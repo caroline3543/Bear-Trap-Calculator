@@ -108,7 +108,8 @@ const TRANSLATIONS = {
     onlyMarksmanShortRequestedYield: "Only {a} Marksman available per squad — total pool is short of the {b} requested even after Stronger squads yield.",
     clearedTroopsToast: "Troops cleared.", resetToast: "Everything reset.", undoAction: "Undo",
     copyPlan: "Copy squad plan", copiedToast: "Copied to clipboard!", copyFailedToast: "Couldn't copy — try again.",
-    autoLabel: "auto", marksmanBelow81Warning: "Below Ton Ton's 81% recommendation", marksmanBelow60kWarning: "Below the 60,000 minimum",
+    autoLabel: "auto", marksmanBelow60kWarning: "Below the 60,000 minimum",
+    infantryStockLimitWarning: "Not enough Infantry in your pool to go higher", lancerStockLimitWarning: "Not enough Lancer in your pool to go higher",
   },
   it: {
     troopPool: "Riserva truppe", troopPoolSub: "Le T10 vengono sempre usate prima delle T9 per lo stesso tipo di truppa.",
@@ -162,7 +163,8 @@ const TRANSLATIONS = {
     onlyMarksmanShortRequestedYield: "Solo {a} Tiratori disponibili per squadra — la riserva totale è sotto i {b} richiesti anche dopo la cessione delle squadre Forti.",
     clearedTroopsToast: "Truppe cancellate.", resetToast: "Tutto reimpostato.", undoAction: "Annulla",
     copyPlan: "Copia piano squadre", copiedToast: "Copiato negli appunti!", copyFailedToast: "Copia non riuscita — riprova.",
-    autoLabel: "auto", marksmanBelow81Warning: "Sotto la raccomandazione dell'81% di Ton Ton", marksmanBelow60kWarning: "Sotto il minimo di 60.000",
+    autoLabel: "auto", marksmanBelow60kWarning: "Sotto il minimo di 60.000",
+    infantryStockLimitWarning: "Non hai abbastanza Fanteria in riserva per salire ancora", lancerStockLimitWarning: "Non hai abbastanza Lancieri in riserva per salire ancora",
   },
   es: {
     troopPool: "Reserva de tropas", troopPoolSub: "Las T10 siempre se usan antes que las T9 para el mismo tipo de tropa.",
@@ -216,7 +218,8 @@ const TRANSLATIONS = {
     onlyMarksmanShortRequestedYield: "Solo {a} Tiradores disponibles por escuadrón — la reserva total está por debajo de los {b} solicitados incluso después de que los escuadrones Fuertes cedan.",
     clearedTroopsToast: "Tropas borradas.", resetToast: "Todo restablecido.", undoAction: "Deshacer",
     copyPlan: "Copiar plan de escuadrones", copiedToast: "¡Copiado al portapapeles!", copyFailedToast: "No se pudo copiar — inténtalo de nuevo.",
-    autoLabel: "auto", marksmanBelow81Warning: "Por debajo de la recomendación del 81% de Ton Ton", marksmanBelow60kWarning: "Por debajo del mínimo de 60.000",
+    autoLabel: "auto", marksmanBelow60kWarning: "Por debajo del mínimo de 60.000",
+    infantryStockLimitWarning: "No tienes suficiente Infantería en la reserva para subir más", lancerStockLimitWarning: "No tienes suficientes Lanceros en la reserva para subir más",
   },
   ko: {
     troopPool: "병력 보유량", troopPoolSub: "같은 병종이면 T9보다 T10을 항상 먼저 사용합니다.",
@@ -270,7 +273,8 @@ const TRANSLATIONS = {
     onlyMarksmanShortRequestedYield: "부대당 저격수 {a}만 사용 가능 — 강한 부대가 양보한 후에도 총 보유량이 요청된 {b}에 못 미칩니다.",
     clearedTroopsToast: "병력이 지워졌습니다.", resetToast: "모두 초기화되었습니다.", undoAction: "실행 취소",
     copyPlan: "부대 계획 복사", copiedToast: "클립보드에 복사되었습니다!", copyFailedToast: "복사하지 못했습니다 — 다시 시도하세요.",
-    autoLabel: "자동", marksmanBelow81Warning: "Ton Ton의 81% 권장치 미만", marksmanBelow60kWarning: "60,000 최소치 미만",
+    autoLabel: "자동", marksmanBelow60kWarning: "60,000 최소치 미만",
+    infantryStockLimitWarning: "보유량에 보병이 부족하여 더 올릴 수 없습니다", lancerStockLimitWarning: "보유량에 창병이 부족하여 더 올릴 수 없습니다",
   },
   de: {
     troopPool: "Truppenbestand", troopPoolSub: "T10 wird beim gleichen Truppentyp immer vor T9 verwendet.",
@@ -324,7 +328,8 @@ const TRANSLATIONS = {
     onlyMarksmanShortRequestedYield: "Nur {a} Scharfschützen pro Trupp verfügbar — Gesamtbestand liegt auch nach Abgabe der starken Trupps unter den angeforderten {b}.",
     clearedTroopsToast: "Truppen gelöscht.", resetToast: "Alles zurückgesetzt.", undoAction: "Rückgängig",
     copyPlan: "Truppplan kopieren", copiedToast: "In die Zwischenablage kopiert!", copyFailedToast: "Kopieren fehlgeschlagen — erneut versuchen.",
-    autoLabel: "auto", marksmanBelow81Warning: "Unter Ton Tons 81%-Empfehlung", marksmanBelow60kWarning: "Unter dem Minimum von 60.000",
+    autoLabel: "auto", marksmanBelow60kWarning: "Unter dem Minimum von 60.000",
+    infantryStockLimitWarning: "Nicht genug Infanterie im Bestand, um weiter zu erhöhen", lancerStockLimitWarning: "Nicht genug Lanzenreiter im Bestand, um weiter zu erhöhen",
   },
   ru: {
     troopPool: "Резерв войск", troopPoolSub: "Войска T10 всегда используются раньше T9 для одного типа войск.",
@@ -378,7 +383,8 @@ const TRANSLATIONS = {
     onlyMarksmanShortRequestedYield: "Доступно только {a} стрелков на отряд — общий резерв ниже запрошенных {b} даже после уступки сильных отрядов.",
     clearedTroopsToast: "Войска очищены.", resetToast: "Всё сброшено.", undoAction: "Отменить",
     copyPlan: "Скопировать план отрядов", copiedToast: "Скопировано в буфер обмена!", copyFailedToast: "Не удалось скопировать — попробуйте снова.",
-    autoLabel: "авто", marksmanBelow81Warning: "Ниже рекомендации Ton Ton в 81%", marksmanBelow60kWarning: "Ниже минимума в 60 000",
+    autoLabel: "авто", marksmanBelow60kWarning: "Ниже минимума в 60 000",
+    infantryStockLimitWarning: "Недостаточно пехоты в резерве, чтобы поднять выше", lancerStockLimitWarning: "Недостаточно копейщиков в резерве, чтобы поднять выше",
   },
   pl: {
     troopPool: "Pula wojsk", troopPoolSub: "Wojska T10 są zawsze używane przed T9 dla tego samego typu wojsk.",
@@ -432,7 +438,8 @@ const TRANSLATIONS = {
     onlyMarksmanShortRequestedYield: "Dostępnych tylko {a} Strzelców na oddział — łączna pula jest poniżej żądanych {b} nawet po ustąpieniu silnych oddziałów.",
     clearedTroopsToast: "Wojska wyczyszczone.", resetToast: "Wszystko zresetowane.", undoAction: "Cofnij",
     copyPlan: "Kopiuj plan oddziałów", copiedToast: "Skopiowano do schowka!", copyFailedToast: "Nie udało się skopiować — spróbuj ponownie.",
-    autoLabel: "auto", marksmanBelow81Warning: "Poniżej zalecanych 81% Ton Ton", marksmanBelow60kWarning: "Poniżej minimum 60 000",
+    autoLabel: "auto", marksmanBelow60kWarning: "Poniżej minimum 60 000",
+    infantryStockLimitWarning: "Za mało Piechoty w puli, by ustawić wyżej", lancerStockLimitWarning: "Za mało Lansjerów w puli, by ustawić wyżej",
   },
   tr: {
     troopPool: "Asker havuzu", troopPoolSub: "Aynı asker türü için T10 her zaman T9'dan önce kullanılır.",
@@ -486,7 +493,8 @@ const TRANSLATIONS = {
     onlyMarksmanShortRequestedYield: "Birlik başına yalnızca {a} Nişancı mevcut — Güçlü birlikler bıraktıktan sonra bile toplam havuz istenen {b}'nin altında.",
     clearedTroopsToast: "Askerler temizlendi.", resetToast: "Her şey sıfırlandı.", undoAction: "Geri al",
     copyPlan: "Birlik planını kopyala", copiedToast: "Panoya kopyalandı!", copyFailedToast: "Kopyalanamadı — tekrar deneyin.",
-    autoLabel: "otomatik", marksmanBelow81Warning: "Ton Ton'un %81 önerisinin altında", marksmanBelow60kWarning: "60.000 minimumunun altında",
+    autoLabel: "otomatik", marksmanBelow60kWarning: "60.000 minimumunun altında",
+    infantryStockLimitWarning: "Havuzda daha yükseğe çıkmak için yeterli Piyade yok", lancerStockLimitWarning: "Havuzda daha yükseğe çıkmak için yeterli Mızraklı yok",
   },
 };
 
@@ -1405,21 +1413,40 @@ export default function App() {
 
   const lancerFloor = Math.max(DIVERSITY_FLOOR, Math.round(capacity * MIN_JOINER_LANCER_PCT));
 
+  // The sliders physically can't be dragged past what the pool can actually supply —
+  // this is a hard stock limit, separate from (and independent of) the softer
+  // 60,000-Marksman warning below. Recomputed live as the troop pool changes.
+  const infantryStockMaxPct =
+    numSquads > 0 && capacity > 0
+      ? Math.min(MAX_JOINER_INFANTRY_PCT * 100, (Math.floor(joinerAvailable.infantry / numSquads) / capacity) * 100)
+      : MAX_JOINER_INFANTRY_PCT * 100;
+  const infantryEffectiveMax = Math.max(MIN_JOINER_INFANTRY_PCT * 100, infantryStockMaxPct);
+  const infantryStockLimited = infantryStockMaxPct < MAX_JOINER_INFANTRY_PCT * 100 - 0.001;
+
+  const lancerStockMaxPct =
+    numSquads > 0 && capacity > 0
+      ? Math.min(MAX_JOINER_LANCER_UI_PCT * 100, (Math.floor(joinerAvailable.lancer / numSquads) / capacity) * 100)
+      : MAX_JOINER_LANCER_UI_PCT * 100;
+  const lancerEffectiveMax = Math.max(5, lancerStockMaxPct);
+  const lancerStockLimited = lancerStockMaxPct < MAX_JOINER_LANCER_UI_PCT * 100 - 0.001;
+
+  const effectiveRecInfantryPct = Math.min(recInfantryPct, infantryEffectiveMax);
+  const effectiveRecLancerPct = Math.min(recLancerPct, lancerEffectiveMax);
+
   const recommendedTarget = useMemo(
     () =>
       priorityTargetWithFloors(
         capacity,
         joinerAvailable,
         numSquads,
-        { infantry: Math.max(DIVERSITY_FLOOR, Math.round(capacity * (recInfantryPct / 100))), lancer: Math.max(DIVERSITY_FLOOR, Math.round(capacity * (recLancerPct / 100))), marksman: DIVERSITY_FLOOR },
+        { infantry: Math.max(DIVERSITY_FLOOR, Math.round(capacity * (effectiveRecInfantryPct / 100))), lancer: Math.max(DIVERSITY_FLOOR, Math.round(capacity * (effectiveRecLancerPct / 100))), marksman: DIVERSITY_FLOOR },
         { infantry: infantryCap }
       ),
-    [capacity, joinerAvailable, numSquads, infantryCap, recInfantryPct, recLancerPct]
+    [capacity, joinerAvailable, numSquads, infantryCap, effectiveRecInfantryPct, effectiveRecLancerPct]
   );
-  // Marksman isn't a slider — it's whatever's left after Infantry and Lancer. These flags
-  // drive the warning emojis rather than blocking the sliders from being dragged there.
+  // Marksman isn't a slider — it's whatever's left after Infantry and Lancer. This flag
+  // drives the one remaining warning: dropping below the hard 60,000 floor.
   const recMarksmanPct = capacity > 0 ? (recommendedTarget.marksman / capacity) * 100 : 100;
-  const recBelow81 = recMarksmanPct < MARKSMAN_MIN_PCT * 100;
   const recBelow60k = recommendedTarget.marksman < MIN_JOINER_MARKSMAN;
 
   // Marksman is guaranteed a floor and gets fill priority for whatever's left
@@ -2061,21 +2088,24 @@ export default function App() {
               <RatioSlider
                 label={`${tType("infantry", lang)} %`}
                 colorDot={TYPE_COLOR.infantry}
-                value={recInfantryPct}
+                value={effectiveRecInfantryPct}
                 min={MIN_JOINER_INFANTRY_PCT * 100}
-                max={MAX_JOINER_INFANTRY_PCT * 100}
+                max={infantryEffectiveMax}
                 step={0.1}
                 onChange={setRecInfantryPct}
+                warningEmoji={infantryStockLimited && effectiveRecInfantryPct >= infantryEffectiveMax - 0.05 ? "📦" : null}
+                warningText={tr("infantryStockLimitWarning")}
               />
               <RatioSlider
                 label={`${tType("lancer", lang)} %`}
                 colorDot={TYPE_COLOR.lancer}
-                value={recLancerPct}
+                value={effectiveRecLancerPct}
                 min={5}
-                max={MAX_JOINER_LANCER_UI_PCT * 100}
+                max={lancerEffectiveMax}
                 step={0.5}
                 onChange={setRecLancerPct}
-                warningEmoji={recBelow60k ? "🚨" : recBelow81 ? "⚠️" : null}
+                warningEmoji={lancerStockLimited && effectiveRecLancerPct >= lancerEffectiveMax - 0.05 ? "📦" : null}
+                warningText={tr("lancerStockLimitWarning")}
               />
               <AutoRatioBar
                 label={`${tType("marksman", lang)} %`}
@@ -2083,8 +2113,8 @@ export default function App() {
                 pct={recMarksmanPct}
                 displayValue={`${recMarksmanPct.toFixed(1)}%`}
                 autoLabel={tr("autoLabel")}
-                warningEmoji={recBelow60k ? "🚨" : recBelow81 ? "⚠️" : null}
-                warningText={recBelow60k ? tr("marksmanBelow60kWarning") : recBelow81 ? tr("marksmanBelow81Warning") : null}
+                warningEmoji={recBelow60k ? "⚠️" : null}
+                warningText={recBelow60k ? tr("marksmanBelow60kWarning") : null}
               />
               <div style={{ fontSize: 11.5, color: C.sub, marginTop: -6, marginBottom: 14 }}>
                 {tType("marksman", lang)}: {fmt(recommendedTarget.marksman)}
