@@ -45,14 +45,14 @@ const TYPE_LABEL = { infantry: "Infantry", lancer: "Lancer", marksman: "Marksman
 const TYPE_LABEL_KEY = { infantry: "infantryLabel", lancer: "lancerLabel", marksman: "marksmanLabel" };
 
 const LANGUAGES = [
-  { code: "en", label: "English" },
-  { code: "it", label: "Italiano" },
-  { code: "es", label: "Español" },
-  { code: "ko", label: "한국어" },
-  { code: "de", label: "Deutsch" },
-  { code: "ru", label: "Русский" },
-  { code: "pl", label: "Polski" },
-  { code: "tr", label: "Türkçe" },
+  { code: "en", label: "English", flag: "🇬🇧" },
+  { code: "it", label: "Italiano", flag: "🇮🇹" },
+  { code: "es", label: "Español", flag: "🇪🇸" },
+  { code: "ko", label: "한국어", flag: "🇰🇷" },
+  { code: "de", label: "Deutsch", flag: "🇩🇪" },
+  { code: "ru", label: "Русский", flag: "🇷🇺" },
+  { code: "pl", label: "Polski", flag: "🇵🇱" },
+  { code: "tr", label: "Türkçe", flag: "🇹🇷" },
 ];
 
 const TRANSLATIONS = {
@@ -84,6 +84,28 @@ const TRANSLATIONS = {
     recHeroNote: "The best ratio depends on your Rally Leader's heroes, hero gear, and chief gear — fine-tune the sliders below to match your own setup.",
     gen5Note: "This is the recommended ratio for Generation 5.",
     resetRatios: "Reset to Ton Ton's ratios",
+    shortLabel: "short", compLabel: "Comp", infAbbr: "Inf", lanAbbr: "Lan", markAbbr: "Mark",
+    addedManually: "added manually", fillRemaining: "Fill remaining", noTroopsLeftPool: "No troops left in any pool to fill this space.",
+    availableWord: "available", remainingToAllocate: "Remaining to allocate", totalWord: "Total",
+    mustEqual100: "must equal 100%", totals100: "Totals 100%",
+    spacesRemainingBelow: "{a} spaces remaining below capacity.", exceedsCapacityBy: "Exceeds capacity by {a}.",
+    marksmanFillsRest: "fills whatever's left after Infantry and Lancer, never below {a}.",
+    spacesCantBeFilled: "{a} spaces per squad can't be filled — not enough total troops.",
+    recShortfallWarning: "Only {a} Marksman available per squad — pool is short of the {b} minimum requested.",
+    useInManual: "Use these numbers in Manual / Exact mode", howThisWorks: "How this works:",
+    tieredStep1: "Stronger squads fill first — all identical to each other.",
+    tieredStep2: "Weaker squads split whatever's left — also identical to each other.",
+    tieredStep3: "Every squad keeps a little Infantry + Lancer, then loads up on Marksman for damage.",
+    numberOfStrongerSquads: "Number of Stronger squads", squadsStrongerWeaker: "Squads 1–{a} are Stronger. Squads {b}–{c} are Weaker.",
+    acceptableInfantryPerStronger: "Acceptable Infantry per Stronger squad",
+    guaranteedStrongerFirst: "Guaranteed in every Stronger squad first — kept between 0.5% and 3% of squad capacity ({a}–{b}).",
+    strongerSquadComposition: "Stronger squad composition",
+    onlyInfantryAvailableRequested: "Only {a} Infantry available per squad (requested {b}).",
+    onlyMarksmanShortMinimum: "Only {a} Marksman available per squad — pool is short of the {b} minimum.",
+    minAcceptableMarksmanWeaker: "Minimum acceptable Marksman per Weaker squad",
+    guaranteedWeakerMinimum: "Guaranteed in every Weaker squad — Stronger squads give up Marksman first if needed. Minimum {a}.",
+    weakerSquadComposition: "Weaker squad composition",
+    onlyMarksmanShortRequestedYield: "Only {a} Marksman available per squad — total pool is short of the {b} requested even after Stronger squads yield.",
   },
   it: {
     troopPool: "Riserva truppe", troopPoolSub: "Le T10 vengono sempre usate prima delle T9 per lo stesso tipo di truppa.",
@@ -113,6 +135,28 @@ const TRANSLATIONS = {
     recHeroNote: "Il rapporto migliore dipende dagli eroi del tuo capo raduno, dal loro equipaggiamento eroe e dall'equipaggiamento del capo — regola i cursori qui sotto in base alla tua configurazione.",
     gen5Note: "Questo è il rapporto consigliato per la Generazione 5.",
     resetRatios: "Ripristina le percentuali di Ton Ton",
+    shortLabel: "mancano", compLabel: "Comp", infAbbr: "Fan", lanAbbr: "Lan", markAbbr: "Tir",
+    addedManually: "aggiunto manualmente", fillRemaining: "Riempi il resto", noTroopsLeftPool: "Nessuna truppa rimasta in nessuna riserva per riempire questo spazio.",
+    availableWord: "disponibili", remainingToAllocate: "Da assegnare", totalWord: "Totale",
+    mustEqual100: "deve essere uguale a 100%", totals100: "Totale 100%",
+    spacesRemainingBelow: "{a} spazi rimanenti sotto la capacità.", exceedsCapacityBy: "Supera la capacità di {a}.",
+    marksmanFillsRest: "riempie ciò che resta dopo Fanteria e Lancieri, mai sotto {a}.",
+    spacesCantBeFilled: "{a} spazi per squadra non possono essere riempiti — non ci sono abbastanza truppe totali.",
+    recShortfallWarning: "Solo {a} Tiratori disponibili per squadra — la riserva è sotto il minimo richiesto di {b}.",
+    useInManual: "Usa questi numeri in modalità Manuale / Quantità esatte", howThisWorks: "Come funziona:",
+    tieredStep1: "Le squadre Forti si riempiono per prime — tutte identiche tra loro.",
+    tieredStep2: "Le squadre Deboli dividono ciò che resta — anche loro identiche tra loro.",
+    tieredStep3: "Ogni squadra tiene un po' di Fanteria e Lancieri, poi carica di Tiratori per il danno.",
+    numberOfStrongerSquads: "Numero di squadre Forti", squadsStrongerWeaker: "Squadre 1–{a} sono Forti. Squadre {b}–{c} sono Deboli.",
+    acceptableInfantryPerStronger: "Fanteria accettabile per squadra Forte",
+    guaranteedStrongerFirst: "Garantita per prima in ogni squadra Forte — mantenuta tra lo 0,5% e il 3% della capacità della squadra ({a}–{b}).",
+    strongerSquadComposition: "Composizione squadra Forte",
+    onlyInfantryAvailableRequested: "Solo {a} Fanteria disponibile per squadra (richiesta {b}).",
+    onlyMarksmanShortMinimum: "Solo {a} Tiratori disponibili per squadra — la riserva è sotto il minimo di {b}.",
+    minAcceptableMarksmanWeaker: "Tiratori minimi accettabili per squadra Debole",
+    guaranteedWeakerMinimum: "Garantito in ogni squadra Debole — le squadre Forti cedono Tiratori per prime se necessario. Minimo {a}.",
+    weakerSquadComposition: "Composizione squadra Debole",
+    onlyMarksmanShortRequestedYield: "Solo {a} Tiratori disponibili per squadra — la riserva totale è sotto i {b} richiesti anche dopo la cessione delle squadre Forti.",
   },
   es: {
     troopPool: "Reserva de tropas", troopPoolSub: "Las T10 siempre se usan antes que las T9 para el mismo tipo de tropa.",
@@ -142,6 +186,28 @@ const TRANSLATIONS = {
     recHeroNote: "La mejor proporción depende de los héroes de tu líder de asalto, su equipo de héroe y el equipo de jefe — ajusta los controles de abajo según tu configuración.",
     gen5Note: "Esta es la proporción recomendada para la Generación 5.",
     resetRatios: "Restablecer a las proporciones de Ton Ton",
+    shortLabel: "faltan", compLabel: "Comp", infAbbr: "Inf", lanAbbr: "Lan", markAbbr: "Tir",
+    addedManually: "añadido manualmente", fillRemaining: "Rellenar el resto", noTroopsLeftPool: "No quedan tropas en ninguna reserva para llenar este espacio.",
+    availableWord: "disponibles", remainingToAllocate: "Por asignar", totalWord: "Total",
+    mustEqual100: "debe sumar 100%", totals100: "Suma 100%",
+    spacesRemainingBelow: "{a} espacios restantes por debajo de la capacidad.", exceedsCapacityBy: "Supera la capacidad en {a}.",
+    marksmanFillsRest: "ocupa lo que queda tras Infantería y Lanceros, nunca menos de {a}.",
+    spacesCantBeFilled: "{a} espacios por escuadrón no se pueden llenar — no hay tropas suficientes en total.",
+    recShortfallWarning: "Solo {a} Tiradores disponibles por escuadrón — la reserva está por debajo del mínimo solicitado de {b}.",
+    useInManual: "Usar estos números en modo Manual / Cantidades exactas", howThisWorks: "Cómo funciona:",
+    tieredStep1: "Los escuadrones Fuertes se llenan primero — todos idénticos entre sí.",
+    tieredStep2: "Los escuadrones Débiles reparten lo que queda — también idénticos entre sí.",
+    tieredStep3: "Cada escuadrón conserva algo de Infantería y Lanceros, y luego se carga de Tiradores para hacer daño.",
+    numberOfStrongerSquads: "Número de escuadrones Fuertes", squadsStrongerWeaker: "Escuadrones 1–{a} son Fuertes. Escuadrones {b}–{c} son Débiles.",
+    acceptableInfantryPerStronger: "Infantería aceptable por escuadrón Fuerte",
+    guaranteedStrongerFirst: "Garantizada primero en cada escuadrón Fuerte — se mantiene entre 0,5% y 3% de la capacidad del escuadrón ({a}–{b}).",
+    strongerSquadComposition: "Composición del escuadrón Fuerte",
+    onlyInfantryAvailableRequested: "Solo {a} Infantería disponible por escuadrón (solicitada {b}).",
+    onlyMarksmanShortMinimum: "Solo {a} Tiradores disponibles por escuadrón — la reserva está por debajo del mínimo de {b}.",
+    minAcceptableMarksmanWeaker: "Tiradores mínimos aceptables por escuadrón Débil",
+    guaranteedWeakerMinimum: "Garantizado en cada escuadrón Débil — los escuadrones Fuertes ceden Tiradores primero si hace falta. Mínimo {a}.",
+    weakerSquadComposition: "Composición del escuadrón Débil",
+    onlyMarksmanShortRequestedYield: "Solo {a} Tiradores disponibles por escuadrón — la reserva total está por debajo de los {b} solicitados incluso después de que los escuadrones Fuertes cedan.",
   },
   ko: {
     troopPool: "병력 보유량", troopPoolSub: "같은 병종이면 T9보다 T10을 항상 먼저 사용합니다.",
@@ -171,6 +237,28 @@ const TRANSLATIONS = {
     recHeroNote: "최적의 비율은 집결 대장의 영웅, 영웅 장비, 사령관 장비에 따라 달라집니다 — 아래 슬라이더로 자신의 설정에 맞게 조정하세요.",
     gen5Note: "이것은 5세대(Generation 5)를 위한 권장 비율입니다.",
     resetRatios: "Ton Ton 비율로 재설정",
+    shortLabel: "부족", compLabel: "구성", infAbbr: "보병", lanAbbr: "창병", markAbbr: "저격",
+    addedManually: "수동으로 추가됨", fillRemaining: "남은 공간 채우기", noTroopsLeftPool: "이 공간을 채울 병력이 보유량에 남아있지 않습니다.",
+    availableWord: "사용 가능", remainingToAllocate: "배분 남음", totalWord: "합계",
+    mustEqual100: "100%가 되어야 합니다", totals100: "합계 100%",
+    spacesRemainingBelow: "{a}개 공간이 용량 미만으로 남아 있습니다.", exceedsCapacityBy: "용량을 {a}만큼 초과했습니다.",
+    marksmanFillsRest: "보병과 창병을 제외한 나머지를 채우며, {a} 아래로 내려가지 않습니다.",
+    spacesCantBeFilled: "부대당 {a}개 공간을 채울 수 없습니다 — 전체 병력이 부족합니다.",
+    recShortfallWarning: "부대당 저격수 {a}만 확보 가능 — 보유량이 요청된 최소치 {b}에 못 미칩니다.",
+    useInManual: "이 수치를 수동 / 정확한 수량 모드에서 사용", howThisWorks: "작동 방식:",
+    tieredStep1: "강한 부대가 먼저 채워집니다 — 모두 동일한 구성입니다.",
+    tieredStep2: "약한 부대가 남은 것을 나눕니다 — 이들도 서로 동일한 구성입니다.",
+    tieredStep3: "모든 부대는 보병과 창병을 약간 유지한 뒤, 피해를 위해 저격수를 채웁니다.",
+    numberOfStrongerSquads: "강한 부대 수", squadsStrongerWeaker: "부대 1–{a}는 강함. 부대 {b}–{c}는 약함.",
+    acceptableInfantryPerStronger: "강한 부대당 허용 보병 수",
+    guaranteedStrongerFirst: "모든 강한 부대에서 먼저 보장되며 — 부대 용량의 0.5%~3% 사이로 유지됩니다 ({a}–{b}).",
+    strongerSquadComposition: "강한 부대 구성",
+    onlyInfantryAvailableRequested: "부대당 보병 {a}만 사용 가능 (요청 {b}).",
+    onlyMarksmanShortMinimum: "부대당 저격수 {a}만 사용 가능 — 보유량이 최소치 {b}에 못 미칩니다.",
+    minAcceptableMarksmanWeaker: "약한 부대당 최소 허용 저격수",
+    guaranteedWeakerMinimum: "모든 약한 부대에서 보장되며 — 필요 시 강한 부대가 저격수를 먼저 양보합니다. 최소 {a}.",
+    weakerSquadComposition: "약한 부대 구성",
+    onlyMarksmanShortRequestedYield: "부대당 저격수 {a}만 사용 가능 — 강한 부대가 양보한 후에도 총 보유량이 요청된 {b}에 못 미칩니다.",
   },
   de: {
     troopPool: "Truppenbestand", troopPoolSub: "T10 wird beim gleichen Truppentyp immer vor T9 verwendet.",
@@ -200,6 +288,28 @@ const TRANSLATIONS = {
     recHeroNote: "Das beste Verhältnis hängt von den Helden deines Sammlungsanführers, deren Heldenausrüstung und der Anführerausrüstung ab — passe die Regler unten an dein eigenes Setup an.",
     gen5Note: "Dies ist das empfohlene Verhältnis für Generation 5.",
     resetRatios: "Auf Ton Tons Verhältnisse zurücksetzen",
+    shortLabel: "fehlen", compLabel: "Zus", infAbbr: "Inf", lanAbbr: "Lan", markAbbr: "Sch",
+    addedManually: "manuell hinzugefügt", fillRemaining: "Rest auffüllen", noTroopsLeftPool: "Keine Truppen mehr in irgendeinem Bestand, um diesen Platz zu füllen.",
+    availableWord: "verfügbar", remainingToAllocate: "Noch zu verteilen", totalWord: "Gesamt",
+    mustEqual100: "muss 100% ergeben", totals100: "Ergibt 100%",
+    spacesRemainingBelow: "{a} Plätze verbleiben unter der Kapazität.", exceedsCapacityBy: "Überschreitet die Kapazität um {a}.",
+    marksmanFillsRest: "füllt den Rest nach Infanterie und Lanzenreiter, nie unter {a}.",
+    spacesCantBeFilled: "{a} Plätze pro Trupp können nicht gefüllt werden — nicht genug Truppen insgesamt.",
+    recShortfallWarning: "Nur {a} Scharfschützen pro Trupp verfügbar — Bestand liegt unter dem angeforderten Minimum von {b}.",
+    useInManual: "Diese Werte im Modus Manuell / Exakte Mengen verwenden", howThisWorks: "So funktioniert es:",
+    tieredStep1: "Starke Trupps werden zuerst aufgefüllt — alle identisch zueinander.",
+    tieredStep2: "Schwache Trupps teilen sich den Rest — ebenfalls identisch zueinander.",
+    tieredStep3: "Jeder Trupp behält etwas Infanterie und Lanzenreiter und lädt dann mit Scharfschützen für Schaden auf.",
+    numberOfStrongerSquads: "Anzahl der starken Trupps", squadsStrongerWeaker: "Trupps 1–{a} sind Stark. Trupps {b}–{c} sind Schwach.",
+    acceptableInfantryPerStronger: "Akzeptable Infanterie pro starkem Trupp",
+    guaranteedStrongerFirst: "Zuerst in jedem starken Trupp garantiert — bleibt zwischen 0,5% und 3% der Truppkapazität ({a}–{b}).",
+    strongerSquadComposition: "Zusammensetzung des starken Trupps",
+    onlyInfantryAvailableRequested: "Nur {a} Infanterie pro Trupp verfügbar (angefordert {b}).",
+    onlyMarksmanShortMinimum: "Nur {a} Scharfschützen pro Trupp verfügbar — Bestand liegt unter dem Minimum von {b}.",
+    minAcceptableMarksmanWeaker: "Minimal akzeptable Scharfschützen pro schwachem Trupp",
+    guaranteedWeakerMinimum: "In jedem schwachen Trupp garantiert — starke Trupps geben bei Bedarf zuerst Scharfschützen ab. Minimum {a}.",
+    weakerSquadComposition: "Zusammensetzung des schwachen Trupps",
+    onlyMarksmanShortRequestedYield: "Nur {a} Scharfschützen pro Trupp verfügbar — Gesamtbestand liegt auch nach Abgabe der starken Trupps unter den angeforderten {b}.",
   },
   ru: {
     troopPool: "Резерв войск", troopPoolSub: "Войска T10 всегда используются раньше T9 для одного типа войск.",
@@ -229,6 +339,28 @@ const TRANSLATIONS = {
     recHeroNote: "Лучшее соотношение зависит от героев вашего лидера сбора, их снаряжения героев и снаряжения командира — настройте ползунки ниже под свою конфигурацию.",
     gen5Note: "Это рекомендуемое соотношение для Поколения 5.",
     resetRatios: "Сбросить к соотношениям Ton Ton",
+    shortLabel: "не хватает", compLabel: "Состав", infAbbr: "Пех", lanAbbr: "Коп", markAbbr: "Стр",
+    addedManually: "добавлено вручную", fillRemaining: "Заполнить остаток", noTroopsLeftPool: "В резерве не осталось войск, чтобы заполнить это место.",
+    availableWord: "доступно", remainingToAllocate: "Осталось распределить", totalWord: "Итого",
+    mustEqual100: "должно быть равно 100%", totals100: "Итого 100%",
+    spacesRemainingBelow: "{a} мест остаются незаполненными ниже вместимости.", exceedsCapacityBy: "Превышает вместимость на {a}.",
+    marksmanFillsRest: "заполняет остаток после пехоты и копейщиков, никогда не ниже {a}.",
+    spacesCantBeFilled: "{a} мест в отряде не могут быть заполнены — не хватает войск в целом.",
+    recShortfallWarning: "Доступно только {a} стрелков на отряд — резерв ниже запрошенного минимума {b}.",
+    useInManual: "Использовать эти значения в режиме Вручную / Точные значения", howThisWorks: "Как это работает:",
+    tieredStep1: "Сильные отряды заполняются первыми — все они одинаковы между собой.",
+    tieredStep2: "Слабые отряды делят остаток — также одинаковы между собой.",
+    tieredStep3: "Каждый отряд сохраняет немного пехоты и копейщиков, а затем набирает стрелков для урона.",
+    numberOfStrongerSquads: "Количество сильных отрядов", squadsStrongerWeaker: "Отряды 1–{a} — Сильные. Отряды {b}–{c} — Слабые.",
+    acceptableInfantryPerStronger: "Допустимая пехота на сильный отряд",
+    guaranteedStrongerFirst: "Гарантируется в первую очередь в каждом сильном отряде — сохраняется в пределах 0,5%–3% вместимости отряда ({a}–{b}).",
+    strongerSquadComposition: "Состав сильного отряда",
+    onlyInfantryAvailableRequested: "Доступно только {a} пехоты на отряд (запрошено {b}).",
+    onlyMarksmanShortMinimum: "Доступно только {a} стрелков на отряд — резерв ниже минимума {b}.",
+    minAcceptableMarksmanWeaker: "Минимально допустимые стрелки на слабый отряд",
+    guaranteedWeakerMinimum: "Гарантируется в каждом слабом отряде — сильные отряды при необходимости уступают стрелков первыми. Минимум {a}.",
+    weakerSquadComposition: "Состав слабого отряда",
+    onlyMarksmanShortRequestedYield: "Доступно только {a} стрелков на отряд — общий резерв ниже запрошенных {b} даже после уступки сильных отрядов.",
   },
   pl: {
     troopPool: "Pula wojsk", troopPoolSub: "Wojska T10 są zawsze używane przed T9 dla tego samego typu wojsk.",
@@ -258,6 +390,28 @@ const TRANSLATIONS = {
     recHeroNote: "Najlepsza proporcja zależy od bohaterów twojego lidera zgrupowania, ich ekwipunku bohatera i ekwipunku dowódcy — dostosuj poniższe suwaki do swojej konfiguracji.",
     gen5Note: "To jest zalecana proporcja dla Generacji 5.",
     resetRatios: "Przywróć proporcje Ton Ton",
+    shortLabel: "brakuje", compLabel: "Skład", infAbbr: "Pie", lanAbbr: "Lan", markAbbr: "Strz",
+    addedManually: "dodano ręcznie", fillRemaining: "Wypełnij resztę", noTroopsLeftPool: "W żadnej puli nie zostały wojska, aby wypełnić to miejsce.",
+    availableWord: "dostępne", remainingToAllocate: "Pozostało do przydzielenia", totalWord: "Razem",
+    mustEqual100: "musi wynosić 100%", totals100: "Razem 100%",
+    spacesRemainingBelow: "{a} miejsc pozostaje poniżej pojemności.", exceedsCapacityBy: "Przekracza pojemność o {a}.",
+    marksmanFillsRest: "wypełnia resztę po Piechocie i Lansjerach, nigdy poniżej {a}.",
+    spacesCantBeFilled: "{a} miejsc na oddział nie można wypełnić — za mało wojsk ogółem.",
+    recShortfallWarning: "Dostępnych tylko {a} Strzelców na oddział — pula jest poniżej wymaganego minimum {b}.",
+    useInManual: "Użyj tych liczb w trybie Ręcznym / Dokładne ilości", howThisWorks: "Jak to działa:",
+    tieredStep1: "Silne oddziały wypełniane są jako pierwsze — wszystkie identyczne.",
+    tieredStep2: "Słabe oddziały dzielą resztę — również identyczne między sobą.",
+    tieredStep3: "Każdy oddział zachowuje trochę Piechoty i Lansjerów, a resztę uzupełnia Strzelcami dla obrażeń.",
+    numberOfStrongerSquads: "Liczba silnych oddziałów", squadsStrongerWeaker: "Oddziały 1–{a} są Silne. Oddziały {b}–{c} są Słabe.",
+    acceptableInfantryPerStronger: "Akceptowalna Piechota na silny oddział",
+    guaranteedStrongerFirst: "Gwarantowana jako pierwsza w każdym silnym oddziale — utrzymywana między 0,5% a 3% pojemności oddziału ({a}–{b}).",
+    strongerSquadComposition: "Skład silnego oddziału",
+    onlyInfantryAvailableRequested: "Dostępna tylko {a} Piechota na oddział (żądano {b}).",
+    onlyMarksmanShortMinimum: "Dostępnych tylko {a} Strzelców na oddział — pula jest poniżej minimum {b}.",
+    minAcceptableMarksmanWeaker: "Minimalna akceptowalna liczba Strzelców na słaby oddział",
+    guaranteedWeakerMinimum: "Gwarantowane w każdym słabym oddziale — silne oddziały w razie potrzeby oddają Strzelców jako pierwsze. Minimum {a}.",
+    weakerSquadComposition: "Skład słabego oddziału",
+    onlyMarksmanShortRequestedYield: "Dostępnych tylko {a} Strzelców na oddział — łączna pula jest poniżej żądanych {b} nawet po ustąpieniu silnych oddziałów.",
   },
   tr: {
     troopPool: "Asker havuzu", troopPoolSub: "Aynı asker türü için T10 her zaman T9'dan önce kullanılır.",
@@ -287,6 +441,28 @@ const TRANSLATIONS = {
     recHeroNote: "En iyi oran, toplanma liderinizin kahramanlarına, kahraman ekipmanına ve lider ekipmanına bağlıdır — kendi kurulumunuza göre aşağıdaki kaydırıcıları ayarlayın.",
     gen5Note: "Bu, 5. Nesil için önerilen orandır.",
     resetRatios: "Ton Ton oranlarına sıfırla",
+    shortLabel: "eksik", compLabel: "Bileşim", infAbbr: "Piy", lanAbbr: "Mız", markAbbr: "Niş",
+    addedManually: "manuel olarak eklendi", fillRemaining: "Kalanı doldur", noTroopsLeftPool: "Bu alanı doldurmak için hiçbir havuzda asker kalmadı.",
+    availableWord: "mevcut", remainingToAllocate: "Dağıtılacak kalan", totalWord: "Toplam",
+    mustEqual100: "%100 olmalı", totals100: "Toplam %100",
+    spacesRemainingBelow: "{a} alan kapasitenin altında kalıyor.", exceedsCapacityBy: "Kapasiteyi {a} aşıyor.",
+    marksmanFillsRest: "Piyade ve Mızraklıdan sonra kalanı doldurur, asla {a} altına düşmez.",
+    spacesCantBeFilled: "Birlik başına {a} alan doldurulamıyor — toplamda yeterli asker yok.",
+    recShortfallWarning: "Birlik başına yalnızca {a} Nişancı mevcut — havuz istenen {b} minimumunun altında.",
+    useInManual: "Bu sayıları Manuel / Kesin miktarlar modunda kullan", howThisWorks: "Nasıl çalışır:",
+    tieredStep1: "Güçlü birlikler önce doldurulur — hepsi birbirinin aynısıdır.",
+    tieredStep2: "Zayıf birlikler kalanı paylaşır — onlar da birbirinin aynısıdır.",
+    tieredStep3: "Her birlik biraz Piyade ve Mızraklı tutar, ardından hasar için Nişancı ile yüklenir.",
+    numberOfStrongerSquads: "Güçlü birlik sayısı", squadsStrongerWeaker: "1–{a} birlikleri Güçlü. {b}–{c} birlikleri Zayıf.",
+    acceptableInfantryPerStronger: "Güçlü birlik başına kabul edilebilir Piyade",
+    guaranteedStrongerFirst: "Her Güçlü birlikte önce garanti edilir — birlik kapasitesinin %0,5 ile %3'ü arasında tutulur ({a}–{b}).",
+    strongerSquadComposition: "Güçlü birlik bileşimi",
+    onlyInfantryAvailableRequested: "Birlik başına yalnızca {a} Piyade mevcut (istenen {b}).",
+    onlyMarksmanShortMinimum: "Birlik başına yalnızca {a} Nişancı mevcut — havuz {b} minimumunun altında.",
+    minAcceptableMarksmanWeaker: "Zayıf birlik başına minimum kabul edilebilir Nişancı",
+    guaranteedWeakerMinimum: "Her Zayıf birlikte garanti edilir — gerekirse Güçlü birlikler önce Nişancı bırakır. Minimum {a}.",
+    weakerSquadComposition: "Zayıf birlik bileşimi",
+    onlyMarksmanShortRequestedYield: "Birlik başına yalnızca {a} Nişancı mevcut — Güçlü birlikler bıraktıktan sonra bile toplam havuz istenen {b}'nin altında.",
   },
 };
 
@@ -297,7 +473,15 @@ function tType(type, lang) {
 function tWord(key, lang) {
   return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || TRANSLATIONS.en[key] || key;
 }
-
+/* Same lookup as tWord, but substitutes {a}/{b}/{c} placeholders with the
+   given values — for sentences that need numbers spliced into translated text. */
+function tFmt(key, lang, vars = {}) {
+  let str = tWord(key, lang);
+  Object.keys(vars).forEach((k) => {
+    str = str.split(`{${k}}`).join(vars[k]);
+  });
+  return str;
+}
 
 /* ============================================================
    HELPERS
@@ -831,7 +1015,7 @@ function SquadCard({ index, squadKey, result, invalid, onAcceptFill, onRemoveFil
     return (
       <Card style={{ borderColor: C.red, background: C.redBg }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ fontWeight: 600, color: C.gold }}>Squad {index}</div>
+          <div style={{ fontWeight: 600, color: C.gold }}>{tWord("squadLabel", lang)} {index}</div>
           <Pill tone="red" icon="✕">{tWord("invalidTarget", lang)}</Pill>
         </div>
         <div style={{ fontSize: 12.5, color: C.red, marginTop: 8 }}>{tWord("fixComposition", lang)}</div>
@@ -887,22 +1071,22 @@ function SquadCard({ index, squadKey, result, invalid, onAcceptFill, onRemoveFil
                 <span style={{ color: C.sub }}> · </span>
                 <span style={{ color: b.t9 > 0 ? C.t9Amber : C.sub, fontWeight: b.t9 > 0 ? 700 : 400 }}>T9 {fmt(b.t9)}</span>
               </div>
-              {b.shortage > 0 && <div style={{ fontSize: 10.5, color: C.red, fontWeight: 600, marginTop: 2 }}>short {fmt(b.shortage)}</div>}
+              {b.shortage > 0 && <div style={{ fontSize: 10.5, color: C.red, fontWeight: 600, marginTop: 2 }}>{tWord("shortLabel", lang)} {fmt(b.shortage)}</div>}
             </div>
           );
         })}
       </div>
 
       <div style={{ fontSize: 11, color: C.sub, marginBottom: 10 }}>
-        Comp: {result.pctOf(result.breakdown.infantry.total).toFixed(1)}% Inf · {result.pctOf(result.breakdown.lancer.total).toFixed(1)}% Lan ·{" "}
-        {result.pctOf(result.breakdown.marksman.total).toFixed(1)}% Mark &nbsp;|&nbsp; T10 {result.t10Pct.toFixed(0)}% / T9 {result.t9Pct.toFixed(0)}%
+        {tWord("compLabel", lang)}: {result.pctOf(result.breakdown.infantry.total).toFixed(1)}% {tWord("infAbbr", lang)} · {result.pctOf(result.breakdown.lancer.total).toFixed(1)}% {tWord("lanAbbr", lang)} ·{" "}
+        {result.pctOf(result.breakdown.marksman.total).toFixed(1)}% {tWord("markAbbr", lang)} &nbsp;|&nbsp; T10 {result.t10Pct.toFixed(0)}% / T9 {result.t9Pct.toFixed(0)}%
       </div>
 
       {result.appliedFills && result.appliedFills.length > 0 && (
         <div style={{ marginBottom: 10, display: "flex", flexDirection: "column", gap: 6 }}>
           {result.appliedFills.map((f, i) => (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: C.goldBg, border: `1px solid ${C.goldBorder}`, borderRadius: 12, padding: "6px 6px 6px 10px", fontSize: 11.5 }}>
-              <span style={{ color: C.gold, fontWeight: 600 }}>+ {fmt(f.applied)} {f.tier.toUpperCase()} {tType(f.type, lang)} added manually</span>
+              <span style={{ color: C.gold, fontWeight: 600 }}>+ {fmt(f.applied)} {f.tier.toUpperCase()} {tType(f.type, lang)} {tWord("addedManually", lang)}</span>
               <button onClick={() => onRemoveFill(squadKey, i)} aria-label="Remove this manual fill" style={{ background: "none", border: "none", color: C.red, fontWeight: 600, cursor: "pointer", fontSize: 15, padding: "6px 8px" }}>✕</button>
             </div>
           ))}
@@ -911,14 +1095,14 @@ function SquadCard({ index, squadKey, result, invalid, onAcceptFill, onRemoveFil
 
       {result.capacityRemaining > 0 && (
         <div style={{ background: bg, borderRadius: 14, padding: "10px 12px", fontSize: 12, color: C.ink }}>
-          <div style={{ fontWeight: 600, marginBottom: 7 }}>Fill remaining {fmt(result.capacityRemaining)}:</div>
+          <div style={{ fontWeight: 600, marginBottom: 7 }}>{tWord("fillRemaining", lang)} {fmt(result.capacityRemaining)}:</div>
           {result.suggestions.length === 0 ? (
-            <div style={{ color: C.red, fontWeight: 500 }}>No troops left in any pool to fill this space.</div>
+            <div style={{ color: C.red, fontWeight: 500 }}>{tWord("noTroopsLeftPool", lang)}</div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {result.suggestions.map((s, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                  <span>{fmt(s.amount)} {s.tier.toUpperCase()} {tType(s.type, lang)} available</span>
+                  <span>{fmt(s.amount)} {s.tier.toUpperCase()} {tType(s.type, lang)} {tWord("availableWord", lang)}</span>
                   <Btn tone="gold" small onClick={() => onAcceptFill(squadKey, s.tier, s.type, s.amount)}>{tWord("addBtn", lang)}</Btn>
                 </div>
               ))}
@@ -959,11 +1143,11 @@ function CompositionInputs({ capacity, mode, setMode, ratio, setRatio, exact, se
           </div>
           <CompositionBar segments={TYPES.map((t) => ({ pct: ratio[t], color: dots[t] }))} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-            <span style={{ fontSize: 11.5, color: C.sub, fontWeight: 500 }}>Remaining to allocate: {Math.max(0, 100 - ratioSum)}%</span>
+            <span style={{ fontSize: 11.5, color: C.sub, fontWeight: 500 }}>{tWord("remainingToAllocate", lang)}: {Math.max(0, 100 - ratioSum)}%</span>
             {!target.valid ? (
-              <span style={{ fontSize: 12, color: C.red, fontWeight: 500 }}>✕ Total {ratioSum.toFixed(0)}% — must equal 100%</span>
+              <span style={{ fontSize: 12, color: C.red, fontWeight: 500 }}>✕ {tWord("totalWord", lang)} {ratioSum.toFixed(0)}% — {tWord("mustEqual100", lang)}</span>
             ) : (
-              <span style={{ fontSize: 12, color: C.green, fontWeight: 500 }}>✓ Totals 100%</span>
+              <span style={{ fontSize: 12, color: C.green, fontWeight: 500 }}>✓ {tWord("totals100", lang)}</span>
             )}
           </div>
         </>
@@ -976,7 +1160,7 @@ function CompositionInputs({ capacity, mode, setMode, ratio, setRatio, exact, se
           </div>
           {!target.valid && (
             <div style={{ marginTop: 8, fontWeight: 500, fontSize: 12.5, color: target.total < capacity ? C.amber : C.red }}>
-              {target.total < capacity ? `${fmt(capacity - target.total)} spaces remaining below capacity.` : `Exceeds capacity by ${fmt(target.total - capacity)}.`}
+              {target.total < capacity ? tFmt("spacesRemainingBelow", lang, { a: fmt(capacity - target.total) }) : tFmt("exceedsCapacityBy", lang, { a: fmt(target.total - capacity) })}
             </div>
           )}
         </>
@@ -1499,7 +1683,7 @@ export default function App() {
               onChange={(e) => setLang(e.target.value)}
             >
               {LANGUAGES.map((l) => (
-                <option key={l.code} value={l.code}>{l.label}</option>
+                <option key={l.code} value={l.code}>{l.flag} {l.label}</option>
               ))}
             </select>
             <Btn tone="ghost" small onClick={() => setDarkMode(!darkMode)}>
@@ -1690,7 +1874,7 @@ export default function App() {
                 onChange={setRecLancerPct}
               />
               <div style={{ fontSize: 11.5, color: C.sub, marginTop: -6, marginBottom: 14 }}>
-                {tType("marksman", lang)}: {fmt(recommendedTarget.marksman)} — fills whatever's left after Infantry and Lancer, never below {fmt(MIN_JOINER_MARKSMAN)}.
+                {tType("marksman", lang)}: {fmt(recommendedTarget.marksman)} — {tFmt("marksmanFillsRest", lang, { a: fmt(MIN_JOINER_MARKSMAN) })}
               </div>
 
               <div style={{ background: C.goldBg, border: `1.5px solid ${C.goldBorder}`, borderRadius: 14, padding: 10, marginBottom: 10 }}>
@@ -1698,16 +1882,16 @@ export default function App() {
               </div>
               {!recommendedTarget.floorsMet.marksman && (
                 <div style={{ fontSize: 12, color: C.red, fontWeight: 500, marginBottom: 10 }}>
-                  Only {fmt(recommendedTarget.marksman)} Marksman available per squad — pool is short of the {fmt(MIN_JOINER_MARKSMAN)} minimum requested.
+                  {tFmt("recShortfallWarning", lang, { a: fmt(recommendedTarget.marksman), b: fmt(MIN_JOINER_MARKSMAN) })}
                 </div>
               )}
               {recommendedTarget.shortfall > 0 && (
                 <div style={{ color: C.amber, fontWeight: 500, fontSize: 12.5, marginBottom: 10 }}>
-                  {fmt(recommendedTarget.shortfall)} spaces per squad can't be filled — not enough total troops.
+                  {tFmt("spacesCantBeFilled", lang, { a: fmt(recommendedTarget.shortfall) })}
                 </div>
               )}
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <Btn tone="ghost" onClick={applyRecommendedToManual}>Use these numbers in Manual / Exact mode</Btn>
+                <Btn tone="ghost" onClick={applyRecommendedToManual}>{tWord("useInManual", lang)}</Btn>
               </div>
             </div>
           )}
@@ -1715,14 +1899,14 @@ export default function App() {
           {strategy === "tiered" && (
             <div>
               <div style={{ background: C.inputBg, border: `1px solid ${C.inputBorder}`, borderRadius: 14, padding: 10, marginBottom: 14, fontSize: 12, color: C.ink, lineHeight: 1.6 }}>
-                <strong>How this works:</strong>
-                <div>1. Stronger squads fill first — all identical to each other.</div>
-                <div>2. Weaker squads split whatever's left — also identical to each other.</div>
-                <div>3. Every squad keeps a little Infantry + Lancer, then loads up on Marksman for damage.</div>
+                <strong>{tWord("howThisWorks", lang)}</strong>
+                <div>1. {tWord("tieredStep1", lang)}</div>
+                <div>2. {tWord("tieredStep2", lang)}</div>
+                <div>3. {tWord("tieredStep3", lang)}</div>
               </div>
 
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <span style={{ fontSize: 12.5, fontWeight: 500, color: C.ink }}>Number of Stronger squads</span>
+                <span style={{ fontSize: 12.5, fontWeight: 500, color: C.ink }}>{tWord("numberOfStrongerSquads", lang)}</span>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <Btn tone="ghost" small onClick={() => setNumStronger(Math.max(1, numStronger - 1))}>−</Btn>
                   <span style={{ fontWeight: 600, fontSize: 15, minWidth: 18, textAlign: "center", color: C.ink }}>{numStrongerClamped}</span>
@@ -1730,36 +1914,36 @@ export default function App() {
                 </div>
               </div>
               <div style={{ fontSize: 11.5, color: C.sub, marginBottom: 14 }}>
-                Squads 1–{numStrongerClamped} are Stronger. Squads {numStrongerClamped + 1}–{numSquads} are Weaker.
+                {tFmt("squadsStrongerWeaker", lang, { a: numStrongerClamped, b: numStrongerClamped + 1, c: numSquads })}
               </div>
 
-              <NumField label="Acceptable Infantry per Stronger squad" value={strongInfantry} onChange={setStrongInfantry} />
-              <div style={{ fontSize: 11, color: C.sub, marginTop: 5, marginBottom: 14 }}>Guaranteed in every Stronger squad first — kept between 0.5% and 3% of squad capacity ({fmt(infantryFloor)}–{fmt(infantryCap)}).</div>
+              <NumField label={tWord("acceptableInfantryPerStronger", lang)} value={strongInfantry} onChange={setStrongInfantry} />
+              <div style={{ fontSize: 11, color: C.sub, marginTop: 5, marginBottom: 14 }}>{tFmt("guaranteedStrongerFirst", lang, { a: fmt(infantryFloor), b: fmt(infantryCap) })}</div>
 
-              <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 15, fontWeight: 800, lineHeight: "20px", color: C.gold, marginBottom: 6 }}>Stronger squad composition</div>
+              <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 15, fontWeight: 800, lineHeight: "20px", color: C.gold, marginBottom: 6 }}>{tWord("strongerSquadComposition", lang)}</div>
               <div style={{ background: C.goldBg, border: `1.5px solid ${C.goldBorder}`, borderRadius: 14, padding: 10, marginBottom: 14 }}>
                 <TargetPreview target={tieredStrong} lang={lang} />
                 {!tieredStrong.floorsMet.infantry && (
                   <div style={{ fontSize: 11, color: C.red, fontWeight: 500, marginTop: 6 }}>
-                    Only {fmt(tieredStrong.infantry)} Infantry available per squad (requested {fmt(strongInfantry)}).
+                    {tFmt("onlyInfantryAvailableRequested", lang, { a: fmt(tieredStrong.infantry), b: fmt(strongInfantry) })}
                   </div>
                 )}
                 {!tieredStrong.floorsMet.marksman && (
                   <div style={{ fontSize: 11, color: C.red, fontWeight: 500, marginTop: 6 }}>
-                    Only {fmt(tieredStrong.marksman)} Marksman available per squad — pool is short of the {fmt(MIN_JOINER_MARKSMAN)} minimum.
+                    {tFmt("onlyMarksmanShortMinimum", lang, { a: fmt(tieredStrong.marksman), b: fmt(MIN_JOINER_MARKSMAN) })}
                   </div>
                 )}
               </div>
 
-              <NumField label="Minimum acceptable Marksman per Weaker squad" value={minWeakMarksman} onChange={setMinWeakMarksman} />
-              <div style={{ fontSize: 11, color: C.sub, marginTop: 5, marginBottom: 14 }}>Guaranteed in every Weaker squad — Stronger squads give up Marksman first if needed. Minimum {fmt(MIN_JOINER_MARKSMAN)}.</div>
+              <NumField label={tWord("minAcceptableMarksmanWeaker", lang)} value={minWeakMarksman} onChange={setMinWeakMarksman} />
+              <div style={{ fontSize: 11, color: C.sub, marginTop: 5, marginBottom: 14 }}>{tFmt("guaranteedWeakerMinimum", lang, { a: fmt(MIN_JOINER_MARKSMAN) })}</div>
 
-              <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 15, fontWeight: 800, lineHeight: "20px", color: C.gold, marginBottom: 6 }}>Weaker squad composition</div>
+              <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 15, fontWeight: 800, lineHeight: "20px", color: C.gold, marginBottom: 6 }}>{tWord("weakerSquadComposition", lang)}</div>
               <div style={{ background: C.goldBg, border: `1.5px solid ${C.goldBorder}`, borderRadius: 14, padding: 10 }}>
                 <TargetPreview target={tieredWeak} lang={lang} />
                 {!tieredWeak.floorsMet.marksman && (
                   <div style={{ fontSize: 11, color: C.red, fontWeight: 500, marginTop: 6 }}>
-                    Only {fmt(tieredWeak.marksman)} Marksman available per squad — total pool is short of the {fmt(minWeakMarksman)} requested even after Stronger squads yield.
+                    {tFmt("onlyMarksmanShortRequestedYield", lang, { a: fmt(tieredWeak.marksman), b: fmt(minWeakMarksman) })}
                   </div>
                 )}
               </div>
