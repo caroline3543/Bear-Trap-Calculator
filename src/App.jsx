@@ -40,7 +40,6 @@ const TYPE_COLOR = { infantry: "#8FAE87", lancer: "#8C9FCB", marksman: "#4F8C86"
 const TYPES = ["infantry", "lancer", "marksman"];
 // Damage priority (Bear Trap meta): Marksman > Lancer > Infantry.
 const FILL_ORDER = ["lancer", "infantry", "marksman"];
-const PRIORITY_ORDER = ["marksman", "lancer", "infantry"];
 const TYPE_LABEL = { infantry: "Infantry", lancer: "Lancer", marksman: "Marksman" };
 const TYPE_LABEL_KEY = { infantry: "infantryLabel", lancer: "lancerLabel", marksman: "marksmanLabel" };
 
@@ -631,10 +630,13 @@ const MAX_JOINER_LANCER_UI_PCT = 0.30; // Lancer slider's ceiling on Recommended
 
 /* Builds a per-squad target that (1) guarantees each type's floor first —
    capped by what `divisor` squads can actually draw from the pool — then
-   (2) spends whatever capacity is left in Marksman > Lancer > Infantry
-   priority order, honoring an optional per-type `caps` ceiling (e.g. Infantry
-   never exceeding 3% of capacity) even during that extra-fill phase. Used for
-   both the Recommended and Tiered strategies so floors/caps are real,
+   (2) lets Marksman (and only Marksman) absorb whatever capacity is left,
+   honoring an optional per-type `caps` ceiling (e.g. Infantry never
+   exceeding 3% of capacity). Infantry and Lancer never receive more than
+   their floor asked for — if Marksman's own stock can't cover the rest
+   either, the squad is left Partial rather than the leftover spilling into
+   Lancer or Infantry and blowing past their intended ratio. Used for both
+   the Recommended and Tiered strategies so floors/caps are real,
    guaranteed constraints rather than a post-hoc warning. */
 function priorityTargetWithFloors(capacity, available, divisor, floors, caps = {}) {
   if (!capacity || capacity <= 0 || !divisor || divisor <= 0) {
@@ -655,14 +657,13 @@ function priorityTargetWithFloors(capacity, available, divisor, floors, caps = {
     floorsMet[t] = give >= want;
   });
 
-  PRIORITY_ORDER.forEach((t) => {
-    if (remaining <= 0) return;
-    const capLimit = caps[t] !== undefined ? caps[t] : Infinity;
-    const extra = Math.max(0, Math.min(maxByStock[t], capLimit) - result[t]);
+  if (remaining > 0) {
+    const capLimit = caps.marksman !== undefined ? caps.marksman : Infinity;
+    const extra = Math.max(0, Math.min(maxByStock.marksman, capLimit) - result.marksman);
     const use = Math.min(extra, remaining);
-    result[t] += use;
+    result.marksman += use;
     remaining -= use;
-  });
+  }
 
   return { infantry: result.infantry, lancer: result.lancer, marksman: result.marksman, valid: true, shortfall: Math.max(0, remaining), floorsMet };
 }
@@ -1463,19 +1464,13 @@ export default function App() {
     [minWeakMarksman, infantryFloor, lancerFloor, marksmanFloor]
   );
 
-  // Reserve the Weaker tier's guaranteed minimums FIRST, so the Stronger
-  // tier's own allocation is computed against what's left over — this is
-  // what actually readjusts Stronger squads down rather than just flagging
-  // a Weaker-tier shortfall after the fact.
-  const availableForStrong = useMemo(() => {
-    const obj = {};
-    TYPES.forEach((t) => (obj[t] = Math.max(0, joinerAvailable[t] - weakFloors[t] * numWeaker)));
-    return obj;
-  }, [joinerAvailable, weakFloors, numWeaker]);
-
+  // Stronger squads fill FIRST, straight from the full pool — that's the whole
+  // point of the tier. Weaker squads only get computed against whatever's left
+  // over afterward, so when the pool is short, it's the Weaker tier that comes
+  // up short, never the Stronger tier.
   const tieredStrong = useMemo(
-    () => priorityTargetWithFloors(capacity, availableForStrong, numStrongerClamped, strongFloors, { infantry: infantryCap }),
-    [capacity, availableForStrong, numStrongerClamped, strongFloors, infantryCap]
+    () => priorityTargetWithFloors(capacity, joinerAvailable, numStrongerClamped, strongFloors, { infantry: infantryCap }),
+    [capacity, joinerAvailable, numStrongerClamped, strongFloors, infantryCap]
   );
 
   const actualAvailableForWeak = useMemo(() => {
@@ -2168,20 +2163,20 @@ export default function App() {
                 )}
                 {!tieredStrong.floorsMet.marksman && (
                   <div style={{ fontSize: 11, color: C.red, fontWeight: 500, marginTop: 6 }}>
-                    {tFmt("onlyMarksmanShortMinimum", lang, { a: fmt(tieredStrong.marksman), b: fmt(MIN_JOINER_MARKSMAN) })}
+                    {tFmt("onlyMarksmanShortMinimum", lang, { a: fmt(tieredStrong.marksman), b: fmt(marksmanFloor) })}
                   </div>
                 )}
               </div>
 
               <NumField label={tWord("minAcceptableMarksmanWeaker", lang)} value={minWeakMarksman} onChange={setMinWeakMarksman} />
-              <div style={{ fontSize: 11, color: C.sub, marginTop: 5, marginBottom: 14 }}>{tFmt("guaranteedWeakerMinimum", lang, { a: fmt(MIN_JOINER_MARKSMAN) })}</div>
+              <div style={{ fontSize: 11, color: C.sub, marginTop: 5, marginBottom: 14 }}>{tFmt("guaranteedWeakerMinimum", lang, { a: fmt(marksmanFloor) })}</div>
 
               <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 15, fontWeight: 800, lineHeight: "20px", color: C.gold, marginBottom: 6 }}>{tWord("weakerSquadComposition", lang)}</div>
               <div style={{ background: C.goldBg, border: `1.5px solid ${C.goldBorder}`, borderRadius: 14, padding: 10 }}>
                 <TargetPreview target={tieredWeak} lang={lang} />
                 {!tieredWeak.floorsMet.marksman && (
                   <div style={{ fontSize: 11, color: C.red, fontWeight: 500, marginTop: 6 }}>
-                    {tFmt("onlyMarksmanShortRequestedYield", lang, { a: fmt(tieredWeak.marksman), b: fmt(minWeakMarksman) })}
+                    {tFmt("onlyMarksmanShortRequestedYield", lang, { a: fmt(tieredWeak.marksman), b: fmt(Math.max(marksmanFloor, minWeakMarksman)) })}
                   </div>
                 )}
               </div>
