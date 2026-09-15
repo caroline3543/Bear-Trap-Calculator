@@ -59,7 +59,7 @@ const TRANSLATIONS = {
     troopPool: "Troop pool", troopPoolSub: "T10 is always used before T9 for the same troop type.",
     noTroops: "No troops entered yet — start here.", totalPoolLabel: "Total pool",
     clearAll: "Clear all troops", reset: "Reset",
-    settings: "Settings", settingsSub: "Capacity applies to every joiner squad.",
+    settings: "Settings", joinerSquadsLabel: "Joiner Squads", settingsSub: "Capacity applies to every joiner squad.",
     squadCapacity: "Squad capacity", numSquadsLabel: "Number of squads",
     rallyLeader: "Rally leader squad", rallyLeaderSub: "Reserves troops first, before the joiner squads are filled. Set your own composition.",
     rallyBaseCapacity: "Rally leader base capacity", cyrilleBoostLabel: "Cyrille Capacity Boost", snowApeBoostLabel: "Snow Ape Boost",
@@ -68,7 +68,7 @@ const TRANSLATIONS = {
     squadStrategy: "Squad strategy", squadStrategySub: "How the joiner composition is decided.",
     manual: "Short on Troops", manualNote: "Not enough troops? Set the exact split yourself.",
     recommended: "Enough Troops", recommendedNote: "Ton Ton's ratios — sliders adjust for your setup.",
-    remainingAfterLabel: "Left after this squad", presetsLabel: "Saved setups", savePresetBtn: "💾 Save setup", presetNamePrompt: "Name this setup", loadPresetBtn: "Load", deletePresetBtn: "Delete", presetSavedToast: "Setup saved.", noPresetsYet: "No saved setups yet.", accountALabel: "Account A", accountBLabel: "Account B", switchedAccountToast: "Switched account.",
+    remainingAfterLabel: "Left after this squad", presetsLabel: "Saved setups", savePresetBtn: "💾 Save setup", presetNamePrompt: "Name this setup", loadPresetBtn: "Load", deletePresetBtn: "Delete", presetSavedToast: "Setup saved.", noPresetsYet: "No saved setups yet.", accountALabel: "Account A", accountBLabel: "Account B", switchedAccountToast: "Switched account.", renameAccountPrompt: "Rename this account",
     autoSplitBtn: "⚡ Auto Split", autoSplitApplied: "Auto split applied — fine-tune below.", minMarchMarksmanLabel: "Minimum Marksman per march", minMarchMarksmanHelp: "Auto Split tries to guarantee this much Marksman per march first, stock permitting. Leave at 0 for no minimum.",
     recPoolWarningShort: "May not work", recPoolWarningBanner: "This option may not work with your current troop pool — Marksman could fall below the 60,000 minimum. Try \u201cShort on Troops\u201d instead if that happens.",
     tiered: "Tiered", tieredNote: "Stronger squads fill first, Weaker split the rest.",
@@ -117,7 +117,7 @@ const TRANSLATIONS = {
     troopPool: "Riserva truppe", troopPoolSub: "Le T10 vengono sempre usate prima delle T9 per lo stesso tipo di truppa.",
     noTroops: "Nessuna truppa inserita — inizia qui.", totalPoolLabel: "Totale riserva",
     clearAll: "Cancella tutte le truppe", reset: "Reimposta",
-    settings: "Impostazioni", settingsSub: "La capacità si applica a ogni squadra di supporto.",
+    settings: "Impostazioni", joinerSquadsLabel: "Squadre di supporto", settingsSub: "La capacità si applica a ogni squadra di supporto.",
     squadCapacity: "Capacità squadra", numSquadsLabel: "Numero di squadre",
     rallyLeader: "Squadra del capo raduno", rallyLeaderSub: "Preleva truppe per prima, prima che vengano riempite le squadre di supporto. Imposta tu la composizione.",
     rallyBaseCapacity: "Capacità base del capo raduno", cyrilleBoostLabel: "Bonus capacità Cyrille", snowApeBoostLabel: "Bonus Scimmia delle Nevi",
@@ -126,7 +126,7 @@ const TRANSLATIONS = {
     squadStrategy: "Strategia squadra", squadStrategySub: "Come viene decisa la composizione delle squadre di supporto.",
     manual: "Truppe insufficienti", manualNote: "Non hai abbastanza truppe? Imposta tu la suddivisione esatta.",
     recommended: "Truppe sufficienti", recommendedNote: "Le percentuali di Ton Ton — i cursori si adattano al tuo setup.",
-    remainingAfterLabel: "Rimasti dopo questa squadra", presetsLabel: "Configurazioni salvate", savePresetBtn: "💾 Salva configurazione", presetNamePrompt: "Nome di questa configurazione", loadPresetBtn: "Carica", deletePresetBtn: "Elimina", presetSavedToast: "Configurazione salvata.", noPresetsYet: "Nessuna configurazione salvata.", accountALabel: "Account A", accountBLabel: "Account B", switchedAccountToast: "Account cambiato.",
+    remainingAfterLabel: "Rimasti dopo questa squadra", presetsLabel: "Configurazioni salvate", savePresetBtn: "💾 Salva configurazione", presetNamePrompt: "Nome di questa configurazione", loadPresetBtn: "Carica", deletePresetBtn: "Elimina", presetSavedToast: "Configurazione salvata.", noPresetsYet: "Nessuna configurazione salvata.", accountALabel: "Account A", accountBLabel: "Account B", switchedAccountToast: "Account cambiato.", renameAccountPrompt: "Rinomina questo account",
     autoSplitBtn: "⚡ Divisione automatica", autoSplitApplied: "Divisione automatica applicata — regola qui sotto.", minMarchMarksmanLabel: "Tiratori minimi per marcia", minMarchMarksmanHelp: "La Divisione automatica cerca di garantire prima questa quantità di Tiratori per marcia, riserva permettendo. Lascia 0 per nessun minimo.",
     recPoolWarningShort: "Potrebbe non funzionare", recPoolWarningBanner: "Questa opzione potrebbe non funzionare con la tua riserva attuale — i Tiratori potrebbero scendere sotto il minimo di 60.000. Se succede, prova \u201cTruppe insufficienti\u201d.",
     tiered: "A livelli", tieredNote: "Le squadre Forti si riempiono per prime, le Deboli si dividono il resto.",
@@ -175,7 +175,7 @@ const TRANSLATIONS = {
     troopPool: "Reserva de tropas", troopPoolSub: "Las T10 siempre se usan antes que las T9 para el mismo tipo de tropa.",
     noTroops: "Aún no has introducido tropas — empieza aquí.", totalPoolLabel: "Total de la reserva",
     clearAll: "Borrar todas las tropas", reset: "Restablecer",
-    settings: "Ajustes", settingsSub: "La capacidad se aplica a cada escuadrón de apoyo.",
+    settings: "Ajustes", joinerSquadsLabel: "Escuadrones de apoyo", settingsSub: "La capacidad se aplica a cada escuadrón de apoyo.",
     squadCapacity: "Capacidad del escuadrón", numSquadsLabel: "Número de escuadrones",
     rallyLeader: "Escuadrón del líder de asalto", rallyLeaderSub: "Toma tropas primero, antes de llenar los escuadrones de apoyo. Define tú la composición.",
     rallyBaseCapacity: "Capacidad base del líder de asalto", cyrilleBoostLabel: "Bonificación de capacidad Cyrille", snowApeBoostLabel: "Bonificación Mono de Nieve",
@@ -184,7 +184,7 @@ const TRANSLATIONS = {
     squadStrategy: "Estrategia de escuadrón", squadStrategySub: "Cómo se decide la composición de los escuadrones de apoyo.",
     manual: "Tropas insuficientes", manualNote: "¿No tienes suficientes tropas? Define tú el reparto exacto.",
     recommended: "Tropas suficientes", recommendedNote: "Las proporciones de Ton Ton — los controles se ajustan a tu configuración.",
-    remainingAfterLabel: "Restantes tras este escuadrón", presetsLabel: "Configuraciones guardadas", savePresetBtn: "💾 Guardar configuración", presetNamePrompt: "Nombre de esta configuración", loadPresetBtn: "Cargar", deletePresetBtn: "Eliminar", presetSavedToast: "Configuración guardada.", noPresetsYet: "Aún no hay configuraciones guardadas.", accountALabel: "Cuenta A", accountBLabel: "Cuenta B", switchedAccountToast: "Cuenta cambiada.",
+    remainingAfterLabel: "Restantes tras este escuadrón", presetsLabel: "Configuraciones guardadas", savePresetBtn: "💾 Guardar configuración", presetNamePrompt: "Nombre de esta configuración", loadPresetBtn: "Cargar", deletePresetBtn: "Eliminar", presetSavedToast: "Configuración guardada.", noPresetsYet: "Aún no hay configuraciones guardadas.", accountALabel: "Cuenta A", accountBLabel: "Cuenta B", switchedAccountToast: "Cuenta cambiada.", renameAccountPrompt: "Cambiar el nombre de esta cuenta",
     autoSplitBtn: "⚡ División automática", autoSplitApplied: "División automática aplicada — ajusta abajo.", minMarchMarksmanLabel: "Tiradores mínimos por marcha", minMarchMarksmanHelp: "División automática intenta garantizar primero esta cantidad de Tiradores por marcha, si la reserva lo permite. Deja 0 para no fijar un mínimo.",
     recPoolWarningShort: "Podría no funcionar", recPoolWarningBanner: "Esta opción podría no funcionar con tu reserva actual — los Tiradores podrían caer por debajo del mínimo de 60.000. Si pasa, prueba \u201cTropas insuficientes\u201d.",
     tiered: "Por niveles", tieredNote: "Los escuadrones Fuertes se llenan primero, los Débiles reparten el resto.",
@@ -233,7 +233,7 @@ const TRANSLATIONS = {
     troopPool: "병력 보유량", troopPoolSub: "같은 병종이면 T9보다 T10을 항상 먼저 사용합니다.",
     noTroops: "아직 병력을 입력하지 않았습니다 — 여기서 시작하세요.", totalPoolLabel: "총 보유량",
     clearAll: "모든 병력 지우기", reset: "초기화",
-    settings: "설정", settingsSub: "용량은 모든 지원 부대에 동일하게 적용됩니다.",
+    settings: "설정", joinerSquadsLabel: "지원 부대", settingsSub: "용량은 모든 지원 부대에 동일하게 적용됩니다.",
     squadCapacity: "부대 용량", numSquadsLabel: "부대 수",
     rallyLeader: "집결 대장 부대", rallyLeaderSub: "지원 부대를 채우기 전에 병력을 먼저 확보합니다. 구성은 직접 설정하세요.",
     rallyBaseCapacity: "집결 대장 기본 용량", cyrilleBoostLabel: "시릴 용량 보너스", snowApeBoostLabel: "눈원숭이 보너스",
@@ -242,7 +242,7 @@ const TRANSLATIONS = {
     squadStrategy: "부대 전략", squadStrategySub: "지원 부대의 구성을 결정하는 방식입니다.",
     manual: "병력 부족", manualNote: "병력이 부족한가요? 정확한 분배를 직접 설정하세요.",
     recommended: "병력 충분", recommendedNote: "Ton Ton의 비율 — 슬라이더로 설정에 맞게 조정하세요.",
-    remainingAfterLabel: "이 부대 이후 남은 병력", presetsLabel: "저장된 설정", savePresetBtn: "💾 설정 저장", presetNamePrompt: "이 설정의 이름", loadPresetBtn: "불러오기", deletePresetBtn: "삭제", presetSavedToast: "설정이 저장되었습니다.", noPresetsYet: "저장된 설정이 없습니다.", accountALabel: "계정 A", accountBLabel: "계정 B", switchedAccountToast: "계정이 전환되었습니다.",
+    remainingAfterLabel: "이 부대 이후 남은 병력", presetsLabel: "저장된 설정", savePresetBtn: "💾 설정 저장", presetNamePrompt: "이 설정의 이름", loadPresetBtn: "불러오기", deletePresetBtn: "삭제", presetSavedToast: "설정이 저장되었습니다.", noPresetsYet: "저장된 설정이 없습니다.", accountALabel: "계정 A", accountBLabel: "계정 B", switchedAccountToast: "계정이 전환되었습니다.", renameAccountPrompt: "이 계정의 이름 바꾸기",
     autoSplitBtn: "⚡ 자동 분배", autoSplitApplied: "자동 분배가 적용되었습니다 — 아래에서 세부 조정하세요.", minMarchMarksmanLabel: "행군당 최소 저격수", minMarchMarksmanHelp: "자동 분배는 보유량이 허용하는 한 행군당 이만큼의 저격수를 먼저 확보하려 합니다. 최소치를 두지 않으려면 0으로 두세요.",
     recPoolWarningShort: "작동하지 않을 수 있음", recPoolWarningBanner: "현재 병력 보유량으로는 이 옵션이 맞지 않을 수 있습니다 — 저격수가 60,000 미만으로 떨어질 수 있습니다. 이 경우 \u201c병력 부족\u201d을 사용해 보세요.",
     tiered: "단계별", tieredNote: "강한 부대가 먼저 채워지고, 약한 부대가 나머지를 나눕니다.",
@@ -291,7 +291,7 @@ const TRANSLATIONS = {
     troopPool: "Truppenbestand", troopPoolSub: "T10 wird beim gleichen Truppentyp immer vor T9 verwendet.",
     noTroops: "Noch keine Truppen eingegeben — hier beginnen.", totalPoolLabel: "Gesamtbestand",
     clearAll: "Alle Truppen löschen", reset: "Zurücksetzen",
-    settings: "Einstellungen", settingsSub: "Die Kapazität gilt für jeden Verstärkungstrupp.",
+    settings: "Einstellungen", joinerSquadsLabel: "Verstärkungstrupps", settingsSub: "Die Kapazität gilt für jeden Verstärkungstrupp.",
     squadCapacity: "Truppkapazität", numSquadsLabel: "Anzahl der Trupps",
     rallyLeader: "Sammlungsanführer-Trupp", rallyLeaderSub: "Beansprucht zuerst Truppen, bevor die Verstärkungstrupps aufgefüllt werden. Lege die Zusammensetzung selbst fest.",
     rallyBaseCapacity: "Grundkapazität des Sammlungsanführers", cyrilleBoostLabel: "Cyrille-Kapazitätsbonus", snowApeBoostLabel: "Schneeaffe-Bonus",
@@ -300,7 +300,7 @@ const TRANSLATIONS = {
     squadStrategy: "Truppstrategie", squadStrategySub: "Wie die Zusammensetzung der Verstärkungstrupps entschieden wird.",
     manual: "Zu wenig Truppen", manualNote: "Nicht genug Truppen? Lege die genaue Aufteilung selbst fest.",
     recommended: "Genug Truppen", recommendedNote: "Ton Tons Verhältnisse — Regler passen sich deinem Setup an.",
-    remainingAfterLabel: "Übrig nach diesem Trupp", presetsLabel: "Gespeicherte Setups", savePresetBtn: "💾 Setup speichern", presetNamePrompt: "Name für dieses Setup", loadPresetBtn: "Laden", deletePresetBtn: "Löschen", presetSavedToast: "Setup gespeichert.", noPresetsYet: "Noch keine gespeicherten Setups.", accountALabel: "Konto A", accountBLabel: "Konto B", switchedAccountToast: "Konto gewechselt.",
+    remainingAfterLabel: "Übrig nach diesem Trupp", presetsLabel: "Gespeicherte Setups", savePresetBtn: "💾 Setup speichern", presetNamePrompt: "Name für dieses Setup", loadPresetBtn: "Laden", deletePresetBtn: "Löschen", presetSavedToast: "Setup gespeichert.", noPresetsYet: "Noch keine gespeicherten Setups.", accountALabel: "Konto A", accountBLabel: "Konto B", switchedAccountToast: "Konto gewechselt.", renameAccountPrompt: "Dieses Konto umbenennen",
     autoSplitBtn: "⚡ Automatisch aufteilen", autoSplitApplied: "Automatische Aufteilung angewendet — unten feinjustieren.", minMarchMarksmanLabel: "Minimum Scharfschützen pro Marsch", minMarchMarksmanHelp: "Automatisch aufteilen versucht zuerst, diese Menge Scharfschützen pro Marsch zu garantieren, sofern der Bestand es zulässt. Bei 0 kein Minimum.",
     recPoolWarningShort: "Funktioniert eventuell nicht", recPoolWarningBanner: "Diese Option funktioniert mit deinem aktuellen Truppenbestand eventuell nicht — Scharfschützen könnten unter das Minimum von 60.000 fallen. Versuch in dem Fall \u201cZu wenig Truppen\u201d.",
     tiered: "Gestuft", tieredNote: "Starke Trupps werden zuerst aufgefüllt, schwache teilen sich den Rest.",
@@ -349,7 +349,7 @@ const TRANSLATIONS = {
     troopPool: "Резерв войск", troopPoolSub: "Войска T10 всегда используются раньше T9 для одного типа войск.",
     noTroops: "Войска ещё не введены — начните здесь.", totalPoolLabel: "Всего в резерве",
     clearAll: "Очистить все войска", reset: "Сбросить",
-    settings: "Настройки", settingsSub: "Вместимость применяется к каждому отряду поддержки.",
+    settings: "Настройки", joinerSquadsLabel: "Отряды поддержки", settingsSub: "Вместимость применяется к каждому отряду поддержки.",
     squadCapacity: "Вместимость отряда", numSquadsLabel: "Количество отрядов",
     rallyLeader: "Отряд лидера сбора", rallyLeaderSub: "Забирает войска первым, до заполнения отрядов поддержки. Состав задаётся вручную.",
     rallyBaseCapacity: "Базовая вместимость лидера сбора", cyrilleBoostLabel: "Бонус вместимости от Сирилла", snowApeBoostLabel: "Бонус Снежной обезьяны",
@@ -358,7 +358,7 @@ const TRANSLATIONS = {
     squadStrategy: "Стратегия отряда", squadStrategySub: "Как определяется состав отрядов поддержки.",
     manual: "Не хватает войск", manualNote: "Не хватает войск? Задайте точное распределение сами.",
     recommended: "Войск достаточно", recommendedNote: "Соотношения Ton Ton — ползунки подстраиваются под вашу настройку.",
-    remainingAfterLabel: "Осталось после этого отряда", presetsLabel: "Сохранённые настройки", savePresetBtn: "💾 Сохранить настройку", presetNamePrompt: "Название настройки", loadPresetBtn: "Загрузить", deletePresetBtn: "Удалить", presetSavedToast: "Настройка сохранена.", noPresetsYet: "Пока нет сохранённых настроек.", accountALabel: "Аккаунт A", accountBLabel: "Аккаунт B", switchedAccountToast: "Аккаунт переключён.",
+    remainingAfterLabel: "Осталось после этого отряда", presetsLabel: "Сохранённые настройки", savePresetBtn: "💾 Сохранить настройку", presetNamePrompt: "Название настройки", loadPresetBtn: "Загрузить", deletePresetBtn: "Удалить", presetSavedToast: "Настройка сохранена.", noPresetsYet: "Пока нет сохранённых настроек.", accountALabel: "Аккаунт A", accountBLabel: "Аккаунт B", switchedAccountToast: "Аккаунт переключён.", renameAccountPrompt: "Переименовать аккаунт",
     autoSplitBtn: "⚡ Авторазделение", autoSplitApplied: "Авторазделение применено — настройте ниже.", minMarchMarksmanLabel: "Минимум стрелков на поход", minMarchMarksmanHelp: "Авторазделение сначала пытается гарантировать это количество стрелков на поход, если позволяет резерв. Оставьте 0, чтобы не задавать минимум.",
     recPoolWarningShort: "Может не сработать", recPoolWarningBanner: "Этот вариант может не сработать с вашим текущим резервом — стрелки могут упасть ниже минимума в 60 000. Если так случится, попробуйте \u201cНе хватает войск\u201d.",
     tiered: "Многоуровневая", tieredNote: "Сильные отряды заполняются первыми, слабые делят остаток.",
@@ -407,7 +407,7 @@ const TRANSLATIONS = {
     troopPool: "Pula wojsk", troopPoolSub: "Wojska T10 są zawsze używane przed T9 dla tego samego typu wojsk.",
     noTroops: "Nie wprowadzono jeszcze wojsk — zacznij tutaj.", totalPoolLabel: "Łączna pula",
     clearAll: "Wyczyść wszystkie wojska", reset: "Resetuj",
-    settings: "Ustawienia", settingsSub: "Pojemność dotyczy każdego oddziału wsparcia.",
+    settings: "Ustawienia", joinerSquadsLabel: "Oddziały wsparcia", settingsSub: "Pojemność dotyczy każdego oddziału wsparcia.",
     squadCapacity: "Pojemność oddziału", numSquadsLabel: "Liczba oddziałów",
     rallyLeader: "Oddział lidera zgrupowania", rallyLeaderSub: "Pobiera wojska jako pierwszy, zanim wypełnione zostaną oddziały wsparcia. Skład ustawiasz sam.",
     rallyBaseCapacity: "Podstawowa pojemność lidera zgrupowania", cyrilleBoostLabel: "Bonus pojemności Cyrille", snowApeBoostLabel: "Bonus Śnieżnej Małpy",
@@ -416,7 +416,7 @@ const TRANSLATIONS = {
     squadStrategy: "Strategia oddziału", squadStrategySub: "Jak ustalany jest skład oddziałów wsparcia.",
     manual: "Za mało wojsk", manualNote: "Za mało wojsk? Ustaw dokładny podział samodzielnie.",
     recommended: "Wystarczająco wojsk", recommendedNote: "Proporcje Ton Ton — suwaki dostosowują się do Twojej konfiguracji.",
-    remainingAfterLabel: "Pozostało po tym oddziale", presetsLabel: "Zapisane konfiguracje", savePresetBtn: "💾 Zapisz konfigurację", presetNamePrompt: "Nazwa tej konfiguracji", loadPresetBtn: "Wczytaj", deletePresetBtn: "Usuń", presetSavedToast: "Konfiguracja zapisana.", noPresetsYet: "Brak zapisanych konfiguracji.", accountALabel: "Konto A", accountBLabel: "Konto B", switchedAccountToast: "Zmieniono konto.",
+    remainingAfterLabel: "Pozostało po tym oddziale", presetsLabel: "Zapisane konfiguracje", savePresetBtn: "💾 Zapisz konfigurację", presetNamePrompt: "Nazwa tej konfiguracji", loadPresetBtn: "Wczytaj", deletePresetBtn: "Usuń", presetSavedToast: "Konfiguracja zapisana.", noPresetsYet: "Brak zapisanych konfiguracji.", accountALabel: "Konto A", accountBLabel: "Konto B", switchedAccountToast: "Zmieniono konto.", renameAccountPrompt: "Zmień nazwę tego konta",
     autoSplitBtn: "⚡ Automatyczny podział", autoSplitApplied: "Zastosowano automatyczny podział — dostosuj poniżej.", minMarchMarksmanLabel: "Minimalna liczba Strzelców na marsz", minMarchMarksmanHelp: "Automatyczny podział najpierw próbuje zagwarantować tę liczbę Strzelców na marsz, o ile pula na to pozwala. Zostaw 0, aby nie ustawiać minimum.",
     recPoolWarningShort: "Może nie zadziałać", recPoolWarningBanner: "Ta opcja może nie zadziałać z Twoją obecną pulą — Strzelcy mogą spaść poniżej minimum 60 000. Jeśli tak się stanie, spróbuj \u201cZa mało wojsk\u201d.",
     tiered: "Warstwowy", tieredNote: "Silne oddziały wypełniane są jako pierwsze, słabe dzielą resztę.",
@@ -465,7 +465,7 @@ const TRANSLATIONS = {
     troopPool: "Asker havuzu", troopPoolSub: "Aynı asker türü için T10 her zaman T9'dan önce kullanılır.",
     noTroops: "Henüz asker girilmedi — buradan başlayın.", totalPoolLabel: "Toplam havuz",
     clearAll: "Tüm askerleri temizle", reset: "Sıfırla",
-    settings: "Ayarlar", settingsSub: "Kapasite her destek birliği için geçerlidir.",
+    settings: "Ayarlar", joinerSquadsLabel: "Destek Birlikleri", settingsSub: "Kapasite her destek birliği için geçerlidir.",
     squadCapacity: "Birlik kapasitesi", numSquadsLabel: "Birlik sayısı",
     rallyLeader: "Toplanma lideri birliği", rallyLeaderSub: "Destek birlikleri doldurulmadan önce askerleri ilk o alır. Bileşimi kendiniz belirlersiniz.",
     rallyBaseCapacity: "Toplanma liderinin temel kapasitesi", cyrilleBoostLabel: "Cyrille Kapasite Artışı", snowApeBoostLabel: "Kar Maymunu Artışı",
@@ -474,7 +474,7 @@ const TRANSLATIONS = {
     squadStrategy: "Birlik stratejisi", squadStrategySub: "Destek birliklerinin bileşiminin nasıl belirlendiği.",
     manual: "Asker Yetersiz", manualNote: "Yeterli asker yok mu? Kesin dağılımı kendiniz belirleyin.",
     recommended: "Asker Yeterli", recommendedNote: "Ton Ton\u2019un oranları — kaydırıcılar kurulumunuza göre ayarlanır.",
-    remainingAfterLabel: "Bu birlikten sonra kalan", presetsLabel: "Kayıtlı kurulumlar", savePresetBtn: "💾 Kurulumu kaydet", presetNamePrompt: "Bu kuruluma isim ver", loadPresetBtn: "Yükle", deletePresetBtn: "Sil", presetSavedToast: "Kurulum kaydedildi.", noPresetsYet: "Henüz kayıtlı kurulum yok.", accountALabel: "Hesap A", accountBLabel: "Hesap B", switchedAccountToast: "Hesap değiştirildi.",
+    remainingAfterLabel: "Bu birlikten sonra kalan", presetsLabel: "Kayıtlı kurulumlar", savePresetBtn: "💾 Kurulumu kaydet", presetNamePrompt: "Bu kuruluma isim ver", loadPresetBtn: "Yükle", deletePresetBtn: "Sil", presetSavedToast: "Kurulum kaydedildi.", noPresetsYet: "Henüz kayıtlı kurulum yok.", accountALabel: "Hesap A", accountBLabel: "Hesap B", switchedAccountToast: "Hesap değiştirildi.", renameAccountPrompt: "Bu hesabı yeniden adlandır",
     autoSplitBtn: "⚡ Otomatik Bölüştür", autoSplitApplied: "Otomatik bölüştürme uygulandı — aşağıdan ince ayar yapın.", minMarchMarksmanLabel: "Sefer başına minimum Nişancı", minMarchMarksmanHelp: "Otomatik Bölüştür, havuz izin verdiği sürece önce sefer başına bu kadar Nişancı garanti etmeye çalışır. Minimum istemiyorsanız 0 bırakın.",
     recPoolWarningShort: "Çalışmayabilir", recPoolWarningBanner: "Bu seçenek mevcut asker havuzunuzla çalışmayabilir — Nişancı 60.000 minimumunun altına düşebilir. Bu olursa \u201cAsker Yetersiz\u201d seçeneğini deneyin.",
     tiered: "Kademeli", tieredNote: "Güçlü birlikler önce doldurulur, Zayıf birlikler kalanı paylaşır.",
@@ -1172,11 +1172,13 @@ function SquadCard({ index, squadKey, result, invalid, onAcceptFill, onRemoveFil
   const usesT9 = t9Used > 0;
 
   // Full squads auto-collapse to a single summary line so partially-filled
-  // squads are easier to spot while scrolling. Clicking the header always
-  // lets the player re-expand (or manually collapse) any squad.
+  // squads (and the Rally Leader, when it's short) are easier to spot while
+  // scrolling. If a squad flips from Full back to Partial — the pool
+  // changed, a fill got removed — it auto-expands again. Clicking the
+  // header always lets the player override either way for that squad.
   const [collapsed, setCollapsed] = useState(isFull);
   useEffect(() => {
-    if (isFull) setCollapsed(true);
+    setCollapsed(isFull);
   }, [isFull]);
 
   return (
@@ -1352,6 +1354,17 @@ const EMPTY = { infantry: 0, lancer: 0, marksman: 0 };
 const STORAGE_KEY = "bearTrapCalculator:v1";
 const ACTIVE_ACCOUNT_KEY = "bearTrapCalculator:activeAccount";
 const PRESETS_KEY = "bearTrapCalculator:presets";
+const ACCOUNT_NAMES_KEY = "bearTrapCalculator:accountNames";
+
+function loadAccountNames() {
+  try {
+    const raw = localStorage.getItem(ACCOUNT_NAMES_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return { A: (parsed && parsed.A) || "Account A", B: (parsed && parsed.B) || "Account B" };
+  } catch {
+    return { A: "Account A", B: "Account B" };
+  }
+}
 
 function accountStorageKey(id) {
   return `${STORAGE_KEY}:${id}`;
@@ -1407,6 +1420,7 @@ export default function App() {
   const [activeAccount, setActiveAccount] = useState(readActiveAccount);
   const [saved] = useState(() => loadSavedForAccount(activeAccount));
   const [presets, setPresets] = useState(loadPresets);
+  const [accountNames, setAccountNames] = useState(loadAccountNames);
 
   const [capacity, setCapacity] = useState(saved?.capacity ?? 110000);
   const [numSquads, setNumSquads] = useState(saved?.numSquads ?? 6);
@@ -1715,6 +1729,19 @@ export default function App() {
     showToast(tr("switchedAccountToast"), null, null, 2000);
   }
 
+  function handleRenameAccount(id) {
+    const current = accountNames[id];
+    const name = typeof window !== "undefined" ? window.prompt(tr("renameAccountPrompt"), current) : null;
+    if (!name || !name.trim()) return;
+    const updated = { ...accountNames, [id]: name.trim() };
+    setAccountNames(updated);
+    try {
+      localStorage.setItem(ACCOUNT_NAMES_KEY, JSON.stringify(updated));
+    } catch {
+      // storage unavailable — name still applies for this session
+    }
+  }
+
   // Named presets — a separate saved list, independent of the two accounts,
   // for players who want to keep more than one reference setup around
   // (e.g. different event sizes) without losing their current work.
@@ -1749,13 +1776,13 @@ export default function App() {
   function handleAutoSplit() {
     const previousMode = mode;
     const previousExact = exact;
-    // Start from Ton Ton's ratio (0.5% Infantry, ~10% Lancer, Marksman at
+    // Start from Ton Ton's ratio (2% Infantry, ~10% Lancer, Marksman at
     // least the player's requested minimum) — then, unlike Recommended,
     // let any capacity that's still unfilled cascade through Marksman →
     // Lancer → Infantry (Ton Ton's own priority order) using whatever stock
     // is actually left, so the march fills completely even when the pool
     // can't support the ideal ratio.
-    const autoInfantryFloor = Math.max(DIVERSITY_FLOOR, Math.round(capacity * MIN_JOINER_INFANTRY_PCT));
+    const autoInfantryFloor = Math.max(DIVERSITY_FLOOR, Math.round(capacity * 0.02));
     const autoLancerFloor = Math.max(DIVERSITY_FLOOR, Math.round(capacity * MIN_JOINER_LANCER_PCT));
     const auto = priorityTargetWithFloors(
       capacity,
@@ -2074,40 +2101,6 @@ export default function App() {
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ display: "flex", gap: 2, background: "var(--tierTrackBg)", borderRadius: 999, padding: 3 }}>
-              <button
-                onClick={() => switchAccount("A")}
-                aria-label={tr("accountALabel")}
-                style={{
-                  border: "none",
-                  borderRadius: 999,
-                  padding: "6px 12px",
-                  fontWeight: 800,
-                  fontSize: 12.5,
-                  cursor: "pointer",
-                  background: activeAccount === "A" ? C.goldStrong : "transparent",
-                  color: activeAccount === "A" ? C.cocoaDark : C.sub,
-                }}
-              >
-                A
-              </button>
-              <button
-                onClick={() => switchAccount("B")}
-                aria-label={tr("accountBLabel")}
-                style={{
-                  border: "none",
-                  borderRadius: 999,
-                  padding: "6px 12px",
-                  fontWeight: 800,
-                  fontSize: 12.5,
-                  cursor: "pointer",
-                  background: activeAccount === "B" ? C.goldStrong : "transparent",
-                  color: activeAccount === "B" ? C.cocoaDark : C.sub,
-                }}
-              >
-                B
-              </button>
-            </div>
             <select
               aria-label="Language"
               className="lang-select"
@@ -2123,6 +2116,62 @@ export default function App() {
             </Btn>
             <BearMascot className="header-bear" />
           </div>
+        </div>
+
+        {/* ACCOUNT SWITCHER — its own prominent bar, not squeezed into the
+            header, since many players run two separate Bear Traps. */}
+        <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+          {[
+            { id: "A", accent: C.goldStrong },
+            { id: "B", accent: TYPE_COLOR.lancer },
+          ].map((acc) => {
+            const selected = activeAccount === acc.id;
+            return (
+              <button
+                key={acc.id}
+                onClick={() => switchAccount(acc.id)}
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  border: `2px solid ${selected ? acc.accent : C.cardBorder}`,
+                  background: selected ? acc.accent : C.surface,
+                  borderRadius: 16,
+                  padding: "12px 14px",
+                  cursor: "pointer",
+                  boxShadow: selected ? "0 3px 10px rgba(33,70,65,.25)" : "none",
+                }}
+              >
+                <span
+                  style={{
+                    fontWeight: 800,
+                    fontSize: 15,
+                    color: selected ? C.cocoaDark : C.ink,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {acc.id === "A" ? "🅰️" : "🅱️"} {accountNames[acc.id]}
+                </span>
+                {selected && (
+                  <span
+                    role="button"
+                    aria-label={tr("renameAccountPrompt")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRenameAccount(acc.id);
+                    }}
+                    style={{ fontSize: 14, cursor: "pointer", flexShrink: 0, opacity: 0.85 }}
+                  >
+                    ✏️
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         <div style={{ position: "sticky", top: 0, zIndex: 10, marginBottom: 16 }} className="calc-card">
@@ -2142,8 +2191,7 @@ export default function App() {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* TROOP POOL + SETTINGS — paired side by side on wide screens */}
-          <div className="section-grid">
+          {/* TROOP POOL */}
           <Card>
           <SectionHeader step={1} title={tr("troopPool")} sub={tr("troopPoolSub")} />
           {noTroopsEntered && (
@@ -2177,46 +2225,11 @@ export default function App() {
           </div>
         </Card>
 
-        {/* SETTINGS */}
-        <Card>
-          <SectionHeader step={2} title={tr("settings")} sub={tr("settingsSub")} />
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <NumField label={tr("squadCapacity")} value={capacity} onChange={setCapacity} />
-            <NumField label={tr("numSquadsLabel")} value={numSquads} onChange={setNumSquads} />
-          </div>
-
-          <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.cardBorder}` }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: C.gold, marginBottom: 8 }}>{tr("presetsLabel")}</div>
-            {presets.length === 0 ? (
-              <div style={{ fontSize: 11.5, color: C.sub, marginBottom: 10 }}>{tr("noPresetsYet")}</div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
-                {presets.map((p) => (
-                  <div key={p.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, background: C.inputBg, border: `1px solid ${C.inputBorder}`, borderRadius: 10, padding: "6px 6px 6px 10px" }}>
-                    <span style={{ fontSize: 12.5, fontWeight: 600, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
-                    <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                      <Btn tone="gold" small onClick={() => handleLoadPreset(p)}>{tr("loadPresetBtn")}</Btn>
-                      <button
-                        onClick={() => handleDeletePreset(p.id)}
-                        aria-label={tr("deletePresetBtn")}
-                        style={{ background: "none", border: "none", color: C.red, fontWeight: 600, cursor: "pointer", fontSize: 15, padding: "6px 8px" }}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            <Btn tone="ghost" small onClick={handleSavePreset}>{tr("savePresetBtn")}</Btn>
-          </div>
-        </Card>
-          </div>
-
-        {/* RALLY LEADER */}
+          {/* RALLY LEADER + JOINER SQUADS — paired side by side on wide screens */}
+          <div className="section-grid">
         <Card>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => setAdvancedOpen(!advancedOpen)}>
-            <SectionHeader step={3} title={tr("rallyLeader")} sub={tr("rallyLeaderSub")} />
+            <SectionHeader step={2} title={tr("rallyLeader")} sub={tr("rallyLeaderSub")} />
             <span style={{ color: C.gold, fontWeight: 600, fontSize: 18, flexShrink: 0, paddingLeft: 10 }}>{advancedOpen ? "−" : "+"}</span>
           </div>
           {advancedOpen && (
@@ -2257,6 +2270,42 @@ export default function App() {
             </div>
           )}
         </Card>
+
+        {/* JOINER SQUADS (formerly Settings) */}
+        <Card>
+          <SectionHeader step={3} title={tr("joinerSquadsLabel")} sub={tr("settingsSub")} />
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <NumField label={tr("squadCapacity")} value={capacity} onChange={setCapacity} />
+            <NumField label={tr("numSquadsLabel")} value={numSquads} onChange={setNumSquads} />
+          </div>
+
+          <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.cardBorder}` }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: C.gold, marginBottom: 8 }}>{tr("presetsLabel")}</div>
+            {presets.length === 0 ? (
+              <div style={{ fontSize: 11.5, color: C.sub, marginBottom: 10 }}>{tr("noPresetsYet")}</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
+                {presets.map((p) => (
+                  <div key={p.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, background: C.inputBg, border: `1px solid ${C.inputBorder}`, borderRadius: 10, padding: "6px 6px 6px 10px" }}>
+                    <span style={{ fontSize: 12.5, fontWeight: 600, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+                    <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                      <Btn tone="gold" small onClick={() => handleLoadPreset(p)}>{tr("loadPresetBtn")}</Btn>
+                      <button
+                        onClick={() => handleDeletePreset(p.id)}
+                        aria-label={tr("deletePresetBtn")}
+                        style={{ background: "none", border: "none", color: C.red, fontWeight: 600, cursor: "pointer", fontSize: 15, padding: "6px 8px" }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <Btn tone="ghost" small onClick={handleSavePreset}>{tr("savePresetBtn")}</Btn>
+          </div>
+        </Card>
+          </div>
 
         {/* SQUAD STRATEGY */}
         <Card>
