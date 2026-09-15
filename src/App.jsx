@@ -653,15 +653,22 @@ const MAX_JOINER_LANCER_UI_PCT = 0.30; // Lancer slider's ceiling — dragging p
 
 /* Builds a per-squad target that (1) guarantees each type's floor first —
    capped by what `divisor` squads can actually draw from the pool — then
-   (2) lets Marksman (and only Marksman) absorb whatever capacity is left,
-   honoring an optional per-type `caps` ceiling (e.g. Infantry never
-   exceeding 3% of capacity). Infantry and Lancer never receive more than
-   their floor asked for — if Marksman's own stock can't cover the rest
-   either, the squad is left Partial rather than the leftover spilling into
-   Lancer or Infantry and blowing past their intended ratio. Used for both
-   the Recommended and Tiered strategies so floors/caps are real,
-   guaranteed constraints rather than a post-hoc warning. */
-function priorityTargetWithFloors(capacity, available, divisor, floors, caps = {}) {
+   (2) spends whatever capacity is left over. By default only Marksman (and
+   only Marksman) absorbs that leftover, honoring an optional per-type
+   `caps` ceiling (e.g. Infantry never exceeding 3% of capacity) — Infantry
+   and Lancer never receive more than their floor asked for, and if
+   Marksman's own stock can't cover the rest either, the squad is left
+   Partial rather than the leftover spilling into Lancer or Infantry and
+   blowing past their intended ratio. Used for the Recommended strategy so
+   floors/caps are real, guaranteed constraints rather than a post-hoc
+   warning.
+   Passing `spillOrder` (e.g. ["marksman","lancer","infantry"]) switches to
+   Ton Ton's priority-fill behavior instead: leftover capacity cascades
+   through that order, each type still capped by its own stock (and `caps`,
+   if given), so a squad fills as completely as the total pool allows even
+   when that means drifting from the ideal ratio. Used by Auto Split, where
+   filling the march completely matters more than a perfect ratio. */
+function priorityTargetWithFloors(capacity, available, divisor, floors, caps = {}, spillOrder = null) {
   if (!capacity || capacity <= 0 || !divisor || divisor <= 0) {
     return { infantry: 0, lancer: 0, marksman: 0, valid: false, shortfall: 0, floorsMet: { infantry: true, lancer: true, marksman: true } };
   }
@@ -680,7 +687,16 @@ function priorityTargetWithFloors(capacity, available, divisor, floors, caps = {
     floorsMet[t] = give >= want;
   });
 
-  if (remaining > 0) {
+  if (spillOrder) {
+    spillOrder.forEach((t) => {
+      if (remaining <= 0) return;
+      const capLimit = caps[t] !== undefined ? caps[t] : Infinity;
+      const extra = Math.max(0, Math.min(maxByStock[t], capLimit) - result[t]);
+      const use = Math.min(extra, remaining);
+      result[t] += use;
+      remaining -= use;
+    });
+  } else if (remaining > 0) {
     const capLimit = caps.marksman !== undefined ? caps.marksman : Infinity;
     const extra = Math.max(0, Math.min(maxByStock.marksman, capLimit) - result.marksman);
     const use = Math.min(extra, remaining);
@@ -1733,12 +1749,21 @@ export default function App() {
   function handleAutoSplit() {
     const previousMode = mode;
     const previousExact = exact;
+    // Start from Ton Ton's ratio (0.5% Infantry, ~10% Lancer, Marksman at
+    // least the player's requested minimum) — then, unlike Recommended,
+    // let any capacity that's still unfilled cascade through Marksman →
+    // Lancer → Infantry (Ton Ton's own priority order) using whatever stock
+    // is actually left, so the march fills completely even when the pool
+    // can't support the ideal ratio.
+    const autoInfantryFloor = Math.max(DIVERSITY_FLOOR, Math.round(capacity * MIN_JOINER_INFANTRY_PCT));
+    const autoLancerFloor = Math.max(DIVERSITY_FLOOR, Math.round(capacity * MIN_JOINER_LANCER_PCT));
     const auto = priorityTargetWithFloors(
       capacity,
       joinerAvailable,
       numSquads,
-      { infantry: DIVERSITY_FLOOR, lancer: DIVERSITY_FLOOR, marksman: Math.max(DIVERSITY_FLOOR, minMarchMarksman) },
-      { infantry: infantryCap }
+      { infantry: autoInfantryFloor, lancer: autoLancerFloor, marksman: Math.max(DIVERSITY_FLOOR, minMarchMarksman) },
+      {},
+      ["marksman", "lancer", "infantry"]
     );
     setMode("exact");
     setExact({ infantry: auto.infantry, lancer: auto.lancer, marksman: auto.marksman });
