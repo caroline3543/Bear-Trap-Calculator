@@ -108,6 +108,7 @@ const TRANSLATIONS = {
     onlyMarksmanShortRequestedYield: "Only {a} Marksman available per squad — total pool is short of the {b} requested even after Stronger squads yield.",
     clearedTroopsToast: "Troops cleared.", resetToast: "Everything reset.", undoAction: "Undo",
     copyPlan: "Copy squad plan", copiedToast: "Copied to clipboard!", copyFailedToast: "Couldn't copy — try again.",
+    autoLabel: "auto", marksmanBelow81Warning: "Below Ton Ton's 81% recommendation", marksmanBelow60kWarning: "Below the 60,000 minimum",
   },
   it: {
     troopPool: "Riserva truppe", troopPoolSub: "Le T10 vengono sempre usate prima delle T9 per lo stesso tipo di truppa.",
@@ -161,6 +162,7 @@ const TRANSLATIONS = {
     onlyMarksmanShortRequestedYield: "Solo {a} Tiratori disponibili per squadra — la riserva totale è sotto i {b} richiesti anche dopo la cessione delle squadre Forti.",
     clearedTroopsToast: "Truppe cancellate.", resetToast: "Tutto reimpostato.", undoAction: "Annulla",
     copyPlan: "Copia piano squadre", copiedToast: "Copiato negli appunti!", copyFailedToast: "Copia non riuscita — riprova.",
+    autoLabel: "auto", marksmanBelow81Warning: "Sotto la raccomandazione dell'81% di Ton Ton", marksmanBelow60kWarning: "Sotto il minimo di 60.000",
   },
   es: {
     troopPool: "Reserva de tropas", troopPoolSub: "Las T10 siempre se usan antes que las T9 para el mismo tipo de tropa.",
@@ -214,6 +216,7 @@ const TRANSLATIONS = {
     onlyMarksmanShortRequestedYield: "Solo {a} Tiradores disponibles por escuadrón — la reserva total está por debajo de los {b} solicitados incluso después de que los escuadrones Fuertes cedan.",
     clearedTroopsToast: "Tropas borradas.", resetToast: "Todo restablecido.", undoAction: "Deshacer",
     copyPlan: "Copiar plan de escuadrones", copiedToast: "¡Copiado al portapapeles!", copyFailedToast: "No se pudo copiar — inténtalo de nuevo.",
+    autoLabel: "auto", marksmanBelow81Warning: "Por debajo de la recomendación del 81% de Ton Ton", marksmanBelow60kWarning: "Por debajo del mínimo de 60.000",
   },
   ko: {
     troopPool: "병력 보유량", troopPoolSub: "같은 병종이면 T9보다 T10을 항상 먼저 사용합니다.",
@@ -267,6 +270,7 @@ const TRANSLATIONS = {
     onlyMarksmanShortRequestedYield: "부대당 저격수 {a}만 사용 가능 — 강한 부대가 양보한 후에도 총 보유량이 요청된 {b}에 못 미칩니다.",
     clearedTroopsToast: "병력이 지워졌습니다.", resetToast: "모두 초기화되었습니다.", undoAction: "실행 취소",
     copyPlan: "부대 계획 복사", copiedToast: "클립보드에 복사되었습니다!", copyFailedToast: "복사하지 못했습니다 — 다시 시도하세요.",
+    autoLabel: "자동", marksmanBelow81Warning: "Ton Ton의 81% 권장치 미만", marksmanBelow60kWarning: "60,000 최소치 미만",
   },
   de: {
     troopPool: "Truppenbestand", troopPoolSub: "T10 wird beim gleichen Truppentyp immer vor T9 verwendet.",
@@ -320,6 +324,7 @@ const TRANSLATIONS = {
     onlyMarksmanShortRequestedYield: "Nur {a} Scharfschützen pro Trupp verfügbar — Gesamtbestand liegt auch nach Abgabe der starken Trupps unter den angeforderten {b}.",
     clearedTroopsToast: "Truppen gelöscht.", resetToast: "Alles zurückgesetzt.", undoAction: "Rückgängig",
     copyPlan: "Truppplan kopieren", copiedToast: "In die Zwischenablage kopiert!", copyFailedToast: "Kopieren fehlgeschlagen — erneut versuchen.",
+    autoLabel: "auto", marksmanBelow81Warning: "Unter Ton Tons 81%-Empfehlung", marksmanBelow60kWarning: "Unter dem Minimum von 60.000",
   },
   ru: {
     troopPool: "Резерв войск", troopPoolSub: "Войска T10 всегда используются раньше T9 для одного типа войск.",
@@ -373,6 +378,7 @@ const TRANSLATIONS = {
     onlyMarksmanShortRequestedYield: "Доступно только {a} стрелков на отряд — общий резерв ниже запрошенных {b} даже после уступки сильных отрядов.",
     clearedTroopsToast: "Войска очищены.", resetToast: "Всё сброшено.", undoAction: "Отменить",
     copyPlan: "Скопировать план отрядов", copiedToast: "Скопировано в буфер обмена!", copyFailedToast: "Не удалось скопировать — попробуйте снова.",
+    autoLabel: "авто", marksmanBelow81Warning: "Ниже рекомендации Ton Ton в 81%", marksmanBelow60kWarning: "Ниже минимума в 60 000",
   },
   pl: {
     troopPool: "Pula wojsk", troopPoolSub: "Wojska T10 są zawsze używane przed T9 dla tego samego typu wojsk.",
@@ -426,6 +432,7 @@ const TRANSLATIONS = {
     onlyMarksmanShortRequestedYield: "Dostępnych tylko {a} Strzelców na oddział — łączna pula jest poniżej żądanych {b} nawet po ustąpieniu silnych oddziałów.",
     clearedTroopsToast: "Wojska wyczyszczone.", resetToast: "Wszystko zresetowane.", undoAction: "Cofnij",
     copyPlan: "Kopiuj plan oddziałów", copiedToast: "Skopiowano do schowka!", copyFailedToast: "Nie udało się skopiować — spróbuj ponownie.",
+    autoLabel: "auto", marksmanBelow81Warning: "Poniżej zalecanych 81% Ton Ton", marksmanBelow60kWarning: "Poniżej minimum 60 000",
   },
   tr: {
     troopPool: "Asker havuzu", troopPoolSub: "Aynı asker türü için T10 her zaman T9'dan önce kullanılır.",
@@ -479,6 +486,7 @@ const TRANSLATIONS = {
     onlyMarksmanShortRequestedYield: "Birlik başına yalnızca {a} Nişancı mevcut — Güçlü birlikler bıraktıktan sonra bile toplam havuz istenen {b}'nin altında.",
     clearedTroopsToast: "Askerler temizlendi.", resetToast: "Her şey sıfırlandı.", undoAction: "Geri al",
     copyPlan: "Birlik planını kopyala", copiedToast: "Panoya kopyalandı!", copyFailedToast: "Kopyalanamadı — tekrar deneyin.",
+    autoLabel: "otomatik", marksmanBelow81Warning: "Ton Ton'un %81 önerisinin altında", marksmanBelow60kWarning: "60.000 minimumunun altında",
   },
 };
 
@@ -606,12 +614,12 @@ function computeTarget(capacity, mode, ratio, exact) {
 }
 
 const DIVERSITY_FLOOR = 1; // every squad always carries at least this much of each troop type
-const MIN_JOINER_MARKSMAN = 60000; // absolute floor — used only when 81% of capacity is smaller than this (tiny squads)
-const MARKSMAN_MIN_PCT = 0.81; // Marksman must stay at 81%+ of squad capacity — non-negotiable, for both Recommended and Tiered
+const MIN_JOINER_MARKSMAN = 60000; // absolute floor for Tiered (hard-enforced there) and the warning threshold for Recommended's slider
+const MARKSMAN_MIN_PCT = 0.81; // Marksman's recommended floor — hard-enforced for Tiered; shown as a warning (not blocked) on Recommended's sliders
 const MAX_JOINER_INFANTRY_PCT = 0.03; // Infantry is capped at 3% of squad capacity for both Recommended and Tiered
 const MIN_JOINER_INFANTRY_PCT = 0.005; // ...and floored at 0.5% of squad capacity, stock permitting
-const MIN_JOINER_LANCER_PCT = 0.10; // Lancer targets at least 10% of capacity when the pool has enough troops to support it, for both Recommended and Tiered
-const MAX_JOINER_LANCER_PCT = 0.185; // Lancer's hard ceiling — the highest it can ever go (only reachable when Infantry sits at its own 0.5% floor), so Marksman never drops below 81%
+const MIN_JOINER_LANCER_PCT = 0.10; // Lancer's default/starting point (Ton Ton's ratio) — floor for Tiered
+const MAX_JOINER_LANCER_UI_PCT = 0.30; // Lancer slider's ceiling on Recommended — dragging past the safe zone just warns, doesn't block
 
 /* Builds a per-squad target that (1) guarantees each type's floor first —
    capped by what `divisor` squads can actually draw from the pool — then
@@ -856,7 +864,7 @@ function PctField({ label, value, onChange, colorDot }) {
 /* A labeled range slider for adjusting a ratio. The track fills in behind
    the thumb as it moves (a visible progress bar, not just a plain groove)
    so it reads as "drag this" at a glance, without needing instructions. */
-function RatioSlider({ label, colorDot, value, min, max, step, onChange, suffix = "%" }) {
+function RatioSlider({ label, colorDot, value, min, max, step, onChange, suffix = "%", warningEmoji, warningText }) {
   const span = Math.max(max - min, 0.0001);
   const pct = Math.min(100, Math.max(0, ((value - min) / span) * 100));
   const trackBg = `linear-gradient(to right, ${colorDot} 0%, ${colorDot} ${pct}%, var(--tierTrackBg) ${pct}%, var(--tierTrackBg) 100%)`;
@@ -867,19 +875,26 @@ function RatioSlider({ label, colorDot, value, min, max, step, onChange, suffix 
           <span style={{ width: 9, height: 9, borderRadius: 999, background: colorDot, display: "inline-block" }} />
           {label}
         </span>
-        <span
-          style={{
-            fontSize: 15,
-            fontWeight: 800,
-            color: C.cocoaDark,
-            background: colorDot,
-            padding: "3px 12px",
-            borderRadius: 999,
-            minWidth: 52,
-            textAlign: "center",
-          }}
-        >
-          {value}{suffix}
+        <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          {warningEmoji && (
+            <span title={warningText} style={{ fontSize: 15, cursor: "help" }}>
+              {warningEmoji}
+            </span>
+          )}
+          <span
+            style={{
+              fontSize: 15,
+              fontWeight: 800,
+              color: C.cocoaDark,
+              background: colorDot,
+              padding: "3px 12px",
+              borderRadius: 999,
+              minWidth: 52,
+              textAlign: "center",
+            }}
+          >
+            {value}{suffix}
+          </span>
         </span>
       </div>
       <input
@@ -897,6 +912,64 @@ function RatioSlider({ label, colorDot, value, min, max, step, onChange, suffix 
         <span style={{ fontSize: 10.5, color: C.sub, fontWeight: 600 }}>{min}{suffix}</span>
         <span style={{ fontSize: 10.5, color: C.sub, fontWeight: 600 }}>{max}{suffix}</span>
       </div>
+      {warningEmoji && warningText && (
+        <div style={{ fontSize: 11, color: C.amber, fontWeight: 600, marginTop: 5 }}>
+          {warningEmoji} {warningText}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* A read-only bar showing Marksman's share moving live as the sliders above
+   change — deliberately NOT an <input type="range">, with a muted "auto"
+   tag and a not-allowed cursor, so it never reads as something you can drag. */
+function AutoRatioBar({ label, colorDot, pct, displayValue, autoLabel, warningEmoji, warningText }) {
+  const clamped = Math.min(100, Math.max(0, pct));
+  const barColor = warningEmoji ? C.amber : colorDot;
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 9 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 700, color: C.gold }}>
+          <span style={{ width: 9, height: 9, borderRadius: 999, background: colorDot, display: "inline-block" }} />
+          {label}
+          <span style={{ fontSize: 10, fontWeight: 700, color: C.sub, background: "var(--tierTrackBg)", borderRadius: 999, padding: "2px 8px", textTransform: "uppercase", letterSpacing: 0.4 }}>
+            🔒 {autoLabel}
+          </span>
+        </span>
+        <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          {warningEmoji && (
+            <span title={warningText} style={{ fontSize: 15, cursor: "help" }}>
+              {warningEmoji}
+            </span>
+          )}
+          <span
+            style={{
+              fontSize: 15,
+              fontWeight: 800,
+              color: C.cocoaDark,
+              background: barColor,
+              padding: "3px 12px",
+              borderRadius: 999,
+              minWidth: 52,
+              textAlign: "center",
+            }}
+          >
+            {displayValue}
+          </span>
+        </span>
+      </div>
+      <div
+        style={{ height: 12, borderRadius: 999, background: "var(--tierTrackBg)", overflow: "hidden", cursor: "not-allowed" }}
+        aria-hidden="true"
+      >
+        <div style={{ height: "100%", width: `${clamped}%`, background: barColor, borderRadius: 999, transition: "width 150ms ease" }} />
+      </div>
+      {warningEmoji && warningText && (
+        <div style={{ fontSize: 11, color: C.amber, fontWeight: 600, marginTop: 5 }}>
+          {warningEmoji} {warningText}
+        </div>
+      )}
     </div>
   );
 }
@@ -1226,21 +1299,18 @@ export default function App() {
   // Infantry per joiner squad is bounded between 0.5% and 3% of that squad's capacity — used by both Recommended and Tiered.
   const infantryCap = Math.round(capacity * MAX_JOINER_INFANTRY_PCT);
   const infantryFloor = Math.max(DIVERSITY_FLOOR, Math.round(capacity * MIN_JOINER_INFANTRY_PCT));
-  // Marksman's real floor: 81% of capacity, non-negotiable — falling back to the flat
-  // 60,000 minimum only on the rare tiny-capacity squad where 81% would be less than that.
+  // Marksman's floor for Tiered (hard-enforced there, no slider to fight it): 81% of
+  // capacity, falling back to the flat 60,000 minimum only on tiny squads where 81%
+  // would be less than that.
   const marksmanFloor = Math.max(MIN_JOINER_MARKSMAN, Math.round(capacity * MARKSMAN_MIN_PCT));
 
   // Recommended strategy's ratios are adjustable — Ton Ton's guide is the starting point
-  // (0.5% Infantry, 10% Lancer, Marksman fills the rest), but sliders let the player
-  // tune them for their own Rally Leader heroes/gear while staying inside the rules:
-  // Infantry can't leave its 0.5%–3% band, and the Lancer slider's own max shrinks so
-  // Marksman can never be dragged below its non-negotiable 81% floor (or the 60,000
-  // absolute floor on tiny squads, whichever is larger) — and never above 18.5% regardless.
+  // (0.5% Infantry, 10% Lancer, Marksman fills the rest). Infantry stays hard-bounded at
+  // 0.5%–3%. Lancer can be dragged up to 30% — past the point where that starts eating
+  // into Marksman's 81% recommendation (or its 60,000 hard floor), the UI warns instead
+  // of blocking, since the slider doesn't force Marksman back up artificially.
   const [recInfantryPct, setRecInfantryPct] = useState(saved?.recInfantryPct ?? MIN_JOINER_INFANTRY_PCT * 100);
   const [recLancerPct, setRecLancerPct] = useState(saved?.recLancerPct ?? MIN_JOINER_LANCER_PCT * 100);
-  const marksmanFloorPct = capacity > 0 ? (marksmanFloor / capacity) * 100 : MARKSMAN_MIN_PCT * 100;
-  const maxLancerPctAllowed = Math.max(5, Math.min(MAX_JOINER_LANCER_PCT * 100, 100 - recInfantryPct - marksmanFloorPct));
-  const effectiveLancerPct = Math.min(recLancerPct, maxLancerPctAllowed);
 
   // Manual composition (used when strategy === 'manual')
   const [mode, setMode] = useState(saved?.mode ?? "ratio");
@@ -1341,11 +1411,16 @@ export default function App() {
         capacity,
         joinerAvailable,
         numSquads,
-        { infantry: Math.max(DIVERSITY_FLOOR, Math.round(capacity * (recInfantryPct / 100))), lancer: Math.max(DIVERSITY_FLOOR, Math.round(capacity * (effectiveLancerPct / 100))), marksman: marksmanFloor },
+        { infantry: Math.max(DIVERSITY_FLOOR, Math.round(capacity * (recInfantryPct / 100))), lancer: Math.max(DIVERSITY_FLOOR, Math.round(capacity * (recLancerPct / 100))), marksman: DIVERSITY_FLOOR },
         { infantry: infantryCap }
       ),
-    [capacity, joinerAvailable, numSquads, infantryCap, recInfantryPct, effectiveLancerPct, marksmanFloor]
+    [capacity, joinerAvailable, numSquads, infantryCap, recInfantryPct, recLancerPct]
   );
+  // Marksman isn't a slider — it's whatever's left after Infantry and Lancer. These flags
+  // drive the warning emojis rather than blocking the sliders from being dragged there.
+  const recMarksmanPct = capacity > 0 ? (recommendedTarget.marksman / capacity) * 100 : 100;
+  const recBelow81 = recMarksmanPct < MARKSMAN_MIN_PCT * 100;
+  const recBelow60k = recommendedTarget.marksman < MIN_JOINER_MARKSMAN;
 
   // Marksman is guaranteed a floor and gets fill priority for whatever's left
   // (so it soaks up as much of the squad as the pool allows once Lancer's
@@ -1518,22 +1593,37 @@ export default function App() {
     const lines = ["🐻 Bear Trap Squad Plan"];
     if (rallyComputation.result) {
       const r = rallyComputation.result;
-      lines.push(
-        `${tr("leaderLabel")}: ${fmt(r.breakdown.infantry.total)} ${tType("infantry", lang)} / ${fmt(r.breakdown.lancer.total)} ${tType("lancer", lang)} / ${fmt(r.breakdown.marksman.total)} ${tType("marksman", lang)} — ${r.status === "full" ? tr("fullPill") : tr("partialPill")}`
-      );
+      lines.push(`${tr("leaderLabel")}: ${fmt(r.breakdown.infantry.total)} - ${fmt(r.breakdown.lancer.total)} - ${fmt(r.breakdown.marksman.total)}`);
     }
     lines.push("");
-    computation.squads.forEach((sq, i) => {
-      if (!sq) return;
-      const tierText = strategy === "tiered" ? ` (${i < numStrongerClamped ? tr("strongerLabel") : tr("weakerLabel")})` : "";
-      lines.push(
-        `${tr("squadLabel")} ${i + 1}${tierText}: ${fmt(sq.breakdown.infantry.total)} ${tType("infantry", lang)} / ${fmt(sq.breakdown.lancer.total)} ${tType("lancer", lang)} / ${fmt(sq.breakdown.marksman.total)} ${tType("marksman", lang)} — ${sq.status === "full" ? tr("fullPill") : tr("partialPill")}`
-      );
-    });
+
+    // Group consecutive squads that share the exact same composition (and,
+    // in Tiered mode, the same tier) into one "Squad X-Y: ..." line instead
+    // of repeating an identical row for every squad.
+    const squads = computation.squads;
+    const tierOf = (i) => (strategy === "tiered" ? (i < numStrongerClamped ? "s" : "w") : null);
+    let i = 0;
+    while (i < squads.length) {
+      const sq = squads[i];
+      if (!sq) { i++; continue; }
+      let j = i;
+      while (
+        j + 1 < squads.length &&
+        squads[j + 1] &&
+        squads[j + 1].breakdown.infantry.total === sq.breakdown.infantry.total &&
+        squads[j + 1].breakdown.lancer.total === sq.breakdown.lancer.total &&
+        squads[j + 1].breakdown.marksman.total === sq.breakdown.marksman.total &&
+        tierOf(j + 1) === tierOf(i)
+      ) {
+        j++;
+      }
+      const label = i === j ? `${tr("squadLabel")} ${i + 1}` : `${tr("squadLabel")} ${i + 1}-${j + 1}`;
+      lines.push(`${label}: ${fmt(sq.breakdown.infantry.total)} - ${fmt(sq.breakdown.lancer.total)} - ${fmt(sq.breakdown.marksman.total)}`);
+      i = j + 1;
+    }
+
     lines.push("");
-    lines.push(
-      `${tr("remainingTroopsHeading")}: ${tType("infantry", lang)} ${fmt(remT10.infantry + remT9.infantry)} · ${tType("lancer", lang)} ${fmt(remT10.lancer + remT9.lancer)} · ${tType("marksman", lang)} ${fmt(remT10.marksman + remT9.marksman)}`
-    );
+    lines.push(`${tr("remainingTroopsHeading")}: ${fmt(remT10.infantry + remT9.infantry)} - ${fmt(remT10.lancer + remT9.lancer)} - ${fmt(remT10.marksman + remT9.marksman)}`);
     return lines.join("\n");
   }
 
@@ -1980,24 +2070,29 @@ export default function App() {
               <RatioSlider
                 label={`${tType("lancer", lang)} %`}
                 colorDot={TYPE_COLOR.lancer}
-                value={effectiveLancerPct}
+                value={recLancerPct}
                 min={5}
-                max={maxLancerPctAllowed}
+                max={MAX_JOINER_LANCER_UI_PCT * 100}
                 step={0.5}
                 onChange={setRecLancerPct}
+                warningEmoji={recBelow60k ? "🚨" : recBelow81 ? "⚠️" : null}
+              />
+              <AutoRatioBar
+                label={`${tType("marksman", lang)} %`}
+                colorDot={TYPE_COLOR.marksman}
+                pct={recMarksmanPct}
+                displayValue={`${recMarksmanPct.toFixed(1)}%`}
+                autoLabel={tr("autoLabel")}
+                warningEmoji={recBelow60k ? "🚨" : recBelow81 ? "⚠️" : null}
+                warningText={recBelow60k ? tr("marksmanBelow60kWarning") : recBelow81 ? tr("marksmanBelow81Warning") : null}
               />
               <div style={{ fontSize: 11.5, color: C.sub, marginTop: -6, marginBottom: 14 }}>
-                {tType("marksman", lang)}: {fmt(recommendedTarget.marksman)} — {tFmt("marksmanFillsRest", lang, { a: fmt(MIN_JOINER_MARKSMAN) })}
+                {tType("marksman", lang)}: {fmt(recommendedTarget.marksman)}
               </div>
 
               <div style={{ background: C.goldBg, border: `1.5px solid ${C.goldBorder}`, borderRadius: 14, padding: 10, marginBottom: 10 }}>
                 <TargetPreview target={recommendedTarget} lang={lang} />
               </div>
-              {!recommendedTarget.floorsMet.marksman && (
-                <div style={{ fontSize: 12, color: C.red, fontWeight: 500, marginBottom: 10 }}>
-                  {tFmt("recShortfallWarning", lang, { a: fmt(recommendedTarget.marksman), b: fmt(MIN_JOINER_MARKSMAN) })}
-                </div>
-              )}
               {recommendedTarget.shortfall > 0 && (
                 <div style={{ color: C.amber, fontWeight: 500, fontSize: 12.5, marginBottom: 10 }}>
                   {tFmt("spacesCantBeFilled", lang, { a: fmt(recommendedTarget.shortfall) })}
