@@ -80,7 +80,7 @@ const TRANSLATIONS = {
     fullPill: "Full", partialPill: "Partial", usesT9Pill: "Uses T9", addBtn: "Add",
     invalidTarget: "Invalid target", fixComposition: "Fix the composition above to see squad results.",
     squadLabel: "Squad", strongerLabel: "Stronger", weakerLabel: "Weaker", leaderLabel: "Rally Leader",
-    recSourceNote: "These starting ratios come from Ton Ton's guide — a solid baseline for most Rally Leaders.",
+    recSourceNote: "Ton Ton recommends these joining ratios:", recSourceSub: "A solid baseline for most Rally Leaders.",
     recHeroNote: "The best ratio depends on your Rally Leader's heroes, hero gear, and chief gear — fine-tune the sliders below to match your own setup.",
     gen5Note: "This is the recommended ratio for Generation 5.",
     resetRatios: "Reset to Ton Ton's ratios",
@@ -109,7 +109,7 @@ const TRANSLATIONS = {
     fullPill: "Completa", partialPill: "Parziale", usesT9Pill: "Usa T9", addBtn: "Aggiungi",
     invalidTarget: "Obiettivo non valido", fixComposition: "Correggi la composizione sopra per vedere i risultati della squadra.",
     squadLabel: "Squadra", strongerLabel: "Forte", weakerLabel: "Debole", leaderLabel: "Capo raduno",
-    recSourceNote: "Queste percentuali di partenza vengono dalla guida di Ton Ton — una base solida per la maggior parte dei capi raduno.",
+    recSourceNote: "Ton Ton consiglia queste percentuali di unione:", recSourceSub: "Una base solida per la maggior parte dei capi raduno.",
     recHeroNote: "Il rapporto migliore dipende dagli eroi del tuo capo raduno, dal loro equipaggiamento eroe e dall'equipaggiamento del capo — regola i cursori qui sotto in base alla tua configurazione.",
     gen5Note: "Questo è il rapporto consigliato per la Generazione 5.",
     resetRatios: "Ripristina le percentuali di Ton Ton",
@@ -138,7 +138,7 @@ const TRANSLATIONS = {
     fullPill: "Completo", partialPill: "Parcial", usesT9Pill: "Usa T9", addBtn: "Añadir",
     invalidTarget: "Objetivo no válido", fixComposition: "Corrige la composición de arriba para ver los resultados del escuadrón.",
     squadLabel: "Escuadrón", strongerLabel: "Fuerte", weakerLabel: "Débil", leaderLabel: "Líder de asalto",
-    recSourceNote: "Estos porcentajes iniciales vienen de la guía de Ton Ton — una base sólida para la mayoría de los líderes de asalto.",
+    recSourceNote: "Ton Ton recomienda estas proporciones de unión:", recSourceSub: "Una base sólida para la mayoría de los líderes de asalto.",
     recHeroNote: "La mejor proporción depende de los héroes de tu líder de asalto, su equipo de héroe y el equipo de jefe — ajusta los controles de abajo según tu configuración.",
     gen5Note: "Esta es la proporción recomendada para la Generación 5.",
     resetRatios: "Restablecer a las proporciones de Ton Ton",
@@ -167,7 +167,7 @@ const TRANSLATIONS = {
     fullPill: "가득 참", partialPill: "부분", usesT9Pill: "T9 사용", addBtn: "추가",
     invalidTarget: "잘못된 목표", fixComposition: "부대 결과를 보려면 위의 구성을 수정하세요.",
     squadLabel: "부대", strongerLabel: "강함", weakerLabel: "약함", leaderLabel: "집결 대장",
-    recSourceNote: "이 시작 비율은 Ton Ton의 가이드에서 가져온 것으로, 대부분의 집결 대장에게 적합한 기본값입니다.",
+    recSourceNote: "Ton Ton이 추천하는 합류 비율:", recSourceSub: "대부분의 집결 대장에게 적합한 기본값입니다.",
     recHeroNote: "최적의 비율은 집결 대장의 영웅, 영웅 장비, 사령관 장비에 따라 달라집니다 — 아래 슬라이더로 자신의 설정에 맞게 조정하세요.",
     gen5Note: "이것은 5세대(Generation 5)를 위한 권장 비율입니다.",
     resetRatios: "Ton Ton 비율로 재설정",
@@ -196,7 +196,7 @@ const TRANSLATIONS = {
     fullPill: "Voll", partialPill: "Teilweise", usesT9Pill: "Nutzt T9", addBtn: "Hinzufügen",
     invalidTarget: "Ungültiges Ziel", fixComposition: "Korrigiere die Zusammensetzung oben, um die Truppergebnisse zu sehen.",
     squadLabel: "Trupp", strongerLabel: "Stark", weakerLabel: "Schwach", leaderLabel: "Sammlungsanführer",
-    recSourceNote: "Diese Ausgangswerte stammen aus Ton Tons Leitfaden — eine solide Basis für die meisten Sammlungsanführer.",
+    recSourceNote: "Ton Ton empfiehlt diese Beitritts-Verhältnisse:", recSourceSub: "Eine solide Basis für die meisten Sammlungsanführer.",
     recHeroNote: "Das beste Verhältnis hängt von den Helden deines Sammlungsanführers, deren Heldenausrüstung und der Anführerausrüstung ab — passe die Regler unten an dein eigenes Setup an.",
     gen5Note: "Dies ist das empfohlene Verhältnis für Generation 5.",
     resetRatios: "Auf Ton Tons Verhältnisse zurücksetzen",
@@ -225,7 +225,7 @@ const TRANSLATIONS = {
     fullPill: "Полный", partialPill: "Частично", usesT9Pill: "Использует T9", addBtn: "Добавить",
     invalidTarget: "Недопустимая цель", fixComposition: "Исправьте состав выше, чтобы увидеть результаты отряда.",
     squadLabel: "Отряд", strongerLabel: "Сильный", weakerLabel: "Слабый", leaderLabel: "Лидер сбора",
-    recSourceNote: "Эти начальные соотношения взяты из руководства Ton Ton — надёжная основа для большинства лидеров сбора.",
+    recSourceNote: "Ton Ton рекомендует такие соотношения для присоединения:", recSourceSub: "Надёжная основа для большинства лидеров сбора.",
     recHeroNote: "Лучшее соотношение зависит от героев вашего лидера сбора, их снаряжения героев и снаряжения командира — настройте ползунки ниже под свою конфигурацию.",
     gen5Note: "Это рекомендуемое соотношение для Поколения 5.",
     resetRatios: "Сбросить к соотношениям Ton Ton",
@@ -254,7 +254,7 @@ const TRANSLATIONS = {
     fullPill: "Pełny", partialPill: "Częściowy", usesT9Pill: "Używa T9", addBtn: "Dodaj",
     invalidTarget: "Nieprawidłowy cel", fixComposition: "Popraw skład powyżej, aby zobaczyć wyniki oddziału.",
     squadLabel: "Oddział", strongerLabel: "Silny", weakerLabel: "Słaby", leaderLabel: "Lider zgrupowania",
-    recSourceNote: "Te początkowe proporcje pochodzą z poradnika Ton Ton — solidna baza dla większości liderów zgrupowania.",
+    recSourceNote: "Ton Ton zaleca następujące proporcje dołączania:", recSourceSub: "Solidna baza dla większości liderów zgrupowania.",
     recHeroNote: "Najlepsza proporcja zależy od bohaterów twojego lidera zgrupowania, ich ekwipunku bohatera i ekwipunku dowódcy — dostosuj poniższe suwaki do swojej konfiguracji.",
     gen5Note: "To jest zalecana proporcja dla Generacji 5.",
     resetRatios: "Przywróć proporcje Ton Ton",
@@ -283,7 +283,7 @@ const TRANSLATIONS = {
     fullPill: "Dolu", partialPill: "Kısmi", usesT9Pill: "T9 kullanıyor", addBtn: "Ekle",
     invalidTarget: "Geçersiz hedef", fixComposition: "Birlik sonuçlarını görmek için yukarıdaki bileşimi düzeltin.",
     squadLabel: "Birlik", strongerLabel: "Güçlü", weakerLabel: "Zayıf", leaderLabel: "Toplanma lideri",
-    recSourceNote: "Bu başlangıç oranları Ton Ton'un rehberinden alınmıştır — çoğu toplanma lideri için sağlam bir temel.",
+    recSourceNote: "Ton Ton şu katılım oranlarını öneriyor:", recSourceSub: "Çoğu toplanma lideri için sağlam bir temel.",
     recHeroNote: "En iyi oran, toplanma liderinizin kahramanlarına, kahraman ekipmanına ve lider ekipmanına bağlıdır — kendi kurulumunuza göre aşağıdaki kaydırıcıları ayarlayın.",
     gen5Note: "Bu, 5. Nesil için önerilen orandır.",
     resetRatios: "Ton Ton oranlarına sıfırla",
@@ -651,15 +651,34 @@ function PctField({ label, value, onChange, colorDot }) {
 
 /* A labeled range slider for adjusting a ratio, with the live value shown
    large next to the label so it's obvious what dragging it does. */
+/* A labeled range slider for adjusting a ratio. The track fills in behind
+   the thumb as it moves (a visible progress bar, not just a plain groove)
+   so it reads as "drag this" at a glance, without needing instructions. */
 function RatioSlider({ label, colorDot, value, min, max, step, onChange, suffix = "%" }) {
+  const span = Math.max(max - min, 0.0001);
+  const pct = Math.min(100, Math.max(0, ((value - min) / span) * 100));
+  const trackBg = `linear-gradient(to right, ${colorDot} 0%, ${colorDot} ${pct}%, var(--tierTrackBg) ${pct}%, var(--tierTrackBg) 100%)`;
   return (
-    <div style={{ marginBottom: 16 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 9 }}>
         <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 700, color: C.gold }}>
-          <span style={{ width: 8, height: 8, borderRadius: 999, background: colorDot, display: "inline-block" }} />
+          <span style={{ width: 9, height: 9, borderRadius: 999, background: colorDot, display: "inline-block" }} />
           {label}
         </span>
-        <span style={{ fontSize: 15, fontWeight: 800, color: C.ink }}>{value}{suffix}</span>
+        <span
+          style={{
+            fontSize: 15,
+            fontWeight: 800,
+            color: C.cocoaDark,
+            background: colorDot,
+            padding: "3px 12px",
+            borderRadius: 999,
+            minWidth: 52,
+            textAlign: "center",
+          }}
+        >
+          {value}{suffix}
+        </span>
       </div>
       <input
         type="range"
@@ -669,8 +688,13 @@ function RatioSlider({ label, colorDot, value, min, max, step, onChange, suffix 
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
         className="ratio-slider"
+        style={{ background: trackBg }}
         aria-label={label}
       />
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+        <span style={{ fontSize: 10.5, color: C.sub, fontWeight: 600 }}>{min}{suffix}</span>
+        <span style={{ fontSize: 10.5, color: C.sub, fontWeight: 600 }}>{max}{suffix}</span>
+      </div>
     </div>
   );
 }
@@ -1391,33 +1415,41 @@ export default function App() {
           -webkit-appearance: none;
           appearance: none;
           width: 100%;
-          height: 8px;
+          height: 12px;
           border-radius: 999px;
-          background: var(--tierTrackBg);
           outline: none;
-          cursor: pointer;
+          cursor: grab;
           margin: 0;
+          transition: box-shadow .15s ease;
         }
+        .ratio-slider:active { cursor: grabbing; }
         .ratio-slider::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
-          width: 22px;
-          height: 22px;
+          width: 30px;
+          height: 30px;
           border-radius: 999px;
-          background: ${C.goldStrong};
-          border: 3px solid ${C.surface};
-          box-shadow: 0 2px 6px rgba(33,70,65,.3);
-          cursor: pointer;
+          background: ${C.surface};
+          border: 5px solid ${C.goldStrong};
+          box-shadow: 0 2px 8px rgba(33,70,65,.35);
+          cursor: grab;
+          margin-top: 0;
+          transition: transform .1s ease, box-shadow .15s ease;
         }
+        .ratio-slider::-webkit-slider-thumb:hover { transform: scale(1.12); box-shadow: 0 3px 12px rgba(33,70,65,.45); }
+        .ratio-slider:active::-webkit-slider-thumb { transform: scale(1.18); cursor: grabbing; }
         .ratio-slider::-moz-range-thumb {
-          width: 22px;
-          height: 22px;
+          width: 30px;
+          height: 30px;
           border-radius: 999px;
-          background: ${C.goldStrong};
-          border: 3px solid ${C.surface};
-          box-shadow: 0 2px 6px rgba(33,70,65,.3);
-          cursor: pointer;
+          background: ${C.surface};
+          border: 5px solid ${C.goldStrong};
+          box-shadow: 0 2px 8px rgba(33,70,65,.35);
+          cursor: grab;
+          transition: transform .1s ease, box-shadow .15s ease;
         }
+        .ratio-slider::-moz-range-thumb:hover { transform: scale(1.12); }
+        .ratio-slider::-moz-range-track { height: 12px; border-radius: 999px; }
       `}</style>
 
       {/* Subtle paper-grain texture — kept low-opacity behind all content */}
@@ -1618,7 +1650,23 @@ export default function App() {
           {strategy === "recommended" && (
             <div>
               <div style={{ background: C.goldBg, border: `1.5px solid ${C.goldBorder}`, borderRadius: 14, padding: 12, marginBottom: 14, fontSize: 12.5, color: C.ink, lineHeight: 1.55 }}>
-                <div style={{ fontWeight: 800, color: C.gold, marginBottom: 4 }}>🐻 {tr("recSourceNote")}</div>
+                <div style={{ fontWeight: 800, color: C.gold, marginBottom: 2 }}>🐻 {tr("recSourceNote")}</div>
+                <div style={{ color: C.sub, fontSize: 11.5, marginBottom: 10 }}>{tr("recSourceSub")}</div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 10 }}>
+                  {[
+                    { color: TYPE_COLOR.infantry, name: tType("infantry", lang), range: "0.5–3%" },
+                    { color: TYPE_COLOR.lancer, name: tType("lancer", lang), range: "10–30%" },
+                    { color: TYPE_COLOR.marksman, name: tType("marksman", lang), range: "81%+" },
+                  ].map((row) => (
+                    <div key={row.name} style={{ display: "flex", alignItems: "center", gap: 8, background: C.surface, borderRadius: 10, padding: "6px 10px" }}>
+                      <span style={{ width: 10, height: 10, borderRadius: 999, background: row.color, flexShrink: 0 }} />
+                      <span style={{ fontWeight: 700, flex: 1 }}>{row.name}</span>
+                      <span style={{ fontWeight: 800, color: C.gold }}>{row.range}</span>
+                    </div>
+                  ))}
+                </div>
+
                 <div style={{ fontWeight: 700, marginBottom: 6 }}>{tr("gen5Note")}</div>
                 <div>{tr("recHeroNote")}</div>
               </div>
