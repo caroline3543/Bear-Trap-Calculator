@@ -106,6 +106,8 @@ const TRANSLATIONS = {
     guaranteedWeakerMinimum: "Guaranteed in every Weaker squad — Stronger squads give up Marksman first if needed. Minimum {a}.",
     weakerSquadComposition: "Weaker squad composition",
     onlyMarksmanShortRequestedYield: "Only {a} Marksman available per squad — total pool is short of the {b} requested even after Stronger squads yield.",
+    clearedTroopsToast: "Troops cleared.", resetToast: "Everything reset.", undoAction: "Undo",
+    copyPlan: "Copy squad plan", copiedToast: "Copied to clipboard!", copyFailedToast: "Couldn't copy — try again.",
   },
   it: {
     troopPool: "Riserva truppe", troopPoolSub: "Le T10 vengono sempre usate prima delle T9 per lo stesso tipo di truppa.",
@@ -157,6 +159,8 @@ const TRANSLATIONS = {
     guaranteedWeakerMinimum: "Garantito in ogni squadra Debole — le squadre Forti cedono Tiratori per prime se necessario. Minimo {a}.",
     weakerSquadComposition: "Composizione squadra Debole",
     onlyMarksmanShortRequestedYield: "Solo {a} Tiratori disponibili per squadra — la riserva totale è sotto i {b} richiesti anche dopo la cessione delle squadre Forti.",
+    clearedTroopsToast: "Truppe cancellate.", resetToast: "Tutto reimpostato.", undoAction: "Annulla",
+    copyPlan: "Copia piano squadre", copiedToast: "Copiato negli appunti!", copyFailedToast: "Copia non riuscita — riprova.",
   },
   es: {
     troopPool: "Reserva de tropas", troopPoolSub: "Las T10 siempre se usan antes que las T9 para el mismo tipo de tropa.",
@@ -208,6 +212,8 @@ const TRANSLATIONS = {
     guaranteedWeakerMinimum: "Garantizado en cada escuadrón Débil — los escuadrones Fuertes ceden Tiradores primero si hace falta. Mínimo {a}.",
     weakerSquadComposition: "Composición del escuadrón Débil",
     onlyMarksmanShortRequestedYield: "Solo {a} Tiradores disponibles por escuadrón — la reserva total está por debajo de los {b} solicitados incluso después de que los escuadrones Fuertes cedan.",
+    clearedTroopsToast: "Tropas borradas.", resetToast: "Todo restablecido.", undoAction: "Deshacer",
+    copyPlan: "Copiar plan de escuadrones", copiedToast: "¡Copiado al portapapeles!", copyFailedToast: "No se pudo copiar — inténtalo de nuevo.",
   },
   ko: {
     troopPool: "병력 보유량", troopPoolSub: "같은 병종이면 T9보다 T10을 항상 먼저 사용합니다.",
@@ -259,6 +265,8 @@ const TRANSLATIONS = {
     guaranteedWeakerMinimum: "모든 약한 부대에서 보장되며 — 필요 시 강한 부대가 저격수를 먼저 양보합니다. 최소 {a}.",
     weakerSquadComposition: "약한 부대 구성",
     onlyMarksmanShortRequestedYield: "부대당 저격수 {a}만 사용 가능 — 강한 부대가 양보한 후에도 총 보유량이 요청된 {b}에 못 미칩니다.",
+    clearedTroopsToast: "병력이 지워졌습니다.", resetToast: "모두 초기화되었습니다.", undoAction: "실행 취소",
+    copyPlan: "부대 계획 복사", copiedToast: "클립보드에 복사되었습니다!", copyFailedToast: "복사하지 못했습니다 — 다시 시도하세요.",
   },
   de: {
     troopPool: "Truppenbestand", troopPoolSub: "T10 wird beim gleichen Truppentyp immer vor T9 verwendet.",
@@ -310,6 +318,8 @@ const TRANSLATIONS = {
     guaranteedWeakerMinimum: "In jedem schwachen Trupp garantiert — starke Trupps geben bei Bedarf zuerst Scharfschützen ab. Minimum {a}.",
     weakerSquadComposition: "Zusammensetzung des schwachen Trupps",
     onlyMarksmanShortRequestedYield: "Nur {a} Scharfschützen pro Trupp verfügbar — Gesamtbestand liegt auch nach Abgabe der starken Trupps unter den angeforderten {b}.",
+    clearedTroopsToast: "Truppen gelöscht.", resetToast: "Alles zurückgesetzt.", undoAction: "Rückgängig",
+    copyPlan: "Truppplan kopieren", copiedToast: "In die Zwischenablage kopiert!", copyFailedToast: "Kopieren fehlgeschlagen — erneut versuchen.",
   },
   ru: {
     troopPool: "Резерв войск", troopPoolSub: "Войска T10 всегда используются раньше T9 для одного типа войск.",
@@ -361,6 +371,8 @@ const TRANSLATIONS = {
     guaranteedWeakerMinimum: "Гарантируется в каждом слабом отряде — сильные отряды при необходимости уступают стрелков первыми. Минимум {a}.",
     weakerSquadComposition: "Состав слабого отряда",
     onlyMarksmanShortRequestedYield: "Доступно только {a} стрелков на отряд — общий резерв ниже запрошенных {b} даже после уступки сильных отрядов.",
+    clearedTroopsToast: "Войска очищены.", resetToast: "Всё сброшено.", undoAction: "Отменить",
+    copyPlan: "Скопировать план отрядов", copiedToast: "Скопировано в буфер обмена!", copyFailedToast: "Не удалось скопировать — попробуйте снова.",
   },
   pl: {
     troopPool: "Pula wojsk", troopPoolSub: "Wojska T10 są zawsze używane przed T9 dla tego samego typu wojsk.",
@@ -412,6 +424,8 @@ const TRANSLATIONS = {
     guaranteedWeakerMinimum: "Gwarantowane w każdym słabym oddziale — silne oddziały w razie potrzeby oddają Strzelców jako pierwsze. Minimum {a}.",
     weakerSquadComposition: "Skład słabego oddziału",
     onlyMarksmanShortRequestedYield: "Dostępnych tylko {a} Strzelców na oddział — łączna pula jest poniżej żądanych {b} nawet po ustąpieniu silnych oddziałów.",
+    clearedTroopsToast: "Wojska wyczyszczone.", resetToast: "Wszystko zresetowane.", undoAction: "Cofnij",
+    copyPlan: "Kopiuj plan oddziałów", copiedToast: "Skopiowano do schowka!", copyFailedToast: "Nie udało się skopiować — spróbuj ponownie.",
   },
   tr: {
     troopPool: "Asker havuzu", troopPoolSub: "Aynı asker türü için T10 her zaman T9'dan önce kullanılır.",
@@ -463,6 +477,8 @@ const TRANSLATIONS = {
     guaranteedWeakerMinimum: "Her Zayıf birlikte garanti edilir — gerekirse Güçlü birlikler önce Nişancı bırakır. Minimum {a}.",
     weakerSquadComposition: "Zayıf birlik bileşimi",
     onlyMarksmanShortRequestedYield: "Birlik başına yalnızca {a} Nişancı mevcut — Güçlü birlikler bıraktıktan sonra bile toplam havuz istenen {b}'nin altında.",
+    clearedTroopsToast: "Askerler temizlendi.", resetToast: "Her şey sıfırlandı.", undoAction: "Geri al",
+    copyPlan: "Birlik planını kopyala", copiedToast: "Panoya kopyalandı!", copyFailedToast: "Kopyalanamadı — tekrar deneyin.",
   },
 };
 
@@ -590,10 +606,12 @@ function computeTarget(capacity, mode, ratio, exact) {
 }
 
 const DIVERSITY_FLOOR = 1; // every squad always carries at least this much of each troop type
-const MIN_JOINER_MARKSMAN = 60000; // both Recommended and Tiered joiner squads guarantee at least this much Marksman, stock permitting
+const MIN_JOINER_MARKSMAN = 60000; // absolute floor — used only when 81% of capacity is smaller than this (tiny squads)
+const MARKSMAN_MIN_PCT = 0.81; // Marksman must stay at 81%+ of squad capacity — non-negotiable, for both Recommended and Tiered
 const MAX_JOINER_INFANTRY_PCT = 0.03; // Infantry is capped at 3% of squad capacity for both Recommended and Tiered
 const MIN_JOINER_INFANTRY_PCT = 0.005; // ...and floored at 0.5% of squad capacity, stock permitting
 const MIN_JOINER_LANCER_PCT = 0.10; // Lancer targets at least 10% of capacity when the pool has enough troops to support it, for both Recommended and Tiered
+const MAX_JOINER_LANCER_PCT = 0.185; // Lancer's hard ceiling — the highest it can ever go (only reachable when Infantry sits at its own 0.5% floor), so Marksman never drops below 81%
 
 /* Builds a per-squad target that (1) guarantees each type's floor first —
    capped by what `divisor` squads can actually draw from the pool — then
@@ -1208,16 +1226,20 @@ export default function App() {
   // Infantry per joiner squad is bounded between 0.5% and 3% of that squad's capacity — used by both Recommended and Tiered.
   const infantryCap = Math.round(capacity * MAX_JOINER_INFANTRY_PCT);
   const infantryFloor = Math.max(DIVERSITY_FLOOR, Math.round(capacity * MIN_JOINER_INFANTRY_PCT));
+  // Marksman's real floor: 81% of capacity, non-negotiable — falling back to the flat
+  // 60,000 minimum only on the rare tiny-capacity squad where 81% would be less than that.
+  const marksmanFloor = Math.max(MIN_JOINER_MARKSMAN, Math.round(capacity * MARKSMAN_MIN_PCT));
 
   // Recommended strategy's ratios are adjustable — Ton Ton's guide is the starting point
   // (0.5% Infantry, 10% Lancer, Marksman fills the rest), but sliders let the player
   // tune them for their own Rally Leader heroes/gear while staying inside the rules:
   // Infantry can't leave its 0.5%–3% band, and the Lancer slider's own max shrinks so
-  // Marksman can never be dragged below its guaranteed 60,000 minimum.
+  // Marksman can never be dragged below its non-negotiable 81% floor (or the 60,000
+  // absolute floor on tiny squads, whichever is larger) — and never above 18.5% regardless.
   const [recInfantryPct, setRecInfantryPct] = useState(saved?.recInfantryPct ?? MIN_JOINER_INFANTRY_PCT * 100);
   const [recLancerPct, setRecLancerPct] = useState(saved?.recLancerPct ?? MIN_JOINER_LANCER_PCT * 100);
-  const maxLancerPctAllowed =
-    capacity > 0 ? Math.max(5, Math.min(30, 100 * (1 - recInfantryPct / 100 - MIN_JOINER_MARKSMAN / capacity))) : 30;
+  const marksmanFloorPct = capacity > 0 ? (marksmanFloor / capacity) * 100 : MARKSMAN_MIN_PCT * 100;
+  const maxLancerPctAllowed = Math.max(5, Math.min(MAX_JOINER_LANCER_PCT * 100, 100 - recInfantryPct - marksmanFloorPct));
   const effectiveLancerPct = Math.min(recLancerPct, maxLancerPctAllowed);
 
   // Manual composition (used when strategy === 'manual')
@@ -1319,10 +1341,10 @@ export default function App() {
         capacity,
         joinerAvailable,
         numSquads,
-        { infantry: Math.max(DIVERSITY_FLOOR, Math.round(capacity * (recInfantryPct / 100))), lancer: Math.max(DIVERSITY_FLOOR, Math.round(capacity * (effectiveLancerPct / 100))), marksman: MIN_JOINER_MARKSMAN },
+        { infantry: Math.max(DIVERSITY_FLOOR, Math.round(capacity * (recInfantryPct / 100))), lancer: Math.max(DIVERSITY_FLOOR, Math.round(capacity * (effectiveLancerPct / 100))), marksman: marksmanFloor },
         { infantry: infantryCap }
       ),
-    [capacity, joinerAvailable, numSquads, infantryCap, recInfantryPct, effectiveLancerPct]
+    [capacity, joinerAvailable, numSquads, infantryCap, recInfantryPct, effectiveLancerPct, marksmanFloor]
   );
 
   // Marksman is guaranteed a floor and gets fill priority for whatever's left
@@ -1331,12 +1353,12 @@ export default function App() {
   // between 0.5% and 3% of capacity; Lancer targets ~10% of capacity so it
   // still follows the ratio guidance whenever the pool has enough troops.
   const strongFloors = useMemo(
-    () => ({ infantry: Math.min(Math.max(infantryFloor, strongInfantry), infantryCap), lancer: lancerFloor, marksman: MIN_JOINER_MARKSMAN }),
-    [strongInfantry, infantryCap, infantryFloor, lancerFloor]
+    () => ({ infantry: Math.min(Math.max(infantryFloor, strongInfantry), infantryCap), lancer: lancerFloor, marksman: marksmanFloor }),
+    [strongInfantry, infantryCap, infantryFloor, lancerFloor, marksmanFloor]
   );
   const weakFloors = useMemo(
-    () => ({ infantry: infantryFloor, lancer: lancerFloor, marksman: Math.max(MIN_JOINER_MARKSMAN, minWeakMarksman) }),
-    [minWeakMarksman, infantryFloor, lancerFloor]
+    () => ({ infantry: infantryFloor, lancer: lancerFloor, marksman: Math.max(marksmanFloor, minWeakMarksman) }),
+    [minWeakMarksman, infantryFloor, lancerFloor, marksmanFloor]
   );
 
   // Reserve the Weaker tier's guaranteed minimums FIRST, so the Stronger
@@ -1396,12 +1418,40 @@ export default function App() {
   const unfilledSpaces = Math.max(0, totalCapacityRequired - totalAllocated);
   const noTroopsEntered = totalAvailable === 0;
 
+  // Lightweight toast/snackbar — used for "Undo" after a destructive action
+  // and for copy-to-clipboard confirmation. Auto-dismisses after a delay.
+  const [toast, setToast] = useState(null); // { message, actionLabel, onAction }
+  const toastTimerRef = useRef(null);
+  function showToast(message, actionLabel, onAction, duration = 6000) {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast({ message, actionLabel, onAction });
+    toastTimerRef.current = setTimeout(() => setToast(null), duration);
+  }
+  function dismissToast() {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast(null);
+  }
+
   function clearTroops() {
+    const snapshot = { t10, t9, fills };
     setT10(EMPTY);
     setT9(EMPTY);
     setFills({});
+    showToast(tr("clearedTroopsToast"), tr("undoAction"), () => {
+      setT10(snapshot.t10);
+      setT9(snapshot.t9);
+      setFills(snapshot.fills);
+      dismissToast();
+    });
   }
   function resetAll() {
+    const snapshot = {
+      capacity, numSquads, t10, t9,
+      mode, ratio, exact,
+      strategy, numStronger, strongInfantry, minWeakMarksman,
+      rallyCapacity, cyrilleBoost, snowApeBoost, ministerBoost, rallyMode, rallyRatio, rallyExact,
+      recInfantryPct, recLancerPct, fills,
+    };
     setCapacity(110000);
     setNumSquads(6);
     setT10(SAMPLE.t10);
@@ -1428,6 +1478,30 @@ export default function App() {
     } catch {
       // storage unavailable — state is already reset regardless
     }
+    showToast(tr("resetToast"), tr("undoAction"), () => {
+      setCapacity(snapshot.capacity);
+      setNumSquads(snapshot.numSquads);
+      setT10(snapshot.t10);
+      setT9(snapshot.t9);
+      setMode(snapshot.mode);
+      setRatio(snapshot.ratio);
+      setExact(snapshot.exact);
+      setStrategy(snapshot.strategy);
+      setNumStronger(snapshot.numStronger);
+      setStrongInfantry(snapshot.strongInfantry);
+      setMinWeakMarksman(snapshot.minWeakMarksman);
+      setRallyCapacity(snapshot.rallyCapacity);
+      setCyrilleBoost(snapshot.cyrilleBoost);
+      setSnowApeBoost(snapshot.snowApeBoost);
+      setMinisterBoost(snapshot.ministerBoost);
+      setRallyMode(snapshot.rallyMode);
+      setRallyRatio(snapshot.rallyRatio);
+      setRallyExact(snapshot.rallyExact);
+      setRecInfantryPct(snapshot.recInfantryPct);
+      setRecLancerPct(snapshot.recLancerPct);
+      setFills(snapshot.fills);
+      dismissToast();
+    });
   }
   function applyRecommendedToManual() {
     setStrategy("manual");
@@ -1437,6 +1511,45 @@ export default function App() {
 
   const remT10 = computation.pools.t10;
   const remT9 = computation.pools.t9;
+
+  // Builds a plain-text summary of the whole squad plan, formatted for
+  // pasting straight into a Discord or alliance chat message.
+  function buildShareText() {
+    const lines = ["🐻 Bear Trap Squad Plan"];
+    if (rallyComputation.result) {
+      const r = rallyComputation.result;
+      lines.push(
+        `${tr("leaderLabel")}: ${fmt(r.breakdown.infantry.total)} ${tType("infantry", lang)} / ${fmt(r.breakdown.lancer.total)} ${tType("lancer", lang)} / ${fmt(r.breakdown.marksman.total)} ${tType("marksman", lang)} — ${r.status === "full" ? tr("fullPill") : tr("partialPill")}`
+      );
+    }
+    lines.push("");
+    computation.squads.forEach((sq, i) => {
+      if (!sq) return;
+      const tierText = strategy === "tiered" ? ` (${i < numStrongerClamped ? tr("strongerLabel") : tr("weakerLabel")})` : "";
+      lines.push(
+        `${tr("squadLabel")} ${i + 1}${tierText}: ${fmt(sq.breakdown.infantry.total)} ${tType("infantry", lang)} / ${fmt(sq.breakdown.lancer.total)} ${tType("lancer", lang)} / ${fmt(sq.breakdown.marksman.total)} ${tType("marksman", lang)} — ${sq.status === "full" ? tr("fullPill") : tr("partialPill")}`
+      );
+    });
+    lines.push("");
+    lines.push(
+      `${tr("remainingTroopsHeading")}: ${tType("infantry", lang)} ${fmt(remT10.infantry + remT9.infantry)} · ${tType("lancer", lang)} ${fmt(remT10.lancer + remT9.lancer)} · ${tType("marksman", lang)} ${fmt(remT10.marksman + remT9.marksman)}`
+    );
+    return lines.join("\n");
+  }
+
+  async function handleCopyPlan() {
+    const text = buildShareText();
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        throw new Error("clipboard API unavailable");
+      }
+      showToast(tr("copiedToast"), null, null, 2500);
+    } catch {
+      showToast(tr("copyFailedToast"), null, null, 3000);
+    }
+  }
 
   return (
     <div
@@ -1958,7 +2071,10 @@ export default function App() {
           </div>
         ) : (
           <div>
-            <SectionHeader title={`${tr("squadResults")} (${numSquads})`} />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, flexWrap: "wrap" }}>
+              <SectionHeader title={`${tr("squadResults")} (${numSquads})`} />
+              <Btn tone="ghost" small onClick={handleCopyPlan}>📋 {tr("copyPlan")}</Btn>
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {computation.squads.map((sq, i) => (
                 <SquadCard
@@ -2008,6 +2124,57 @@ export default function App() {
         </div>
         </div>
       </div>
+
+      {toast && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 20,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 100,
+            background: C.gold,
+            color: C.surface,
+            borderRadius: 999,
+            padding: "10px 10px 10px 18px",
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            boxShadow: "0 6px 20px rgba(33,70,65,.35)",
+            fontFamily: "'Nunito Sans', sans-serif",
+            fontSize: 13,
+            fontWeight: 700,
+            maxWidth: "calc(100% - 32px)",
+          }}
+        >
+          <span>{toast.message}</span>
+          {toast.actionLabel && (
+            <button
+              onClick={toast.onAction}
+              style={{
+                background: C.goldStrong,
+                color: C.cocoaDark,
+                border: "none",
+                borderRadius: 999,
+                padding: "7px 14px",
+                fontWeight: 800,
+                fontSize: 12.5,
+                cursor: "pointer",
+                flexShrink: 0,
+              }}
+            >
+              {toast.actionLabel}
+            </button>
+          )}
+          <button
+            onClick={dismissToast}
+            aria-label="Dismiss"
+            style={{ background: "none", border: "none", color: C.surface, opacity: 0.7, cursor: "pointer", fontSize: 16, padding: "4px 6px", flexShrink: 0 }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   );
 }
