@@ -68,6 +68,8 @@ const TRANSLATIONS = {
     squadStrategy: "Squad strategy", squadStrategySub: "How the joiner composition is decided.",
     manual: "Short on Troops", manualNote: "Not enough troops? Set the exact split yourself.",
     recommended: "Enough Troops", recommendedNote: "Ton Ton's ratios — sliders adjust for your setup.",
+    remainingAfterLabel: "Left after this squad", presetsLabel: "Saved setups", savePresetBtn: "💾 Save setup", presetNamePrompt: "Name this setup", loadPresetBtn: "Load", deletePresetBtn: "Delete", presetSavedToast: "Setup saved.", noPresetsYet: "No saved setups yet.", accountALabel: "Account A", accountBLabel: "Account B", switchedAccountToast: "Switched account.",
+    autoSplitBtn: "⚡ Auto Split", autoSplitApplied: "Auto split applied — fine-tune below.", minMarchMarksmanLabel: "Minimum Marksman per march", minMarchMarksmanHelp: "Auto Split tries to guarantee this much Marksman per march first, stock permitting. Leave at 0 for no minimum.",
     recPoolWarningShort: "May not work", recPoolWarningBanner: "This option may not work with your current troop pool — Marksman could fall below the 60,000 minimum. Try \u201cShort on Troops\u201d instead if that happens.",
     tiered: "Tiered", tieredNote: "Stronger squads fill first, Weaker split the rest.",
     squadResults: "Squad results", remainingTroopsHeading: "Remaining troops",
@@ -124,6 +126,8 @@ const TRANSLATIONS = {
     squadStrategy: "Strategia squadra", squadStrategySub: "Come viene decisa la composizione delle squadre di supporto.",
     manual: "Truppe insufficienti", manualNote: "Non hai abbastanza truppe? Imposta tu la suddivisione esatta.",
     recommended: "Truppe sufficienti", recommendedNote: "Le percentuali di Ton Ton — i cursori si adattano al tuo setup.",
+    remainingAfterLabel: "Rimasti dopo questa squadra", presetsLabel: "Configurazioni salvate", savePresetBtn: "💾 Salva configurazione", presetNamePrompt: "Nome di questa configurazione", loadPresetBtn: "Carica", deletePresetBtn: "Elimina", presetSavedToast: "Configurazione salvata.", noPresetsYet: "Nessuna configurazione salvata.", accountALabel: "Account A", accountBLabel: "Account B", switchedAccountToast: "Account cambiato.",
+    autoSplitBtn: "⚡ Divisione automatica", autoSplitApplied: "Divisione automatica applicata — regola qui sotto.", minMarchMarksmanLabel: "Tiratori minimi per marcia", minMarchMarksmanHelp: "La Divisione automatica cerca di garantire prima questa quantità di Tiratori per marcia, riserva permettendo. Lascia 0 per nessun minimo.",
     recPoolWarningShort: "Potrebbe non funzionare", recPoolWarningBanner: "Questa opzione potrebbe non funzionare con la tua riserva attuale — i Tiratori potrebbero scendere sotto il minimo di 60.000. Se succede, prova \u201cTruppe insufficienti\u201d.",
     tiered: "A livelli", tieredNote: "Le squadre Forti si riempiono per prime, le Deboli si dividono il resto.",
     squadResults: "Risultati squadra", remainingTroopsHeading: "Truppe rimanenti",
@@ -180,6 +184,8 @@ const TRANSLATIONS = {
     squadStrategy: "Estrategia de escuadrón", squadStrategySub: "Cómo se decide la composición de los escuadrones de apoyo.",
     manual: "Tropas insuficientes", manualNote: "¿No tienes suficientes tropas? Define tú el reparto exacto.",
     recommended: "Tropas suficientes", recommendedNote: "Las proporciones de Ton Ton — los controles se ajustan a tu configuración.",
+    remainingAfterLabel: "Restantes tras este escuadrón", presetsLabel: "Configuraciones guardadas", savePresetBtn: "💾 Guardar configuración", presetNamePrompt: "Nombre de esta configuración", loadPresetBtn: "Cargar", deletePresetBtn: "Eliminar", presetSavedToast: "Configuración guardada.", noPresetsYet: "Aún no hay configuraciones guardadas.", accountALabel: "Cuenta A", accountBLabel: "Cuenta B", switchedAccountToast: "Cuenta cambiada.",
+    autoSplitBtn: "⚡ División automática", autoSplitApplied: "División automática aplicada — ajusta abajo.", minMarchMarksmanLabel: "Tiradores mínimos por marcha", minMarchMarksmanHelp: "División automática intenta garantizar primero esta cantidad de Tiradores por marcha, si la reserva lo permite. Deja 0 para no fijar un mínimo.",
     recPoolWarningShort: "Podría no funcionar", recPoolWarningBanner: "Esta opción podría no funcionar con tu reserva actual — los Tiradores podrían caer por debajo del mínimo de 60.000. Si pasa, prueba \u201cTropas insuficientes\u201d.",
     tiered: "Por niveles", tieredNote: "Los escuadrones Fuertes se llenan primero, los Débiles reparten el resto.",
     squadResults: "Resultados del escuadrón", remainingTroopsHeading: "Tropas restantes",
@@ -236,6 +242,8 @@ const TRANSLATIONS = {
     squadStrategy: "부대 전략", squadStrategySub: "지원 부대의 구성을 결정하는 방식입니다.",
     manual: "병력 부족", manualNote: "병력이 부족한가요? 정확한 분배를 직접 설정하세요.",
     recommended: "병력 충분", recommendedNote: "Ton Ton의 비율 — 슬라이더로 설정에 맞게 조정하세요.",
+    remainingAfterLabel: "이 부대 이후 남은 병력", presetsLabel: "저장된 설정", savePresetBtn: "💾 설정 저장", presetNamePrompt: "이 설정의 이름", loadPresetBtn: "불러오기", deletePresetBtn: "삭제", presetSavedToast: "설정이 저장되었습니다.", noPresetsYet: "저장된 설정이 없습니다.", accountALabel: "계정 A", accountBLabel: "계정 B", switchedAccountToast: "계정이 전환되었습니다.",
+    autoSplitBtn: "⚡ 자동 분배", autoSplitApplied: "자동 분배가 적용되었습니다 — 아래에서 세부 조정하세요.", minMarchMarksmanLabel: "행군당 최소 저격수", minMarchMarksmanHelp: "자동 분배는 보유량이 허용하는 한 행군당 이만큼의 저격수를 먼저 확보하려 합니다. 최소치를 두지 않으려면 0으로 두세요.",
     recPoolWarningShort: "작동하지 않을 수 있음", recPoolWarningBanner: "현재 병력 보유량으로는 이 옵션이 맞지 않을 수 있습니다 — 저격수가 60,000 미만으로 떨어질 수 있습니다. 이 경우 \u201c병력 부족\u201d을 사용해 보세요.",
     tiered: "단계별", tieredNote: "강한 부대가 먼저 채워지고, 약한 부대가 나머지를 나눕니다.",
     squadResults: "부대 결과", remainingTroopsHeading: "남은 병력",
@@ -292,6 +300,8 @@ const TRANSLATIONS = {
     squadStrategy: "Truppstrategie", squadStrategySub: "Wie die Zusammensetzung der Verstärkungstrupps entschieden wird.",
     manual: "Zu wenig Truppen", manualNote: "Nicht genug Truppen? Lege die genaue Aufteilung selbst fest.",
     recommended: "Genug Truppen", recommendedNote: "Ton Tons Verhältnisse — Regler passen sich deinem Setup an.",
+    remainingAfterLabel: "Übrig nach diesem Trupp", presetsLabel: "Gespeicherte Setups", savePresetBtn: "💾 Setup speichern", presetNamePrompt: "Name für dieses Setup", loadPresetBtn: "Laden", deletePresetBtn: "Löschen", presetSavedToast: "Setup gespeichert.", noPresetsYet: "Noch keine gespeicherten Setups.", accountALabel: "Konto A", accountBLabel: "Konto B", switchedAccountToast: "Konto gewechselt.",
+    autoSplitBtn: "⚡ Automatisch aufteilen", autoSplitApplied: "Automatische Aufteilung angewendet — unten feinjustieren.", minMarchMarksmanLabel: "Minimum Scharfschützen pro Marsch", minMarchMarksmanHelp: "Automatisch aufteilen versucht zuerst, diese Menge Scharfschützen pro Marsch zu garantieren, sofern der Bestand es zulässt. Bei 0 kein Minimum.",
     recPoolWarningShort: "Funktioniert eventuell nicht", recPoolWarningBanner: "Diese Option funktioniert mit deinem aktuellen Truppenbestand eventuell nicht — Scharfschützen könnten unter das Minimum von 60.000 fallen. Versuch in dem Fall \u201cZu wenig Truppen\u201d.",
     tiered: "Gestuft", tieredNote: "Starke Trupps werden zuerst aufgefüllt, schwache teilen sich den Rest.",
     squadResults: "Truppergebnisse", remainingTroopsHeading: "Verbleibende Truppen",
@@ -348,6 +358,8 @@ const TRANSLATIONS = {
     squadStrategy: "Стратегия отряда", squadStrategySub: "Как определяется состав отрядов поддержки.",
     manual: "Не хватает войск", manualNote: "Не хватает войск? Задайте точное распределение сами.",
     recommended: "Войск достаточно", recommendedNote: "Соотношения Ton Ton — ползунки подстраиваются под вашу настройку.",
+    remainingAfterLabel: "Осталось после этого отряда", presetsLabel: "Сохранённые настройки", savePresetBtn: "💾 Сохранить настройку", presetNamePrompt: "Название настройки", loadPresetBtn: "Загрузить", deletePresetBtn: "Удалить", presetSavedToast: "Настройка сохранена.", noPresetsYet: "Пока нет сохранённых настроек.", accountALabel: "Аккаунт A", accountBLabel: "Аккаунт B", switchedAccountToast: "Аккаунт переключён.",
+    autoSplitBtn: "⚡ Авторазделение", autoSplitApplied: "Авторазделение применено — настройте ниже.", minMarchMarksmanLabel: "Минимум стрелков на поход", minMarchMarksmanHelp: "Авторазделение сначала пытается гарантировать это количество стрелков на поход, если позволяет резерв. Оставьте 0, чтобы не задавать минимум.",
     recPoolWarningShort: "Может не сработать", recPoolWarningBanner: "Этот вариант может не сработать с вашим текущим резервом — стрелки могут упасть ниже минимума в 60 000. Если так случится, попробуйте \u201cНе хватает войск\u201d.",
     tiered: "Многоуровневая", tieredNote: "Сильные отряды заполняются первыми, слабые делят остаток.",
     squadResults: "Результаты по отрядам", remainingTroopsHeading: "Оставшиеся войска",
@@ -404,6 +416,8 @@ const TRANSLATIONS = {
     squadStrategy: "Strategia oddziału", squadStrategySub: "Jak ustalany jest skład oddziałów wsparcia.",
     manual: "Za mało wojsk", manualNote: "Za mało wojsk? Ustaw dokładny podział samodzielnie.",
     recommended: "Wystarczająco wojsk", recommendedNote: "Proporcje Ton Ton — suwaki dostosowują się do Twojej konfiguracji.",
+    remainingAfterLabel: "Pozostało po tym oddziale", presetsLabel: "Zapisane konfiguracje", savePresetBtn: "💾 Zapisz konfigurację", presetNamePrompt: "Nazwa tej konfiguracji", loadPresetBtn: "Wczytaj", deletePresetBtn: "Usuń", presetSavedToast: "Konfiguracja zapisana.", noPresetsYet: "Brak zapisanych konfiguracji.", accountALabel: "Konto A", accountBLabel: "Konto B", switchedAccountToast: "Zmieniono konto.",
+    autoSplitBtn: "⚡ Automatyczny podział", autoSplitApplied: "Zastosowano automatyczny podział — dostosuj poniżej.", minMarchMarksmanLabel: "Minimalna liczba Strzelców na marsz", minMarchMarksmanHelp: "Automatyczny podział najpierw próbuje zagwarantować tę liczbę Strzelców na marsz, o ile pula na to pozwala. Zostaw 0, aby nie ustawiać minimum.",
     recPoolWarningShort: "Może nie zadziałać", recPoolWarningBanner: "Ta opcja może nie zadziałać z Twoją obecną pulą — Strzelcy mogą spaść poniżej minimum 60 000. Jeśli tak się stanie, spróbuj \u201cZa mało wojsk\u201d.",
     tiered: "Warstwowy", tieredNote: "Silne oddziały wypełniane są jako pierwsze, słabe dzielą resztę.",
     squadResults: "Wyniki oddziału", remainingTroopsHeading: "Pozostałe wojska",
@@ -460,6 +474,8 @@ const TRANSLATIONS = {
     squadStrategy: "Birlik stratejisi", squadStrategySub: "Destek birliklerinin bileşiminin nasıl belirlendiği.",
     manual: "Asker Yetersiz", manualNote: "Yeterli asker yok mu? Kesin dağılımı kendiniz belirleyin.",
     recommended: "Asker Yeterli", recommendedNote: "Ton Ton\u2019un oranları — kaydırıcılar kurulumunuza göre ayarlanır.",
+    remainingAfterLabel: "Bu birlikten sonra kalan", presetsLabel: "Kayıtlı kurulumlar", savePresetBtn: "💾 Kurulumu kaydet", presetNamePrompt: "Bu kuruluma isim ver", loadPresetBtn: "Yükle", deletePresetBtn: "Sil", presetSavedToast: "Kurulum kaydedildi.", noPresetsYet: "Henüz kayıtlı kurulum yok.", accountALabel: "Hesap A", accountBLabel: "Hesap B", switchedAccountToast: "Hesap değiştirildi.",
+    autoSplitBtn: "⚡ Otomatik Bölüştür", autoSplitApplied: "Otomatik bölüştürme uygulandı — aşağıdan ince ayar yapın.", minMarchMarksmanLabel: "Sefer başına minimum Nişancı", minMarchMarksmanHelp: "Otomatik Bölüştür, havuz izin verdiği sürece önce sefer başına bu kadar Nişancı garanti etmeye çalışır. Minimum istemiyorsanız 0 bırakın.",
     recPoolWarningShort: "Çalışmayabilir", recPoolWarningBanner: "Bu seçenek mevcut asker havuzunuzla çalışmayabilir — Nişancı 60.000 minimumunun altına düşebilir. Bu olursa \u201cAsker Yetersiz\u201d seçeneğini deneyin.",
     tiered: "Kademeli", tieredNote: "Güçlü birlikler önce doldurulur, Zayıf birlikler kalanı paylaşır.",
     squadResults: "Birlik sonuçları", remainingTroopsHeading: "Kalan askerler",
@@ -1139,10 +1155,22 @@ function SquadCard({ index, squadKey, result, invalid, onAcceptFill, onRemoveFil
   const t9Used = TYPES.reduce((s, t) => s + result.breakdown[t].t9, 0);
   const usesT9 = t9Used > 0;
 
+  // Full squads auto-collapse to a single summary line so partially-filled
+  // squads are easier to spot while scrolling. Clicking the header always
+  // lets the player re-expand (or manually collapse) any squad.
+  const [collapsed, setCollapsed] = useState(isFull);
+  useEffect(() => {
+    if (isFull) setCollapsed(true);
+  }, [isFull]);
+
   return (
     <Card style={{ borderColor, borderLeft: tierAccent ? `4px solid ${tierAccent}` : undefined }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 8, flexWrap: "wrap" }}>
-        <div style={{ fontWeight: 600, color: C.ink, fontSize: 15.5 }}>
+      <div
+        onClick={() => setCollapsed(!collapsed)}
+        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: collapsed ? 0 : 12, gap: 8, flexWrap: "wrap", cursor: "pointer" }}
+      >
+        <div style={{ fontWeight: 600, color: C.ink, fontSize: 15.5, display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ color: C.sub, fontSize: 12, width: 12, display: "inline-block" }}>{collapsed ? "▸" : "▾"}</span>
           {index === "Leader" ? tWord("leaderLabel", lang) : `${tWord("squadLabel", lang)} ${index}`} {tierLabel && <span style={{ fontSize: 10.5, fontWeight: 500, color: C.sub, textTransform: "uppercase", marginLeft: 6 }}>{tWord(tierLabel === "stronger" ? "strongerLabel" : "weakerLabel", lang)}</span>}
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -1151,6 +1179,12 @@ function SquadCard({ index, squadKey, result, invalid, onAcceptFill, onRemoveFil
         </div>
       </div>
 
+      {collapsed ? (
+        <div style={{ fontSize: 12, color: C.sub, marginTop: 8 }}>
+          {fmt(result.breakdown.infantry.total)} {tType("infantry", lang)} · {fmt(result.breakdown.lancer.total)} {tType("lancer", lang)} · {fmt(result.breakdown.marksman.total)} {tType("marksman", lang)}
+        </div>
+      ) : (
+        <>
       <ProgressBar pct={fillPct} tone={tone} />
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 600, color: C.ink, marginTop: 7, marginBottom: 16 }}>
         <span>{fmt(result.totalAllocated)} / {fmt(result.totalAllocated + result.capacityRemaining)}</span>
@@ -1189,6 +1223,12 @@ function SquadCard({ index, squadKey, result, invalid, onAcceptFill, onRemoveFil
         {result.pctOf(result.breakdown.marksman.total).toFixed(1)}% {tWord("markAbbr", lang)} &nbsp;|&nbsp; T10 {result.t10Pct.toFixed(0)}% / T9 {result.t9Pct.toFixed(0)}%
       </div>
 
+      {result.remainingAfter && (
+        <div style={{ fontSize: 11, color: C.sub, marginBottom: 10, background: "var(--tierTrackBg)", borderRadius: 10, padding: "6px 10px" }}>
+          {tWord("remainingAfterLabel", lang)}: {tType("infantry", lang)} {fmt(result.remainingAfter.infantry)} · {tType("lancer", lang)} {fmt(result.remainingAfter.lancer)} · {tType("marksman", lang)} {fmt(result.remainingAfter.marksman)}
+        </div>
+      )}
+
       {result.appliedFills && result.appliedFills.length > 0 && (
         <div style={{ marginBottom: 10, display: "flex", flexDirection: "column", gap: 6 }}>
           {result.appliedFills.map((f, i) => (
@@ -1216,6 +1256,8 @@ function SquadCard({ index, squadKey, result, invalid, onAcceptFill, onRemoveFil
             </div>
           )}
         </div>
+      )}
+        </>
       )}
     </Card>
   );
@@ -1292,20 +1334,63 @@ const SAMPLE = {
 const EMPTY = { infantry: 0, lancer: 0, marksman: 0 };
 
 const STORAGE_KEY = "bearTrapCalculator:v1";
+const ACTIVE_ACCOUNT_KEY = "bearTrapCalculator:activeAccount";
+const PRESETS_KEY = "bearTrapCalculator:presets";
 
-function loadSaved() {
+function accountStorageKey(id) {
+  return `${STORAGE_KEY}:${id}`;
+}
+
+function readActiveAccount() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    return localStorage.getItem(ACTIVE_ACCOUNT_KEY) || "A";
+  } catch {
+    return "A";
+  }
+}
+
+/* Loads one account's saved data. The very first time Account A is read and
+   it has nothing of its own yet, this quietly migrates whatever was saved
+   under the old single-account key — so existing players don't lose their
+   setup just because two-account support showed up. */
+function loadSavedForAccount(id) {
+  try {
+    const raw = localStorage.getItem(accountStorageKey(id));
+    if (raw) return JSON.parse(raw);
+    if (id === "A") {
+      const legacy = localStorage.getItem(STORAGE_KEY);
+      if (legacy) return JSON.parse(legacy);
+    }
+    return null;
   } catch {
     return null; // private browsing / storage disabled / corrupted data — just fall back to defaults
   }
 }
 
+function loadPresets() {
+  try {
+    const raw = localStorage.getItem(PRESETS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePresetsToStorage(list) {
+  try {
+    localStorage.setItem(PRESETS_KEY, JSON.stringify(list));
+  } catch {
+    // storage unavailable — presets just won't persist across reloads
+  }
+}
+
 export default function App() {
-  // Loaded once on first render; every piece of state below falls back to
-  // its normal default if nothing was saved (or saving is unavailable).
-  const [saved] = useState(loadSaved);
+  // Which of the two accounts is currently active, and that account's saved
+  // data — both loaded once on first render. Every piece of state below
+  // falls back to its normal default if nothing was saved for it.
+  const [activeAccount, setActiveAccount] = useState(readActiveAccount);
+  const [saved] = useState(() => loadSavedForAccount(activeAccount));
+  const [presets, setPresets] = useState(loadPresets);
 
   const [capacity, setCapacity] = useState(saved?.capacity ?? 110000);
   const [numSquads, setNumSquads] = useState(saved?.numSquads ?? 6);
@@ -1327,6 +1412,9 @@ export default function App() {
   const [mode, setMode] = useState(saved?.mode ?? "ratio");
   const [ratio, setRatio] = useState(saved?.ratio ?? { infantry: 2, lancer: 15, marksman: 83 });
   const [exact, setExact] = useState(saved?.exact ?? { infantry: 2200, lancer: 16500, marksman: 91300 });
+  // Feeds the Auto Split button below — a floor Auto Split tries to guarantee
+  // for Marksman per march, stock permitting.
+  const [minMarchMarksman, setMinMarchMarksman] = useState(saved?.minMarchMarksman ?? 0);
 
   // Squad strategy: manual | recommended
   const [strategy, setStrategy] = useState(saved?.strategy ?? "manual");
@@ -1358,15 +1446,16 @@ export default function App() {
     });
   }
 
-  // Auto-save everything the player has entered so it survives a refresh.
-  // Runs after every relevant change; silently no-ops if storage is unavailable.
+  // Auto-save everything the player has entered so it survives a refresh —
+  // scoped to whichever account is currently active, so switching accounts
+  // never mixes the two troop pools together.
   useEffect(() => {
     try {
       localStorage.setItem(
-        STORAGE_KEY,
+        accountStorageKey(activeAccount),
         JSON.stringify({
           capacity, numSquads, t10, t9,
-          mode, ratio, exact,
+          mode, ratio, exact, minMarchMarksman,
           strategy,
           rallyCapacity, cyrilleBoost, snowApeBoost, ministerBoost, rallyMode, rallyRatio, rallyExact,
           advancedOpen, darkMode, lang, fills, recInfantryPct, recLancerPct,
@@ -1376,8 +1465,9 @@ export default function App() {
       // storage full or disabled — nothing to do, the app still works without it
     }
   }, [
+    activeAccount,
     capacity, numSquads, t10, t9,
-    mode, ratio, exact,
+    mode, ratio, exact, minMarchMarksman,
     strategy,
     rallyCapacity, cyrilleBoost, snowApeBoost, ministerBoost, rallyMode, rallyRatio, rallyExact,
     advancedOpen, darkMode, lang, fills, recInfantryPct, recLancerPct,
@@ -1451,7 +1541,13 @@ export default function App() {
         squads.push(null);
         continue;
       }
-      squads.push(allocateSquad(capacity, tgt, pools, fills[i + 1] || []));
+      const sq = allocateSquad(capacity, tgt, pools, fills[i + 1] || []);
+      // Snapshot what's left in the shared pool right after this squad draws
+      // from it, so Squad Results can show a running total while scrolling
+      // instead of making the player jump back up to Remaining Troops.
+      sq.remainingAfter = {};
+      TYPES.forEach((t) => (sq.remainingAfter[t] = pools.t10[t] + pools.t9[t]));
+      squads.push(sq);
     }
     return { squads, pools };
   }, [rallyComputation, numSquads, strategy, targetManual, recommendedTarget, capacity, fills]);
@@ -1469,6 +1565,10 @@ export default function App() {
   // Lightweight toast/snackbar — used for "Undo" after a destructive action
   // and for copy-to-clipboard confirmation. Auto-dismisses after a delay.
   const [toast, setToast] = useState(null); // { message, actionLabel, onAction }
+  // Bumped whenever Auto Split or "Use Recommended's numbers" writes new
+  // values into the Exact fields, so that panel can briefly flash to show
+  // something changed without the player having to notice on their own.
+  const [flashSignal, setFlashSignal] = useState(0);
   const toastTimerRef = useRef(null);
   function showToast(message, actionLabel, onAction, duration = 6000) {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
@@ -1495,7 +1595,7 @@ export default function App() {
   function resetAll() {
     const snapshot = {
       capacity, numSquads, t10, t9,
-      mode, ratio, exact,
+      mode, ratio, exact, minMarchMarksman,
       strategy,
       rallyCapacity, cyrilleBoost, snowApeBoost, ministerBoost, rallyMode, rallyRatio, rallyExact,
       recInfantryPct, recLancerPct, fills,
@@ -1507,6 +1607,7 @@ export default function App() {
     setMode("ratio");
     setRatio({ infantry: 2, lancer: 15, marksman: 83 });
     setExact({ infantry: 2200, lancer: 16500, marksman: 91300 });
+    setMinMarchMarksman(0);
     setStrategy("manual");
     setRallyCapacity(140000);
     setCyrilleBoost(0);
@@ -1519,7 +1620,7 @@ export default function App() {
     setRecLancerPct(MIN_JOINER_LANCER_PCT * 100);
     setFills({});
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(accountStorageKey(activeAccount));
     } catch {
       // storage unavailable — state is already reset regardless
     }
@@ -1531,6 +1632,7 @@ export default function App() {
       setMode(snapshot.mode);
       setRatio(snapshot.ratio);
       setExact(snapshot.exact);
+      setMinMarchMarksman(snapshot.minMarchMarksman);
       setStrategy(snapshot.strategy);
       setRallyCapacity(snapshot.rallyCapacity);
       setCyrilleBoost(snapshot.cyrilleBoost);
@@ -1545,10 +1647,107 @@ export default function App() {
       dismissToast();
     });
   }
+  // The full shape of "one account's setup" — reused for switching between
+  // Account A/B and for saving/loading named presets, since they're the
+  // same kind of snapshot.
+  function buildAccountSnapshot() {
+    return {
+      capacity, numSquads, t10, t9,
+      mode, ratio, exact, minMarchMarksman,
+      strategy,
+      rallyCapacity, cyrilleBoost, snowApeBoost, ministerBoost, rallyMode, rallyRatio, rallyExact,
+      recInfantryPct, recLancerPct, fills,
+    };
+  }
+  function applyAccountSnapshot(data) {
+    setCapacity(data.capacity ?? 110000);
+    setNumSquads(data.numSquads ?? 6);
+    setT10(data.t10 ?? SAMPLE.t10);
+    setT9(data.t9 ?? SAMPLE.t9);
+    setMode(data.mode ?? "ratio");
+    setRatio(data.ratio ?? { infantry: 2, lancer: 15, marksman: 83 });
+    setExact(data.exact ?? { infantry: 2200, lancer: 16500, marksman: 91300 });
+    setMinMarchMarksman(data.minMarchMarksman ?? 0);
+    setStrategy(data.strategy ?? "manual");
+    setRallyCapacity(data.rallyCapacity ?? 140000);
+    setCyrilleBoost(data.cyrilleBoost ?? 0);
+    setSnowApeBoost(data.snowApeBoost ?? 0);
+    setMinisterBoost(data.ministerBoost ?? 0);
+    setRallyMode(data.rallyMode ?? "exact");
+    setRallyRatio(data.rallyRatio ?? { infantry: 0, lancer: 0, marksman: 0 });
+    setRallyExact(data.rallyExact ?? { infantry: 0, lancer: 0, marksman: 0 });
+    setRecInfantryPct(data.recInfantryPct ?? MIN_JOINER_INFANTRY_PCT * 100);
+    setRecLancerPct(data.recLancerPct ?? MIN_JOINER_LANCER_PCT * 100);
+    setFills(data.fills ?? {});
+    setFlashSignal((n) => n + 1);
+  }
+
+  // Two accounts, two independent troop pools — switching saves whatever
+  // the player was just looking at under the account they're leaving, then
+  // loads the other account's own saved setup (or clean defaults, the
+  // first time it's used).
+  function switchAccount(target) {
+    if (target === activeAccount) return;
+    try {
+      localStorage.setItem(accountStorageKey(activeAccount), JSON.stringify(buildAccountSnapshot()));
+      localStorage.setItem(ACTIVE_ACCOUNT_KEY, target);
+    } catch {
+      // storage unavailable — still switch in memory for this session
+    }
+    applyAccountSnapshot(loadSavedForAccount(target) || {});
+    setActiveAccount(target);
+    showToast(tr("switchedAccountToast"), null, null, 2000);
+  }
+
+  // Named presets — a separate saved list, independent of the two accounts,
+  // for players who want to keep more than one reference setup around
+  // (e.g. different event sizes) without losing their current work.
+  function handleSavePreset() {
+    const name = typeof window !== "undefined" ? window.prompt(tr("presetNamePrompt")) : null;
+    if (!name) return;
+    const updated = [...presets, { id: Date.now().toString(), name, data: buildAccountSnapshot() }];
+    setPresets(updated);
+    savePresetsToStorage(updated);
+    showToast(tr("presetSavedToast"), null, null, 2000);
+  }
+  function handleLoadPreset(preset) {
+    applyAccountSnapshot(preset.data);
+  }
+  function handleDeletePreset(id) {
+    const updated = presets.filter((p) => p.id !== id);
+    setPresets(updated);
+    savePresetsToStorage(updated);
+  }
+
   function applyRecommendedToManual() {
     setStrategy("manual");
     setMode("exact");
     setExact({ infantry: recommendedTarget.infantry, lancer: recommendedTarget.lancer, marksman: recommendedTarget.marksman });
+    setFlashSignal((n) => n + 1);
+  }
+
+  // Auto Split — a one-tap starting point for "Short on Troops": splits
+  // whatever's actually left in the pool evenly across every march, trying
+  // to guarantee the requested Marksman minimum first (stock permitting),
+  // then drops the result into the Exact fields for further hand-tuning.
+  function handleAutoSplit() {
+    const previousMode = mode;
+    const previousExact = exact;
+    const auto = priorityTargetWithFloors(
+      capacity,
+      joinerAvailable,
+      numSquads,
+      { infantry: DIVERSITY_FLOOR, lancer: DIVERSITY_FLOOR, marksman: Math.max(DIVERSITY_FLOOR, minMarchMarksman) },
+      { infantry: infantryCap }
+    );
+    setMode("exact");
+    setExact({ infantry: auto.infantry, lancer: auto.lancer, marksman: auto.marksman });
+    setFlashSignal((n) => n + 1);
+    showToast(tr("autoSplitApplied"), tr("undoAction"), () => {
+      setMode(previousMode);
+      setExact(previousExact);
+      dismissToast();
+    });
   }
 
   const remT10 = computation.pools.t10;
@@ -1802,6 +2001,12 @@ export default function App() {
         }
         .ratio-slider::-moz-range-thumb:hover { transform: scale(1.12); }
         .ratio-slider::-moz-range-track { height: 12px; border-radius: 999px; }
+
+        @keyframes flashPulse {
+          0% { box-shadow: 0 0 0 3px ${C.goldStrong}; border-radius: 18px; }
+          100% { box-shadow: 0 0 0 0 transparent; border-radius: 18px; }
+        }
+        .flash-once { animation: flashPulse 900ms ease; }
       `}</style>
 
       {/* Subtle paper-grain texture — kept low-opacity behind all content */}
@@ -1844,6 +2049,40 @@ export default function App() {
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ display: "flex", gap: 2, background: "var(--tierTrackBg)", borderRadius: 999, padding: 3 }}>
+              <button
+                onClick={() => switchAccount("A")}
+                aria-label={tr("accountALabel")}
+                style={{
+                  border: "none",
+                  borderRadius: 999,
+                  padding: "6px 12px",
+                  fontWeight: 800,
+                  fontSize: 12.5,
+                  cursor: "pointer",
+                  background: activeAccount === "A" ? C.goldStrong : "transparent",
+                  color: activeAccount === "A" ? C.cocoaDark : C.sub,
+                }}
+              >
+                A
+              </button>
+              <button
+                onClick={() => switchAccount("B")}
+                aria-label={tr("accountBLabel")}
+                style={{
+                  border: "none",
+                  borderRadius: 999,
+                  padding: "6px 12px",
+                  fontWeight: 800,
+                  fontSize: 12.5,
+                  cursor: "pointer",
+                  background: activeAccount === "B" ? C.goldStrong : "transparent",
+                  color: activeAccount === "B" ? C.cocoaDark : C.sub,
+                }}
+              >
+                B
+              </button>
+            </div>
             <select
               aria-label="Language"
               className="lang-select"
@@ -1919,6 +2158,32 @@ export default function App() {
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <NumField label={tr("squadCapacity")} value={capacity} onChange={setCapacity} />
             <NumField label={tr("numSquadsLabel")} value={numSquads} onChange={setNumSquads} />
+          </div>
+
+          <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.cardBorder}` }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: C.gold, marginBottom: 8 }}>{tr("presetsLabel")}</div>
+            {presets.length === 0 ? (
+              <div style={{ fontSize: 11.5, color: C.sub, marginBottom: 10 }}>{tr("noPresetsYet")}</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
+                {presets.map((p) => (
+                  <div key={p.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, background: C.inputBg, border: `1px solid ${C.inputBorder}`, borderRadius: 10, padding: "6px 6px 6px 10px" }}>
+                    <span style={{ fontSize: 12.5, fontWeight: 600, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+                    <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                      <Btn tone="gold" small onClick={() => handleLoadPreset(p)}>{tr("loadPresetBtn")}</Btn>
+                      <button
+                        onClick={() => handleDeletePreset(p.id)}
+                        aria-label={tr("deletePresetBtn")}
+                        style={{ background: "none", border: "none", color: C.red, fontWeight: 600, cursor: "pointer", fontSize: 15, padding: "6px 8px" }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <Btn tone="ghost" small onClick={handleSavePreset}>{tr("savePresetBtn")}</Btn>
           </div>
         </Card>
           </div>
@@ -2025,7 +2290,16 @@ export default function App() {
           </div>
 
           {strategy === "manual" && (
-            <CompositionInputs capacity={capacity} mode={mode} setMode={setMode} ratio={ratio} setRatio={setRatio} exact={exact} setExact={setExact} target={targetManual} lang={lang} />
+            <div>
+              <NumField label={tr("minMarchMarksmanLabel")} value={minMarchMarksman} onChange={setMinMarchMarksman} />
+              <div style={{ fontSize: 11, color: C.sub, marginTop: 5, marginBottom: 12 }}>{tr("minMarchMarksmanHelp")}</div>
+              <Btn tone="gold" small onClick={handleAutoSplit}>{tr("autoSplitBtn")}</Btn>
+              <div style={{ marginTop: 14 }}>
+                <div key={flashSignal} className="flash-once">
+                  <CompositionInputs capacity={capacity} mode={mode} setMode={setMode} ratio={ratio} setRatio={setRatio} exact={exact} setExact={setExact} target={targetManual} lang={lang} />
+                </div>
+              </div>
+            </div>
           )}
 
           {strategy === "recommended" && (
