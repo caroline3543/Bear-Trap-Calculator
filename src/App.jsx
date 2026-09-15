@@ -66,8 +66,9 @@ const TRANSLATIONS = {
     ministerAppointed: "Minister of Strategy appointed", minister2000: "+2,000 capacity", minister3750: "+3,750 capacity",
     effectiveCapacity: "Effective capacity", percentages: "Percentages", exactAmounts: "Exact amounts",
     squadStrategy: "Squad strategy", squadStrategySub: "How the joiner composition is decided.",
-    manual: "Manual", manualNote: "You set the exact split yourself.",
-    recommended: "Recommended", recommendedNote: "One composition, same for every squad.",
+    manual: "Short on Troops", manualNote: "Not enough troops? Set the exact split yourself.",
+    recommended: "Enough Troops", recommendedNote: "Ton Ton's ratios — sliders adjust for your setup.",
+    recPoolWarningShort: "May not work", recPoolWarningBanner: "This option may not work with your current troop pool — Marksman could fall below the 60,000 minimum. Try \u201cShort on Troops\u201d instead if that happens.",
     tiered: "Tiered", tieredNote: "Stronger squads fill first, Weaker split the rest.",
     squadResults: "Squad results", remainingTroopsHeading: "Remaining troops",
     totalAvailableLabel: "Total available", totalAllocatedLabel: "Total allocated", totalRemainingLabel: "Total remaining",
@@ -121,8 +122,9 @@ const TRANSLATIONS = {
     ministerAppointed: "Ministro della Strategia nominato", minister2000: "+2.000 capacità", minister3750: "+3.750 capacità",
     effectiveCapacity: "Capacità effettiva", percentages: "Percentuali", exactAmounts: "Quantità esatte",
     squadStrategy: "Strategia squadra", squadStrategySub: "Come viene decisa la composizione delle squadre di supporto.",
-    manual: "Manuale", manualNote: "Imposti tu la suddivisione esatta.",
-    recommended: "Consigliata", recommendedNote: "Un'unica composizione, uguale per ogni squadra.",
+    manual: "Truppe insufficienti", manualNote: "Non hai abbastanza truppe? Imposta tu la suddivisione esatta.",
+    recommended: "Truppe sufficienti", recommendedNote: "Le percentuali di Ton Ton — i cursori si adattano al tuo setup.",
+    recPoolWarningShort: "Potrebbe non funzionare", recPoolWarningBanner: "Questa opzione potrebbe non funzionare con la tua riserva attuale — i Tiratori potrebbero scendere sotto il minimo di 60.000. Se succede, prova \u201cTruppe insufficienti\u201d.",
     tiered: "A livelli", tieredNote: "Le squadre Forti si riempiono per prime, le Deboli si dividono il resto.",
     squadResults: "Risultati squadra", remainingTroopsHeading: "Truppe rimanenti",
     totalAvailableLabel: "Totale disponibile", totalAllocatedLabel: "Totale assegnato", totalRemainingLabel: "Totale rimanente",
@@ -176,8 +178,9 @@ const TRANSLATIONS = {
     ministerAppointed: "Ministro de Estrategia nombrado", minister2000: "+2.000 de capacidad", minister3750: "+3.750 de capacidad",
     effectiveCapacity: "Capacidad efectiva", percentages: "Porcentajes", exactAmounts: "Cantidades exactas",
     squadStrategy: "Estrategia de escuadrón", squadStrategySub: "Cómo se decide la composición de los escuadrones de apoyo.",
-    manual: "Manual", manualNote: "Tú defines el reparto exacto.",
-    recommended: "Recomendada", recommendedNote: "Una sola composición, igual para cada escuadrón.",
+    manual: "Tropas insuficientes", manualNote: "¿No tienes suficientes tropas? Define tú el reparto exacto.",
+    recommended: "Tropas suficientes", recommendedNote: "Las proporciones de Ton Ton — los controles se ajustan a tu configuración.",
+    recPoolWarningShort: "Podría no funcionar", recPoolWarningBanner: "Esta opción podría no funcionar con tu reserva actual — los Tiradores podrían caer por debajo del mínimo de 60.000. Si pasa, prueba \u201cTropas insuficientes\u201d.",
     tiered: "Por niveles", tieredNote: "Los escuadrones Fuertes se llenan primero, los Débiles reparten el resto.",
     squadResults: "Resultados del escuadrón", remainingTroopsHeading: "Tropas restantes",
     totalAvailableLabel: "Total disponible", totalAllocatedLabel: "Total asignado", totalRemainingLabel: "Total restante",
@@ -231,8 +234,9 @@ const TRANSLATIONS = {
     ministerAppointed: "전략 대신 임명됨", minister2000: "+2,000 용량", minister3750: "+3,750 용량",
     effectiveCapacity: "실효 용량", percentages: "비율", exactAmounts: "정확한 수량",
     squadStrategy: "부대 전략", squadStrategySub: "지원 부대의 구성을 결정하는 방식입니다.",
-    manual: "수동", manualNote: "정확한 분배를 직접 설정합니다.",
-    recommended: "추천", recommendedNote: "모든 부대에 동일한 구성을 적용합니다.",
+    manual: "병력 부족", manualNote: "병력이 부족한가요? 정확한 분배를 직접 설정하세요.",
+    recommended: "병력 충분", recommendedNote: "Ton Ton의 비율 — 슬라이더로 설정에 맞게 조정하세요.",
+    recPoolWarningShort: "작동하지 않을 수 있음", recPoolWarningBanner: "현재 병력 보유량으로는 이 옵션이 맞지 않을 수 있습니다 — 저격수가 60,000 미만으로 떨어질 수 있습니다. 이 경우 \u201c병력 부족\u201d을 사용해 보세요.",
     tiered: "단계별", tieredNote: "강한 부대가 먼저 채워지고, 약한 부대가 나머지를 나눕니다.",
     squadResults: "부대 결과", remainingTroopsHeading: "남은 병력",
     totalAvailableLabel: "총 가용량", totalAllocatedLabel: "총 배정량", totalRemainingLabel: "총 잔여량",
@@ -286,8 +290,9 @@ const TRANSLATIONS = {
     ministerAppointed: "Minister für Strategie ernannt", minister2000: "+2.000 Kapazität", minister3750: "+3.750 Kapazität",
     effectiveCapacity: "Effektive Kapazität", percentages: "Prozentsätze", exactAmounts: "Exakte Mengen",
     squadStrategy: "Truppstrategie", squadStrategySub: "Wie die Zusammensetzung der Verstärkungstrupps entschieden wird.",
-    manual: "Manuell", manualNote: "Du legst die genaue Aufteilung selbst fest.",
-    recommended: "Empfohlen", recommendedNote: "Eine Zusammensetzung, gleich für jeden Trupp.",
+    manual: "Zu wenig Truppen", manualNote: "Nicht genug Truppen? Lege die genaue Aufteilung selbst fest.",
+    recommended: "Genug Truppen", recommendedNote: "Ton Tons Verhältnisse — Regler passen sich deinem Setup an.",
+    recPoolWarningShort: "Funktioniert eventuell nicht", recPoolWarningBanner: "Diese Option funktioniert mit deinem aktuellen Truppenbestand eventuell nicht — Scharfschützen könnten unter das Minimum von 60.000 fallen. Versuch in dem Fall \u201cZu wenig Truppen\u201d.",
     tiered: "Gestuft", tieredNote: "Starke Trupps werden zuerst aufgefüllt, schwache teilen sich den Rest.",
     squadResults: "Truppergebnisse", remainingTroopsHeading: "Verbleibende Truppen",
     totalAvailableLabel: "Gesamt verfügbar", totalAllocatedLabel: "Gesamt zugewiesen", totalRemainingLabel: "Gesamt verbleibend",
@@ -341,8 +346,9 @@ const TRANSLATIONS = {
     ministerAppointed: "Назначен министр стратегии", minister2000: "+2000 вместимости", minister3750: "+3750 вместимости",
     effectiveCapacity: "Фактическая вместимость", percentages: "Проценты", exactAmounts: "Точные значения",
     squadStrategy: "Стратегия отряда", squadStrategySub: "Как определяется состав отрядов поддержки.",
-    manual: "Вручную", manualNote: "Вы сами задаёте точное распределение.",
-    recommended: "Рекомендуемая", recommendedNote: "Один и тот же состав для каждого отряда.",
+    manual: "Не хватает войск", manualNote: "Не хватает войск? Задайте точное распределение сами.",
+    recommended: "Войск достаточно", recommendedNote: "Соотношения Ton Ton — ползунки подстраиваются под вашу настройку.",
+    recPoolWarningShort: "Может не сработать", recPoolWarningBanner: "Этот вариант может не сработать с вашим текущим резервом — стрелки могут упасть ниже минимума в 60 000. Если так случится, попробуйте \u201cНе хватает войск\u201d.",
     tiered: "Многоуровневая", tieredNote: "Сильные отряды заполняются первыми, слабые делят остаток.",
     squadResults: "Результаты по отрядам", remainingTroopsHeading: "Оставшиеся войска",
     totalAvailableLabel: "Всего доступно", totalAllocatedLabel: "Всего распределено", totalRemainingLabel: "Всего осталось",
@@ -396,8 +402,9 @@ const TRANSLATIONS = {
     ministerAppointed: "Minister Strategii mianowany", minister2000: "+2000 pojemności", minister3750: "+3750 pojemności",
     effectiveCapacity: "Efektywna pojemność", percentages: "Procenty", exactAmounts: "Dokładne ilości",
     squadStrategy: "Strategia oddziału", squadStrategySub: "Jak ustalany jest skład oddziałów wsparcia.",
-    manual: "Ręczny", manualNote: "Sam ustalasz dokładny podział.",
-    recommended: "Zalecany", recommendedNote: "Jeden skład, taki sam dla każdego oddziału.",
+    manual: "Za mało wojsk", manualNote: "Za mało wojsk? Ustaw dokładny podział samodzielnie.",
+    recommended: "Wystarczająco wojsk", recommendedNote: "Proporcje Ton Ton — suwaki dostosowują się do Twojej konfiguracji.",
+    recPoolWarningShort: "Może nie zadziałać", recPoolWarningBanner: "Ta opcja może nie zadziałać z Twoją obecną pulą — Strzelcy mogą spaść poniżej minimum 60 000. Jeśli tak się stanie, spróbuj \u201cZa mało wojsk\u201d.",
     tiered: "Warstwowy", tieredNote: "Silne oddziały wypełniane są jako pierwsze, słabe dzielą resztę.",
     squadResults: "Wyniki oddziału", remainingTroopsHeading: "Pozostałe wojska",
     totalAvailableLabel: "Łącznie dostępne", totalAllocatedLabel: "Łącznie przydzielone", totalRemainingLabel: "Łącznie pozostałe",
@@ -451,8 +458,9 @@ const TRANSLATIONS = {
     ministerAppointed: "Strateji Bakanı atandı", minister2000: "+2.000 kapasite", minister3750: "+3.750 kapasite",
     effectiveCapacity: "Etkin kapasite", percentages: "Yüzdeler", exactAmounts: "Kesin miktarlar",
     squadStrategy: "Birlik stratejisi", squadStrategySub: "Destek birliklerinin bileşiminin nasıl belirlendiği.",
-    manual: "Manuel", manualNote: "Kesin dağılımı kendiniz belirlersiniz.",
-    recommended: "Önerilen", recommendedNote: "Her birlik için aynı, tek bir bileşim.",
+    manual: "Asker Yetersiz", manualNote: "Yeterli asker yok mu? Kesin dağılımı kendiniz belirleyin.",
+    recommended: "Asker Yeterli", recommendedNote: "Ton Ton\u2019un oranları — kaydırıcılar kurulumunuza göre ayarlanır.",
+    recPoolWarningShort: "Çalışmayabilir", recPoolWarningBanner: "Bu seçenek mevcut asker havuzunuzla çalışmayabilir — Nişancı 60.000 minimumunun altına düşebilir. Bu olursa \u201cAsker Yetersiz\u201d seçeneğini deneyin.",
     tiered: "Kademeli", tieredNote: "Güçlü birlikler önce doldurulur, Zayıf birlikler kalanı paylaşır.",
     squadResults: "Birlik sonuçları", remainingTroopsHeading: "Kalan askerler",
     totalAvailableLabel: "Toplam mevcut", totalAllocatedLabel: "Toplam ayrılan", totalRemainingLabel: "Toplam kalan",
@@ -621,12 +629,11 @@ function computeTarget(capacity, mode, ratio, exact) {
 }
 
 const DIVERSITY_FLOOR = 1; // every squad always carries at least this much of each troop type
-const MIN_JOINER_MARKSMAN = 60000; // absolute floor for Tiered (hard-enforced there) and the warning threshold for Recommended's slider
-const MARKSMAN_MIN_PCT = 0.81; // Marksman's recommended floor — hard-enforced for Tiered; shown as a warning (not blocked) on Recommended's sliders
-const MAX_JOINER_INFANTRY_PCT = 0.03; // Infantry is capped at 3% of squad capacity for both Recommended and Tiered
+const MIN_JOINER_MARKSMAN = 60000; // Recommended's hard warning threshold — the one non-negotiable floor
+const MAX_JOINER_INFANTRY_PCT = 0.03; // Infantry is capped at 3% of squad capacity
 const MIN_JOINER_INFANTRY_PCT = 0.005; // ...and floored at 0.5% of squad capacity, stock permitting
-const MIN_JOINER_LANCER_PCT = 0.10; // Lancer's default/starting point (Ton Ton's ratio) — floor for Tiered
-const MAX_JOINER_LANCER_UI_PCT = 0.30; // Lancer slider's ceiling on Recommended — dragging past the safe zone just warns, doesn't block
+const MIN_JOINER_LANCER_PCT = 0.10; // Lancer's default/starting slider position (Ton Ton's ratio)
+const MAX_JOINER_LANCER_UI_PCT = 0.30; // Lancer slider's ceiling — dragging past the safe zone just warns, doesn't block
 
 /* Builds a per-squad target that (1) guarantees each type's floor first —
    capped by what `divisor` squads can actually draw from the pool — then
@@ -1305,13 +1312,8 @@ export default function App() {
   const [t10, setT10] = useState(saved?.t10 ?? SAMPLE.t10);
   const [t9, setT9] = useState(saved?.t9 ?? SAMPLE.t9);
 
-  // Infantry per joiner squad is bounded between 0.5% and 3% of that squad's capacity — used by both Recommended and Tiered.
+  // Infantry per joiner squad is bounded between 0.5% and 3% of that squad's capacity.
   const infantryCap = Math.round(capacity * MAX_JOINER_INFANTRY_PCT);
-  const infantryFloor = Math.max(DIVERSITY_FLOOR, Math.round(capacity * MIN_JOINER_INFANTRY_PCT));
-  // Marksman's floor for Tiered (hard-enforced there, no slider to fight it): 81% of
-  // capacity, falling back to the flat 60,000 minimum only on tiny squads where 81%
-  // would be less than that.
-  const marksmanFloor = Math.max(MIN_JOINER_MARKSMAN, Math.round(capacity * MARKSMAN_MIN_PCT));
 
   // Recommended strategy's ratios are adjustable — Ton Ton's guide is the starting point
   // (0.5% Infantry, 10% Lancer, Marksman fills the rest). Infantry stays hard-bounded at
@@ -1326,14 +1328,8 @@ export default function App() {
   const [ratio, setRatio] = useState(saved?.ratio ?? { infantry: 2, lancer: 15, marksman: 83 });
   const [exact, setExact] = useState(saved?.exact ?? { infantry: 2200, lancer: 16500, marksman: 91300 });
 
-  // Squad strategy: manual | recommended | tiered
+  // Squad strategy: manual | recommended
   const [strategy, setStrategy] = useState(saved?.strategy ?? "manual");
-  const [numStronger, setNumStronger] = useState(saved?.numStronger ?? 5);
-  // Infantry amount the player finds acceptable to always include per
-  // Stronger squad — reserved before Marksman/Lancer fill the rest.
-  const [strongInfantry, setStrongInfantry] = useState(saved?.strongInfantry ?? 0);
-  // Minimum Marksman per squad the player wants the Weaker tier to hit.
-  const [minWeakMarksman, setMinWeakMarksman] = useState(saved?.minWeakMarksman ?? MIN_JOINER_MARKSMAN);
 
   // Rally leader — always used. No ratio is suggested; the player sets their own.
   const [rallyCapacity, setRallyCapacity] = useState(saved?.rallyCapacity ?? 140000);
@@ -1371,7 +1367,7 @@ export default function App() {
         JSON.stringify({
           capacity, numSquads, t10, t9,
           mode, ratio, exact,
-          strategy, numStronger, strongInfantry, minWeakMarksman,
+          strategy,
           rallyCapacity, cyrilleBoost, snowApeBoost, ministerBoost, rallyMode, rallyRatio, rallyExact,
           advancedOpen, darkMode, lang, fills, recInfantryPct, recLancerPct,
         })
@@ -1382,7 +1378,7 @@ export default function App() {
   }, [
     capacity, numSquads, t10, t9,
     mode, ratio, exact,
-    strategy, numStronger, strongInfantry, minWeakMarksman,
+    strategy,
     rallyCapacity, cyrilleBoost, snowApeBoost, ministerBoost, rallyMode, rallyRatio, rallyExact,
     advancedOpen, darkMode, lang, fills, recInfantryPct, recLancerPct,
   ]);
@@ -1408,11 +1404,6 @@ export default function App() {
     TYPES.forEach((t) => (obj[t] = p.t10[t] + p.t9[t]));
     return obj;
   }, [rallyComputation]);
-
-  const numStrongerClamped = Math.min(Math.max(1, numStronger), Math.max(1, numSquads - 1));
-  const numWeaker = Math.max(0, numSquads - numStrongerClamped);
-
-  const lancerFloor = Math.max(DIVERSITY_FLOOR, Math.round(capacity * MIN_JOINER_LANCER_PCT));
 
   // The sliders physically can't be dragged past what the pool can actually supply —
   // this is a hard stock limit, separate from (and independent of) the softer
@@ -1450,51 +1441,11 @@ export default function App() {
   const recMarksmanPct = capacity > 0 ? (recommendedTarget.marksman / capacity) * 100 : 100;
   const recBelow60k = recommendedTarget.marksman < MIN_JOINER_MARKSMAN;
 
-  // Marksman is guaranteed a floor and gets fill priority for whatever's left
-  // (so it soaks up as much of the squad as the pool allows once Lancer's
-  // ratio target and Infantry's range are satisfied). Infantry is bounded
-  // between 0.5% and 3% of capacity; Lancer targets ~10% of capacity so it
-  // still follows the ratio guidance whenever the pool has enough troops.
-  const strongFloors = useMemo(
-    () => ({ infantry: Math.min(Math.max(infantryFloor, strongInfantry), infantryCap), lancer: lancerFloor, marksman: marksmanFloor }),
-    [strongInfantry, infantryCap, infantryFloor, lancerFloor, marksmanFloor]
-  );
-  const weakFloors = useMemo(
-    () => ({ infantry: infantryFloor, lancer: lancerFloor, marksman: Math.max(marksmanFloor, minWeakMarksman) }),
-    [minWeakMarksman, infantryFloor, lancerFloor, marksmanFloor]
-  );
-
-  // Stronger squads fill FIRST, straight from the full pool — that's the whole
-  // point of the tier. Weaker squads only get computed against whatever's left
-  // over afterward, so when the pool is short, it's the Weaker tier that comes
-  // up short, never the Stronger tier.
-  const tieredStrong = useMemo(
-    () => priorityTargetWithFloors(capacity, joinerAvailable, numStrongerClamped, strongFloors, { infantry: infantryCap }),
-    [capacity, joinerAvailable, numStrongerClamped, strongFloors, infantryCap]
-  );
-
-  const actualAvailableForWeak = useMemo(() => {
-    const obj = {};
-    TYPES.forEach((t) => (obj[t] = Math.max(0, joinerAvailable[t] - tieredStrong[t] * numStrongerClamped)));
-    return obj;
-  }, [joinerAvailable, tieredStrong, numStrongerClamped]);
-
-  const tieredWeak = useMemo(
-    () =>
-      numWeaker > 0
-        ? priorityTargetWithFloors(capacity, actualAvailableForWeak, numWeaker, weakFloors, { infantry: infantryCap })
-        : { infantry: 0, lancer: 0, marksman: 0, valid: true, shortfall: 0, floorsMet: { infantry: true, lancer: true, marksman: true } },
-    [capacity, actualAvailableForWeak, numWeaker, weakFloors, infantryCap]
-  );
-
   const computation = useMemo(() => {
     const pools = { t10: { ...rallyComputation.pools.t10 }, t9: { ...rallyComputation.pools.t9 } };
     const squads = [];
     for (let i = 0; i < numSquads; i++) {
-      let tgt;
-      if (strategy === "manual") tgt = targetManual;
-      else if (strategy === "recommended") tgt = recommendedTarget;
-      else tgt = i < numStrongerClamped ? tieredStrong : tieredWeak;
+      const tgt = strategy === "manual" ? targetManual : recommendedTarget;
 
       if (!tgt.valid) {
         squads.push(null);
@@ -1503,7 +1454,7 @@ export default function App() {
       squads.push(allocateSquad(capacity, tgt, pools, fills[i + 1] || []));
     }
     return { squads, pools };
-  }, [rallyComputation, numSquads, strategy, targetManual, recommendedTarget, tieredStrong, tieredWeak, numStrongerClamped, capacity, fills]);
+  }, [rallyComputation, numSquads, strategy, targetManual, recommendedTarget, capacity, fills]);
 
   const totalAvailable = TYPES.reduce((s, t) => s + t10[t] + t9[t], 0);
   const rallyAllocated = rallyComputation.result ? rallyComputation.result.totalAllocated : 0;
@@ -1545,7 +1496,7 @@ export default function App() {
     const snapshot = {
       capacity, numSquads, t10, t9,
       mode, ratio, exact,
-      strategy, numStronger, strongInfantry, minWeakMarksman,
+      strategy,
       rallyCapacity, cyrilleBoost, snowApeBoost, ministerBoost, rallyMode, rallyRatio, rallyExact,
       recInfantryPct, recLancerPct, fills,
     };
@@ -1557,9 +1508,6 @@ export default function App() {
     setRatio({ infantry: 2, lancer: 15, marksman: 83 });
     setExact({ infantry: 2200, lancer: 16500, marksman: 91300 });
     setStrategy("manual");
-    setNumStronger(5);
-    setStrongInfantry(0);
-    setMinWeakMarksman(MIN_JOINER_MARKSMAN);
     setRallyCapacity(140000);
     setCyrilleBoost(0);
     setSnowApeBoost(0);
@@ -1584,9 +1532,6 @@ export default function App() {
       setRatio(snapshot.ratio);
       setExact(snapshot.exact);
       setStrategy(snapshot.strategy);
-      setNumStronger(snapshot.numStronger);
-      setStrongInfantry(snapshot.strongInfantry);
-      setMinWeakMarksman(snapshot.minWeakMarksman);
       setRallyCapacity(snapshot.rallyCapacity);
       setCyrilleBoost(snapshot.cyrilleBoost);
       setSnowApeBoost(snapshot.snowApeBoost);
@@ -1619,11 +1564,10 @@ export default function App() {
     }
     lines.push("");
 
-    // Group consecutive squads that share the exact same composition (and,
-    // in Tiered mode, the same tier) into one "Squad X-Y: ..." line instead
-    // of repeating an identical row for every squad.
+    // Group consecutive squads that share the exact same composition into
+    // one "Squad X-Y: ..." line instead of repeating an identical row for
+    // every squad.
     const squads = computation.squads;
-    const tierOf = (i) => (strategy === "tiered" ? (i < numStrongerClamped ? "s" : "w") : null);
     let i = 0;
     while (i < squads.length) {
       const sq = squads[i];
@@ -1634,8 +1578,7 @@ export default function App() {
         squads[j + 1] &&
         squads[j + 1].breakdown.infantry.total === sq.breakdown.infantry.total &&
         squads[j + 1].breakdown.lancer.total === sq.breakdown.lancer.total &&
-        squads[j + 1].breakdown.marksman.total === sq.breakdown.marksman.total &&
-        tierOf(j + 1) === tierOf(i)
+        squads[j + 1].breakdown.marksman.total === sq.breakdown.marksman.total
       ) {
         j++;
       }
@@ -2032,9 +1975,9 @@ export default function App() {
             {[
               { key: "manual", label: tr("manual"), note: tr("manualNote"), star: false },
               { key: "recommended", label: tr("recommended"), note: tr("recommendedNote"), star: true },
-              { key: "tiered", label: tr("tiered"), note: tr("tieredNote"), star: false },
             ].map((opt) => {
               const selected = strategy === opt.key;
+              const showPoolWarning = opt.key === "recommended" && recBelow60k;
               return (
                 <button
                   key={opt.key}
@@ -2047,9 +1990,38 @@ export default function App() {
                     {opt.star && <span aria-hidden="true" style={{ color: selected ? C.goldStrong : C.goldStrong, fontSize: 13 }}>★</span>}
                   </div>
                   <div style={{ fontSize: 12, fontWeight: 500, color: selected ? "var(--selectedTextMuted)" : C.sub, marginTop: 4, lineHeight: 1.4 }}>{opt.note}</div>
+                  {showPoolWarning && (
+                    <div style={{ fontSize: 11, fontWeight: 700, color: selected ? "#FBD9CE" : C.amber, marginTop: 6 }}>
+                      ⚠️ {tr("recPoolWarningShort")}
+                    </div>
+                  )}
                 </button>
               );
             })}
+          </div>
+
+          {/* Ton Ton's reference ratios — shown for both strategies, since Manual
+              users benefit from the same guidance even while hand-tuning. */}
+          <div style={{ background: C.goldBg, border: `1.5px solid ${C.goldBorder}`, borderRadius: 14, padding: 12, marginBottom: 14, fontSize: 12.5, color: C.ink, lineHeight: 1.55 }}>
+            <div style={{ fontWeight: 800, color: C.gold, marginBottom: 2 }}>🐻 {tr("recSourceNote")}</div>
+            <div style={{ color: C.sub, fontSize: 11.5, marginBottom: 10 }}>{tr("recSourceSub")}</div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 10 }}>
+              {[
+                { color: TYPE_COLOR.infantry, name: tType("infantry", lang), range: "0.5–3%" },
+                { color: TYPE_COLOR.lancer, name: tType("lancer", lang), range: "10–30%" },
+                { color: TYPE_COLOR.marksman, name: tType("marksman", lang), range: "81%+" },
+              ].map((row) => (
+                <div key={row.name} style={{ display: "flex", alignItems: "center", gap: 8, background: C.surface, borderRadius: 10, padding: "6px 10px" }}>
+                  <span style={{ width: 10, height: 10, borderRadius: 999, background: row.color, flexShrink: 0 }} />
+                  <span style={{ fontWeight: 700, flex: 1 }}>{row.name}</span>
+                  <span style={{ fontWeight: 800, color: C.gold }}>{row.range}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>{tr("gen5Note")}</div>
+            <div>{tr("recHeroNote")}</div>
           </div>
 
           {strategy === "manual" && (
@@ -2058,27 +2030,11 @@ export default function App() {
 
           {strategy === "recommended" && (
             <div>
-              <div style={{ background: C.goldBg, border: `1.5px solid ${C.goldBorder}`, borderRadius: 14, padding: 12, marginBottom: 14, fontSize: 12.5, color: C.ink, lineHeight: 1.55 }}>
-                <div style={{ fontWeight: 800, color: C.gold, marginBottom: 2 }}>🐻 {tr("recSourceNote")}</div>
-                <div style={{ color: C.sub, fontSize: 11.5, marginBottom: 10 }}>{tr("recSourceSub")}</div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 10 }}>
-                  {[
-                    { color: TYPE_COLOR.infantry, name: tType("infantry", lang), range: "0.5–3%" },
-                    { color: TYPE_COLOR.lancer, name: tType("lancer", lang), range: "10–30%" },
-                    { color: TYPE_COLOR.marksman, name: tType("marksman", lang), range: "81%+" },
-                  ].map((row) => (
-                    <div key={row.name} style={{ display: "flex", alignItems: "center", gap: 8, background: C.surface, borderRadius: 10, padding: "6px 10px" }}>
-                      <span style={{ width: 10, height: 10, borderRadius: 999, background: row.color, flexShrink: 0 }} />
-                      <span style={{ fontWeight: 700, flex: 1 }}>{row.name}</span>
-                      <span style={{ fontWeight: 800, color: C.gold }}>{row.range}</span>
-                    </div>
-                  ))}
+              {recBelow60k && (
+                <div style={{ background: C.redBg, border: `1.5px solid ${C.red}`, borderRadius: 14, padding: 12, marginBottom: 14, fontSize: 12.5, color: C.red, fontWeight: 600, lineHeight: 1.5 }}>
+                  ⚠️ {tr("recPoolWarningBanner")}
                 </div>
-
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>{tr("gen5Note")}</div>
-                <div>{tr("recHeroNote")}</div>
-              </div>
+              )}
 
               <RatioSlider
                 label={`${tType("infantry", lang)} %`}
@@ -2128,60 +2084,6 @@ export default function App() {
               </div>
             </div>
           )}
-
-          {strategy === "tiered" && (
-            <div>
-              <div style={{ background: C.inputBg, border: `1px solid ${C.inputBorder}`, borderRadius: 14, padding: 10, marginBottom: 14, fontSize: 12, color: C.ink, lineHeight: 1.6 }}>
-                <strong>{tWord("howThisWorks", lang)}</strong>
-                <div>1. {tWord("tieredStep1", lang)}</div>
-                <div>2. {tWord("tieredStep2", lang)}</div>
-                <div>3. {tWord("tieredStep3", lang)}</div>
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <span style={{ fontSize: 12.5, fontWeight: 500, color: C.ink }}>{tWord("numberOfStrongerSquads", lang)}</span>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <Btn tone="ghost" small onClick={() => setNumStronger(Math.max(1, numStronger - 1))}>−</Btn>
-                  <span style={{ fontWeight: 600, fontSize: 15, minWidth: 18, textAlign: "center", color: C.ink }}>{numStrongerClamped}</span>
-                  <Btn tone="ghost" small onClick={() => setNumStronger(Math.min(numSquads - 1, numStronger + 1))}>+</Btn>
-                </div>
-              </div>
-              <div style={{ fontSize: 11.5, color: C.sub, marginBottom: 14 }}>
-                {tFmt("squadsStrongerWeaker", lang, { a: numStrongerClamped, b: numStrongerClamped + 1, c: numSquads })}
-              </div>
-
-              <NumField label={tWord("acceptableInfantryPerStronger", lang)} value={strongInfantry} onChange={setStrongInfantry} />
-              <div style={{ fontSize: 11, color: C.sub, marginTop: 5, marginBottom: 14 }}>{tFmt("guaranteedStrongerFirst", lang, { a: fmt(infantryFloor), b: fmt(infantryCap) })}</div>
-
-              <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 15, fontWeight: 800, lineHeight: "20px", color: C.gold, marginBottom: 6 }}>{tWord("strongerSquadComposition", lang)}</div>
-              <div style={{ background: C.goldBg, border: `1.5px solid ${C.goldBorder}`, borderRadius: 14, padding: 10, marginBottom: 14 }}>
-                <TargetPreview target={tieredStrong} lang={lang} />
-                {!tieredStrong.floorsMet.infantry && (
-                  <div style={{ fontSize: 11, color: C.red, fontWeight: 500, marginTop: 6 }}>
-                    {tFmt("onlyInfantryAvailableRequested", lang, { a: fmt(tieredStrong.infantry), b: fmt(strongInfantry) })}
-                  </div>
-                )}
-                {!tieredStrong.floorsMet.marksman && (
-                  <div style={{ fontSize: 11, color: C.red, fontWeight: 500, marginTop: 6 }}>
-                    {tFmt("onlyMarksmanShortMinimum", lang, { a: fmt(tieredStrong.marksman), b: fmt(marksmanFloor) })}
-                  </div>
-                )}
-              </div>
-
-              <NumField label={tWord("minAcceptableMarksmanWeaker", lang)} value={minWeakMarksman} onChange={setMinWeakMarksman} />
-              <div style={{ fontSize: 11, color: C.sub, marginTop: 5, marginBottom: 14 }}>{tFmt("guaranteedWeakerMinimum", lang, { a: fmt(marksmanFloor) })}</div>
-
-              <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 15, fontWeight: 800, lineHeight: "20px", color: C.gold, marginBottom: 6 }}>{tWord("weakerSquadComposition", lang)}</div>
-              <div style={{ background: C.goldBg, border: `1.5px solid ${C.goldBorder}`, borderRadius: 14, padding: 10 }}>
-                <TargetPreview target={tieredWeak} lang={lang} />
-                {!tieredWeak.floorsMet.marksman && (
-                  <div style={{ fontSize: 11, color: C.red, fontWeight: 500, marginTop: 6 }}>
-                    {tFmt("onlyMarksmanShortRequestedYield", lang, { a: fmt(tieredWeak.marksman), b: fmt(Math.max(marksmanFloor, minWeakMarksman)) })}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </Card>
 
         {/* SQUAD RESULTS */}
@@ -2205,7 +2107,7 @@ export default function App() {
                   invalid={false}
                   onAcceptFill={acceptFill}
                   onRemoveFill={removeFill}
-                  tierLabel={strategy === "tiered" ? (i < numStrongerClamped ? "stronger" : "weaker") : null}
+                  tierLabel={null}
                   lang={lang}
                 />
               ))}
