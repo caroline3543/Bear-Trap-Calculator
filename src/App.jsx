@@ -1171,24 +1171,10 @@ function SquadCard({ index, squadKey, result, invalid, onAcceptFill, onRemoveFil
   const t9Used = TYPES.reduce((s, t) => s + result.breakdown[t].t9, 0);
   const usesT9 = t9Used > 0;
 
-  // Full squads auto-collapse to a single summary line so partially-filled
-  // squads (and the Rally Leader, when it's short) are easier to spot while
-  // scrolling. If a squad flips from Full back to Partial — the pool
-  // changed, a fill got removed — it auto-expands again. Clicking the
-  // header always lets the player override either way for that squad.
-  const [collapsed, setCollapsed] = useState(isFull);
-  useEffect(() => {
-    setCollapsed(isFull);
-  }, [isFull]);
-
   return (
     <Card style={{ borderColor, borderLeft: tierAccent ? `4px solid ${tierAccent}` : undefined }}>
-      <div
-        onClick={() => setCollapsed(!collapsed)}
-        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: collapsed ? 0 : 12, gap: 8, flexWrap: "wrap", cursor: "pointer" }}
-      >
-        <div style={{ fontWeight: 600, color: C.ink, fontSize: 15.5, display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ color: C.sub, fontSize: 12, width: 12, display: "inline-block" }}>{collapsed ? "▸" : "▾"}</span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 8, flexWrap: "wrap" }}>
+        <div style={{ fontWeight: 600, color: C.ink, fontSize: 15.5 }}>
           {index === "Leader" ? tWord("leaderLabel", lang) : `${tWord("squadLabel", lang)} ${index}`} {tierLabel && <span style={{ fontSize: 10.5, fontWeight: 500, color: C.sub, textTransform: "uppercase", marginLeft: 6 }}>{tWord(tierLabel === "stronger" ? "strongerLabel" : "weakerLabel", lang)}</span>}
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -1197,12 +1183,6 @@ function SquadCard({ index, squadKey, result, invalid, onAcceptFill, onRemoveFil
         </div>
       </div>
 
-      {collapsed ? (
-        <div style={{ fontSize: 12, color: C.sub, marginTop: 8 }}>
-          {fmt(result.breakdown.infantry.total)} {tType("infantry", lang)} · {fmt(result.breakdown.lancer.total)} {tType("lancer", lang)} · {fmt(result.breakdown.marksman.total)} {tType("marksman", lang)}
-        </div>
-      ) : (
-        <>
       <ProgressBar pct={fillPct} tone={tone} />
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 600, color: C.ink, marginTop: 7, marginBottom: 16 }}>
         <span>{fmt(result.totalAllocated)} / {fmt(result.totalAllocated + result.capacityRemaining)}</span>
@@ -1274,8 +1254,6 @@ function SquadCard({ index, squadKey, result, invalid, onAcceptFill, onRemoveFil
             </div>
           )}
         </div>
-      )}
-        </>
       )}
     </Card>
   );
@@ -1353,16 +1331,15 @@ const EMPTY = { infantry: 0, lancer: 0, marksman: 0 };
 
 const STORAGE_KEY = "bearTrapCalculator:v1";
 const ACTIVE_ACCOUNT_KEY = "bearTrapCalculator:activeAccount";
-const PRESETS_KEY = "bearTrapCalculator:presets";
 const ACCOUNT_NAMES_KEY = "bearTrapCalculator:accountNames";
 
 function loadAccountNames() {
   try {
     const raw = localStorage.getItem(ACCOUNT_NAMES_KEY);
     const parsed = raw ? JSON.parse(raw) : null;
-    return { A: (parsed && parsed.A) || "Account A", B: (parsed && parsed.B) || "Account B" };
+    return { A: (parsed && parsed.A) || "Main Account", B: (parsed && parsed.B) || "Farm Account" };
   } catch {
-    return { A: "Account A", B: "Account B" };
+    return { A: "Main Account", B: "Farm Account" };
   }
 }
 
@@ -1396,30 +1373,12 @@ function loadSavedForAccount(id) {
   }
 }
 
-function loadPresets() {
-  try {
-    const raw = localStorage.getItem(PRESETS_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function savePresetsToStorage(list) {
-  try {
-    localStorage.setItem(PRESETS_KEY, JSON.stringify(list));
-  } catch {
-    // storage unavailable — presets just won't persist across reloads
-  }
-}
-
 export default function App() {
   // Which of the two accounts is currently active, and that account's saved
   // data — both loaded once on first render. Every piece of state below
   // falls back to its normal default if nothing was saved for it.
   const [activeAccount, setActiveAccount] = useState(readActiveAccount);
   const [saved] = useState(() => loadSavedForAccount(activeAccount));
-  const [presets, setPresets] = useState(loadPresets);
   const [accountNames, setAccountNames] = useState(loadAccountNames);
 
   const [capacity, setCapacity] = useState(saved?.capacity ?? 110000);
@@ -1677,9 +1636,8 @@ export default function App() {
       dismissToast();
     });
   }
-  // The full shape of "one account's setup" — reused for switching between
-  // Account A/B and for saving/loading named presets, since they're the
-  // same kind of snapshot.
+  // The full shape of "one account's setup" — used when switching between
+  // Account A/B, so each keeps its own independent troop pool and settings.
   function buildAccountSnapshot() {
     return {
       capacity, numSquads, t10, t9,
@@ -1740,26 +1698,6 @@ export default function App() {
     } catch {
       // storage unavailable — name still applies for this session
     }
-  }
-
-  // Named presets — a separate saved list, independent of the two accounts,
-  // for players who want to keep more than one reference setup around
-  // (e.g. different event sizes) without losing their current work.
-  function handleSavePreset() {
-    const name = typeof window !== "undefined" ? window.prompt(tr("presetNamePrompt")) : null;
-    if (!name) return;
-    const updated = [...presets, { id: Date.now().toString(), name, data: buildAccountSnapshot() }];
-    setPresets(updated);
-    savePresetsToStorage(updated);
-    showToast(tr("presetSavedToast"), null, null, 2000);
-  }
-  function handleLoadPreset(preset) {
-    applyAccountSnapshot(preset.data);
-  }
-  function handleDeletePreset(id) {
-    const updated = presets.filter((p) => p.id !== id);
-    setPresets(updated);
-    savePresetsToStorage(updated);
   }
 
   function applyRecommendedToManual() {
@@ -2154,7 +2092,7 @@ export default function App() {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {acc.id === "A" ? "🅰️" : "🅱️"} {accountNames[acc.id]}
+                  {accountNames[acc.id]}
                 </span>
                 {selected && (
                   <span
@@ -2277,32 +2215,6 @@ export default function App() {
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <NumField label={tr("squadCapacity")} value={capacity} onChange={setCapacity} />
             <NumField label={tr("numSquadsLabel")} value={numSquads} onChange={setNumSquads} />
-          </div>
-
-          <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.cardBorder}` }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: C.gold, marginBottom: 8 }}>{tr("presetsLabel")}</div>
-            {presets.length === 0 ? (
-              <div style={{ fontSize: 11.5, color: C.sub, marginBottom: 10 }}>{tr("noPresetsYet")}</div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
-                {presets.map((p) => (
-                  <div key={p.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, background: C.inputBg, border: `1px solid ${C.inputBorder}`, borderRadius: 10, padding: "6px 6px 6px 10px" }}>
-                    <span style={{ fontSize: 12.5, fontWeight: 600, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
-                    <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                      <Btn tone="gold" small onClick={() => handleLoadPreset(p)}>{tr("loadPresetBtn")}</Btn>
-                      <button
-                        onClick={() => handleDeletePreset(p.id)}
-                        aria-label={tr("deletePresetBtn")}
-                        style={{ background: "none", border: "none", color: C.red, fontWeight: 600, cursor: "pointer", fontSize: 15, padding: "6px 8px" }}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            <Btn tone="ghost" small onClick={handleSavePreset}>{tr("savePresetBtn")}</Btn>
           </div>
         </Card>
           </div>
