@@ -119,6 +119,9 @@ const TRANSLATIONS = {
     scanErrorMsg: "Couldn't read that image — try a clearer screenshot, or enter the numbers by hand below.",
     scanHint: "Works best with a clear, uncropped shot of the Troops Preview screen.", whatScannerRead: "What the scanner read",
     notAnImage: "That doesn't look like an image — try a screenshot (PNG or JPG).",
+    scanInstructions: "In-game, tap your profile picture (top-left) → Troops → that screen shows your troop counts. Screenshot it, then upload it below.",
+    scanRetryLangHint: "This didn't read well — try a different screenshot language above and scan again.", rescanBtn: "🔁 Scan again",
+    appliedScanToOtherToast: "Scanned values applied to {a}.",
   },
   it: {
     troopPool: "Riserva truppe", troopPoolSub: "Le T10 vengono sempre usate prima delle T9 per lo stesso tipo di truppa.",
@@ -183,6 +186,9 @@ const TRANSLATIONS = {
     scanErrorMsg: "Impossibile leggere l'immagine — prova con uno screenshot più chiaro, oppure inserisci i numeri a mano qui sotto.",
     scanHint: "Funziona meglio con uno scatto chiaro e non ritagliato della schermata Anteprima Truppe.", whatScannerRead: "Cosa ha letto lo scanner",
     notAnImage: "Non sembra un'immagine — prova con uno screenshot (PNG o JPG).",
+    scanInstructions: "Nel gioco, tocca la tua immagine del profilo (in alto a sinistra) → Truppe → quella schermata mostra il numero delle tue truppe. Fai uno screenshot e caricalo qui sotto.",
+    scanRetryLangHint: "Non ha letto bene — prova una lingua dello screenshot diversa qui sopra e scansiona di nuovo.", rescanBtn: "🔁 Scansiona di nuovo",
+    appliedScanToOtherToast: "Valori scansionati applicati a {a}.",
   },
   es: {
     troopPool: "Reserva de tropas", troopPoolSub: "Las T10 siempre se usan antes que las T9 para el mismo tipo de tropa.",
@@ -247,6 +253,9 @@ const TRANSLATIONS = {
     scanErrorMsg: "No se pudo leer esa imagen — prueba con una captura más clara, o introduce los números a mano abajo.",
     scanHint: "Funciona mejor con una captura clara y sin recortar de la pantalla de Vista previa de Tropas.", whatScannerRead: "Lo que leyó el escáner",
     notAnImage: "Eso no parece una imagen — prueba con una captura (PNG o JPG).",
+    scanInstructions: "En el juego, toca tu foto de perfil (arriba a la izquierda) → Tropas → esa pantalla muestra tus tropas. Haz una captura y súbela abajo.",
+    scanRetryLangHint: "Esto no se leyó bien — prueba con otro idioma de captura arriba y escanea de nuevo.", rescanBtn: "🔁 Escanear de nuevo",
+    appliedScanToOtherToast: "Valores escaneados aplicados a {a}.",
   },
   ko: {
     troopPool: "병력 보유량", troopPoolSub: "같은 병종이면 T9보다 T10을 항상 먼저 사용합니다.",
@@ -311,6 +320,9 @@ const TRANSLATIONS = {
     scanErrorMsg: "이미지를 읽을 수 없습니다 — 더 선명한 스크린샷을 시도하거나 아래에 직접 숫자를 입력하세요.",
     scanHint: "병력 미리보기 화면을 선명하고 자르지 않은 상태로 캡처하면 가장 잘 작동합니다.", whatScannerRead: "스캐너가 읽은 내용",
     notAnImage: "이미지가 아닌 것 같습니다 — 스크린샷(PNG 또는 JPG)을 시도하세요.",
+    scanInstructions: "게임에서 프로필 사진(왼쪽 위)을 탭 → 병력 → 그 화면에 병력 수가 표시됩니다. 그 화면을 캡처해서 아래에 업로드하세요.",
+    scanRetryLangHint: "잘 읽히지 않았습니다 — 위에서 다른 스크린샷 언어를 선택하고 다시 스캔해 보세요.", rescanBtn: "🔁 다시 스캔",
+    appliedScanToOtherToast: "스캔한 값이 {a}에 적용되었습니다.",
   },
   de: {
     troopPool: "Truppenbestand", troopPoolSub: "T10 wird beim gleichen Truppentyp immer vor T9 verwendet.",
@@ -375,6 +387,9 @@ const TRANSLATIONS = {
     scanErrorMsg: "Dieses Bild konnte nicht gelesen werden — versuche einen klareren Screenshot oder gib die Zahlen unten manuell ein.",
     scanHint: "Funktioniert am besten mit einer klaren, nicht zugeschnittenen Aufnahme des Truppenübersicht-Bildschirms.", whatScannerRead: "Was der Scanner gelesen hat",
     notAnImage: "Das sieht nicht wie ein Bild aus — versuche einen Screenshot (PNG oder JPG).",
+    scanInstructions: "Tippe im Spiel auf dein Profilbild (oben links) → Truppen → dieser Bildschirm zeigt deine Truppenzahlen. Mach einen Screenshot davon und lade ihn unten hoch.",
+    scanRetryLangHint: "Das wurde nicht gut gelesen — probiere oben eine andere Screenshot-Sprache und scanne erneut.", rescanBtn: "🔁 Erneut scannen",
+    appliedScanToOtherToast: "Gescannte Werte auf {a} angewendet.",
   },
   ru: {
     troopPool: "Резерв войск", troopPoolSub: "Войска T10 всегда используются раньше T9 для одного типа войск.",
@@ -439,6 +454,9 @@ const TRANSLATIONS = {
     scanErrorMsg: "Не удалось прочитать это изображение — попробуйте более чёткий скриншот или введите числа вручную ниже.",
     scanHint: "Лучше всего работает с чётким, необрезанным снимком экрана предпросмотра войск.", whatScannerRead: "Что прочитал сканер",
     notAnImage: "Это не похоже на изображение — попробуйте скриншот (PNG или JPG).",
+    scanInstructions: "В игре нажмите на свой портрет (вверху слева) → Войска → этот экран показывает количество войск. Сделайте скриншот и загрузите его ниже.",
+    scanRetryLangHint: "Это плохо считалось — попробуйте другой язык скриншота выше и отсканируйте снова.", rescanBtn: "🔁 Сканировать снова",
+    appliedScanToOtherToast: "Отсканированные значения применены к {a}.",
   },
   pl: {
     troopPool: "Pula wojsk", troopPoolSub: "Wojska T10 są zawsze używane przed T9 dla tego samego typu wojsk.",
@@ -503,6 +521,9 @@ const TRANSLATIONS = {
     scanErrorMsg: "Nie udało się odczytać tego obrazu — spróbuj wyraźniejszego zrzutu ekranu lub wpisz liczby ręcznie poniżej.",
     scanHint: "Najlepiej działa z wyraźnym, nieprzyciętym zdjęciem ekranu podglądu wojsk.", whatScannerRead: "Co odczytał skaner",
     notAnImage: "To nie wygląda na obraz — spróbuj zrzutu ekranu (PNG lub JPG).",
+    scanInstructions: "W grze dotknij swojego zdjęcia profilowego (lewy górny róg) → Wojska → ten ekran pokazuje liczbę Twoich wojsk. Zrób zrzut ekranu i prześlij go poniżej.",
+    scanRetryLangHint: "To nie zostało dobrze odczytane — spróbuj innego języka zrzutu ekranu powyżej i zeskanuj ponownie.", rescanBtn: "🔁 Skanuj ponownie",
+    appliedScanToOtherToast: "Zeskanowane wartości zastosowano do {a}.",
   },
   tr: {
     troopPool: "Asker havuzu", troopPoolSub: "Aynı asker türü için T10 her zaman T9'dan önce kullanılır.",
@@ -567,6 +588,9 @@ const TRANSLATIONS = {
     scanErrorMsg: "O görüntü okunamadı — daha net bir ekran görüntüsü deneyin veya sayıları aşağıya elle girin.",
     scanHint: "Asker Önizleme ekranının net ve kırpılmamış bir görüntüsüyle en iyi çalışır.", whatScannerRead: "Tarayıcının okuduğu",
     notAnImage: "Bu bir görüntüye benzemiyor — bir ekran görüntüsü (PNG veya JPG) deneyin.",
+    scanInstructions: "Oyunda, profil resminize (sol üst) dokunun → Askerler → o ekran asker sayılarınızı gösterir. Ekran görüntüsü alın ve aşağıya yükleyin.",
+    scanRetryLangHint: "Bu iyi okunmadı — yukarıdan farklı bir ekran görüntüsü dili deneyin ve tekrar tarayın.", rescanBtn: "🔁 Tekrar tara",
+    appliedScanToOtherToast: "Taranan değerler {a} hesabına uygulandı.",
   },
   ar: {
     troopPool: "مجمع الجنود", troopPoolSub: "تُستخدم T10 دائمًا قبل T9 لنفس نوع الجندي.",
@@ -631,6 +655,9 @@ const TRANSLATIONS = {
     scanErrorMsg: "تعذّرت قراءة هذه الصورة — جرّب لقطة شاشة أوضح، أو أدخل الأرقام يدويًا أدناه.",
     scanHint: "يعمل بشكل أفضل مع لقطة واضحة وغير مقصوصة لشاشة معاينة الجنود.", whatScannerRead: "ما قرأه الماسح",
     notAnImage: "هذا لا يبدو كصورة — جرّب لقطة شاشة (PNG أو JPG).",
+    scanInstructions: "داخل اللعبة، اضغط على صورة ملفك الشخصي (أعلى اليسار) ← الجنود ← تعرض تلك الشاشة أعداد جنودك. التقط لقطة شاشة لها ثم ارفعها أدناه.",
+    scanRetryLangHint: "لم تتم قراءته جيدًا — جرّب لغة لقطة شاشة مختلفة أعلاه وامسح مرة أخرى.", rescanBtn: "🔁 مسح مرة أخرى",
+    appliedScanToOtherToast: "تم تطبيق القيم الممسوحة على {a}.",
   },
 };
 
@@ -1459,8 +1486,7 @@ function loadTesseract() {
 }
 
 // The screenshot's language is independent of the app's display language —
-// this just seeds a sensible starting guess when the scanner opens.
-const OCR_LANG_MAP = { en: "eng", it: "ita", es: "spa", ko: "kor", de: "deu", ru: "rus", pl: "pol", tr: "tur", ar: "ara" };
+// the scanner defaults to English and lets the player switch + rescan.
 const OCR_LANGUAGES = [
   { code: "eng", label: "English" },
   { code: "chi_sim", label: "Chinese (Simplified)" },
@@ -1623,9 +1649,9 @@ function buildOcrCanvas(imgEl) {
   return canvas;
 }
 
-function ScreenshotScanner({ lang, onApply }) {
+function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
   const [open, setOpen] = useState(false);
-  const [scanLang, setScanLang] = useState(OCR_LANG_MAP[lang] || "eng");
+  const [scanLang, setScanLang] = useState("eng"); // default guess — easy to change and rescan if it misreads
   const [imgSrc, setImgSrc] = useState(null);
   const [fileError, setFileError] = useState(null);
   const [scanning, setScanning] = useState(false);
@@ -1634,6 +1660,7 @@ function ScreenshotScanner({ lang, onApply }) {
   const [confidence, setConfidence] = useState({});
   const [rawText, setRawText] = useState("");
   const [edited, setEdited] = useState(null); // { t10Infantry, t10Lancer, ... } once a scan has run
+  const [hasScanned, setHasScanned] = useState(false);
   const imgRef = useRef(null);
 
   function handleFile(file) {
@@ -1643,6 +1670,7 @@ function ScreenshotScanner({ lang, onApply }) {
       return;
     }
     setEdited(null);
+    setHasScanned(false);
     setRawText("");
     setConfidence({});
     const reader = new FileReader();
@@ -1677,6 +1705,7 @@ function ScreenshotScanner({ lang, onApply }) {
       setEdited(values);
       setConfidence(parsed.confidence);
       setRawText(parsed.rawText);
+      setHasScanned(true);
     } catch {
       setFileError(tWord("scanErrorMsg", lang));
       const empty = {};
@@ -1684,6 +1713,7 @@ function ScreenshotScanner({ lang, onApply }) {
       setEdited(empty);
       setConfidence({});
       setRawText("");
+      setHasScanned(true);
     } finally {
       setScanning(false);
     }
@@ -1693,12 +1723,15 @@ function ScreenshotScanner({ lang, onApply }) {
     const c = confidence[key];
     return c === undefined || c === null || c < SCAN_CONF_THRESHOLD;
   }
+  const reviewCount = SCAN_FIELDS.filter((f) => needsReview(f.key)).length;
+  const looksOff = hasScanned && reviewCount >= 3;
 
-  function handleApply() {
-    onApply(edited);
+  function handleApply(targetId) {
+    onApply(edited, targetId);
     setOpen(false);
     setImgSrc(null);
     setEdited(null);
+    setHasScanned(false);
     setFileError(null);
   }
 
@@ -1717,6 +1750,10 @@ function ScreenshotScanner({ lang, onApply }) {
         <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: C.sub, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
           {tWord("scanScreenshotHide", lang)}
         </button>
+      </div>
+
+      <div style={{ fontSize: 12, color: C.ink, lineHeight: 1.5, marginBottom: 12, background: C.goldBg, border: `1px solid ${C.goldBorder}`, borderRadius: 10, padding: "8px 10px" }}>
+        {tWord("scanInstructions", lang)}
       </div>
 
       <label style={{ display: "block", fontSize: 11.5, color: C.sub, marginBottom: 5 }}>{tWord("screenshotLangLabel", lang)}</label>
@@ -1751,23 +1788,43 @@ function ScreenshotScanner({ lang, onApply }) {
         </label>
       ) : (
         <div>
-          <img
-            ref={imgRef}
-            src={imgSrc}
-            alt=""
-            style={{ display: "block", width: "100%", maxHeight: 260, objectFit: "contain", borderRadius: 10, border: `1px solid ${C.cardBorder}`, marginBottom: 10, background: C.surface }}
-          />
-          {!edited && (
-            <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-              <Btn tone="gold" small onClick={runScan}>{scanning ? scanStatus : tWord("scanBtn", lang)}</Btn>
-              <Btn tone="ghost" small onClick={() => { setImgSrc(null); setFileError(null); }}>✕</Btn>
-            </div>
-          )}
+          {/* Full device width, capped to roughly a third of a typical tall
+              screenshot's height so the top (where troop counts sit) reads
+              clearly instead of being shrunk to fit — scrollable so an
+              iPhone user can drag down through the rest of the image. */}
+          <div
+            style={{
+              width: "100%",
+              maxHeight: "34vh",
+              overflowY: "auto",
+              overflowX: "hidden",
+              WebkitOverflowScrolling: "touch",
+              touchAction: "pan-y",
+              borderRadius: 10,
+              border: `1px solid ${C.cardBorder}`,
+              marginBottom: 10,
+              background: C.surface,
+            }}
+          >
+            <img ref={imgRef} src={imgSrc} alt="" style={{ display: "block", width: "100%", height: "auto" }} />
+          </div>
+          <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+            <Btn tone="gold" small onClick={runScan}>
+              {scanning ? scanStatus : hasScanned ? tWord("rescanBtn", lang) : tWord("scanBtn", lang)}
+            </Btn>
+            <Btn tone="ghost" small onClick={() => { setImgSrc(null); setEdited(null); setHasScanned(false); setFileError(null); }}>✕</Btn>
+          </div>
           {scanning && <ProgressBar pct={scanPct} tone="green" />}
         </div>
       )}
 
       {fileError && <div style={{ fontSize: 12, color: C.red, fontWeight: 600, marginTop: 8 }}>{fileError}</div>}
+
+      {looksOff && (
+        <div style={{ fontSize: 12, color: C.amber, fontWeight: 600, marginTop: 8, background: C.amberBg, borderRadius: 10, padding: "8px 10px" }}>
+          ⚠ {tWord("scanRetryLangHint", lang)}
+        </div>
+      )}
 
       {edited && (
         <div style={{ marginTop: 12 }}>
@@ -1799,8 +1856,14 @@ function ScreenshotScanner({ lang, onApply }) {
             </details>
           )}
 
-          <div style={{ marginTop: 10 }}>
-            <Btn tone="gold" onClick={handleApply}>{tWord("applyToPoolBtn", lang)}</Btn>
+          {/* Apply straight to either account — no need to switch the
+              active account first just to drop a scan into it. */}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+            {accounts.map((acc) => (
+              <Btn key={acc.id} tone="gold" small onClick={() => handleApply(acc.id)}>
+                {tWord("applyToPoolBtn", lang)} — {acc.name}{acc.id === activeAccountId ? " ✓" : ""}
+              </Btn>
+            ))}
           </div>
         </div>
       )}
@@ -2074,16 +2137,32 @@ export default function App() {
   // Applies a completed screenshot scan straight into the Troop Pool —
   // replaces T10/T9 with whatever the player confirmed in the scanner's
   // review step, with the same Undo pattern as Clear/Reset.
-  function handleApplyScan(scanned) {
-    const previousT10 = t10;
-    const previousT9 = t9;
-    setT10({ infantry: scanned.t10Infantry, lancer: scanned.t10Lancer, marksman: scanned.t10Marksman });
-    setT9({ infantry: scanned.t9Infantry, lancer: scanned.t9Lancer, marksman: scanned.t9Marksman });
-    showToast(tr("appliedScanToast"), tr("undoAction"), () => {
-      setT10(previousT10);
-      setT9(previousT9);
-      dismissToast();
-    });
+  // Applies a completed screenshot scan either to the currently active
+  // account (live state, same Undo pattern as Clear/Reset) or straight into
+  // the OTHER account's saved data in the background — no need to switch
+  // accounts first just to drop a scan into the one you're not looking at.
+  function handleApplyScan(scanned, targetId) {
+    const t10Vals = { infantry: scanned.t10Infantry, lancer: scanned.t10Lancer, marksman: scanned.t10Marksman };
+    const t9Vals = { infantry: scanned.t9Infantry, lancer: scanned.t9Lancer, marksman: scanned.t9Marksman };
+    if (targetId === activeAccount) {
+      const previousT10 = t10;
+      const previousT9 = t9;
+      setT10(t10Vals);
+      setT9(t9Vals);
+      showToast(tr("appliedScanToast"), tr("undoAction"), () => {
+        setT10(previousT10);
+        setT9(previousT9);
+        dismissToast();
+      });
+    } else {
+      try {
+        const existing = loadSavedForAccount(targetId) || {};
+        localStorage.setItem(accountStorageKey(targetId), JSON.stringify({ ...existing, t10: t10Vals, t9: t9Vals }));
+        showToast(tFmt("appliedScanToOtherToast", lang, { a: accountNames[targetId] }), null, null, 2500);
+      } catch {
+        showToast(tr("scanErrorMsg"), null, null, 2500);
+      }
+    }
   }
   function resetAll() {
     const snapshot = {
@@ -2642,7 +2721,12 @@ export default function App() {
             </div>
           )}
           <div style={{ marginBottom: 12 }}>
-            <ScreenshotScanner lang={lang} onApply={handleApplyScan} />
+            <ScreenshotScanner
+              lang={lang}
+              accounts={[{ id: "A", name: accountNames.A }, { id: "B", name: accountNames.B }]}
+              activeAccountId={activeAccount}
+              onApply={handleApplyScan}
+            />
           </div>
           <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 15, fontWeight: 800, lineHeight: "20px", color: C.gold, marginTop: 4, marginBottom: 6 }}>T10</div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
