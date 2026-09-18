@@ -1673,9 +1673,9 @@ function parseScanText(data) {
 
 // Crops to nothing (whole image) but upscales before handing it to
 // Tesseract — small, compressed screenshot text reads far more reliably at
-// 2x than at native resolution.
-const OCR_UPSCALE_FACTOR = 2;
-const OCR_MAX_DIMENSION = 3200;
+// 3x than at native resolution.
+const OCR_UPSCALE_FACTOR = 3;
+const OCR_MAX_DIMENSION = 3600;
 function buildOcrCanvas(imgEl) {
   const sw = imgEl.naturalWidth, sh = imgEl.naturalHeight;
   let destW = sw * OCR_UPSCALE_FACTOR, destH = sh * OCR_UPSCALE_FACTOR;
@@ -1690,6 +1690,16 @@ function buildOcrCanvas(imgEl) {
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
+  // This game's UI is full of colorful icons, gradients, and background
+  // art — all visual noise Tesseract has to wade through before it even
+  // reaches the numbers. Flattening to grayscale and boosting contrast
+  // before OCR is a standard preprocessing step that measurably helps
+  // digit legibility on busy, compressed screenshots like these. Wrapped
+  // in a check since older WebViews may not support canvas filters — the
+  // upscale above still helps even without it.
+  if ("filter" in ctx) {
+    ctx.filter = "grayscale(1) contrast(1.35) brightness(1.05)";
+  }
   ctx.drawImage(imgEl, 0, 0, sw, sh, 0, 0, canvas.width, canvas.height);
   return canvas;
 }
