@@ -123,6 +123,7 @@ const TRANSLATIONS = {
     scanRetryLangHint: "This didn't read well — try a different screenshot language above and scan again.", rescanBtn: "🔁 Scan again",
     appliedScanToOtherToast: "Scanned values applied to {a}.",
     autoDetectLangLabel: "Auto-detect the screenshot's language", detectedLangNote: "Detected: {a}",
+    alwaysDoubleCheckNote: "OCR can misread individual digits even when a field looks fine — compare against your screenshot above before applying.",
   },
   it: {
     troopPool: "Riserva truppe", troopPoolSub: "Le T10 vengono sempre usate prima delle T9 per lo stesso tipo di truppa.",
@@ -191,6 +192,7 @@ const TRANSLATIONS = {
     scanRetryLangHint: "Non ha letto bene — prova una lingua dello screenshot diversa qui sopra e scansiona di nuovo.", rescanBtn: "🔁 Scansiona di nuovo",
     appliedScanToOtherToast: "Valori scansionati applicati a {a}.",
     autoDetectLangLabel: "Rileva automaticamente la lingua dello screenshot", detectedLangNote: "Rilevata: {a}",
+    alwaysDoubleCheckNote: "L'OCR può leggere male singole cifre anche quando un campo sembra corretto — confronta con lo screenshot sopra prima di applicare.",
   },
   es: {
     troopPool: "Reserva de tropas", troopPoolSub: "Las T10 siempre se usan antes que las T9 para el mismo tipo de tropa.",
@@ -259,6 +261,7 @@ const TRANSLATIONS = {
     scanRetryLangHint: "Esto no se leyó bien — prueba con otro idioma de captura arriba y escanea de nuevo.", rescanBtn: "🔁 Escanear de nuevo",
     appliedScanToOtherToast: "Valores escaneados aplicados a {a}.",
     autoDetectLangLabel: "Detectar automáticamente el idioma de la captura", detectedLangNote: "Detectado: {a}",
+    alwaysDoubleCheckNote: "El OCR puede leer mal cifras individuales incluso cuando un campo parece correcto — compara con la captura de arriba antes de aplicar.",
   },
   ko: {
     troopPool: "병력 보유량", troopPoolSub: "같은 병종이면 T9보다 T10을 항상 먼저 사용합니다.",
@@ -327,6 +330,7 @@ const TRANSLATIONS = {
     scanRetryLangHint: "잘 읽히지 않았습니다 — 위에서 다른 스크린샷 언어를 선택하고 다시 스캔해 보세요.", rescanBtn: "🔁 다시 스캔",
     appliedScanToOtherToast: "스캔한 값이 {a}에 적용되었습니다.",
     autoDetectLangLabel: "스크린샷 언어 자동 감지", detectedLangNote: "감지됨: {a}",
+    alwaysDoubleCheckNote: "필드가 괜찮아 보여도 OCR이 개별 숫자를 잘못 읽을 수 있습니다 — 적용하기 전에 위 스크린샷과 대조하세요.",
   },
   de: {
     troopPool: "Truppenbestand", troopPoolSub: "T10 wird beim gleichen Truppentyp immer vor T9 verwendet.",
@@ -395,6 +399,7 @@ const TRANSLATIONS = {
     scanRetryLangHint: "Das wurde nicht gut gelesen — probiere oben eine andere Screenshot-Sprache und scanne erneut.", rescanBtn: "🔁 Erneut scannen",
     appliedScanToOtherToast: "Gescannte Werte auf {a} angewendet.",
     autoDetectLangLabel: "Screenshot-Sprache automatisch erkennen", detectedLangNote: "Erkannt: {a}",
+    alwaysDoubleCheckNote: "OCR kann einzelne Ziffern falsch lesen, selbst wenn ein Feld gut aussieht — vor dem Anwenden mit dem Screenshot oben vergleichen.",
   },
   ru: {
     troopPool: "Резерв войск", troopPoolSub: "Войска T10 всегда используются раньше T9 для одного типа войск.",
@@ -463,6 +468,7 @@ const TRANSLATIONS = {
     scanRetryLangHint: "Это плохо считалось — попробуйте другой язык скриншота выше и отсканируйте снова.", rescanBtn: "🔁 Сканировать снова",
     appliedScanToOtherToast: "Отсканированные значения применены к {a}.",
     autoDetectLangLabel: "Автоматически определить язык скриншота", detectedLangNote: "Определено: {a}",
+    alwaysDoubleCheckNote: "OCR может неверно распознать отдельные цифры, даже если поле выглядит нормально — сверьте со скриншотом выше перед применением.",
   },
   pl: {
     troopPool: "Pula wojsk", troopPoolSub: "Wojska T10 są zawsze używane przed T9 dla tego samego typu wojsk.",
@@ -531,6 +537,7 @@ const TRANSLATIONS = {
     scanRetryLangHint: "To nie zostało dobrze odczytane — spróbuj innego języka zrzutu ekranu powyżej i zeskanuj ponownie.", rescanBtn: "🔁 Skanuj ponownie",
     appliedScanToOtherToast: "Zeskanowane wartości zastosowano do {a}.",
     autoDetectLangLabel: "Automatycznie wykryj język zrzutu ekranu", detectedLangNote: "Wykryto: {a}",
+    alwaysDoubleCheckNote: "OCR może błędnie odczytać pojedyncze cyfry, nawet gdy pole wygląda dobrze — porównaj ze zrzutem ekranu powyżej przed zastosowaniem.",
   },
   tr: {
     troopPool: "Asker havuzu", troopPoolSub: "Aynı asker türü için T10 her zaman T9'dan önce kullanılır.",
@@ -599,6 +606,7 @@ const TRANSLATIONS = {
     scanRetryLangHint: "Bu iyi okunmadı — yukarıdan farklı bir ekran görüntüsü dili deneyin ve tekrar tarayın.", rescanBtn: "🔁 Tekrar tara",
     appliedScanToOtherToast: "Taranan değerler {a} hesabına uygulandı.",
     autoDetectLangLabel: "Ekran görüntüsü dilini otomatik algıla", detectedLangNote: "Algılanan: {a}",
+    alwaysDoubleCheckNote: "Bir alan iyi görünse bile OCR tek tek rakamları yanlış okuyabilir — uygulamadan önce yukarıdaki ekran görüntüsüyle karşılaştırın.",
   },
   ar: {
     troopPool: "مجمع الجنود", troopPoolSub: "تُستخدم T10 دائمًا قبل T9 لنفس نوع الجندي.",
@@ -667,6 +675,7 @@ const TRANSLATIONS = {
     scanRetryLangHint: "لم تتم قراءته جيدًا — جرّب لغة لقطة شاشة مختلفة أعلاه وامسح مرة أخرى.", rescanBtn: "🔁 مسح مرة أخرى",
     appliedScanToOtherToast: "تم تطبيق القيم الممسوحة على {a}.",
     autoDetectLangLabel: "اكتشاف لغة لقطة الشاشة تلقائيًا", detectedLangNote: "تم اكتشاف: {a}",
+    alwaysDoubleCheckNote: "قد يُخطئ المسح الضوئي في قراءة أرقام فردية حتى لو بدا الحقل صحيحًا — قارن بلقطة الشاشة أعلاه قبل التطبيق.",
   },
 };
 
@@ -1538,13 +1547,26 @@ const AUTO_DETECT_SEQUENCE = ["chi_sim", "eng", "ara", "rus"];
 // with its bounding box and Tesseract's own confidence. Word level matters
 // because two on-screen columns often get merged into one wide OCR line —
 // word boxes stay accurate even when the line grouping doesn't.
+// A word's overall confidence is an average across its characters — which
+// means ONE misread digit inside an otherwise-clean number can hide behind
+// a perfectly decent word-level score. Tesseract.js exposes per-character
+// ("symbol") confidence too; using the LOWEST symbol confidence in the word
+// (when available) instead of the averaged word confidence means a single
+// bad digit correctly drags the whole field down to "needs review," rather
+// than a confidently-wrong number slipping through untouched.
 function flattenWords(data) {
   const words = [];
   function collect(lines) {
     (lines || []).forEach((line) => {
       (line.words || []).forEach((w) => {
         if (w.text && w.bbox) {
-          words.push({ text: w.text.trim(), bbox: w.bbox, confidence: typeof w.confidence === "number" ? w.confidence : 100 });
+          let conf = typeof w.confidence === "number" ? w.confidence : 100;
+          if (w.symbols && w.symbols.length) {
+            w.symbols.forEach((s) => {
+              if (typeof s.confidence === "number" && s.confidence < conf) conf = s.confidence;
+            });
+          }
+          words.push({ text: w.text.trim(), bbox: w.bbox, confidence: conf });
         }
       });
     });
@@ -1963,7 +1985,10 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
 
           {/* Apply straight to either account — no need to switch the
               active account first just to drop a scan into it. */}
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+          <div style={{ fontSize: 11.5, color: C.amber, fontWeight: 600, marginTop: 10, lineHeight: 1.4 }}>
+            ⚠ {tWord("alwaysDoubleCheckNote", lang)}
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
             {accounts.map((acc) => (
               <Btn key={acc.id} tone="gold" small onClick={() => handleApply(acc.id)}>
                 {tWord("applyToPoolBtn", lang)} — {acc.name}{acc.id === activeAccountId ? " ✓" : ""}
