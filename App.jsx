@@ -1525,7 +1525,13 @@ const SCAN_CONF_THRESHOLD = 70;
 // early the moment one finds everything. Kept short on purpose: each entry
 // is a full OCR pass (plus its own language data download the first time),
 // so a long list would make "auto" feel like it hung.
-const AUTO_DETECT_SEQUENCE = ["eng", "chi_sim", "ara", "rus"];
+// chi_sim is tried FIRST deliberately, not because the game text is
+// Chinese — it's an English-language game — but because Tesseract's
+// Chinese Simplified model has empirically read this game's bold,
+// stylized custom font (numbers included) more reliably than its own
+// English model does. This is about which trained model best tolerates
+// the font rendering, not about matching the game's actual UI language.
+const AUTO_DETECT_SEQUENCE = ["chi_sim", "eng", "ara", "rus"];
 
 // Pull every OCR *word* (not line) out of the blocks→paragraphs→lines tree,
 // with its bounding box and Tesseract's own confidence. Word level matters
@@ -1668,7 +1674,7 @@ function buildOcrCanvas(imgEl) {
 function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
   const [open, setOpen] = useState(false);
   const [autoDetect, setAutoDetect] = useState(true);
-  const [scanLang, setScanLang] = useState("eng"); // used when auto-detect is off; reflects the winning language after an auto-detect run
+  const [scanLang, setScanLang] = useState("chi_sim"); // default guess — Tesseract's Chinese Simplified model has proven the most reliable reader of this game's font, even for English screenshots; easy to change and rescan if it misreads
   const [imgSrc, setImgSrc] = useState(null);
   const [fileError, setFileError] = useState(null);
   const [scanning, setScanning] = useState(false);
