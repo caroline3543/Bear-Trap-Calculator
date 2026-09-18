@@ -1723,8 +1723,19 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
     const c = confidence[key];
     return c === undefined || c === null || c < SCAN_CONF_THRESHOLD;
   }
-  const reviewCount = SCAN_FIELDS.filter((f) => needsReview(f.key)).length;
-  const looksOff = hasScanned && reviewCount >= 3;
+  // Distinct from needsReview: this is specifically "the label/number
+  // couldn't be located at all" (confidence stays null for both the
+  // position match and the text-search fallback) — as opposed to "found
+  // it, but Tesseract's own score is just cautious," which is common with
+  // this game's bold stylized font even on a correct read. Only the
+  // former is actually a language/matching problem worth suggesting a
+  // screenshot-language change for; the latter just needs a glance.
+  function isMissing(key) {
+    const c = confidence[key];
+    return c === undefined || c === null;
+  }
+  const missingCount = SCAN_FIELDS.filter((f) => isMissing(f.key)).length;
+  const looksOff = hasScanned && missingCount >= 2;
 
   function handleApply(targetId) {
     onApply(edited, targetId);
