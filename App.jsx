@@ -1520,11 +1520,12 @@ const SCAN_FIELDS = [
 ];
 const SCAN_CONF_THRESHOLD = 70;
 // Tesseract.js has no cheap, genuine "detect the language before reading"
-// step — auto-detect here means trying this short, ordered list of likely
-// languages and keeping whichever pass locates the most fields, stopping
-// early the moment one finds everything. Kept short on purpose: each entry
-// is a full OCR pass (plus its own language data download the first time),
-// so a long list would make "auto" feel like it hung.
+// step — auto-detect here means running a full OCR pass with each of these
+// languages in turn and keeping whichever one scores highest by total
+// confidence across all 6 fields (so a language that reads everything
+// cleanly beats one that also finds everything but shakily). Kept short on
+// purpose: every entry is a full pass (plus its own language data download
+// the first time), so a long list would make "auto" feel slow.
 // chi_sim is tried FIRST deliberately, not because the game text is
 // Chinese — it's an English-language game — but because Tesseract's
 // Chinese Simplified model has empirically read this game's bold,
@@ -1707,8 +1708,8 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
   }
 
   // Tesseract has no real "detect the language" pass — auto-detect instead
-  // tries each candidate language as a full OCR pass, in order, and keeps
-  // whichever one located the most fields, stopping early on a clean read.
+  // runs a full OCR pass with every candidate language and keeps whichever
+  // one scores highest by total confidence across all 6 fields.
   async function runScan() {
     if (!imgSrc || !imgRef.current) return;
     setScanning(true);
@@ -1722,7 +1723,7 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
       for (let i = 0; i < candidates.length; i++) {
         const candidateLang = candidates[i];
         const candidateLabel = (OCR_LANGUAGES.find((l) => l.code === candidateLang) || {}).label || candidateLang;
-        setScanStatus(autoDetect ? `${tWord("scanningStatus", lang)} — ${candidateLabel}` : tWord("scanningStatus", lang));
+        setScanStatus(autoDetect ? `${tWord("scanningStatus", lang)} — ${candidateLabel} (${i + 1}/${candidates.length})` : tWord("scanningStatus", lang));
         // eslint-disable-next-line no-await-in-loop
         const res = await Tesseract.recognize(ocrCanvas, candidateLang, {
           workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js",
@@ -1736,9 +1737,18 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
           },
         });
         const parsed = parseScanText(res.data);
-        const missing = SCAN_FIELDS.filter((f) => parsed.confidence[f.key] === null || parsed.confidence[f.key] === undefined).length;
-        if (!best || missing < best.missing) best = { langUsed: candidateLang, parsed, missing };
-        if (missing === 0) break;
+        // Score by total confidence across all 6 fields (a missing field
+        // contributes 0) rather than just "how many fields did it find" —
+        // this is what lets a language that finds everything cleanly beat
+        // one that also finds everything but shakily. Every candidate in
+        // the list gets a full pass; auto-detect picks the best afterward
+        // instead of stopping at the first "found everything."
+        let score = 0;
+        SCAN_FIELDS.forEach((f) => {
+          const c = parsed.confidence[f.key];
+          score += c === null || c === undefined ? 0 : c;
+        });
+        if (!best || score > best.score) best = { langUsed: candidateLang, parsed, score };
       }
       const values = {};
       SCAN_FIELDS.forEach((f) => (values[f.key] = best.parsed.values[f.key] ?? 0));
