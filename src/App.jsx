@@ -1667,9 +1667,17 @@ function nearestNumberBelow(labelWord, numberWords) {
 // up: 2 rows (the common case) means T10/T9 exactly as always; a genuine
 // 3rd row above those two means Helios is present and becomes T11 — never
 // assumed, only detected when it's actually there.
+// Returns both the position-matched values AND how many rows were actually
+// found per troop type — parseScanText needs that count to know whether
+// "T11 wasn't found" means "genuinely not there" (2 rows found — the
+// ordinary case) versus "a real 3rd row exists but its number specifically
+// didn't match" (rare). Only the latter is worth a fallback search; running
+// the crude fallback for T11 whenever it's simply absent was the bug that
+// made the scanner invent a phantom Helios row out of unrelated numbers.
 function assignByPosition(words) {
   const numberWords = words.filter((w) => isNumberWord(w.text));
   const result = {};
+  const rowCounts = {};
   const tiersForCount = { 1: ["t10"], 2: ["t10", "t9"], 3: ["t11", "t10", "t9"] };
   TYPES.forEach((type) => {
     const matches = words.filter((w) => w.text.toLowerCase().indexOf(type) !== -1);
@@ -1678,6 +1686,7 @@ function assignByPosition(words) {
       if (Math.abs(dy) > 20) return dy;
       return ocrCenterX(a.bbox) - ocrCenterX(b.bbox);
     });
+    rowCounts[type] = matches.length;
     const cap = type.charAt(0).toUpperCase() + type.slice(1);
     const tierOrder = tiersForCount[Math.min(matches.length, 3)] || [];
     matches.slice(0, 3).forEach((labelWord, idx) => {
@@ -1685,7 +1694,7 @@ function assignByPosition(words) {
       result[tierOrder[idx] + cap] = nearestNumberBelow(labelWord, numberWords);
     });
   });
-  return result;
+  return { result, rowCounts };
 }
 
 function lineHasKeywords(text, keywords) {
@@ -1710,7 +1719,7 @@ function findValueForFieldFallback(rawText, keywords) {
 
 function parseScanText(data) {
   const words = flattenWords(data);
-  const assigned = words.length ? assignByPosition(words) : {};
+  const { result: assigned, rowCounts } = words.length ? assignByPosition(words) : { result: {}, rowCounts: {} };
   const values = {};
   const confidence = {};
   SCAN_FIELDS.forEach((f) => {
@@ -1718,6 +1727,13 @@ function parseScanText(data) {
     if (r) {
       values[f.key] = r.value;
       confidence[f.key] = r.confidence;
+    } else if (f.tier === "t11" && (rowCounts[f.type] || 0) < 3) {
+      // Position-matching only found 0–2 rows for this type — Helios
+      // genuinely isn't there. Report it as not-applicable rather than
+      // running the fallback, which has no concept of "tier" and would
+      // just grab whatever T10/T9 number happens to sit near the keyword.
+      values[f.key] = null;
+      confidence[f.key] = null;
     } else {
       const fb = findValueForFieldFallback(data.text || "", [f.type]);
       values[f.key] = fb;
