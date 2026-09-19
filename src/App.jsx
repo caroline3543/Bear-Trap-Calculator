@@ -126,7 +126,7 @@ const TRANSLATIONS = {
     hasHeliosLabel: "I have Helios (T11) troops",
     appliedScanToOtherToast: "Scanned values applied to {a}.",
     autoDetectLangLabel: "Auto-detect the screenshot's language", detectedLangNote: "Detected: {a}",
-    alwaysDoubleCheckNote: "OCR can misread individual digits even when a field looks fine — compare against your screenshot above before applying.",
+    alwaysDoubleCheckNote: "OCR can misread individual digits even when a field looks fine — compare against your screenshot above before applying."
   },
   it: {
     troopPool: "Riserva truppe", troopPoolSub: "Le T10 vengono sempre usate prima delle T9 per lo stesso tipo di truppa.",
@@ -198,7 +198,7 @@ const TRANSLATIONS = {
     hasHeliosLabel: "Ho truppe Helios (T11)",
     appliedScanToOtherToast: "Valori scansionati applicati a {a}.",
     autoDetectLangLabel: "Rileva automaticamente la lingua dello screenshot", detectedLangNote: "Rilevata: {a}",
-    alwaysDoubleCheckNote: "L'OCR può leggere male singole cifre anche quando un campo sembra corretto — confronta con lo screenshot sopra prima di applicare.",
+    alwaysDoubleCheckNote: "L'OCR può leggere male singole cifre anche quando un campo sembra corretto — confronta con lo screenshot sopra prima di applicare."
   },
   es: {
     troopPool: "Reserva de tropas", troopPoolSub: "Las T10 siempre se usan antes que las T9 para el mismo tipo de tropa.",
@@ -270,7 +270,7 @@ const TRANSLATIONS = {
     hasHeliosLabel: "Tengo tropas Helios (T11)",
     appliedScanToOtherToast: "Valores escaneados aplicados a {a}.",
     autoDetectLangLabel: "Detectar automáticamente el idioma de la captura", detectedLangNote: "Detectado: {a}",
-    alwaysDoubleCheckNote: "El OCR puede leer mal cifras individuales incluso cuando un campo parece correcto — compara con la captura de arriba antes de aplicar.",
+    alwaysDoubleCheckNote: "El OCR puede leer mal cifras individuales incluso cuando un campo parece correcto — compara con la captura de arriba antes de aplicar."
   },
   ko: {
     troopPool: "병력 보유량", troopPoolSub: "같은 병종이면 T9보다 T10을 항상 먼저 사용합니다.",
@@ -342,7 +342,7 @@ const TRANSLATIONS = {
     hasHeliosLabel: "헬리오스(T11) 병력을 보유하고 있습니다",
     appliedScanToOtherToast: "스캔한 값이 {a}에 적용되었습니다.",
     autoDetectLangLabel: "스크린샷 언어 자동 감지", detectedLangNote: "감지됨: {a}",
-    alwaysDoubleCheckNote: "필드가 괜찮아 보여도 OCR이 개별 숫자를 잘못 읽을 수 있습니다 — 적용하기 전에 위 스크린샷과 대조하세요.",
+    alwaysDoubleCheckNote: "필드가 괜찮아 보여도 OCR이 개별 숫자를 잘못 읽을 수 있습니다 — 적용하기 전에 위 스크린샷과 대조하세요."
   },
   de: {
     troopPool: "Truppenbestand", troopPoolSub: "T10 wird beim gleichen Truppentyp immer vor T9 verwendet.",
@@ -414,7 +414,7 @@ const TRANSLATIONS = {
     hasHeliosLabel: "Ich habe Helios-Truppen (T11)",
     appliedScanToOtherToast: "Gescannte Werte auf {a} angewendet.",
     autoDetectLangLabel: "Screenshot-Sprache automatisch erkennen", detectedLangNote: "Erkannt: {a}",
-    alwaysDoubleCheckNote: "OCR kann einzelne Ziffern falsch lesen, selbst wenn ein Feld gut aussieht — vor dem Anwenden mit dem Screenshot oben vergleichen.",
+    alwaysDoubleCheckNote: "OCR kann einzelne Ziffern falsch lesen, selbst wenn ein Feld gut aussieht — vor dem Anwenden mit dem Screenshot oben vergleichen."
   },
   ru: {
     troopPool: "Резерв войск", troopPoolSub: "Войска T10 всегда используются раньше T9 для одного типа войск.",
@@ -486,7 +486,7 @@ const TRANSLATIONS = {
     hasHeliosLabel: "У меня есть войска Гелиос (T11)",
     appliedScanToOtherToast: "Отсканированные значения применены к {a}.",
     autoDetectLangLabel: "Автоматически определить язык скриншота", detectedLangNote: "Определено: {a}",
-    alwaysDoubleCheckNote: "OCR может неверно распознать отдельные цифры, даже если поле выглядит нормально — сверьте со скриншотом выше перед применением.",
+    alwaysDoubleCheckNote: "OCR может неверно распознать отдельные цифры, даже если поле выглядит нормально — сверьте со скриншотом выше перед применением."
   },
   pl: {
     troopPool: "Pula wojsk", troopPoolSub: "Wojska T10 są zawsze używane przed T9 dla tego samego typu wojsk.",
@@ -558,7 +558,7 @@ const TRANSLATIONS = {
     hasHeliosLabel: "Mam wojska Helios (T11)",
     appliedScanToOtherToast: "Zeskanowane wartości zastosowano do {a}.",
     autoDetectLangLabel: "Automatycznie wykryj język zrzutu ekranu", detectedLangNote: "Wykryto: {a}",
-    alwaysDoubleCheckNote: "OCR może błędnie odczytać pojedyncze cyfry, nawet gdy pole wygląda dobrze — porównaj ze zrzutem ekranu powyżej przed zastosowaniem.",
+    alwaysDoubleCheckNote: "OCR może błędnie odczytać pojedyncze cyfry, nawet gdy pole wygląda dobrze — porównaj ze zrzutem ekranu powyżej przed zastosowaniem."
   },
   tr: {
     troopPool: "Asker havuzu", troopPoolSub: "Aynı asker türü için T10 her zaman T9'dan önce kullanılır.",
@@ -630,7 +630,7 @@ const TRANSLATIONS = {
     hasHeliosLabel: "Helios (T11) askerlerim var",
     appliedScanToOtherToast: "Taranan değerler {a} hesabına uygulandı.",
     autoDetectLangLabel: "Ekran görüntüsü dilini otomatik algıla", detectedLangNote: "Algılanan: {a}",
-    alwaysDoubleCheckNote: "Bir alan iyi görünse bile OCR tek tek rakamları yanlış okuyabilir — uygulamadan önce yukarıdaki ekran görüntüsüyle karşılaştırın.",
+    alwaysDoubleCheckNote: "Bir alan iyi görünse bile OCR tek tek rakamları yanlış okuyabilir — uygulamadan önce yukarıdaki ekran görüntüsüyle karşılaştırın."
   },
   ar: {
     troopPool: "مجمع الجنود", troopPoolSub: "تُستخدم T10 دائمًا قبل T9 لنفس نوع الجندي.",
@@ -702,7 +702,7 @@ const TRANSLATIONS = {
     hasHeliosLabel: "لدي جنود هيليوس (T11)",
     appliedScanToOtherToast: "تم تطبيق القيم الممسوحة على {a}.",
     autoDetectLangLabel: "اكتشاف لغة لقطة الشاشة تلقائيًا", detectedLangNote: "تم اكتشاف: {a}",
-    alwaysDoubleCheckNote: "قد يُخطئ المسح الضوئي في قراءة أرقام فردية حتى لو بدا الحقل صحيحًا — قارن بلقطة الشاشة أعلاه قبل التطبيق.",
+    alwaysDoubleCheckNote: "قد يُخطئ المسح الضوئي في قراءة أرقام فردية حتى لو بدا الحقل صحيحًا — قارن بلقطة الشاشة أعلاه قبل التطبيق."
   },
 };
 
@@ -1684,6 +1684,7 @@ function assignByPosition(words) {
       if (!tierOrder[idx]) return;
       result[tierOrder[idx] + cap] = nearestNumberBelow(labelWord, numberWords);
     });
+    });
   });
   return result;
 }
@@ -1727,6 +1728,9 @@ function parseScanText(data) {
   return { values, confidence, rawText: data.text || "" };
 }
 
+// Crops to nothing (whole image) but upscales before handing it to
+// Tesseract — small, compressed screenshot text reads far more reliably at
+// 2x than at native resolution.
 // Crops to nothing (whole image) but upscales before handing it to
 // Tesseract — small, compressed screenshot text reads far more reliably at
 // 2x than at native resolution.
@@ -1896,6 +1900,9 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
         setRawText("");
         setDetectedLang(null);
       }
+    } finally {
+      setScanning(false);
+    }
       setHasScanned(true);
     } finally {
       setScanning(false);
@@ -1962,7 +1969,6 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
     }
     return lines.join("\n");
   }
-
   if (!open) {
     return (
       <Btn tone="ghost" small onClick={() => setOpen(true)}>
@@ -2038,6 +2044,9 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
           {/* Full device width, capped to roughly a third of a typical tall
               screenshot's height so the top (where troop counts sit) reads
               clearly instead of being shrunk to fit — scrollable so an
+          {/* Full device width, capped to roughly a third of a typical tall
+              screenshot's height so the top (where troop counts sit) reads
+              clearly instead of being shrunk to fit — scrollable so an
               iPhone user can drag down through the rest of the image.
               Scanning reads ONLY whatever's scrolled into view here, not
               the whole screenshot — this doubles as the crop tool. */}
@@ -2074,6 +2083,11 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
       {totalFailure && (
         <div style={{ fontSize: 12, color: C.red, fontWeight: 600, marginTop: 8, background: C.redBg, borderRadius: 10, padding: "8px 10px" }}>
           ⚠ {tWord("scanTotalFailure", lang)}
+        </div>
+      )}
+      {!totalFailure && looksOff && (
+        <div style={{ fontSize: 12, color: C.amber, fontWeight: 600, marginTop: 8, background: C.amberBg, borderRadius: 10, padding: "8px 10px" }}>
+          ⚠ {tWord("scanRetryLangHint", lang)}
         </div>
       )}
       {looksOff && (
@@ -2400,6 +2414,10 @@ export default function App() {
       dismissToast();
     });
   }
+  // Applies a completed screenshot scan straight into the Troop Pool — replaces T10/T9 with whatever the player confirmed in the scanner's
+  // review step, with the same Undo pattern as Clear/Reset.
+  // T11 (Helios) only comes along, and only auto-switches that account's
+  // Helios toggle on, if the scan actually found a T11 row — never assumed.
   // Applies a completed screenshot scan either to the currently active
   // account (live state, same Undo pattern as Clear/Reset) or straight into
   // the OTHER account's saved data in the background — no need to switch
@@ -2427,6 +2445,23 @@ export default function App() {
         setT9(previousT9);
         setT11(previousT11);
         setHasHelios(previousHasHelios);
+        dismissToast();
+      });
+    } else {
+      try {
+        const existing = loadSavedForAccount(targetId) || {};
+        const merged = { ...existing, t10: t10Vals, t9: t9Vals };
+        if (foundHelios) {
+          merged.t11 = t11Vals;
+          merged.hasHelios = true;
+        }
+        localStorage.setItem(accountStorageKey(targetId), JSON.stringify(merged));
+        showToast(tFmt("appliedScanToOtherToast", lang, { a: accountNames[targetId] }), null, null, 2500);
+      } catch {
+        showToast(tr("scanErrorMsg"), null, null, 2500);
+      }
+    }
+  }
         dismissToast();
       });
     } else {
