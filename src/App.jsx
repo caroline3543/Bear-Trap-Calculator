@@ -113,6 +113,20 @@ const TRANSLATIONS = {
     copyPlan: "Copy squad plan", copiedToast: "Copied to clipboard!", copyFailedToast: "Couldn't copy — try again.",
     autoLabel: "auto", marksmanBelow60kWarning: "Below the 60,000 minimum",
     infantryStockLimitWarning: "Not enough Infantry in your pool to go higher", lancerStockLimitWarning: "Not enough Lancer in your pool to go higher",
+    scanScreenshotBtn: "📷 Scan a screenshot instead", scanScreenshotHide: "Hide scanner", screenshotLangLabel: "Screenshot language — match your game's UI language",
+    chooseScreenshot: "Choose a screenshot", scanBtn: "Scan screenshot", scanningStatus: "Reading numbers…", scanResultsHeading: "Check the numbers",
+    needsReviewNote: "needs review", applyToPoolBtn: "Apply to Troop Pool", appliedScanToast: "Scanned values applied to Troop Pool.",
+    scanErrorMsg: "Couldn't read that image — try a clearer screenshot, or enter the numbers by hand below.",
+    scanHint: "Works best with a clear, uncropped shot of the Troops Preview screen.", whatScannerRead: "What the scanner read",
+    notAnImage: "That doesn't look like an image — try a screenshot (PNG or JPG).",
+    scanInstructions: "In-game, tap your profile picture (top-left) → Troops → that screen shows your troop counts. Screenshot it, then upload it below.",
+    scanRetryLangHint: "This didn't read well — try a different screenshot language above and scan again.", rescanBtn: "🔁 Scan again",
+    scanTotalFailure: "Every language we tried came up empty on this screenshot. Try a clearer or less-compressed screenshot, or enter the numbers by hand in the fields below.",
+    scanCropHint: "Scanning only reads what's visible above — scroll to frame just the numbers you want, or scan a section, scroll, and scan again to fill in the rest.",
+    hasHeliosLabel: "I have Helios (T11) troops",
+    appliedScanToOtherToast: "Scanned values applied to {a}.",
+    autoDetectLangLabel: "Auto-detect the screenshot's language", detectedLangNote: "Detected: {a}",
+    alwaysDoubleCheckNote: "OCR can misread individual digits even when a field looks fine — compare against your screenshot above before applying.",
   },
   it: {
     troopPool: "Riserva truppe", troopPoolSub: "Le T10 vengono sempre usate prima delle T9 per lo stesso tipo di truppa.",
@@ -171,6 +185,20 @@ const TRANSLATIONS = {
     copyPlan: "Copia piano squadre", copiedToast: "Copiato negli appunti!", copyFailedToast: "Copia non riuscita — riprova.",
     autoLabel: "auto", marksmanBelow60kWarning: "Sotto il minimo di 60.000",
     infantryStockLimitWarning: "Non hai abbastanza Fanteria in riserva per salire ancora", lancerStockLimitWarning: "Non hai abbastanza Lancieri in riserva per salire ancora",
+    scanScreenshotBtn: "📷 Scansiona uno screenshot", scanScreenshotHide: "Nascondi lo scanner", screenshotLangLabel: "Lingua dello screenshot — deve corrispondere alla lingua dell'interfaccia di gioco",
+    chooseScreenshot: "Scegli uno screenshot", scanBtn: "Scansiona lo screenshot", scanningStatus: "Lettura dei numeri…", scanResultsHeading: "Controlla i numeri",
+    needsReviewNote: "da controllare", applyToPoolBtn: "Applica alla riserva truppe", appliedScanToast: "Valori scansionati applicati alla riserva truppe.",
+    scanErrorMsg: "Impossibile leggere l'immagine — prova con uno screenshot più chiaro, oppure inserisci i numeri a mano qui sotto.",
+    scanHint: "Funziona meglio con uno scatto chiaro e non ritagliato della schermata Anteprima Truppe.", whatScannerRead: "Cosa ha letto lo scanner",
+    notAnImage: "Non sembra un'immagine — prova con uno screenshot (PNG o JPG).",
+    scanInstructions: "Nel gioco, tocca la tua immagine del profilo (in alto a sinistra) → Truppe → quella schermata mostra il numero delle tue truppe. Fai uno screenshot e caricalo qui sotto.",
+    scanRetryLangHint: "Non ha letto bene — prova una lingua dello screenshot diversa qui sopra e scansiona di nuovo.", rescanBtn: "🔁 Scansiona di nuovo",
+    scanTotalFailure: "Nessuna delle lingue provate ha funzionato su questo screenshot. Prova uno screenshot più chiaro o meno compresso, oppure inserisci i numeri a mano nei campi qui sotto.",
+    scanCropHint: "La scansione legge solo ciò che è visibile sopra — scorri per inquadrare solo i numeri che vuoi, oppure scansiona una sezione, scorri e scansiona di nuovo per completare il resto.",
+    hasHeliosLabel: "Ho truppe Helios (T11)",
+    appliedScanToOtherToast: "Valori scansionati applicati a {a}.",
+    autoDetectLangLabel: "Rileva automaticamente la lingua dello screenshot", detectedLangNote: "Rilevata: {a}",
+    alwaysDoubleCheckNote: "L'OCR può leggere male singole cifre anche quando un campo sembra corretto — confronta con lo screenshot sopra prima di applicare.",
   },
   es: {
     troopPool: "Reserva de tropas", troopPoolSub: "Las T10 siempre se usan antes que las T9 para el mismo tipo de tropa.",
@@ -229,6 +257,20 @@ const TRANSLATIONS = {
     copyPlan: "Copiar plan de escuadrones", copiedToast: "¡Copiado al portapapeles!", copyFailedToast: "No se pudo copiar — inténtalo de nuevo.",
     autoLabel: "auto", marksmanBelow60kWarning: "Por debajo del mínimo de 60.000",
     infantryStockLimitWarning: "No tienes suficiente Infantería en la reserva para subir más", lancerStockLimitWarning: "No tienes suficientes Lanceros en la reserva para subir más",
+    scanScreenshotBtn: "📷 Escanear una captura en su lugar", scanScreenshotHide: "Ocultar el escáner", screenshotLangLabel: "Idioma de la captura — debe coincidir con el idioma de la interfaz del juego",
+    chooseScreenshot: "Elegir una captura", scanBtn: "Escanear captura", scanningStatus: "Leyendo los números…", scanResultsHeading: "Revisa los números",
+    needsReviewNote: "revisar", applyToPoolBtn: "Aplicar a la reserva de tropas", appliedScanToast: "Valores escaneados aplicados a la reserva de tropas.",
+    scanErrorMsg: "No se pudo leer esa imagen — prueba con una captura más clara, o introduce los números a mano abajo.",
+    scanHint: "Funciona mejor con una captura clara y sin recortar de la pantalla de Vista previa de Tropas.", whatScannerRead: "Lo que leyó el escáner",
+    notAnImage: "Eso no parece una imagen — prueba con una captura (PNG o JPG).",
+    scanInstructions: "En el juego, toca tu foto de perfil (arriba a la izquierda) → Tropas → esa pantalla muestra tus tropas. Haz una captura y súbela abajo.",
+    scanRetryLangHint: "Esto no se leyó bien — prueba con otro idioma de captura arriba y escanea de nuevo.", rescanBtn: "🔁 Escanear de nuevo",
+    scanTotalFailure: "Ningún idioma probado funcionó con esta captura. Prueba con una captura más clara o menos comprimida, o introduce los números a mano en los campos de abajo.",
+    scanCropHint: "El escaneo solo lee lo que se ve arriba — desplázate para encuadrar solo los números que quieres, o escanea una sección, desplázate y escanea de nuevo para completar el resto.",
+    hasHeliosLabel: "Tengo tropas Helios (T11)",
+    appliedScanToOtherToast: "Valores escaneados aplicados a {a}.",
+    autoDetectLangLabel: "Detectar automáticamente el idioma de la captura", detectedLangNote: "Detectado: {a}",
+    alwaysDoubleCheckNote: "El OCR puede leer mal cifras individuales incluso cuando un campo parece correcto — compara con la captura de arriba antes de aplicar.",
   },
   ko: {
     troopPool: "병력 보유량", troopPoolSub: "같은 병종이면 T9보다 T10을 항상 먼저 사용합니다.",
@@ -287,6 +329,20 @@ const TRANSLATIONS = {
     copyPlan: "부대 계획 복사", copiedToast: "클립보드에 복사되었습니다!", copyFailedToast: "복사하지 못했습니다 — 다시 시도하세요.",
     autoLabel: "자동", marksmanBelow60kWarning: "60,000 최소치 미만",
     infantryStockLimitWarning: "보유량에 보병이 부족하여 더 올릴 수 없습니다", lancerStockLimitWarning: "보유량에 창병이 부족하여 더 올릴 수 없습니다",
+    scanScreenshotBtn: "📷 스크린샷 스캔하기", scanScreenshotHide: "스캐너 숨기기", screenshotLangLabel: "스크린샷 언어 — 게임 UI 언어와 일치해야 합니다",
+    chooseScreenshot: "스크린샷 선택", scanBtn: "스크린샷 스캔", scanningStatus: "숫자를 읽는 중…", scanResultsHeading: "숫자 확인",
+    needsReviewNote: "확인 필요", applyToPoolBtn: "병력 보유량에 적용", appliedScanToast: "스캔한 값이 병력 보유량에 적용되었습니다.",
+    scanErrorMsg: "이미지를 읽을 수 없습니다 — 더 선명한 스크린샷을 시도하거나 아래에 직접 숫자를 입력하세요.",
+    scanHint: "병력 미리보기 화면을 선명하고 자르지 않은 상태로 캡처하면 가장 잘 작동합니다.", whatScannerRead: "스캐너가 읽은 내용",
+    notAnImage: "이미지가 아닌 것 같습니다 — 스크린샷(PNG 또는 JPG)을 시도하세요.",
+    scanInstructions: "게임에서 프로필 사진(왼쪽 위)을 탭 → 병력 → 그 화면에 병력 수가 표시됩니다. 그 화면을 캡처해서 아래에 업로드하세요.",
+    scanRetryLangHint: "잘 읽히지 않았습니다 — 위에서 다른 스크린샷 언어를 선택하고 다시 스캔해 보세요.", rescanBtn: "🔁 다시 스캔",
+    scanTotalFailure: "시도한 모든 언어가 이 스크린샷에서 아무것도 찾지 못했습니다. 더 선명하거나 압축이 덜 된 스크린샷을 시도하거나, 아래 필드에 숫자를 직접 입력하세요.",
+    scanCropHint: "스캔은 위에 보이는 부분만 읽습니다 — 원하는 숫자만 보이도록 스크롤하거나, 한 부분을 스캔한 뒤 스크롤해서 나머지를 다시 스캔하세요.",
+    hasHeliosLabel: "헬리오스(T11) 병력을 보유하고 있습니다",
+    appliedScanToOtherToast: "스캔한 값이 {a}에 적용되었습니다.",
+    autoDetectLangLabel: "스크린샷 언어 자동 감지", detectedLangNote: "감지됨: {a}",
+    alwaysDoubleCheckNote: "필드가 괜찮아 보여도 OCR이 개별 숫자를 잘못 읽을 수 있습니다 — 적용하기 전에 위 스크린샷과 대조하세요.",
   },
   de: {
     troopPool: "Truppenbestand", troopPoolSub: "T10 wird beim gleichen Truppentyp immer vor T9 verwendet.",
@@ -345,6 +401,20 @@ const TRANSLATIONS = {
     copyPlan: "Truppplan kopieren", copiedToast: "In die Zwischenablage kopiert!", copyFailedToast: "Kopieren fehlgeschlagen — erneut versuchen.",
     autoLabel: "auto", marksmanBelow60kWarning: "Unter dem Minimum von 60.000",
     infantryStockLimitWarning: "Nicht genug Infanterie im Bestand, um weiter zu erhöhen", lancerStockLimitWarning: "Nicht genug Lanzenreiter im Bestand, um weiter zu erhöhen",
+    scanScreenshotBtn: "📷 Stattdessen einen Screenshot scannen", scanScreenshotHide: "Scanner ausblenden", screenshotLangLabel: "Screenshot-Sprache — muss der Sprache der Spieloberfläche entsprechen",
+    chooseScreenshot: "Screenshot auswählen", scanBtn: "Screenshot scannen", scanningStatus: "Zahlen werden gelesen…", scanResultsHeading: "Zahlen überprüfen",
+    needsReviewNote: "muss geprüft werden", applyToPoolBtn: "Auf Truppenbestand anwenden", appliedScanToast: "Gescannte Werte auf den Truppenbestand angewendet.",
+    scanErrorMsg: "Dieses Bild konnte nicht gelesen werden — versuche einen klareren Screenshot oder gib die Zahlen unten manuell ein.",
+    scanHint: "Funktioniert am besten mit einer klaren, nicht zugeschnittenen Aufnahme des Truppenübersicht-Bildschirms.", whatScannerRead: "Was der Scanner gelesen hat",
+    notAnImage: "Das sieht nicht wie ein Bild aus — versuche einen Screenshot (PNG oder JPG).",
+    scanInstructions: "Tippe im Spiel auf dein Profilbild (oben links) → Truppen → dieser Bildschirm zeigt deine Truppenzahlen. Mach einen Screenshot davon und lade ihn unten hoch.",
+    scanRetryLangHint: "Das wurde nicht gut gelesen — probiere oben eine andere Screenshot-Sprache und scanne erneut.", rescanBtn: "🔁 Erneut scannen",
+    scanTotalFailure: "Keine der ausprobierten Sprachen konnte diesen Screenshot lesen. Versuche einen klareren oder weniger komprimierten Screenshot, oder gib die Zahlen unten manuell ein.",
+    scanCropHint: "Der Scan liest nur, was oben sichtbar ist — scrolle, um nur die gewünschten Zahlen einzurahmen, oder scanne einen Abschnitt, scrolle weiter und scanne erneut, um den Rest zu ergänzen.",
+    hasHeliosLabel: "Ich habe Helios-Truppen (T11)",
+    appliedScanToOtherToast: "Gescannte Werte auf {a} angewendet.",
+    autoDetectLangLabel: "Screenshot-Sprache automatisch erkennen", detectedLangNote: "Erkannt: {a}",
+    alwaysDoubleCheckNote: "OCR kann einzelne Ziffern falsch lesen, selbst wenn ein Feld gut aussieht — vor dem Anwenden mit dem Screenshot oben vergleichen.",
   },
   ru: {
     troopPool: "Резерв войск", troopPoolSub: "Войска T10 всегда используются раньше T9 для одного типа войск.",
@@ -403,6 +473,20 @@ const TRANSLATIONS = {
     copyPlan: "Скопировать план отрядов", copiedToast: "Скопировано в буфер обмена!", copyFailedToast: "Не удалось скопировать — попробуйте снова.",
     autoLabel: "авто", marksmanBelow60kWarning: "Ниже минимума в 60 000",
     infantryStockLimitWarning: "Недостаточно пехоты в резерве, чтобы поднять выше", lancerStockLimitWarning: "Недостаточно копейщиков в резерве, чтобы поднять выше",
+    scanScreenshotBtn: "📷 Отсканировать скриншот", scanScreenshotHide: "Скрыть сканер", screenshotLangLabel: "Язык скриншота — должен совпадать с языком интерфейса игры",
+    chooseScreenshot: "Выбрать скриншот", scanBtn: "Сканировать скриншот", scanningStatus: "Считывание чисел…", scanResultsHeading: "Проверьте числа",
+    needsReviewNote: "требует проверки", applyToPoolBtn: "Применить к резерву войск", appliedScanToast: "Отсканированные значения применены к резерву войск.",
+    scanErrorMsg: "Не удалось прочитать это изображение — попробуйте более чёткий скриншот или введите числа вручную ниже.",
+    scanHint: "Лучше всего работает с чётким, необрезанным снимком экрана предпросмотра войск.", whatScannerRead: "Что прочитал сканер",
+    notAnImage: "Это не похоже на изображение — попробуйте скриншот (PNG или JPG).",
+    scanInstructions: "В игре нажмите на свой портрет (вверху слева) → Войска → этот экран показывает количество войск. Сделайте скриншот и загрузите его ниже.",
+    scanRetryLangHint: "Это плохо считалось — попробуйте другой язык скриншота выше и отсканируйте снова.", rescanBtn: "🔁 Сканировать снова",
+    scanTotalFailure: "Ни один из опробованных языков не смог прочитать этот скриншот. Попробуйте более чёткий или менее сжатый скриншот, либо введите числа вручную в поля ниже.",
+    scanCropHint: "Сканирование считывает только то, что видно выше — прокрутите, чтобы показать только нужные числа, либо отсканируйте один участок, прокрутите и отсканируйте снова, чтобы дополнить остальное.",
+    hasHeliosLabel: "У меня есть войска Гелиос (T11)",
+    appliedScanToOtherToast: "Отсканированные значения применены к {a}.",
+    autoDetectLangLabel: "Автоматически определить язык скриншота", detectedLangNote: "Определено: {a}",
+    alwaysDoubleCheckNote: "OCR может неверно распознать отдельные цифры, даже если поле выглядит нормально — сверьте со скриншотом выше перед применением.",
   },
   pl: {
     troopPool: "Pula wojsk", troopPoolSub: "Wojska T10 są zawsze używane przed T9 dla tego samego typu wojsk.",
@@ -461,6 +545,20 @@ const TRANSLATIONS = {
     copyPlan: "Kopiuj plan oddziałów", copiedToast: "Skopiowano do schowka!", copyFailedToast: "Nie udało się skopiować — spróbuj ponownie.",
     autoLabel: "auto", marksmanBelow60kWarning: "Poniżej minimum 60 000",
     infantryStockLimitWarning: "Za mało Piechoty w puli, by ustawić wyżej", lancerStockLimitWarning: "Za mało Lansjerów w puli, by ustawić wyżej",
+    scanScreenshotBtn: "📷 Zeskanuj zrzut ekranu", scanScreenshotHide: "Ukryj skaner", screenshotLangLabel: "Język zrzutu ekranu — musi zgadzać się z językiem interfejsu gry",
+    chooseScreenshot: "Wybierz zrzut ekranu", scanBtn: "Skanuj zrzut ekranu", scanningStatus: "Odczytywanie liczb…", scanResultsHeading: "Sprawdź liczby",
+    needsReviewNote: "do sprawdzenia", applyToPoolBtn: "Zastosuj do puli wojsk", appliedScanToast: "Zeskanowane wartości zastosowano do puli wojsk.",
+    scanErrorMsg: "Nie udało się odczytać tego obrazu — spróbuj wyraźniejszego zrzutu ekranu lub wpisz liczby ręcznie poniżej.",
+    scanHint: "Najlepiej działa z wyraźnym, nieprzyciętym zdjęciem ekranu podglądu wojsk.", whatScannerRead: "Co odczytał skaner",
+    notAnImage: "To nie wygląda na obraz — spróbuj zrzutu ekranu (PNG lub JPG).",
+    scanInstructions: "W grze dotknij swojego zdjęcia profilowego (lewy górny róg) → Wojska → ten ekran pokazuje liczbę Twoich wojsk. Zrób zrzut ekranu i prześlij go poniżej.",
+    scanRetryLangHint: "To nie zostało dobrze odczytane — spróbuj innego języka zrzutu ekranu powyżej i zeskanuj ponownie.", rescanBtn: "🔁 Skanuj ponownie",
+    scanTotalFailure: "Żaden z wypróbowanych języków nie poradził sobie z tym zrzutem ekranu. Spróbuj wyraźniejszego lub mniej skompresowanego zrzutu, albo wpisz liczby ręcznie w polach poniżej.",
+    scanCropHint: "Skanowanie odczytuje tylko to, co widać powyżej — przewiń, aby pokazać tylko potrzebne liczby, albo zeskanuj jedną sekcję, przewiń i zeskanuj ponownie, aby uzupełnić resztę.",
+    hasHeliosLabel: "Mam wojska Helios (T11)",
+    appliedScanToOtherToast: "Zeskanowane wartości zastosowano do {a}.",
+    autoDetectLangLabel: "Automatycznie wykryj język zrzutu ekranu", detectedLangNote: "Wykryto: {a}",
+    alwaysDoubleCheckNote: "OCR może błędnie odczytać pojedyncze cyfry, nawet gdy pole wygląda dobrze — porównaj ze zrzutem ekranu powyżej przed zastosowaniem.",
   },
   tr: {
     troopPool: "Asker havuzu", troopPoolSub: "Aynı asker türü için T10 her zaman T9'dan önce kullanılır.",
@@ -519,6 +617,20 @@ const TRANSLATIONS = {
     copyPlan: "Birlik planını kopyala", copiedToast: "Panoya kopyalandı!", copyFailedToast: "Kopyalanamadı — tekrar deneyin.",
     autoLabel: "otomatik", marksmanBelow60kWarning: "60.000 minimumunun altında",
     infantryStockLimitWarning: "Havuzda daha yükseğe çıkmak için yeterli Piyade yok", lancerStockLimitWarning: "Havuzda daha yükseğe çıkmak için yeterli Mızraklı yok",
+    scanScreenshotBtn: "📷 Bunun yerine ekran görüntüsü tara", scanScreenshotHide: "Tarayıcıyı gizle", screenshotLangLabel: "Ekran görüntüsü dili — oyunun arayüz diliyle eşleşmeli",
+    chooseScreenshot: "Ekran görüntüsü seç", scanBtn: "Ekran görüntüsünü tara", scanningStatus: "Sayılar okunuyor…", scanResultsHeading: "Sayıları kontrol et",
+    needsReviewNote: "kontrol gerekli", applyToPoolBtn: "Asker Havuzuna Uygula", appliedScanToast: "Taranan değerler Asker Havuzuna uygulandı.",
+    scanErrorMsg: "O görüntü okunamadı — daha net bir ekran görüntüsü deneyin veya sayıları aşağıya elle girin.",
+    scanHint: "Asker Önizleme ekranının net ve kırpılmamış bir görüntüsüyle en iyi çalışır.", whatScannerRead: "Tarayıcının okuduğu",
+    notAnImage: "Bu bir görüntüye benzemiyor — bir ekran görüntüsü (PNG veya JPG) deneyin.",
+    scanInstructions: "Oyunda, profil resminize (sol üst) dokunun → Askerler → o ekran asker sayılarınızı gösterir. Ekran görüntüsü alın ve aşağıya yükleyin.",
+    scanRetryLangHint: "Bu iyi okunmadı — yukarıdan farklı bir ekran görüntüsü dili deneyin ve tekrar tarayın.", rescanBtn: "🔁 Tekrar tara",
+    scanTotalFailure: "Denenen dillerin hiçbiri bu ekran görüntüsünü okuyamadı. Daha net veya daha az sıkıştırılmış bir ekran görüntüsü deneyin, ya da sayıları aşağıdaki alanlara elle girin.",
+    scanCropHint: "Tarama yalnızca yukarıda görünen kısmı okur — yalnızca istediğiniz sayıları göstermek için kaydırın, ya da bir bölümü tarayıp kaydırdıktan sonra kalanı taramak için tekrar tarayın.",
+    hasHeliosLabel: "Helios (T11) askerlerim var",
+    appliedScanToOtherToast: "Taranan değerler {a} hesabına uygulandı.",
+    autoDetectLangLabel: "Ekran görüntüsü dilini otomatik algıla", detectedLangNote: "Algılanan: {a}",
+    alwaysDoubleCheckNote: "Bir alan iyi görünse bile OCR tek tek rakamları yanlış okuyabilir — uygulamadan önce yukarıdaki ekran görüntüsüyle karşılaştırın.",
   },
   ar: {
     troopPool: "مجمع الجنود", troopPoolSub: "تُستخدم T10 دائمًا قبل T9 لنفس نوع الجندي.",
@@ -577,6 +689,20 @@ const TRANSLATIONS = {
     copyPlan: "نسخ خطة الفرق", copiedToast: "تم النسخ إلى الحافظة!", copyFailedToast: "تعذر النسخ — حاول مرة أخرى.",
     autoLabel: "تلقائي", marksmanBelow60kWarning: "أقل من الحد الأدنى 60,000",
     infantryStockLimitWarning: "لا يوجد مشاة كافون في مجمعك للزيادة أكثر", lancerStockLimitWarning: "لا يوجد رماح كافون في مجمعك للزيادة أكثر",
+    scanScreenshotBtn: "📷 مسح لقطة شاشة بدلاً من ذلك", scanScreenshotHide: "إخفاء الماسح", screenshotLangLabel: "لغة لقطة الشاشة — يجب أن تطابق لغة واجهة اللعبة",
+    chooseScreenshot: "اختر لقطة شاشة", scanBtn: "مسح لقطة الشاشة", scanningStatus: "قراءة الأرقام…", scanResultsHeading: "تحقق من الأرقام",
+    needsReviewNote: "يحتاج مراجعة", applyToPoolBtn: "طبّق على مجمع الجنود", appliedScanToast: "تم تطبيق القيم الممسوحة على مجمع الجنود.",
+    scanErrorMsg: "تعذّرت قراءة هذه الصورة — جرّب لقطة شاشة أوضح، أو أدخل الأرقام يدويًا أدناه.",
+    scanHint: "يعمل بشكل أفضل مع لقطة واضحة وغير مقصوصة لشاشة معاينة الجنود.", whatScannerRead: "ما قرأه الماسح",
+    notAnImage: "هذا لا يبدو كصورة — جرّب لقطة شاشة (PNG أو JPG).",
+    scanInstructions: "داخل اللعبة، اضغط على صورة ملفك الشخصي (أعلى اليسار) ← الجنود ← تعرض تلك الشاشة أعداد جنودك. التقط لقطة شاشة لها ثم ارفعها أدناه.",
+    scanRetryLangHint: "لم تتم قراءته جيدًا — جرّب لغة لقطة شاشة مختلفة أعلاه وامسح مرة أخرى.", rescanBtn: "🔁 مسح مرة أخرى",
+    scanTotalFailure: "لم تنجح أي لغة من اللغات التي جُربت في قراءة هذه اللقطة. جرّب لقطة أوضح أو أقل ضغطًا، أو أدخل الأرقام يدويًا في الحقول أدناه.",
+    scanCropHint: "يقرأ المسح فقط ما هو ظاهر أعلاه — مرّر لعرض الأرقام المطلوبة فقط، أو امسح قسمًا ثم مرّر وامسح مرة أخرى لإكمال الباقي.",
+    hasHeliosLabel: "لدي جنود هيليوس (T11)",
+    appliedScanToOtherToast: "تم تطبيق القيم الممسوحة على {a}.",
+    autoDetectLangLabel: "اكتشاف لغة لقطة الشاشة تلقائيًا", detectedLangNote: "تم اكتشاف: {a}",
+    alwaysDoubleCheckNote: "قد يُخطئ المسح الضوئي في قراءة أرقام فردية حتى لو بدا الحقل صحيحًا — قارن بلقطة الشاشة أعلاه قبل التطبيق.",
   },
 };
 
@@ -766,6 +892,12 @@ function priorityTargetWithFloors(capacity, available, divisor, floors, caps = {
   return { infantry: result.infantry, lancer: result.lancer, marksman: result.marksman, valid: true, shortfall: Math.max(0, remaining), floorsMet };
 }
 
+// Troop tiers, strongest to weakest — always tried in this exact order
+// regardless of whether a player has Helios (T11) troops; when they don't,
+// t11's pool simply stays at zero (the field is hidden, never edited), so
+// nothing about this order needs to change based on who has what.
+const TIERS = ["t11", "t10", "t9"];
+
 /* Allocate ONE squad's target against shared pools, then apply accepted
    manual fills, then compute fresh fill suggestions for any leftover space. */
 function allocateSquad(capacity, target, pools, acceptedFills = []) {
@@ -774,13 +906,16 @@ function allocateSquad(capacity, target, pools, acceptedFills = []) {
 
   TYPES.forEach((t) => {
     const want = target[t] || 0;
-    const t10Alloc = Math.min(want, pools.t10[t]);
-    pools.t10[t] -= t10Alloc;
-    const stillWant = want - t10Alloc;
-    const t9Alloc = Math.min(stillWant, pools.t9[t]);
-    pools.t9[t] -= t9Alloc;
-    const total = t10Alloc + t9Alloc;
-    breakdown[t] = { target: want, t10: t10Alloc, t9: t9Alloc, total, shortage: Math.max(0, want - total) };
+    let stillWant = want;
+    const alloc = {};
+    TIERS.forEach((tier) => {
+      const use = Math.min(stillWant, pools[tier][t]);
+      pools[tier][t] -= use;
+      alloc[tier] = use;
+      stillWant -= use;
+    });
+    const total = TIERS.reduce((s, tier) => s + alloc[tier], 0);
+    breakdown[t] = { target: want, ...alloc, total, shortage: Math.max(0, want - total) };
     totalAllocated += total;
   });
 
@@ -809,7 +944,7 @@ function allocateSquad(capacity, target, pools, acceptedFills = []) {
   const suggestions = [];
   if (capacityRemaining > 0) {
     let remaining = capacityRemaining;
-    for (const tier of ["t10", "t9"]) {
+    for (const tier of TIERS) {
       for (const t of FILL_ORDER) {
         if (remaining <= 0) break;
         const avail = pools[tier][t];
@@ -823,8 +958,11 @@ function allocateSquad(capacity, target, pools, acceptedFills = []) {
     }
   }
 
-  const t10Used = TYPES.reduce((s, t) => s + breakdown[t].t10, 0);
-  const t9Used = TYPES.reduce((s, t) => s + breakdown[t].t9, 0);
+  const tierPct = {};
+  TIERS.forEach((tier) => {
+    const used = TYPES.reduce((s, t) => s + breakdown[t][tier], 0);
+    tierPct[`${tier}Pct`] = totalAllocated > 0 ? (used / totalAllocated) * 100 : 0;
+  });
 
   return {
     breakdown,
@@ -834,8 +972,7 @@ function allocateSquad(capacity, target, pools, acceptedFills = []) {
     suggestions,
     appliedFills,
     pctOf: (n) => (totalAllocated > 0 ? (n / totalAllocated) * 100 : 0),
-    t10Pct: totalAllocated > 0 ? (t10Used / totalAllocated) * 100 : 0,
-    t9Pct: totalAllocated > 0 ? (t9Used / totalAllocated) * 100 : 0,
+    ...tierPct,
   };
 }
 
@@ -1253,6 +1390,8 @@ function SquadCard({ index, squadKey, result, invalid, onAcceptFill, onRemoveFil
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
         {TYPES.map((t) => {
           const b = result.breakdown[t];
+          const t11Pct = b.total > 0 ? (b.t11 / b.total) * 100 : 0;
+          const t10Pct = b.total > 0 ? (b.t10 / b.total) * 100 : 0;
           const t9Pct = b.total > 0 ? (b.t9 / b.total) * 100 : 0;
           return (
             <div key={t} style={{ background: C.surface, border: `1.5px solid ${b.t9 > 0 ? C.t9Amber : C.cardBorder}`, borderRadius: 14, padding: "11px 9px" }}>
@@ -1260,11 +1399,18 @@ function SquadCard({ index, squadKey, result, invalid, onAcceptFill, onRemoveFil
               <div style={{ fontSize: 17, fontWeight: 700, color: C.ink }}>{fmt(b.total)}</div>
               {b.total > 0 && (
                 <div style={{ display: "flex", height: 8, borderRadius: 999, overflow: "hidden", marginTop: 6, marginBottom: 6, background: "var(--tierTrackBg)" }}>
-                  {b.t10 > 0 && <div style={{ width: `${100 - t9Pct}%`, background: C.teal }} />}
+                  {b.t11 > 0 && <div style={{ width: `${t11Pct}%`, background: C.green }} />}
+                  {b.t10 > 0 && <div style={{ width: `${t10Pct}%`, background: C.teal }} />}
                   {b.t9 > 0 && <div style={{ width: `${t9Pct}%`, background: C.t9Amber }} />}
                 </div>
               )}
               <div style={{ fontSize: 10.5 }}>
+                {b.t11 > 0 && (
+                  <>
+                    <span style={{ color: C.green, fontWeight: 700 }}>T11 {fmt(b.t11)}</span>
+                    <span style={{ color: C.sub }}> · </span>
+                  </>
+                )}
                 <span style={{ color: b.t10 > 0 ? C.teal : C.sub, fontWeight: b.t10 > 0 ? 700 : 400 }}>T10 {fmt(b.t10)}</span>
                 <span style={{ color: C.sub }}> · </span>
                 <span style={{ color: b.t9 > 0 ? C.t9Amber : C.sub, fontWeight: b.t9 > 0 ? 700 : 400 }}>T9 {fmt(b.t9)}</span>
@@ -1277,7 +1423,7 @@ function SquadCard({ index, squadKey, result, invalid, onAcceptFill, onRemoveFil
 
       <div style={{ fontSize: 11, color: C.sub, marginBottom: 10 }}>
         {tWord("compLabel", lang)}: {result.pctOf(result.breakdown.infantry.total).toFixed(1)}% {tWord("infAbbr", lang)} · {result.pctOf(result.breakdown.lancer.total).toFixed(1)}% {tWord("lanAbbr", lang)} ·{" "}
-        {result.pctOf(result.breakdown.marksman.total).toFixed(1)}% {tWord("markAbbr", lang)} &nbsp;|&nbsp; T10 {result.t10Pct.toFixed(0)}% / T9 {result.t9Pct.toFixed(0)}%
+        {result.pctOf(result.breakdown.marksman.total).toFixed(1)}% {tWord("markAbbr", lang)} &nbsp;|&nbsp; {result.t11Pct > 0 ? `T11 ${result.t11Pct.toFixed(0)}% / ` : ""}T10 {result.t10Pct.toFixed(0)}% / T9 {result.t9Pct.toFixed(0)}%
       </div>
 
       {result.remainingAfter && (
@@ -1380,6 +1526,613 @@ function CompositionInputs({ capacity, mode, setMode, ratio, setRatio, exact, se
 }
 
 /* ============================================================
+   SCREENSHOT SCANNER — reads T10/T9 troop counts straight out of
+   a Troops Preview screenshot via on-device OCR (Tesseract.js,
+   loaded on demand — nothing is ever uploaded anywhere) and hands
+   them to the Troop Pool fields above. Adapted from a standalone
+   scanner tool: the actual OCR word-position matching carries
+   over faithfully, but its separate history/export/theme system
+   is dropped, since this app already has its own account-based
+   persistence and look — duplicating either would just create two
+   competing sources of truth.
+   ============================================================ */
+let tesseractLoadPromise = null;
+function loadTesseract() {
+  if (typeof window !== "undefined" && window.Tesseract) return Promise.resolve(window.Tesseract);
+  if (tesseractLoadPromise) return tesseractLoadPromise;
+  tesseractLoadPromise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+    script.onload = () => resolve(window.Tesseract);
+    script.onerror = () => reject(new Error("Failed to load OCR engine"));
+    document.head.appendChild(script);
+  });
+  return tesseractLoadPromise;
+}
+
+// The screenshot's language is independent of the app's display language —
+// the scanner defaults to English and lets the player switch + rescan.
+const OCR_LANGUAGES = [
+  { code: "eng", label: "English" },
+  { code: "chi_sim", label: "Chinese (Simplified)" },
+  { code: "chi_tra", label: "Chinese (Traditional)" },
+  { code: "ara", label: "Arabic" },
+  { code: "deu", label: "German" },
+  { code: "spa", label: "Spanish" },
+  { code: "ita", label: "Italian" },
+  { code: "kor", label: "Korean" },
+  { code: "pol", label: "Polish" },
+  { code: "rus", label: "Russian" },
+  { code: "tur", label: "Turkish" },
+];
+
+const SCAN_FIELDS = [
+  { key: "t11Infantry", tier: "t11", type: "infantry" },
+  { key: "t11Lancer", tier: "t11", type: "lancer" },
+  { key: "t11Marksman", tier: "t11", type: "marksman" },
+  { key: "t10Infantry", tier: "t10", type: "infantry" },
+  { key: "t10Lancer", tier: "t10", type: "lancer" },
+  { key: "t10Marksman", tier: "t10", type: "marksman" },
+  { key: "t9Infantry", tier: "t9", type: "infantry" },
+  { key: "t9Lancer", tier: "t9", type: "lancer" },
+  { key: "t9Marksman", tier: "t9", type: "marksman" },
+];
+const SCAN_CONF_THRESHOLD = 70;
+// Tesseract.js has no cheap, genuine "detect the language before reading"
+// step — auto-detect here means running a full OCR pass with each of these
+// languages in turn and keeping whichever one scores highest by total
+// confidence across all 6 fields (so a language that reads everything
+// cleanly beats one that also finds everything but shakily). Kept short on
+// purpose: every entry is a full pass (plus its own language data download
+// the first time), so a long list would make "auto" feel slow.
+// chi_sim is tried FIRST deliberately, not because the game text is
+// Chinese — it's an English-language game — but because Tesseract's
+// Chinese Simplified model has empirically read this game's bold,
+// stylized custom font (numbers included) more reliably than its own
+// English model does. This is about which trained model best tolerates
+// the font rendering, not about matching the game's actual UI language.
+const AUTO_DETECT_SEQUENCE = ["chi_sim", "eng", "ara", "rus"];
+
+// Pull every OCR *word* (not line) out of the blocks→paragraphs→lines tree,
+// with its bounding box and Tesseract's own confidence. Word level matters
+// because two on-screen columns often get merged into one wide OCR line —
+// word boxes stay accurate even when the line grouping doesn't.
+// A word's overall confidence is an average across its characters — which
+// means ONE misread digit inside an otherwise-clean number can hide behind
+// a perfectly decent word-level score. Tesseract.js exposes per-character
+// ("symbol") confidence too; using the LOWEST symbol confidence in the word
+// (when available) instead of the averaged word confidence means a single
+// bad digit correctly drags the whole field down to "needs review," rather
+// than a confidently-wrong number slipping through untouched.
+function flattenWords(data) {
+  const words = [];
+  function collect(lines) {
+    (lines || []).forEach((line) => {
+      (line.words || []).forEach((w) => {
+        if (w.text && w.bbox) {
+          let conf = typeof w.confidence === "number" ? w.confidence : 100;
+          if (w.symbols && w.symbols.length) {
+            w.symbols.forEach((s) => {
+              if (typeof s.confidence === "number" && s.confidence < conf) conf = s.confidence;
+            });
+          }
+          words.push({ text: w.text.trim(), bbox: w.bbox, confidence: conf });
+        }
+      });
+    });
+  }
+  if (data.blocks && data.blocks.length) {
+    data.blocks.forEach((block) => (block.paragraphs || []).forEach((para) => collect(para.lines)));
+  }
+  if (!words.length && data.lines) collect(data.lines);
+  if (!words.length && data.paragraphs) data.paragraphs.forEach((p) => collect(p.lines));
+  return words.filter((w) => w.text);
+}
+
+// Pulls a usable digit run out of a word even when OCR glued noise onto it
+// ("P6615") or misread a comma as a period ("6.615") — separators are
+// always stripped rather than trusted.
+function extractDigits(text) {
+  const matches = text.match(/\d[\d.,]*\d|\d{2,}/g);
+  if (!matches) return null;
+  const candidates = matches.map((m) => ({ raw: m, digits: m.replace(/[.,]/g, "") })).filter((c) => c.digits.length >= 4);
+  if (!candidates.length) return null;
+  candidates.sort((a, b) => b.digits.length - a.digits.length);
+  return candidates[0];
+}
+function isNumberWord(text) {
+  return extractDigits(text) !== null;
+}
+function ocrCenterX(b) { return (b.x0 + b.x1) / 2; }
+function ocrCenterY(b) { return (b.y0 + b.y1) / 2; }
+
+function nearestNumberBelow(labelWord, numberWords) {
+  const lcx = ocrCenterX(labelWord.bbox);
+  const candidates = numberWords.filter((n) => n.bbox.y0 >= labelWord.bbox.y1 - 10);
+  if (!candidates.length) return null;
+  candidates.sort((a, b) => {
+    const score = (n) => Math.abs(n.bbox.y0 - labelWord.bbox.y1) * 1.5 + Math.abs(ocrCenterX(n.bbox) - lcx);
+    return score(a) - score(b);
+  });
+  const best = candidates[0];
+  const d = extractDigits(best.text);
+  return { value: parseInt(d.digits, 10), confidence: best.confidence, raw: best.text };
+}
+
+// "T11"/"T10"/"T9" (Helios/Apex/Supreme) read unreliably via OCR since icons
+// crowd the text, but "Infantry"/"Lancer"/"Marksman" read cleanly. The
+// screen always lists rows strongest-tier-first for a given type, so
+// rather than reading the tier word itself, each type's occurrences get
+// sorted top-to-bottom and labeled by however many rows actually turned
+// up: 2 rows (the common case) means T10/T9 exactly as always; a genuine
+// 3rd row above those two means Helios is present and becomes T11 — never
+// assumed, only detected when it's actually there.
+function assignByPosition(words) {
+  const numberWords = words.filter((w) => isNumberWord(w.text));
+  const result = {};
+  const tiersForCount = { 1: ["t10"], 2: ["t10", "t9"], 3: ["t11", "t10", "t9"] };
+  TYPES.forEach((type) => {
+    const matches = words.filter((w) => w.text.toLowerCase().indexOf(type) !== -1);
+    matches.sort((a, b) => {
+      const dy = ocrCenterY(a.bbox) - ocrCenterY(b.bbox);
+      if (Math.abs(dy) > 20) return dy;
+      return ocrCenterX(a.bbox) - ocrCenterX(b.bbox);
+    });
+    const cap = type.charAt(0).toUpperCase() + type.slice(1);
+    const tierOrder = tiersForCount[Math.min(matches.length, 3)] || [];
+    matches.slice(0, 3).forEach((labelWord, idx) => {
+      if (!tierOrder[idx]) return;
+      result[tierOrder[idx] + cap] = nearestNumberBelow(labelWord, numberWords);
+    });
+  });
+  return result;
+}
+
+function lineHasKeywords(text, keywords) {
+  const lower = text.toLowerCase();
+  return keywords.every((kw) => lower.indexOf(kw) !== -1);
+}
+
+// Fallback for when a field wasn't found by word position: plain sequential
+// text search. Lower confidence, since it skips the position cross-check.
+function findValueForFieldFallback(rawText, keywords) {
+  const lines = rawText.split("\n").map((l) => l.trim()).filter(Boolean);
+  for (let i = 0; i < lines.length; i++) {
+    if (lineHasKeywords(lines[i], keywords)) {
+      for (let j = i; j <= Math.min(i + 2, lines.length - 1); j++) {
+        const d = extractDigits(lines[j]);
+        if (d) return parseInt(d.digits, 10);
+      }
+    }
+  }
+  return null;
+}
+
+function parseScanText(data) {
+  const words = flattenWords(data);
+  const assigned = words.length ? assignByPosition(words) : {};
+  const values = {};
+  const confidence = {};
+  SCAN_FIELDS.forEach((f) => {
+    const r = assigned[f.key];
+    if (r) {
+      values[f.key] = r.value;
+      confidence[f.key] = r.confidence;
+    } else {
+      const fb = findValueForFieldFallback(data.text || "", [f.type]);
+      values[f.key] = fb;
+      confidence[f.key] = fb === null ? null : 50;
+    }
+  });
+  return { values, confidence, rawText: data.text || "" };
+}
+
+// Crops to nothing (whole image) but upscales before handing it to
+// Tesseract — small, compressed screenshot text reads far more reliably at
+// 2x than at native resolution.
+//
+// Tried and reverted: a grayscale + contrast-boost canvas filter before OCR
+// (a standard preprocessing trick) and a 3x upscale. Real test against this
+// game's actual UI made results measurably WORSE — a scan that previously
+// still extracted digit-like text (even if some digits were wrong) came
+// back with no numbers found at all after that change. Whatever's specific
+// to this font/background combination, flattening color and boosting
+// contrast apparently destroys information the OCR model needs rather than
+// removing noise. Leaving this note so a future "let's try preprocessing
+// again" doesn't repeat the same regression blind.
+const OCR_UPSCALE_FACTOR = 2;
+const OCR_MAX_DIMENSION = 3200;
+// `crop` (in the source image's own natural pixel coordinates) lets a
+// caller OCR only part of the image — used so the scanner reads only
+// whatever's actually scrolled into view in the preview, not the whole
+// screenshot every time.
+function buildOcrCanvas(imgEl, crop) {
+  const sx = crop ? crop.sx : 0;
+  const sy = crop ? crop.sy : 0;
+  const sw = crop ? crop.sw : imgEl.naturalWidth;
+  const sh = crop ? crop.sh : imgEl.naturalHeight;
+  let destW = sw * OCR_UPSCALE_FACTOR, destH = sh * OCR_UPSCALE_FACTOR;
+  if (Math.max(destW, destH) > OCR_MAX_DIMENSION) {
+    const shrink = OCR_MAX_DIMENSION / Math.max(destW, destH);
+    destW *= shrink;
+    destH *= shrink;
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(destW));
+  canvas.height = Math.max(1, Math.round(destH));
+  const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(imgEl, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+  return canvas;
+}
+
+function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
+  const [open, setOpen] = useState(false);
+  const [autoDetect, setAutoDetect] = useState(true);
+  const [scanLang, setScanLang] = useState("chi_sim"); // default guess — Tesseract's Chinese Simplified model has proven the most reliable reader of this game's font, even for English screenshots; easy to change and rescan if it misreads
+  const [imgSrc, setImgSrc] = useState(null);
+  const [fileError, setFileError] = useState(null);
+  const [scanning, setScanning] = useState(false);
+  const [scanStatus, setScanStatus] = useState("");
+  const [scanPct, setScanPct] = useState(0);
+  const [confidence, setConfidence] = useState({});
+  const [rawText, setRawText] = useState("");
+  const [scannedValues, setScannedValues] = useState(null); // immutable snapshot of the OCR result, for the debug panel — edited (below) can drift from this as the player corrects fields
+  const [edited, setEdited] = useState(null); // { t10Infantry, t10Lancer, ... } once a scan has run — the player's editable copy
+  const [hasScanned, setHasScanned] = useState(false);
+  const [detectedLang, setDetectedLang] = useState(null);
+  const imgRef = useRef(null);
+  const scrollWrapRef = useRef(null);
+
+  function handleFile(file) {
+    setFileError(null);
+    if (!file.type || file.type.indexOf("image/") !== 0) {
+      setFileError(tWord("notAnImage", lang));
+      return;
+    }
+    setEdited(null);
+    setScannedValues(null);
+    setHasScanned(false);
+    setRawText("");
+    setConfidence({});
+    setDetectedLang(null);
+    const reader = new FileReader();
+    reader.onload = (e) => setImgSrc(e.target.result);
+    reader.onerror = () => setFileError(tWord("notAnImage", lang));
+    reader.readAsDataURL(file);
+  }
+
+  // OCR reads only whatever's currently scrolled into view in the preview,
+  // not the whole screenshot — computed here in the source image's own
+  // natural pixel coordinates from the scroll wrapper's current position.
+  function computeVisibleCrop() {
+    const wrap = scrollWrapRef.current;
+    const imgEl = imgRef.current;
+    if (!wrap || !imgEl || !imgEl.naturalWidth || !wrap.clientWidth) return null;
+    const scale = imgEl.naturalWidth / wrap.clientWidth; // image is width:100% of wrap, so this is the display→natural scale factor
+    const sy = Math.max(0, wrap.scrollTop * scale);
+    const sh = Math.max(1, Math.min(imgEl.naturalHeight - sy, wrap.clientHeight * scale));
+    return { sx: 0, sy, sw: imgEl.naturalWidth, sh };
+  }
+
+  // Tesseract has no real "detect the language" pass — auto-detect instead
+  // runs a full OCR pass with every candidate language and keeps whichever
+  // one scores highest by total confidence across all 6 fields.
+  async function runScan() {
+    if (!imgSrc || !imgRef.current) return;
+    setScanning(true);
+    setFileError(null);
+    setScanPct(5);
+    try {
+      const Tesseract = await loadTesseract();
+      const crop = computeVisibleCrop();
+      const ocrCanvas = buildOcrCanvas(imgRef.current, crop);
+      const candidates = autoDetect ? AUTO_DETECT_SEQUENCE : [scanLang];
+      let best = null;
+      for (let i = 0; i < candidates.length; i++) {
+        const candidateLang = candidates[i];
+        const candidateLabel = (OCR_LANGUAGES.find((l) => l.code === candidateLang) || {}).label || candidateLang;
+        setScanStatus(autoDetect ? `${tWord("scanningStatus", lang)} — ${candidateLabel} (${i + 1}/${candidates.length})` : tWord("scanningStatus", lang));
+        // eslint-disable-next-line no-await-in-loop
+        const res = await Tesseract.recognize(ocrCanvas, candidateLang, {
+          workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js",
+          corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5",
+          logger: (m) => {
+            if (m.status) {
+              const pct = m.progress ? Math.round(m.progress * 100) : 0;
+              const basePct = Math.round((i / candidates.length) * 100);
+              setScanPct(Math.max(5, basePct + Math.round(pct / candidates.length)));
+            }
+          },
+        });
+        const parsed = parseScanText(res.data);
+        // Score by total confidence across all 6 fields (a missing field
+        // contributes 0) rather than just "how many fields did it find" —
+        // this is what lets a language that finds everything cleanly beat
+        // one that also finds everything but shakily. Every candidate in
+        // the list gets a full pass; auto-detect picks the best afterward
+        // instead of stopping at the first "found everything."
+        let score = 0;
+        SCAN_FIELDS.forEach((f) => {
+          const c = parsed.confidence[f.key];
+          score += c === null || c === undefined ? 0 : c;
+        });
+        if (!best || score > best.score) best = { langUsed: candidateLang, parsed, score };
+      }
+      // Merge into whatever's already there instead of overwriting — since
+      // a scan now only covers the scrolled-to region, a field this pass
+      // didn't find might simply be outside the current view (already
+      // found correctly by an earlier scan of a different region), not
+      // actually missing. Only a field THIS pass did find gets replaced.
+      const values = {};
+      SCAN_FIELDS.forEach((f) => {
+        const found = best.parsed.values[f.key];
+        values[f.key] = found === null || found === undefined ? (edited ? edited[f.key] ?? 0 : 0) : found;
+      });
+      const mergedConfidence = { ...confidence };
+      SCAN_FIELDS.forEach((f) => {
+        const c = best.parsed.confidence[f.key];
+        if (c !== null && c !== undefined) mergedConfidence[f.key] = c;
+      });
+      setEdited(values);
+      setScannedValues(values);
+      setConfidence(mergedConfidence);
+      setRawText(best.parsed.rawText);
+      setScanLang(best.langUsed);
+      setDetectedLang(autoDetect ? best.langUsed : null);
+      setHasScanned(true);
+    } catch {
+      setFileError(tWord("scanErrorMsg", lang));
+      // Don't wipe out results a PREVIOUS successful scan (of a different
+      // scrolled region) already found — only seed empty values if this
+      // was the very first attempt.
+      if (!edited) {
+        const empty = {};
+        SCAN_FIELDS.forEach((f) => (empty[f.key] = 0));
+        setEdited(empty);
+        setScannedValues(empty);
+        setConfidence({});
+        setRawText("");
+        setDetectedLang(null);
+      }
+      setHasScanned(true);
+    } finally {
+      setScanning(false);
+    }
+  }
+
+  function needsReview(key) {
+    const c = confidence[key];
+    return c === undefined || c === null || c < SCAN_CONF_THRESHOLD;
+  }
+  // Distinct from needsReview: this is specifically "the label/number
+  // couldn't be located at all" (confidence stays null for both the
+  // position match and the text-search fallback) — as opposed to "found
+  // it, but Tesseract's own score is just cautious," which is common with
+  // this game's bold stylized font even on a correct read. Only the
+  // former is actually a language/matching problem worth suggesting a
+  // screenshot-language change for; the latter just needs a glance.
+  function isMissing(key) {
+    const c = confidence[key];
+    return c === undefined || c === null;
+  }
+  // T11 (Helios) is only "relevant" to the missing/failure tallies once at
+  // least one T11 field was actually located in the scan — most players
+  // don't have Helios troops, so 3 permanently-missing T11 fields would
+  // otherwise wrongly drag down every single scan's apparent accuracy.
+  const hasT11Data = SCAN_FIELDS.some((f) => f.tier === "t11" && !isMissing(f.key));
+  const relevantFields = SCAN_FIELDS.filter((f) => f.tier !== "t11" || hasT11Data);
+  const missingCount = relevantFields.filter((f) => isMissing(f.key)).length;
+  const looksOff = hasScanned && missingCount >= 2 && missingCount < relevantFields.length;
+  // Every candidate language (or the single one tried, with auto-detect
+  // off) came back with nothing for all relevant fields — meaningfully
+  // different from "found some, not others," and "try a different
+  // language" is actively misleading here when auto-detect already tried
+  // several.
+  const totalFailure = hasScanned && missingCount === relevantFields.length;
+
+  function handleApply(targetId) {
+    onApply(edited, targetId);
+    setOpen(false);
+    setImgSrc(null);
+    setEdited(null);
+    setScannedValues(null);
+    setHasScanned(false);
+    setFileError(null);
+  }
+
+  // Structured "what the scanner read" text — the raw OCR pass plus each
+  // field's actual scanned value (not the player's later edits) and
+  // confidence, in one place, collapsed by default. Meant to be pasted
+  // back for debugging if a reading looks wrong.
+  function buildDebugSummary() {
+    const lines = [rawText || "(no text detected)", "", "--- parsed field confidence ---"];
+    SCAN_FIELDS.forEach((f) => {
+      const v = scannedValues ? scannedValues[f.key] : null;
+      const c = confidence[f.key];
+      const label = `${f.tier.toUpperCase()} ${tType(f.type, lang)}`;
+      const valueText = v === null || v === undefined ? "not found" : fmt(v);
+      const confText = c !== null && c !== undefined ? ` (${Math.round(c)}% confidence)` : "";
+      lines.push(`${label}: ${valueText}${confText}`);
+    });
+    if (detectedLang) {
+      const detectedLabel = (OCR_LANGUAGES.find((l) => l.code === detectedLang) || {}).label || detectedLang;
+      lines.push("", `Auto-detect picked: ${detectedLabel}`);
+    }
+    return lines.join("\n");
+  }
+
+  if (!open) {
+    return (
+      <Btn tone="ghost" small onClick={() => setOpen(true)}>
+        {tWord("scanScreenshotBtn", lang)}
+      </Btn>
+    );
+  }
+
+  return (
+    <div style={{ background: C.inputBg, border: `1px solid ${C.inputBorder}`, borderRadius: 14, padding: 12, marginBottom: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <span style={{ fontSize: 12.5, fontWeight: 800, color: C.gold }}>{tWord("scanScreenshotBtn", lang)}</span>
+        <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: C.sub, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+          {tWord("scanScreenshotHide", lang)}
+        </button>
+      </div>
+
+      <div style={{ fontSize: 12, color: C.ink, lineHeight: 1.5, marginBottom: 12, background: C.goldBg, border: `1px solid ${C.goldBorder}`, borderRadius: 10, padding: "8px 10px" }}>
+        {tWord("scanInstructions", lang)}
+      </div>
+
+      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 10, cursor: "pointer" }}>
+        <input
+          type="checkbox"
+          checked={autoDetect}
+          onChange={(e) => setAutoDetect(e.target.checked)}
+          style={{ width: 16, height: 16, accentColor: C.goldStrong, cursor: "pointer" }}
+        />
+        {tWord("autoDetectLangLabel", lang)}
+      </label>
+
+      {!autoDetect && (
+        <div>
+          <label style={{ display: "block", fontSize: 11.5, color: C.sub, marginBottom: 5 }}>{tWord("screenshotLangLabel", lang)}</label>
+          <select value={scanLang} onChange={(e) => setScanLang(e.target.value)} className="lang-select" style={{ width: "100%", marginBottom: 12 }}>
+            {OCR_LANGUAGES.map((l) => (
+              <option key={l.code} value={l.code}>{l.label}</option>
+            ))}
+          </select>
+        </div>
+      )}
+      {autoDetect && detectedLang && !scanning && (
+        <div style={{ fontSize: 11.5, color: C.sub, marginBottom: 10 }}>
+          {tFmt("detectedLangNote", lang, { a: (OCR_LANGUAGES.find((l) => l.code === detectedLang) || {}).label || detectedLang })}
+        </div>
+      )}
+
+      {!imgSrc ? (
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            border: `1.5px dashed ${C.cardBorder}`,
+            borderRadius: 12,
+            padding: "22px 14px",
+            textAlign: "center",
+            fontSize: 13,
+            color: C.sub,
+            cursor: "pointer",
+          }}
+        >
+          {tWord("chooseScreenshot", lang)}
+          <input
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={(e) => e.target.files && e.target.files[0] && handleFile(e.target.files[0])}
+          />
+        </label>
+      ) : (
+        <div>
+          {/* Full device width, capped to roughly a third of a typical tall
+              screenshot's height so the top (where troop counts sit) reads
+              clearly instead of being shrunk to fit — scrollable so an
+              iPhone user can drag down through the rest of the image.
+              Scanning reads ONLY whatever's scrolled into view here, not
+              the whole screenshot — this doubles as the crop tool. */}
+          <div
+            ref={scrollWrapRef}
+            style={{
+              width: "100%",
+              maxHeight: "34vh",
+              overflowY: "auto",
+              overflowX: "hidden",
+              WebkitOverflowScrolling: "touch",
+              touchAction: "pan-y",
+              borderRadius: 10,
+              border: `1px solid ${C.cardBorder}`,
+              marginBottom: 6,
+              background: C.surface,
+            }}
+          >
+            <img ref={imgRef} src={imgSrc} alt="" style={{ display: "block", width: "100%", height: "auto" }} />
+          </div>
+          <div style={{ fontSize: 11, color: C.sub, marginBottom: 10 }}>{tWord("scanCropHint", lang)}</div>
+          <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+            <Btn tone="gold" small onClick={runScan}>
+              {scanning ? scanStatus : hasScanned ? tWord("rescanBtn", lang) : tWord("scanBtn", lang)}
+            </Btn>
+            <Btn tone="ghost" small onClick={() => { setImgSrc(null); setEdited(null); setScannedValues(null); setConfidence({}); setHasScanned(false); setFileError(null); }}>✕</Btn>
+          </div>
+          {scanning && <ProgressBar pct={scanPct} tone="green" />}
+        </div>
+      )}
+
+      {fileError && <div style={{ fontSize: 12, color: C.red, fontWeight: 600, marginTop: 8 }}>{fileError}</div>}
+
+      {totalFailure && (
+        <div style={{ fontSize: 12, color: C.red, fontWeight: 600, marginTop: 8, background: C.redBg, borderRadius: 10, padding: "8px 10px" }}>
+          ⚠ {tWord("scanTotalFailure", lang)}
+        </div>
+      )}
+      {looksOff && (
+        <div style={{ fontSize: 12, color: C.amber, fontWeight: 600, marginTop: 8, background: C.amberBg, borderRadius: 10, padding: "8px 10px" }}>
+          ⚠ {tWord("scanRetryLangHint", lang)}
+        </div>
+      )}
+
+      {edited && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: C.gold, marginBottom: 8 }}>{tWord("scanResultsHeading", lang)}</div>
+          {["t11", "t10", "t9"]
+            .filter((tier) => tier !== "t11" || SCAN_FIELDS.some((f) => f.tier === "t11" && confidence[f.key] !== null && confidence[f.key] !== undefined))
+            .map((tier) => (
+            <div key={tier} style={{ marginBottom: 10 }}>
+              <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 13, fontWeight: 800, color: C.gold, marginBottom: 6 }}>{tier.toUpperCase()}{tier === "t11" ? " (Helios)" : ""}</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {SCAN_FIELDS.filter((f) => f.tier === tier).map((f) => (
+                  <div key={f.key} style={{ flex: 1, minWidth: 90 }}>
+                    <NumField
+                      label={tType(f.type, lang)}
+                      value={edited[f.key]}
+                      onChange={(v) => setEdited({ ...edited, [f.key]: v })}
+                    />
+                    {needsReview(f.key) && <div style={{ fontSize: 10.5, color: C.amber, fontWeight: 700, marginTop: 3 }}>⚠ {tWord("needsReviewNote", lang)}</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <details style={{ marginTop: 8 }}>
+            <summary style={{ cursor: "pointer", fontSize: 11.5, color: C.sub }}>{tWord("whatScannerRead", lang)}</summary>
+            <pre style={{ whiteSpace: "pre-wrap", fontSize: 10.5, color: C.sub, background: C.surface, border: `1px solid ${C.cardBorder}`, borderRadius: 8, padding: 8, marginTop: 6, maxHeight: 200, overflow: "auto" }}>
+              {buildDebugSummary()}
+            </pre>
+          </details>
+
+          {/* Apply straight to either account — no need to switch the
+              active account first just to drop a scan into it. */}
+          <div style={{ fontSize: 11.5, color: C.amber, fontWeight: 600, marginTop: 10, lineHeight: 1.4 }}>
+            ⚠ {tWord("alwaysDoubleCheckNote", lang)}
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+            {accounts.map((acc) => (
+              <Btn key={acc.id} tone="gold" small onClick={() => handleApply(acc.id)}>
+                {tWord("applyToPoolBtn", lang)} — {acc.name}{acc.id === activeAccountId ? " ✓" : ""}
+              </Btn>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{ fontSize: 11, color: C.sub, marginTop: 10 }}>{tWord("scanHint", lang)}</div>
+    </div>
+  );
+}
+
+/* ============================================================
    MAIN APP
    ============================================================ */
 const SAMPLE = {
@@ -1444,6 +2197,11 @@ export default function App() {
   const [numSquads, setNumSquads] = useState(saved?.numSquads ?? 6);
   const [t10, setT10] = useState(saved?.t10 ?? SAMPLE.t10);
   const [t9, setT9] = useState(saved?.t9 ?? SAMPLE.t9);
+  // Helios (T11) — the newest, strongest tier. Optional: most players don't
+  // have it yet, so it starts hidden and off, and the fields only appear
+  // once the player says they actually have some.
+  const [hasHelios, setHasHelios] = useState(saved?.hasHelios ?? false);
+  const [t11, setT11] = useState(saved?.t11 ?? EMPTY);
 
   // Infantry per joiner squad is bounded between 0.5% and 3% of that squad's capacity.
   const infantryCap = Math.round(capacity * MAX_JOINER_INFANTRY_PCT);
@@ -1502,7 +2260,7 @@ export default function App() {
       localStorage.setItem(
         accountStorageKey(activeAccount),
         JSON.stringify({
-          capacity, numSquads, t10, t9,
+          capacity, numSquads, t10, t9, t11, hasHelios,
           mode, ratio, exact, minMarchMarksman,
           strategy,
           rallyCapacity, cyrilleBoost, snowApeBoost, ministerBoost, rallyMode, rallyRatio, rallyExact,
@@ -1514,7 +2272,7 @@ export default function App() {
     }
   }, [
     activeAccount,
-    capacity, numSquads, t10, t9,
+    capacity, numSquads, t10, t9, t11, hasHelios,
     mode, ratio, exact, minMarchMarksman,
     strategy,
     rallyCapacity, cyrilleBoost, snowApeBoost, ministerBoost, rallyMode, rallyRatio, rallyExact,
@@ -1530,16 +2288,16 @@ export default function App() {
 
   // Rally leader consumes from the pool first, independent of joiner strategy.
   const rallyComputation = useMemo(() => {
-    const pools = { t10: { ...t10 }, t9: { ...t9 } };
+    const pools = { t11: { ...t11 }, t10: { ...t10 }, t9: { ...t9 } };
     let result = null;
     if (rallyTarget.valid) result = allocateSquad(effectiveRallyCapacity, rallyTarget, pools, fills["rally"] || []);
     return { result, pools };
-  }, [t10, t9, rallyTarget, effectiveRallyCapacity, fills]);
+  }, [t11, t10, t9, rallyTarget, effectiveRallyCapacity, fills]);
 
   const joinerAvailable = useMemo(() => {
     const p = rallyComputation.pools;
     const obj = {};
-    TYPES.forEach((t) => (obj[t] = p.t10[t] + p.t9[t]));
+    TYPES.forEach((t) => (obj[t] = p.t11[t] + p.t10[t] + p.t9[t]));
     return obj;
   }, [rallyComputation]);
 
@@ -1580,7 +2338,7 @@ export default function App() {
   const recBelow60k = recommendedTarget.marksman < MIN_JOINER_MARKSMAN;
 
   const computation = useMemo(() => {
-    const pools = { t10: { ...rallyComputation.pools.t10 }, t9: { ...rallyComputation.pools.t9 } };
+    const pools = { t11: { ...rallyComputation.pools.t11 }, t10: { ...rallyComputation.pools.t10 }, t9: { ...rallyComputation.pools.t9 } };
     const squads = [];
     for (let i = 0; i < numSquads; i++) {
       const tgt = strategy === "manual" ? targetManual : recommendedTarget;
@@ -1594,13 +2352,13 @@ export default function App() {
       // from it, so Squad Results can show a running total while scrolling
       // instead of making the player jump back up to Remaining Troops.
       sq.remainingAfter = {};
-      TYPES.forEach((t) => (sq.remainingAfter[t] = pools.t10[t] + pools.t9[t]));
+      TYPES.forEach((t) => (sq.remainingAfter[t] = pools.t11[t] + pools.t10[t] + pools.t9[t]));
       squads.push(sq);
     }
     return { squads, pools };
   }, [rallyComputation, numSquads, strategy, targetManual, recommendedTarget, capacity, fills]);
 
-  const totalAvailable = TYPES.reduce((s, t) => s + t10[t] + t9[t], 0);
+  const totalAvailable = TYPES.reduce((s, t) => s + t11[t] + t10[t] + t9[t], 0);
   const rallyAllocated = rallyComputation.result ? rallyComputation.result.totalAllocated : 0;
   const totalAllocated = computation.squads.reduce((s, sq) => s + (sq ? sq.totalAllocated : 0), 0) + rallyAllocated;
   const totalRemaining = totalAvailable - totalAllocated;
@@ -1629,20 +2387,66 @@ export default function App() {
   }
 
   function clearTroops() {
-    const snapshot = { t10, t9, fills };
+    const snapshot = { t10, t9, t11, fills };
     setT10(EMPTY);
     setT9(EMPTY);
+    setT11(EMPTY);
     setFills({});
     showToast(tr("clearedTroopsToast"), tr("undoAction"), () => {
       setT10(snapshot.t10);
       setT9(snapshot.t9);
+      setT11(snapshot.t11);
       setFills(snapshot.fills);
       dismissToast();
     });
   }
+  // Applies a completed screenshot scan either to the currently active
+  // account (live state, same Undo pattern as Clear/Reset) or straight into
+  // the OTHER account's saved data in the background — no need to switch
+  // accounts first just to drop a scan into the one you're not looking at.
+  // T11 (Helios) only comes along, and only auto-switches that account's
+  // Helios toggle on, if the scan actually found a T11 row — never assumed.
+  function handleApplyScan(scanned, targetId) {
+    const t11Vals = { infantry: scanned.t11Infantry ?? 0, lancer: scanned.t11Lancer ?? 0, marksman: scanned.t11Marksman ?? 0 };
+    const t10Vals = { infantry: scanned.t10Infantry, lancer: scanned.t10Lancer, marksman: scanned.t10Marksman };
+    const t9Vals = { infantry: scanned.t9Infantry, lancer: scanned.t9Lancer, marksman: scanned.t9Marksman };
+    const foundHelios = TYPES.some((t) => t11Vals[t] > 0);
+    if (targetId === activeAccount) {
+      const previousT10 = t10;
+      const previousT9 = t9;
+      const previousT11 = t11;
+      const previousHasHelios = hasHelios;
+      setT10(t10Vals);
+      setT9(t9Vals);
+      if (foundHelios) {
+        setT11(t11Vals);
+        setHasHelios(true);
+      }
+      showToast(tr("appliedScanToast"), tr("undoAction"), () => {
+        setT10(previousT10);
+        setT9(previousT9);
+        setT11(previousT11);
+        setHasHelios(previousHasHelios);
+        dismissToast();
+      });
+    } else {
+      try {
+        const existing = loadSavedForAccount(targetId) || {};
+        const merged = { ...existing, t10: t10Vals, t9: t9Vals };
+        if (foundHelios) {
+          merged.t11 = t11Vals;
+          merged.hasHelios = true;
+        }
+        localStorage.setItem(accountStorageKey(targetId), JSON.stringify(merged));
+        showToast(tFmt("appliedScanToOtherToast", lang, { a: accountNames[targetId] }), null, null, 2500);
+      } catch {
+        showToast(tr("scanErrorMsg"), null, null, 2500);
+      }
+    }
+  }
   function resetAll() {
     const snapshot = {
-      capacity, numSquads, t10, t9,
+      capacity, numSquads, t10, t9, t11, hasHelios,
       mode, ratio, exact, minMarchMarksman,
       strategy,
       rallyCapacity, cyrilleBoost, snowApeBoost, ministerBoost, rallyMode, rallyRatio, rallyExact,
@@ -1652,6 +2456,8 @@ export default function App() {
     setNumSquads(6);
     setT10(SAMPLE.t10);
     setT9(SAMPLE.t9);
+    setT11(EMPTY);
+    setHasHelios(false);
     setMode("ratio");
     setRatio({ infantry: 2, lancer: 15, marksman: 83 });
     setExact({ infantry: 2200, lancer: 16500, marksman: 91300 });
@@ -1677,6 +2483,8 @@ export default function App() {
       setNumSquads(snapshot.numSquads);
       setT10(snapshot.t10);
       setT9(snapshot.t9);
+      setT11(snapshot.t11);
+      setHasHelios(snapshot.hasHelios);
       setMode(snapshot.mode);
       setRatio(snapshot.ratio);
       setExact(snapshot.exact);
@@ -1699,7 +2507,7 @@ export default function App() {
   // Account A/B, so each keeps its own independent troop pool and settings.
   function buildAccountSnapshot() {
     return {
-      capacity, numSquads, t10, t9,
+      capacity, numSquads, t10, t9, t11, hasHelios,
       mode, ratio, exact, minMarchMarksman,
       strategy,
       rallyCapacity, cyrilleBoost, snowApeBoost, ministerBoost, rallyMode, rallyRatio, rallyExact,
@@ -1711,6 +2519,8 @@ export default function App() {
     setNumSquads(data.numSquads ?? 6);
     setT10(data.t10 ?? SAMPLE.t10);
     setT9(data.t9 ?? SAMPLE.t9);
+    setT11(data.t11 ?? EMPTY);
+    setHasHelios(data.hasHelios ?? false);
     setMode(data.mode ?? "ratio");
     setRatio(data.ratio ?? { infantry: 2, lancer: 15, marksman: 83 });
     setExact(data.exact ?? { infantry: 2200, lancer: 16500, marksman: 91300 });
@@ -1799,6 +2609,7 @@ export default function App() {
     });
   }
 
+  const remT11 = computation.pools.t11;
   const remT10 = computation.pools.t10;
   const remT9 = computation.pools.t9;
 
@@ -1836,7 +2647,7 @@ export default function App() {
     }
 
     lines.push("");
-    lines.push(`${tr("remainingTroopsHeading")}: ${fmt(remT10.infantry + remT9.infantry)} - ${fmt(remT10.lancer + remT9.lancer)} - ${fmt(remT10.marksman + remT9.marksman)}`);
+    lines.push(`${tr("remainingTroopsHeading")}: ${fmt(remT11.infantry + remT10.infantry + remT9.infantry)} - ${fmt(remT11.lancer + remT10.lancer + remT9.lancer)} - ${fmt(remT11.marksman + remT10.marksman + remT9.marksman)}`);
     return lines.join("\n");
   }
 
@@ -2196,6 +3007,33 @@ export default function App() {
               {tr("noTroops")}
             </div>
           )}
+          <div style={{ marginBottom: 12 }}>
+            <ScreenshotScanner
+              lang={lang}
+              accounts={[{ id: "A", name: accountNames.A }, { id: "B", name: accountNames.B }]}
+              activeAccountId={activeAccount}
+              onApply={handleApplyScan}
+            />
+          </div>
+          <label style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 12.5, fontWeight: 600, color: C.ink, cursor: "pointer", marginBottom: hasHelios ? 10 : 4 }}>
+            <input
+              type="checkbox"
+              checked={hasHelios}
+              onChange={(e) => setHasHelios(e.target.checked)}
+              style={{ width: 17, height: 17, accentColor: C.goldStrong, cursor: "pointer" }}
+            />
+            {tr("hasHeliosLabel")}
+          </label>
+          {hasHelios && (
+            <div>
+              <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 15, fontWeight: 800, lineHeight: "20px", color: C.gold, marginBottom: 6 }}>T11 (Helios)</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+                <NumField label={tType("infantry", lang)} value={t11.infantry} onChange={(v) => setT11({ ...t11, infantry: v })} />
+                <NumField label={tType("lancer", lang)} value={t11.lancer} onChange={(v) => setT11({ ...t11, lancer: v })} />
+                <NumField label={tType("marksman", lang)} value={t11.marksman} onChange={(v) => setT11({ ...t11, marksman: v })} />
+              </div>
+            </div>
+          )}
           <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 15, fontWeight: 800, lineHeight: "20px", color: C.gold, marginTop: 4, marginBottom: 6 }}>T10</div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
             <NumField label={tType("infantry", lang)} value={t10.infantry} onChange={(v) => setT10({ ...t10, infantry: v })} />
@@ -2444,8 +3282,10 @@ export default function App() {
                   <span style={{ width: 7, height: 7, borderRadius: 999, background: TYPE_COLOR[t], display: "inline-block", flexShrink: 0 }} />
                   <span style={{ fontSize: 11, fontWeight: 700, color: C.gold }}>{tType(t, lang)}</span>
                 </div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>{fmt(remT10[t] + remT9[t])}</div>
-                <div style={{ fontSize: 10.5, color: C.sub, marginTop: 3 }}>T10 {fmt(remT10[t])} · T9 {fmt(remT9[t])}</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>{fmt(remT11[t] + remT10[t] + remT9[t])}</div>
+                <div style={{ fontSize: 10.5, color: C.sub, marginTop: 3 }}>
+                  {hasHelios && <>T11 {fmt(remT11[t])} · </>}T10 {fmt(remT10[t])} · T9 {fmt(remT9[t])}
+                </div>
               </div>
             ))}
           </div>
