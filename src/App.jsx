@@ -1695,6 +1695,26 @@ function findTierKeywordNear(labelWord, words) {
 // genuinely partial crop (e.g. only "Helios Marksman" + the Apex row
 // visible, nothing from T9) still get tiers right — position-counting
 // alone can't tell a partial crop from a complete one.
+// Tesseract occasionally produces two overlapping candidate readings of
+// the exact same physical word — ambiguous segmentation, not two rows —
+// each with its own slightly different confidence. Left alone, that reads
+// as a phantom extra row. Collapses matches whose boxes sit essentially on
+// top of each other, keeping the higher-confidence one.
+function dedupeOverlapping(matches) {
+  const kept = [];
+  matches.forEach((w) => {
+    const dupeIdx = kept.findIndex(
+      (k) => Math.abs(ocrCenterY(k.bbox) - ocrCenterY(w.bbox)) < 12 && Math.abs(ocrCenterX(k.bbox) - ocrCenterX(w.bbox)) < 40
+    );
+    if (dupeIdx === -1) {
+      kept.push(w);
+    } else if (w.confidence > kept[dupeIdx].confidence) {
+      kept[dupeIdx] = w;
+    }
+  });
+  return kept;
+}
+
 function assignByPosition(words) {
   const numberWords = words.filter((w) => isNumberWord(w.text));
   const result = {};
@@ -1709,6 +1729,7 @@ function assignByPosition(words) {
     // inventing a tier — e.g. reporting "Apex Infantry" alone as if it
     // were 3 separate rows, one of them wrongly landing in T11.
     let matches = words.filter((w) => w.text.toLowerCase().indexOf(type) !== -1);
+    matches = dedupeOverlapping(matches);
     matches = matches
       .map((w) => ({ word: w, numberResult: nearestNumberBelow(w, numberWords) }))
       .filter((m) => m.numberResult !== null)
