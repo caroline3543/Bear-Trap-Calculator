@@ -120,13 +120,13 @@ const TRANSLATIONS = {
     scanHint: "Works best with a clear, uncropped shot of the Troops Preview screen.", whatScannerRead: "What the scanner read",
     notAnImage: "That doesn't look like an image — try a screenshot (PNG or JPG).",
     scanInstructions: "In-game, tap your profile picture (top-left) → Troops → that screen shows your troop counts. Screenshot it, then upload it below.",
-    scanRetryLangHint: "This didn't read well — try a different screenshot language above and scan again.", rescanBtn: "🔁 Scan again",
+    scanRetryLangHint: "Try a different screenshot language above and scan again.", rescanBtn: "🔁 Scan again",
     scanTotalFailure: "Every language we tried came up empty on this screenshot. Try a clearer or less-compressed screenshot, or enter the numbers by hand in the fields below.",
     scanCropHint: "Scanning only reads what's visible above — scroll to frame just the numbers you want, or scan a section, scroll, and scan again to fill in the rest.",
     hasHeliosLabel: "I have Helios (T11) troops",
     appliedScanToOtherToast: "Scanned values applied to {a}.",
     autoDetectLangLabel: "Auto-detect the screenshot's language", detectedLangNote: "Detected: {a}",
-    alwaysDoubleCheckNote: "OCR can misread individual digits even when a field looks fine — compare against your screenshot above before applying.",
+    alwaysDoubleCheckNote: "Compare the numbers against your screenshot before applying.", scanFriendlyNote: "This scanner's still being improved, so it might only catch some of the numbers. Take a look through your screenshot and fill in anything it missed.", foundCountSummary: "{a} of {b} found",
   },
   it: {
     troopPool: "Riserva truppe", troopPoolSub: "Le T10 vengono sempre usate prima delle T9 per lo stesso tipo di truppa.",
@@ -192,13 +192,13 @@ const TRANSLATIONS = {
     scanHint: "Funziona meglio con uno scatto chiaro e non ritagliato della schermata Anteprima Truppe.", whatScannerRead: "Cosa ha letto lo scanner",
     notAnImage: "Non sembra un'immagine — prova con uno screenshot (PNG o JPG).",
     scanInstructions: "Nel gioco, tocca la tua immagine del profilo (in alto a sinistra) → Truppe → quella schermata mostra il numero delle tue truppe. Fai uno screenshot e caricalo qui sotto.",
-    scanRetryLangHint: "Non ha letto bene — prova una lingua dello screenshot diversa qui sopra e scansiona di nuovo.", rescanBtn: "🔁 Scansiona di nuovo",
+    scanRetryLangHint: "Prova una lingua dello screenshot diversa qui sopra e scansiona di nuovo.", rescanBtn: "🔁 Scansiona di nuovo",
     scanTotalFailure: "Nessuna delle lingue provate ha funzionato su questo screenshot. Prova uno screenshot più chiaro o meno compresso, oppure inserisci i numeri a mano nei campi qui sotto.",
     scanCropHint: "La scansione legge solo ciò che è visibile sopra — scorri per inquadrare solo i numeri che vuoi, oppure scansiona una sezione, scorri e scansiona di nuovo per completare il resto.",
     hasHeliosLabel: "Ho truppe Helios (T11)",
     appliedScanToOtherToast: "Valori scansionati applicati a {a}.",
     autoDetectLangLabel: "Rileva automaticamente la lingua dello screenshot", detectedLangNote: "Rilevata: {a}",
-    alwaysDoubleCheckNote: "L'OCR può leggere male singole cifre anche quando un campo sembra corretto — confronta con lo screenshot sopra prima di applicare.",
+    alwaysDoubleCheckNote: "Confronta i numeri con lo screenshot prima di applicare.", scanFriendlyNote: "Questo scanner è ancora in fase di miglioramento, quindi potrebbe leggere solo alcuni numeri. Dai un'occhiata al tuo screenshot e completa quello che manca.", foundCountSummary: "{a} su {b} trovati",
   },
   es: {
     troopPool: "Reserva de tropas", troopPoolSub: "Las T10 siempre se usan antes que las T9 para el mismo tipo de tropa.",
@@ -264,13 +264,13 @@ const TRANSLATIONS = {
     scanHint: "Funciona mejor con una captura clara y sin recortar de la pantalla de Vista previa de Tropas.", whatScannerRead: "Lo que leyó el escáner",
     notAnImage: "Eso no parece una imagen — prueba con una captura (PNG o JPG).",
     scanInstructions: "En el juego, toca tu foto de perfil (arriba a la izquierda) → Tropas → esa pantalla muestra tus tropas. Haz una captura y súbela abajo.",
-    scanRetryLangHint: "Esto no se leyó bien — prueba con otro idioma de captura arriba y escanea de nuevo.", rescanBtn: "🔁 Escanear de nuevo",
+    scanRetryLangHint: "Prueba con otro idioma de captura arriba y escanea de nuevo.", rescanBtn: "🔁 Escanear de nuevo",
     scanTotalFailure: "Ningún idioma probado funcionó con esta captura. Prueba con una captura más clara o menos comprimida, o introduce los números a mano en los campos de abajo.",
     scanCropHint: "El escaneo solo lee lo que se ve arriba — desplázate para encuadrar solo los números que quieres, o escanea una sección, desplázate y escanea de nuevo para completar el resto.",
     hasHeliosLabel: "Tengo tropas Helios (T11)",
     appliedScanToOtherToast: "Valores escaneados aplicados a {a}.",
     autoDetectLangLabel: "Detectar automáticamente el idioma de la captura", detectedLangNote: "Detectado: {a}",
-    alwaysDoubleCheckNote: "El OCR puede leer mal cifras individuales incluso cuando un campo parece correcto — compara con la captura de arriba antes de aplicar.",
+    alwaysDoubleCheckNote: "Compara los números con la captura antes de aplicar.", scanFriendlyNote: "Este escáner todavía se está mejorando, así que puede que solo detecte algunos números. Revisa tu captura y completa lo que falte.", foundCountSummary: "{a} de {b} encontrados",
   },
   ko: {
     troopPool: "병력 보유량", troopPoolSub: "같은 병종이면 T9보다 T10을 항상 먼저 사용합니다.",
@@ -336,13 +336,13 @@ const TRANSLATIONS = {
     scanHint: "병력 미리보기 화면을 선명하고 자르지 않은 상태로 캡처하면 가장 잘 작동합니다.", whatScannerRead: "스캐너가 읽은 내용",
     notAnImage: "이미지가 아닌 것 같습니다 — 스크린샷(PNG 또는 JPG)을 시도하세요.",
     scanInstructions: "게임에서 프로필 사진(왼쪽 위)을 탭 → 병력 → 그 화면에 병력 수가 표시됩니다. 그 화면을 캡처해서 아래에 업로드하세요.",
-    scanRetryLangHint: "잘 읽히지 않았습니다 — 위에서 다른 스크린샷 언어를 선택하고 다시 스캔해 보세요.", rescanBtn: "🔁 다시 스캔",
+    scanRetryLangHint: "위에서 다른 스크린샷 언어를 선택하고 다시 스캔해 보세요.", rescanBtn: "🔁 다시 스캔",
     scanTotalFailure: "시도한 모든 언어가 이 스크린샷에서 아무것도 찾지 못했습니다. 더 선명하거나 압축이 덜 된 스크린샷을 시도하거나, 아래 필드에 숫자를 직접 입력하세요.",
     scanCropHint: "스캔은 위에 보이는 부분만 읽습니다 — 원하는 숫자만 보이도록 스크롤하거나, 한 부분을 스캔한 뒤 스크롤해서 나머지를 다시 스캔하세요.",
     hasHeliosLabel: "헬리오스(T11) 병력을 보유하고 있습니다",
     appliedScanToOtherToast: "스캔한 값이 {a}에 적용되었습니다.",
     autoDetectLangLabel: "스크린샷 언어 자동 감지", detectedLangNote: "감지됨: {a}",
-    alwaysDoubleCheckNote: "필드가 괜찮아 보여도 OCR이 개별 숫자를 잘못 읽을 수 있습니다 — 적용하기 전에 위 스크린샷과 대조하세요.",
+    alwaysDoubleCheckNote: "적용하기 전에 스크린샷과 숫자를 대조하세요.", scanFriendlyNote: "이 스캐너는 아직 개선 중이라 일부 숫자만 인식할 수도 있어요. 스크린샷을 확인하고 빠진 부분을 채워주세요.", foundCountSummary: "{b}개 중 {a}개 찾음",
   },
   de: {
     troopPool: "Truppenbestand", troopPoolSub: "T10 wird beim gleichen Truppentyp immer vor T9 verwendet.",
@@ -408,13 +408,13 @@ const TRANSLATIONS = {
     scanHint: "Funktioniert am besten mit einer klaren, nicht zugeschnittenen Aufnahme des Truppenübersicht-Bildschirms.", whatScannerRead: "Was der Scanner gelesen hat",
     notAnImage: "Das sieht nicht wie ein Bild aus — versuche einen Screenshot (PNG oder JPG).",
     scanInstructions: "Tippe im Spiel auf dein Profilbild (oben links) → Truppen → dieser Bildschirm zeigt deine Truppenzahlen. Mach einen Screenshot davon und lade ihn unten hoch.",
-    scanRetryLangHint: "Das wurde nicht gut gelesen — probiere oben eine andere Screenshot-Sprache und scanne erneut.", rescanBtn: "🔁 Erneut scannen",
+    scanRetryLangHint: "Probiere oben eine andere Screenshot-Sprache und scanne erneut.", rescanBtn: "🔁 Erneut scannen",
     scanTotalFailure: "Keine der ausprobierten Sprachen konnte diesen Screenshot lesen. Versuche einen klareren oder weniger komprimierten Screenshot, oder gib die Zahlen unten manuell ein.",
     scanCropHint: "Der Scan liest nur, was oben sichtbar ist — scrolle, um nur die gewünschten Zahlen einzurahmen, oder scanne einen Abschnitt, scrolle weiter und scanne erneut, um den Rest zu ergänzen.",
     hasHeliosLabel: "Ich habe Helios-Truppen (T11)",
     appliedScanToOtherToast: "Gescannte Werte auf {a} angewendet.",
     autoDetectLangLabel: "Screenshot-Sprache automatisch erkennen", detectedLangNote: "Erkannt: {a}",
-    alwaysDoubleCheckNote: "OCR kann einzelne Ziffern falsch lesen, selbst wenn ein Feld gut aussieht — vor dem Anwenden mit dem Screenshot oben vergleichen.",
+    alwaysDoubleCheckNote: "Vergleiche die Zahlen vor dem Anwenden mit dem Screenshot.", scanFriendlyNote: "Dieser Scanner wird noch verbessert und erkennt vielleicht nur einen Teil der Zahlen. Schau dir deinen Screenshot an und ergänze, was fehlt.", foundCountSummary: "{a} von {b} gefunden",
   },
   ru: {
     troopPool: "Резерв войск", troopPoolSub: "Войска T10 всегда используются раньше T9 для одного типа войск.",
@@ -480,13 +480,13 @@ const TRANSLATIONS = {
     scanHint: "Лучше всего работает с чётким, необрезанным снимком экрана предпросмотра войск.", whatScannerRead: "Что прочитал сканер",
     notAnImage: "Это не похоже на изображение — попробуйте скриншот (PNG или JPG).",
     scanInstructions: "В игре нажмите на свой портрет (вверху слева) → Войска → этот экран показывает количество войск. Сделайте скриншот и загрузите его ниже.",
-    scanRetryLangHint: "Это плохо считалось — попробуйте другой язык скриншота выше и отсканируйте снова.", rescanBtn: "🔁 Сканировать снова",
+    scanRetryLangHint: "Попробуйте другой язык скриншота выше и отсканируйте снова.", rescanBtn: "🔁 Сканировать снова",
     scanTotalFailure: "Ни один из опробованных языков не смог прочитать этот скриншот. Попробуйте более чёткий или менее сжатый скриншот, либо введите числа вручную в поля ниже.",
     scanCropHint: "Сканирование считывает только то, что видно выше — прокрутите, чтобы показать только нужные числа, либо отсканируйте один участок, прокрутите и отсканируйте снова, чтобы дополнить остальное.",
     hasHeliosLabel: "У меня есть войска Гелиос (T11)",
     appliedScanToOtherToast: "Отсканированные значения применены к {a}.",
     autoDetectLangLabel: "Автоматически определить язык скриншота", detectedLangNote: "Определено: {a}",
-    alwaysDoubleCheckNote: "OCR может неверно распознать отдельные цифры, даже если поле выглядит нормально — сверьте со скриншотом выше перед применением.",
+    alwaysDoubleCheckNote: "Сверьте числа со скриншотом перед применением.", scanFriendlyNote: "Этот сканер ещё дорабатывается, поэтому может распознать не все числа. Проверьте скриншот и заполните то, что он пропустил.", foundCountSummary: "Найдено {a} из {b}",
   },
   pl: {
     troopPool: "Pula wojsk", troopPoolSub: "Wojska T10 są zawsze używane przed T9 dla tego samego typu wojsk.",
@@ -552,13 +552,13 @@ const TRANSLATIONS = {
     scanHint: "Najlepiej działa z wyraźnym, nieprzyciętym zdjęciem ekranu podglądu wojsk.", whatScannerRead: "Co odczytał skaner",
     notAnImage: "To nie wygląda na obraz — spróbuj zrzutu ekranu (PNG lub JPG).",
     scanInstructions: "W grze dotknij swojego zdjęcia profilowego (lewy górny róg) → Wojska → ten ekran pokazuje liczbę Twoich wojsk. Zrób zrzut ekranu i prześlij go poniżej.",
-    scanRetryLangHint: "To nie zostało dobrze odczytane — spróbuj innego języka zrzutu ekranu powyżej i zeskanuj ponownie.", rescanBtn: "🔁 Skanuj ponownie",
+    scanRetryLangHint: "Spróbuj innego języka zrzutu ekranu powyżej i zeskanuj ponownie.", rescanBtn: "🔁 Skanuj ponownie",
     scanTotalFailure: "Żaden z wypróbowanych języków nie poradził sobie z tym zrzutem ekranu. Spróbuj wyraźniejszego lub mniej skompresowanego zrzutu, albo wpisz liczby ręcznie w polach poniżej.",
     scanCropHint: "Skanowanie odczytuje tylko to, co widać powyżej — przewiń, aby pokazać tylko potrzebne liczby, albo zeskanuj jedną sekcję, przewiń i zeskanuj ponownie, aby uzupełnić resztę.",
     hasHeliosLabel: "Mam wojska Helios (T11)",
     appliedScanToOtherToast: "Zeskanowane wartości zastosowano do {a}.",
     autoDetectLangLabel: "Automatycznie wykryj język zrzutu ekranu", detectedLangNote: "Wykryto: {a}",
-    alwaysDoubleCheckNote: "OCR może błędnie odczytać pojedyncze cyfry, nawet gdy pole wygląda dobrze — porównaj ze zrzutem ekranu powyżej przed zastosowaniem.",
+    alwaysDoubleCheckNote: "Porównaj liczby ze zrzutem ekranu przed zastosowaniem.", scanFriendlyNote: "Ten skaner jest wciąż udoskonalany, więc może rozpoznać tylko część liczb. Sprawdź swój zrzut ekranu i uzupełnij to, czego nie znalazł.", foundCountSummary: "Znaleziono {a} z {b}",
   },
   tr: {
     troopPool: "Asker havuzu", troopPoolSub: "Aynı asker türü için T10 her zaman T9'dan önce kullanılır.",
@@ -624,13 +624,13 @@ const TRANSLATIONS = {
     scanHint: "Asker Önizleme ekranının net ve kırpılmamış bir görüntüsüyle en iyi çalışır.", whatScannerRead: "Tarayıcının okuduğu",
     notAnImage: "Bu bir görüntüye benzemiyor — bir ekran görüntüsü (PNG veya JPG) deneyin.",
     scanInstructions: "Oyunda, profil resminize (sol üst) dokunun → Askerler → o ekran asker sayılarınızı gösterir. Ekran görüntüsü alın ve aşağıya yükleyin.",
-    scanRetryLangHint: "Bu iyi okunmadı — yukarıdan farklı bir ekran görüntüsü dili deneyin ve tekrar tarayın.", rescanBtn: "🔁 Tekrar tara",
+    scanRetryLangHint: "Yukarıdan farklı bir ekran görüntüsü dili deneyin ve tekrar tarayın.", rescanBtn: "🔁 Tekrar tara",
     scanTotalFailure: "Denenen dillerin hiçbiri bu ekran görüntüsünü okuyamadı. Daha net veya daha az sıkıştırılmış bir ekran görüntüsü deneyin, ya da sayıları aşağıdaki alanlara elle girin.",
     scanCropHint: "Tarama yalnızca yukarıda görünen kısmı okur — yalnızca istediğiniz sayıları göstermek için kaydırın, ya da bir bölümü tarayıp kaydırdıktan sonra kalanı taramak için tekrar tarayın.",
     hasHeliosLabel: "Helios (T11) askerlerim var",
     appliedScanToOtherToast: "Taranan değerler {a} hesabına uygulandı.",
     autoDetectLangLabel: "Ekran görüntüsü dilini otomatik algıla", detectedLangNote: "Algılanan: {a}",
-    alwaysDoubleCheckNote: "Bir alan iyi görünse bile OCR tek tek rakamları yanlış okuyabilir — uygulamadan önce yukarıdaki ekran görüntüsüyle karşılaştırın.",
+    alwaysDoubleCheckNote: "Uygulamadan önce sayıları ekran görüntüsüyle karşılaştırın.", scanFriendlyNote: "Bu tarayıcı hâlâ geliştiriliyor, bu yüzden sayıların yalnızca bir kısmını okuyabilir. Ekran görüntünüze bakıp eksik olanları tamamlayın.", foundCountSummary: "{b} içinden {a} bulundu",
   },
   ar: {
     troopPool: "مجمع الجنود", troopPoolSub: "تُستخدم T10 دائمًا قبل T9 لنفس نوع الجندي.",
@@ -696,13 +696,13 @@ const TRANSLATIONS = {
     scanHint: "يعمل بشكل أفضل مع لقطة واضحة وغير مقصوصة لشاشة معاينة الجنود.", whatScannerRead: "ما قرأه الماسح",
     notAnImage: "هذا لا يبدو كصورة — جرّب لقطة شاشة (PNG أو JPG).",
     scanInstructions: "داخل اللعبة، اضغط على صورة ملفك الشخصي (أعلى اليسار) ← الجنود ← تعرض تلك الشاشة أعداد جنودك. التقط لقطة شاشة لها ثم ارفعها أدناه.",
-    scanRetryLangHint: "لم تتم قراءته جيدًا — جرّب لغة لقطة شاشة مختلفة أعلاه وامسح مرة أخرى.", rescanBtn: "🔁 مسح مرة أخرى",
+    scanRetryLangHint: "جرّب لغة لقطة شاشة مختلفة أعلاه وامسح مرة أخرى.", rescanBtn: "🔁 مسح مرة أخرى",
     scanTotalFailure: "لم تنجح أي لغة من اللغات التي جُربت في قراءة هذه اللقطة. جرّب لقطة أوضح أو أقل ضغطًا، أو أدخل الأرقام يدويًا في الحقول أدناه.",
     scanCropHint: "يقرأ المسح فقط ما هو ظاهر أعلاه — مرّر لعرض الأرقام المطلوبة فقط، أو امسح قسمًا ثم مرّر وامسح مرة أخرى لإكمال الباقي.",
     hasHeliosLabel: "لدي جنود هيليوس (T11)",
     appliedScanToOtherToast: "تم تطبيق القيم الممسوحة على {a}.",
     autoDetectLangLabel: "اكتشاف لغة لقطة الشاشة تلقائيًا", detectedLangNote: "تم اكتشاف: {a}",
-    alwaysDoubleCheckNote: "قد يُخطئ المسح الضوئي في قراءة أرقام فردية حتى لو بدا الحقل صحيحًا — قارن بلقطة الشاشة أعلاه قبل التطبيق.",
+    alwaysDoubleCheckNote: "قارن الأرقام بلقطة الشاشة قبل التطبيق.", scanFriendlyNote: "هذا الماسح لا يزال قيد التحسين، لذا قد يلتقط بعض الأرقام فقط. ألقِ نظرة على لقطة الشاشة واملأ ما فاته.", foundCountSummary: "تم العثور على {a} من {b}",
   },
 };
 
@@ -1577,7 +1577,6 @@ const SCAN_FIELDS = [
   { key: "t9Lancer", tier: "t9", type: "lancer" },
   { key: "t9Marksman", tier: "t9", type: "marksman" },
 ];
-const SCAN_CONF_THRESHOLD = 70;
 // Tesseract.js has no cheap, genuine "detect the language before reading"
 // step — auto-detect here means running a full OCR pass with each of these
 // languages in turn and keeping whichever one scores highest by total
@@ -1995,35 +1994,22 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
     }
   }
 
-  function needsReview(key) {
-    const c = confidence[key];
-    return c === undefined || c === null || c < SCAN_CONF_THRESHOLD;
-  }
-  // Distinct from needsReview: this is specifically "the label/number
-  // couldn't be located at all" (confidence stays null for both the
-  // position match and the text-search fallback) — as opposed to "found
-  // it, but Tesseract's own score is just cautious," which is common with
-  // this game's bold stylized font even on a correct read. Only the
-  // former is actually a language/matching problem worth suggesting a
-  // screenshot-language change for; the latter just needs a glance.
+  // "Missing" — the label/number couldn't be located at all (confidence
+  // stays null for both the position match and the text-search fallback,
+  // or was filtered out for scoring too low to trust). Used to decide
+  // which tier groups have anything worth showing, and for the found-count
+  // summary above the results.
   function isMissing(key) {
     const c = confidence[key];
     return c === undefined || c === null;
   }
-  // T11 (Helios) is only "relevant" to the missing/failure tallies once at
-  // least one T11 field was actually located in the scan — most players
-  // don't have Helios troops, so 3 permanently-missing T11 fields would
+  // T11 (Helios) is only "relevant" to the found-count tally once at least
+  // one T11 field was actually located in the scan — most players don't
+  // have Helios troops, so 3 permanently-missing T11 fields would
   // otherwise wrongly drag down every single scan's apparent accuracy.
   const hasT11Data = SCAN_FIELDS.some((f) => f.tier === "t11" && !isMissing(f.key));
   const relevantFields = SCAN_FIELDS.filter((f) => f.tier !== "t11" || hasT11Data);
   const missingCount = relevantFields.filter((f) => isMissing(f.key)).length;
-  const looksOff = hasScanned && missingCount >= 2 && missingCount < relevantFields.length;
-  // Every candidate language (or the single one tried, with auto-detect
-  // off) came back with nothing for all relevant fields — meaningfully
-  // different from "found some, not others," and "try a different
-  // language" is actively misleading here when auto-detect already tried
-  // several.
-  const totalFailure = hasScanned && missingCount === relevantFields.length;
 
   function handleApply(targetId) {
     onApply(edited, targetId);
@@ -2164,22 +2150,17 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
 
       {fileError && <div style={{ fontSize: 12, color: C.red, fontWeight: 600, marginTop: 8 }}>{fileError}</div>}
 
-      {totalFailure && (
-        <div style={{ fontSize: 12, color: C.red, fontWeight: 600, marginTop: 8, background: C.redBg, borderRadius: 10, padding: "8px 10px" }}>
-          ⚠ {tWord("scanTotalFailure", lang)}
-        </div>
-      )}
-      {looksOff && (
-        <div style={{ fontSize: 12, color: C.amber, fontWeight: 600, marginTop: 8, background: C.amberBg, borderRadius: 10, padding: "8px 10px" }}>
-          ⚠ {tWord("scanRetryLangHint", lang)}
-        </div>
-      )}
-
       {edited && (
         <div style={{ marginTop: 12 }}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: C.gold, marginBottom: 8 }}>{tWord("scanResultsHeading", lang)}</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6, flexWrap: "wrap", gap: 6 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: C.gold }}>{tWord("scanResultsHeading", lang)}</div>
+            <div style={{ fontSize: 11, color: C.sub, fontWeight: 600 }}>{tFmt("foundCountSummary", lang, { a: relevantFields.length - missingCount, b: relevantFields.length })}</div>
+          </div>
+          <div style={{ fontSize: 12, color: C.amber, lineHeight: 1.4, marginBottom: 10, background: C.amberBg, borderRadius: 10, padding: "8px 10px" }}>
+            {tWord("scanFriendlyNote", lang)}
+          </div>
           {["t11", "t10", "t9"]
-            .filter((tier) => tier !== "t11" || SCAN_FIELDS.some((f) => f.tier === "t11" && confidence[f.key] !== null && confidence[f.key] !== undefined))
+            .filter((tier) => SCAN_FIELDS.some((f) => f.tier === tier && !isMissing(f.key)))
             .map((tier) => (
             <div key={tier} style={{ marginBottom: 10 }}>
               <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 13, fontWeight: 800, color: C.gold, marginBottom: 6 }}>{tier.toUpperCase()}{tier === "t11" ? " (Helios)" : ""}</div>
@@ -2191,7 +2172,6 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
                       value={edited[f.key]}
                       onChange={(v) => setEdited({ ...edited, [f.key]: v })}
                     />
-                    {needsReview(f.key) && <div style={{ fontSize: 10.5, color: C.amber, fontWeight: 700, marginTop: 3 }}>⚠ {tWord("needsReviewNote", lang)}</div>}
                   </div>
                 ))}
               </div>
@@ -2207,10 +2187,7 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
 
           {/* Apply straight to either account — no need to switch the
               active account first just to drop a scan into it. */}
-          <div style={{ fontSize: 11.5, color: C.amber, fontWeight: 600, marginTop: 10, lineHeight: 1.4 }}>
-            ⚠ {tWord("alwaysDoubleCheckNote", lang)}
-          </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
             {accounts.map((acc) => (
               <Btn key={acc.id} tone="gold" small onClick={() => handleApply(acc.id)}>
                 {tWord("applyToPoolBtn", lang)} — {acc.name}{acc.id === activeAccountId ? " ✓" : ""}
@@ -2219,8 +2196,6 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
           </div>
         </div>
       )}
-
-      <div style={{ fontSize: 11, color: C.sub, marginTop: 10 }}>{tWord("scanHint", lang)}</div>
     </div>
   );
 }
