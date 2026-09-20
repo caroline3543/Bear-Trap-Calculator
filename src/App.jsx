@@ -1803,6 +1803,20 @@ function parseScanText(data) {
       confidence[f.key] = fb === null ? null : 50;
     }
   });
+  // Anything at or below 50% confidence gets treated as not found at all,
+  // rather than silently shown as a real (but likely wrong) number.
+  // Empirically, across every real test so far, every incorrect value has
+  // come in at exactly 50% or below (the crude fallback above always
+  // stamps exactly 50%, having no real confidence signal of its own; every
+  // genuinely low-confidence position match has also turned out wrong) —
+  // while every correct value has been well above it. Better to say
+  // "couldn't read this" than confidently show the wrong number.
+  SCAN_FIELDS.forEach((f) => {
+    if (confidence[f.key] !== null && confidence[f.key] !== undefined && confidence[f.key] <= 50) {
+      values[f.key] = null;
+      confidence[f.key] = null;
+    }
+  });
   return { values, confidence, rawText: data.text || "" };
 }
 
