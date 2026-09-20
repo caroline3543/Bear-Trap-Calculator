@@ -1701,7 +1701,18 @@ function assignByPosition(words) {
   const rowCounts = {};
   const tiersForCount = { 1: ["t10"], 2: ["t10", "t9"], 3: ["t11", "t10", "t9"] };
   TYPES.forEach((type) => {
-    const matches = words.filter((w) => w.text.toLowerCase().indexOf(type) !== -1);
+    // A "match" only counts as a real row if it actually has a number
+    // sitting near it — a genuine troop card always does. This filters
+    // out OCR noise (a hallucinated extra word containing this type's
+    // name, with nothing plausible below it) BEFORE it can inflate the
+    // apparent row count and trick the position-fallback below into
+    // inventing a tier — e.g. reporting "Apex Infantry" alone as if it
+    // were 3 separate rows, one of them wrongly landing in T11.
+    let matches = words.filter((w) => w.text.toLowerCase().indexOf(type) !== -1);
+    matches = matches
+      .map((w) => ({ word: w, numberResult: nearestNumberBelow(w, numberWords) }))
+      .filter((m) => m.numberResult !== null)
+      .map((m) => m.word);
     matches.sort((a, b) => {
       const dy = ocrCenterY(a.bbox) - ocrCenterY(b.bbox);
       if (Math.abs(dy) > 20) return dy;
