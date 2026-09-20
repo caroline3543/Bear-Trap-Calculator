@@ -1659,21 +1659,42 @@ function nearestNumberBelow(labelWord, numberWords) {
   return { value: parseInt(d.digits, 10), confidence: best.confidence, raw: best.text };
 }
 
-// "T11"/"T10"/"T9" (Helios/Apex/Supreme) read unreliably via OCR since icons
-// crowd the text, but "Infantry"/"Lancer"/"Marksman" read cleanly. The
-// screen always lists rows strongest-tier-first for a given type, so
-// rather than reading the tier word itself, each type's occurrences get
-// sorted top-to-bottom and labeled by however many rows actually turned
-// up: 2 rows (the common case) means T10/T9 exactly as always; a genuine
-// 3rd row above those two means Helios is present and becomes T11 — never
-// assumed, only detected when it's actually there.
-// Returns both the position-matched values AND how many rows were actually
-// found per troop type — parseScanText needs that count to know whether
-// "T11 wasn't found" means "genuinely not there" (2 rows found — the
-// ordinary case) versus "a real 3rd row exists but its number specifically
-// didn't match" (rare). Only the latter is worth a fallback search; running
-// the crude fallback for T11 whenever it's simply absent was the bug that
-// made the scanner invent a phantom Helios row out of unrelated numbers.
+// "Helios"/"Apex"/"Supreme" precede the type word on the same card ("Apex
+// Infantry", "Helios Marksman") and — contrary to earlier assumption — CAN
+// read cleanly; real scans have shown "Helios Marksman" recognized as
+// legible text. Looks for one of these words on the same row, at or before
+// the type word's own position.
+const TIER_KEYWORDS = { helios: "t11", apex: "t10", supreme: "t9" };
+function findTierKeywordNear(labelWord, words) {
+  // Check the label word's own text first — Tesseract sometimes glues
+  // "Helios Marksman" into a single token rather than two separate ones,
+  // in which case there's no separate neighboring word to find at all.
+  const ownLower = labelWord.text.toLowerCase();
+  for (const kw of Object.keys(TIER_KEYWORDS)) {
+    if (ownLower.indexOf(kw) !== -1) return TIER_KEYWORDS[kw];
+  }
+  for (const w of words) {
+    if (w === labelWord) continue;
+    const sameRow = Math.abs(ocrCenterY(w.bbox) - ocrCenterY(labelWord.bbox)) < 18;
+    if (!sameRow || w.bbox.x0 > labelWord.bbox.x1) continue;
+    const lower = w.text.toLowerCase();
+    for (const kw of Object.keys(TIER_KEYWORDS)) {
+      if (lower.indexOf(kw) !== -1) return TIER_KEYWORDS[kw];
+    }
+  }
+  return null;
+}
+
+// Each type's occurrences (however many are visible — a cropped/scrolled
+// scan may only show one or two of the three possible tiers, not
+// necessarily starting from the top) get resolved two ways: first by
+// actually reading the tier word next to them, when it's legible; anything
+// still unresolved after that falls back to assuming rows run
+// strongest-to-weakest top-to-bottom among whichever tier slots the
+// keyword pass didn't already claim. The keyword pass is what lets a
+// genuinely partial crop (e.g. only "Helios Marksman" + the Apex row
+// visible, nothing from T9) still get tiers right — position-counting
+// alone can't tell a partial crop from a complete one.
 function assignByPosition(words) {
   const numberWords = words.filter((w) => isNumberWord(w.text));
   const result = {};
@@ -1688,10 +1709,20 @@ function assignByPosition(words) {
     });
     rowCounts[type] = matches.length;
     const cap = type.charAt(0).toUpperCase() + type.slice(1);
-    const tierOrder = tiersForCount[Math.min(matches.length, 3)] || [];
-    matches.slice(0, 3).forEach((labelWord, idx) => {
-      if (!tierOrder[idx]) return;
-      result[tierOrder[idx] + cap] = nearestNumberBelow(labelWord, numberWords);
+
+    const unresolved = [];
+    matches.slice(0, 3).forEach((labelWord) => {
+      const tier = findTierKeywordNear(labelWord, words);
+      if (tier && !result[tier + cap]) {
+        result[tier + cap] = nearestNumberBelow(labelWord, numberWords);
+      } else {
+        unresolved.push(labelWord);
+      }
+    });
+
+    const remainingTiers = (tiersForCount[Math.min(matches.length, 3)] || []).filter((t) => !result[t + cap]);
+    unresolved.slice(0, remainingTiers.length).forEach((labelWord, idx) => {
+      result[remainingTiers[idx] + cap] = nearestNumberBelow(labelWord, numberWords);
     });
   });
   return { result, rowCounts };
