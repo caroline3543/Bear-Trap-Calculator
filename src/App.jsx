@@ -1630,11 +1630,17 @@ function flattenWords(data) {
 
 // Pulls a usable digit run out of a word even when OCR glued noise onto it
 // ("P6615") or misread a comma as a period ("6.615") — separators are
-// always stripped rather than trusted.
+// always stripped rather than trusted. Minimum 3 digits (not 4): high
+// enough to reject the small badge/star numbers (e.g. a "6" star-rating
+// icon) that appear throughout these cards, while not silently ignoring a
+// smaller-but-real troop count on a tier someone's only just unlocked.
+// True single/double-digit counts (including a genuine 0) still can't be
+// distinguished from badge noise this way — see the note on confirmed-zero
+// detection further down.
 function extractDigits(text) {
   const matches = text.match(/\d[\d.,]*\d|\d{2,}/g);
   if (!matches) return null;
-  const candidates = matches.map((m) => ({ raw: m, digits: m.replace(/[.,]/g, "") })).filter((c) => c.digits.length >= 4);
+  const candidates = matches.map((m) => ({ raw: m, digits: m.replace(/[.,]/g, "") })).filter((c) => c.digits.length >= 3);
   if (!candidates.length) return null;
   candidates.sort((a, b) => b.digits.length - a.digits.length);
   return candidates[0];
@@ -1645,26 +1651,18 @@ function isNumberWord(text) {
 function ocrCenterX(b) { return (b.x0 + b.x1) / 2; }
 function ocrCenterY(b) { return (b.y0 + b.y1) / 2; }
 
-function nearestNumberBelow(labelWord, numberWords) {
-  const lcx = ocrCenterX(labelWord.bbox);
-  const candidates = numberWords.filter((n) => n.bbox.y0 >= labelWord.bbox.y1 - 10);
-  if (!candidates.length) return null;
-  candidates.sort((a, b) => {
-    const score = (n) => Math.abs(n.bbox.y0 - labelWord.bbox.y1) * 1.5 + Math.abs(ocrCenterX(n.bbox) - lcx);
-    return score(a) - score(b);
-  });
-  const best = candidates[0];
-  const d = extractDigits(best.text);
-  return { value: parseInt(d.digits, 10), confidence: best.confidence, raw: best.text };
-}
-
 // "Helios"/"Apex"/"Supreme" precede the type word on the same card ("Apex
 // Infantry", "Helios Marksman") and — contrary to earlier assumption — CAN
 // read cleanly; real scans have shown "Helios Marksman" recognized as
 // legible text. Looks for one of these words on the same row, at or before
-// the type word's own position.
+// the type word's own position, AND within this card's own column bounds —
+// without that column check, the tier word from a NEIGHBORING card in the
+// same row (e.g. "Helios" from the left card) can get picked up as if it
+// belonged to this card, exactly the cross-card leak the column boundary
+// exists to prevent for numbers too.
 const TIER_KEYWORDS = { helios: "t11", apex: "t10", supreme: "t9" };
-function findTierKeywordNear(labelWord, words) {
+function findTierKeywordNear(card, words) {
+  const labelWord = card.labelWord;
   // Check the label word's own text first — Tesseract sometimes glues
   // "Helios Marksman" into a single token rather than two separate ones,
   // in which case there's no separate neighboring word to find at all.
@@ -1675,7 +1673,8 @@ function findTierKeywordNear(labelWord, words) {
   for (const w of words) {
     if (w === labelWord) continue;
     const sameRow = Math.abs(ocrCenterY(w.bbox) - ocrCenterY(labelWord.bbox)) < 18;
-    if (!sameRow || w.bbox.x0 > labelWord.bbox.x1) continue;
+    const inColumn = ocrCenterX(w.bbox) >= card.xMin && ocrCenterX(w.bbox) <= card.xMax;
+    if (!sameRow || !inColumn || w.bbox.x0 > labelWord.bbox.x1) continue;
     const lower = w.text.toLowerCase();
     for (const kw of Object.keys(TIER_KEYWORDS)) {
       if (lower.indexOf(kw) !== -1) return TIER_KEYWORDS[kw];
@@ -1684,78 +1683,120 @@ function findTierKeywordNear(labelWord, words) {
   return null;
 }
 
-// Each type's occurrences (however many are visible — a cropped/scrolled
-// scan may only show one or two of the three possible tiers, not
-// necessarily starting from the top) get resolved two ways: first by
-// actually reading the tier word next to them, when it's legible; anything
-// still unresolved after that falls back to assuming rows run
-// strongest-to-weakest top-to-bottom among whichever tier slots the
-// keyword pass didn't already claim. The keyword pass is what lets a
-// genuinely partial crop (e.g. only "Helios Marksman" + the Apex row
-// visible, nothing from T9) still get tiers right — position-counting
-// alone can't tell a partial crop from a complete one.
-// Tesseract occasionally produces two overlapping candidate readings of
-// the exact same physical word — ambiguous segmentation, not two rows —
-// each with its own slightly different confidence. Left alone, that reads
-// as a phantom extra row. Collapses matches whose boxes sit essentially on
-// top of each other, keeping the higher-confidence one.
-function dedupeOverlapping(matches) {
-  const kept = [];
-  matches.forEach((w) => {
-    const dupeIdx = kept.findIndex(
-      (k) => Math.abs(ocrCenterY(k.bbox) - ocrCenterY(w.bbox)) < 12 && Math.abs(ocrCenterX(k.bbox) - ocrCenterX(w.bbox)) < 40
-    );
-    if (dupeIdx === -1) {
-      kept.push(w);
-    } else if (w.confidence > kept[dupeIdx].confidence) {
-      kept[dupeIdx] = w;
-    }
+// --- Card-region reconstruction -----------------------------------------
+// Tesseract has no concept of "cards" — it only returns recognized words
+// with bounding boxes. A true vision-based approach (detecting each card's
+// icon and visual boundary) isn't available with this library; this is the
+// closest achievable equivalent using text geometry alone: cluster every
+// troop-type word (Infantry/Lancer/Marksman, regardless of tier) into rows
+// by Y-position, then into left/right columns within each row by X-position.
+// Each (row, column) cell becomes a "card" with a hard X boundary — the
+// midpoint between it and its row-neighbor(s) — that a number search is
+// never allowed to cross. This is what makes one card's number leaking into
+// a neighboring card's field structurally impossible, not just unlikely:
+// the earlier approach searched the WHOLE image for "the nearest number,"
+// with no boundary stopping it from preferring a neighboring card's number
+// when the correct one wasn't cleanly recognized that pass.
+function buildCardRegions(words) {
+  const typeMatches = [];
+  TYPES.forEach((type) => {
+    words.forEach((w) => {
+      if (w.text.toLowerCase().indexOf(type) !== -1) typeMatches.push({ word: w, type });
+    });
   });
-  return kept;
+  // Same overlapping-box problem as before (Tesseract occasionally reads
+  // the same physical label twice at slightly different confidences),
+  // deduped across all types together this time.
+  const deduped = [];
+  typeMatches.forEach((m) => {
+    const dupeIdx = deduped.findIndex(
+      (d) => Math.abs(ocrCenterY(d.word.bbox) - ocrCenterY(m.word.bbox)) < 12 && Math.abs(ocrCenterX(d.word.bbox) - ocrCenterX(m.word.bbox)) < 40
+    );
+    if (dupeIdx === -1) deduped.push(m);
+    else if (m.word.confidence > deduped[dupeIdx].word.confidence) deduped[dupeIdx] = m;
+  });
+  const rows = [];
+  deduped
+    .slice()
+    .sort((a, b) => ocrCenterY(a.word.bbox) - ocrCenterY(b.word.bbox))
+    .forEach((m) => {
+      const row = rows.find((r) => Math.abs(ocrCenterY(r[0].word.bbox) - ocrCenterY(m.word.bbox)) < 20);
+      if (row) row.push(m);
+      else rows.push([m]);
+    });
+  const cards = [];
+  rows.forEach((row) => {
+    row.sort((a, b) => ocrCenterX(a.word.bbox) - ocrCenterX(b.word.bbox));
+    row.forEach((m, i) => {
+      const xMin = i === 0 ? -Infinity : (ocrCenterX(row[i - 1].word.bbox) + ocrCenterX(m.word.bbox)) / 2;
+      const xMax = i === row.length - 1 ? Infinity : (ocrCenterX(m.word.bbox) + ocrCenterX(row[i + 1].word.bbox)) / 2;
+      cards.push({ labelWord: m.word, type: m.type, xMin, xMax, y: ocrCenterY(m.word.bbox) });
+    });
+  });
+  cards.sort((a, b) => (Math.abs(a.y - b.y) > 20 ? a.y - b.y : a.xMin - b.xMin));
+  return cards;
 }
 
+// Finds this card's number — strictly within its own column boundary and
+// below its label — and excludes any number-word already claimed by
+// another card. A number is claimed the moment it's chosen, so the same
+// physical digits can never populate two different fields.
+function numberForCard(card, numberWords, claimed) {
+  const candidates = numberWords.filter(
+    (n) => !claimed.has(n) && n.bbox.y0 >= card.labelWord.bbox.y1 - 10 && ocrCenterX(n.bbox) >= card.xMin && ocrCenterX(n.bbox) <= card.xMax
+  );
+  if (!candidates.length) return null;
+  candidates.sort((a, b) => a.bbox.y0 - b.bbox.y0);
+  const best = candidates[0];
+  const d = extractDigits(best.text);
+  claimed.add(best);
+  return { value: parseInt(d.digits, 10), confidence: best.confidence, raw: best.text };
+}
+
+// Each type's cards (however many are visible — a cropped/scrolled scan
+// may only show one or two of the three possible tiers) get their tier
+// resolved two ways: first by actually reading the tier word next to them,
+// when it's legible; anything still unresolved falls back to assuming
+// cards run strongest-to-weakest top-to-bottom among whichever tier slots
+// the keyword pass didn't already claim. The keyword pass is what lets a
+// genuinely partial crop still get tiers right — position-counting alone
+// can't tell a partial crop from a complete one.
 function assignByPosition(words) {
   const numberWords = words.filter((w) => isNumberWord(w.text));
+  const claimed = new Set();
+  const cards = buildCardRegions(words);
   const result = {};
-  const rowCounts = {};
+  const rowCounts = { infantry: 0, lancer: 0, marksman: 0 };
+  const byType = { infantry: [], lancer: [], marksman: [] };
+
+  cards.forEach((card) => {
+    const numberResult = numberForCard(card, numberWords, claimed);
+    // A card with no plausible number in its own column at all is far
+    // more likely OCR noise (a hallucinated repeat of a type word) than a
+    // genuine row — doesn't count toward the row total either.
+    if (!numberResult) return;
+    rowCounts[card.type]++;
+    byType[card.type].push({ card, numberResult });
+  });
+
   const tiersForCount = { 1: ["t10"], 2: ["t10", "t9"], 3: ["t11", "t10", "t9"] };
   TYPES.forEach((type) => {
-    // A "match" only counts as a real row if it actually has a number
-    // sitting near it — a genuine troop card always does. This filters
-    // out OCR noise (a hallucinated extra word containing this type's
-    // name, with nothing plausible below it) BEFORE it can inflate the
-    // apparent row count and trick the position-fallback below into
-    // inventing a tier — e.g. reporting "Apex Infantry" alone as if it
-    // were 3 separate rows, one of them wrongly landing in T11.
-    let matches = words.filter((w) => w.text.toLowerCase().indexOf(type) !== -1);
-    matches = dedupeOverlapping(matches);
-    matches = matches
-      .map((w) => ({ word: w, numberResult: nearestNumberBelow(w, numberWords) }))
-      .filter((m) => m.numberResult !== null)
-      .map((m) => m.word);
-    matches.sort((a, b) => {
-      const dy = ocrCenterY(a.bbox) - ocrCenterY(b.bbox);
-      if (Math.abs(dy) > 20) return dy;
-      return ocrCenterX(a.bbox) - ocrCenterX(b.bbox);
-    });
-    rowCounts[type] = matches.length;
     const cap = type.charAt(0).toUpperCase() + type.slice(1);
-
     const unresolved = [];
-    matches.slice(0, 3).forEach((labelWord) => {
-      const tier = findTierKeywordNear(labelWord, words);
+    byType[type].forEach(({ card, numberResult }) => {
+      const tier = findTierKeywordNear(card, words);
       if (tier && !result[tier + cap]) {
-        result[tier + cap] = nearestNumberBelow(labelWord, numberWords);
+        result[tier + cap] = numberResult;
       } else {
-        unresolved.push(labelWord);
+        unresolved.push(numberResult);
       }
     });
-
-    const remainingTiers = (tiersForCount[Math.min(matches.length, 3)] || []).filter((t) => !result[t + cap]);
-    unresolved.slice(0, remainingTiers.length).forEach((labelWord, idx) => {
-      result[remainingTiers[idx] + cap] = nearestNumberBelow(labelWord, numberWords);
+    const remainingTiers = (tiersForCount[Math.min(byType[type].length, 3)] || []).filter((t) => !result[t + cap]);
+    unresolved.slice(0, remainingTiers.length).forEach((numberResult, idx) => {
+      result[remainingTiers[idx] + cap] = numberResult;
     });
   });
+
   return { result, rowCounts };
 }
 
