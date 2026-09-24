@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
+import TimeHub from "./timehub/TimeHub.jsx";
 
 /* ============================================================
    THEME / TOKENS — per design-system spec (cosy winter camping).
@@ -2774,6 +2775,25 @@ export default function App() {
     }
   }
 
+  // Shared by the calculator header and the Time Hub's ⚙ panel.
+  const langPicker = (
+    <select
+      aria-label="Language"
+      className="lang-select"
+      value={lang}
+      onChange={(e) => setLang(e.target.value)}
+    >
+      {LANGUAGES.map((l) => (
+        <option key={l.code} value={l.code}>{l.flag} {l.label}</option>
+      ))}
+    </select>
+  );
+  const themeButton = (
+    <Btn tone="ghost" small onClick={() => setDarkMode(!darkMode)}>
+      {darkMode ? `☀️ ${tr("lightToggle")}` : `🌙 ${tr("darkToggle")}`}
+    </Btn>
+  );
+
   return (
     <div
       className={darkMode ? "dark" : ""}
@@ -2998,428 +3018,427 @@ export default function App() {
       </div>
 
       <div className="app-shell">
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 20,
-            padding: "20px 22px",
-            marginBottom: 18,
-            borderRadius: 22,
-            background: "var(--headerBg)",
-            border: "1px solid var(--headerBorder)",
-            flexWrap: "wrap",
-          }}
-        >
-          <div>
-            <div style={{ margin: 0, color: C.gold, fontFamily: "'Fredoka', sans-serif", fontSize: 30, fontWeight: 600, lineHeight: "36px", letterSpacing: -0.3 }}>
-              Caroline's Bear Trap Squad Calculator
-            </div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <select
-              aria-label="Language"
-              className="lang-select"
-              value={lang}
-              onChange={(e) => setLang(e.target.value)}
-            >
-              {LANGUAGES.map((l) => (
-                <option key={l.code} value={l.code}>{l.flag} {l.label}</option>
-              ))}
-            </select>
-            <Btn tone="ghost" small onClick={() => setDarkMode(!darkMode)}>
-              {darkMode ? `☀️ ${tr("lightToggle")}` : `🌙 ${tr("darkToggle")}`}
-            </Btn>
-            <BearMascot className="header-bear" />
-          </div>
-        </div>
-
-        {/* ACCOUNT SWITCHER — its own prominent bar, not squeezed into the
-            header, since many players run two separate Bear Traps. */}
-        <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-          {[
-            { id: "A", accent: C.goldStrong },
-            { id: "B", accent: TYPE_COLOR.lancer },
-          ].map((acc) => {
-            const selected = activeAccount === acc.id;
-            return (
-              <button
-                key={acc.id}
-                onClick={() => switchAccount(acc.id)}
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                  border: `2px solid ${selected ? acc.accent : C.cardBorder}`,
-                  background: selected ? acc.accent : C.surface,
-                  borderRadius: 16,
-                  padding: "12px 14px",
-                  cursor: "pointer",
-                  boxShadow: selected ? "0 3px 10px rgba(33,70,65,.25)" : "none",
-                }}
-              >
-                <span
-                  style={{
-                    fontWeight: 800,
-                    fontSize: 15,
-                    color: selected ? C.cocoaDark : C.ink,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {accountNames[acc.id]}
-                </span>
-                {selected && (
-                  <span
-                    role="button"
-                    aria-label={tr("renameAccountPrompt")}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRenameAccount(acc.id);
-                    }}
-                    style={{ fontSize: 14, cursor: "pointer", flexShrink: 0, opacity: 0.85 }}
-                  >
-                    ✏️
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        <div style={{ position: "sticky", top: 0, zIndex: 10, marginBottom: 16 }} className="calc-card">
-          <div style={{ display: "flex", gap: 0, overflowX: "auto" }}>
-            <SummaryStat label={tr("availableStat")} value={fmt(totalAvailable)} />
-            <StatDivider />
-            <SummaryStat label={tr("allocatedStat")} value={fmt(totalAllocated)} />
-            <StatDivider />
-            <SummaryStat label={tr("remainingStat")} value={fmt(totalRemaining)} />
-            <StatDivider />
-            <SummaryStat label={tr("fullSquadsLabel")} value={`${fullCount}/${numSquads}`} tone="green" />
-            <StatDivider />
-            <SummaryStat label={tr("partialStat")} value={partialCount} tone="amber" />
-            <StatDivider />
-            <SummaryStat label={tr("unfilledStat")} value={fmt(unfilledSpaces)} tone={unfilledSpaces > 0 ? "amber" : "green"} />
-          </div>
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* TROOP POOL */}
-          <Card>
-          <SectionHeader step={1} title={tr("troopPool")} sub={tr("troopPoolSub")} />
-          {noTroopsEntered && (
-            <div style={{ background: C.amberBg, color: C.amber, borderRadius: 12, padding: "8px 10px", fontSize: 12, fontWeight: 500, marginBottom: 10 }}>
-              {tr("noTroops")}
-            </div>
-          )}
-          <div style={{ marginBottom: 12 }}>
-            <ScreenshotScanner
-              lang={lang}
-              accounts={[{ id: "A", name: accountNames.A }, { id: "B", name: accountNames.B }]}
-              activeAccountId={activeAccount}
-              onApply={handleApplyScan}
-            />
-          </div>
-          <label style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 12.5, fontWeight: 600, color: C.ink, cursor: "pointer", marginBottom: hasHelios ? 10 : 4 }}>
-            <input
-              type="checkbox"
-              checked={hasHelios}
-              onChange={(e) => setHasHelios(e.target.checked)}
-              style={{ width: 17, height: 17, accentColor: C.goldStrong, cursor: "pointer" }}
-            />
-            {tr("hasHeliosLabel")}
-          </label>
-          {hasHelios && (
-            <div>
-              <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 15, fontWeight: 800, lineHeight: "20px", color: C.gold, marginBottom: 6 }}>T11 (Helios)</div>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-                <NumField label={tType("infantry", lang)} value={t11.infantry} onChange={(v) => setT11({ ...t11, infantry: v })} />
-                <NumField label={tType("lancer", lang)} value={t11.lancer} onChange={(v) => setT11({ ...t11, lancer: v })} />
-                <NumField label={tType("marksman", lang)} value={t11.marksman} onChange={(v) => setT11({ ...t11, marksman: v })} />
-              </div>
-            </div>
-          )}
-          <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 15, fontWeight: 800, lineHeight: "20px", color: C.gold, marginTop: 4, marginBottom: 6 }}>T10</div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-            <NumField label={tType("infantry", lang)} value={t10.infantry} onChange={(v) => setT10({ ...t10, infantry: v })} />
-            <NumField label={tType("lancer", lang)} value={t10.lancer} onChange={(v) => setT10({ ...t10, lancer: v })} />
-            <NumField label={tType("marksman", lang)} value={t10.marksman} onChange={(v) => setT10({ ...t10, marksman: v })} />
-          </div>
-          <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 15, fontWeight: 800, lineHeight: "20px", color: C.gold, marginBottom: 6 }}>T9</div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
-            <NumField label={tType("infantry", lang)} value={t9.infantry} onChange={(v) => setT9({ ...t9, infantry: v })} />
-            <NumField label={tType("lancer", lang)} value={t9.lancer} onChange={(v) => setT9({ ...t9, lancer: v })} />
-            <NumField label={tType("marksman", lang)} value={t9.marksman} onChange={(v) => setT9({ ...t9, marksman: v })} />
-          </div>
-
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-            <TroopChip label="Inf" value={t10.infantry + t9.infantry} color={TYPE_COLOR.infantry} />
-            <TroopChip label="Lan" value={t10.lancer + t9.lancer} color={TYPE_COLOR.lancer} />
-            <TroopChip label="Mar" value={t10.marksman + t9.marksman} color={TYPE_COLOR.marksman} />
-            <TroopChip label={tr("totalPoolLabel")} value={totalAvailable} color={C.gold} strong />
-          </div>
-
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <Btn tone="danger" onClick={clearTroops}>{tr("clearAll")}</Btn>
-            <Btn tone="ghost" onClick={resetAll}>{tr("reset")}</Btn>
-          </div>
-        </Card>
-
-          {/* RALLY LEADER + JOINER SQUADS — paired side by side on wide screens */}
-          <div className="section-grid">
-        <Card>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => setAdvancedOpen(!advancedOpen)}>
-            <SectionHeader step={2} title={tr("rallyLeader")} sub={tr("rallyLeaderSub")} />
-            <span style={{ color: C.gold, fontWeight: 600, fontSize: 18, flexShrink: 0, paddingLeft: 10 }}>{advancedOpen ? "−" : "+"}</span>
-          </div>
-          {advancedOpen && (
-            <div>
-              <NumField label={tr("rallyBaseCapacity")} value={rallyCapacity} onChange={setRallyCapacity} />
-              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                <NumField label={tr("cyrilleBoostLabel")} value={cyrilleBoost} onChange={setCyrilleBoost} />
-                <NumField label={tr("snowApeBoostLabel")} value={snowApeBoost} onChange={setSnowApeBoost} />
-              </div>
-
-              <div style={{ marginTop: 14 }}>
-                <label style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 12.5, fontWeight: 500, color: C.ink, cursor: "pointer" }}>
-                  <input
-                    type="checkbox"
-                    checked={ministerBoost > 0}
-                    onChange={(e) => setMinisterBoost(e.target.checked ? 2000 : 0)}
-                    style={{ width: 17, height: 17, accentColor: C.goldStrong, cursor: "pointer" }}
-                  />
-                  {tr("ministerAppointed")}
-                </label>
-                {ministerBoost > 0 && (
-                  <div style={{ display: "flex", gap: 8, marginTop: 9 }}>
-                    <Btn tone={ministerBoost === 2000 ? "primary" : "ghost"} small onClick={() => setMinisterBoost(2000)}>{tr("minister2000")}</Btn>
-                    <Btn tone={ministerBoost === 3750 ? "primary" : "ghost"} small onClick={() => setMinisterBoost(3750)}>{tr("minister3750")}</Btn>
-                  </div>
-                )}
-              </div>
-
-              <div style={{ marginTop: 12, marginBottom: 10, fontSize: 12, fontWeight: 500, color: C.gold, background: C.goldBg, border: `1px solid ${C.goldBorder}`, borderRadius: 12, padding: "6px 10px" }}>
-                {tr("effectiveCapacity")}: {fmt(rallyCapacity)} + {fmt(cyrilleBoost)} + {fmt(snowApeBoost)} + {fmt(ministerBoost)} = {fmt(effectiveRallyCapacity)}
-              </div>
-              <CompositionInputs capacity={effectiveRallyCapacity} mode={rallyMode} setMode={setRallyMode} ratio={rallyRatio} setRatio={setRallyRatio} exact={rallyExact} setExact={setRallyExact} target={rallyTarget} lang={lang} />
-              {rallyComputation.result && (
-                <div style={{ marginTop: 10 }}>
-                  <SquadCard index="Leader" squadKey="rally" result={rallyComputation.result} invalid={false} onAcceptFill={acceptFill} onRemoveFill={removeFill} lang={lang} />
-                </div>
-              )}
-            </div>
-          )}
-        </Card>
-
-        {/* JOINER SQUADS (formerly Settings) */}
-        <Card>
-          <SectionHeader step={3} title={tr("joinerSquadsLabel")} sub={tr("settingsSub")} />
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <NumField label={tr("squadCapacity")} value={capacity} onChange={setCapacity} />
-            <NumField label={tr("numSquadsLabel")} value={numSquads} onChange={setNumSquads} />
-          </div>
-        </Card>
-          </div>
-
-        {/* SQUAD STRATEGY */}
-        <Card>
-          <SectionHeader step={4} title={tr("squadStrategy")} sub={tr("squadStrategySub")} />
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, marginBottom: 14 }}>
-            {[
-              { key: "manual", label: tr("manual"), note: tr("manualNote"), star: false },
-              { key: "recommended", label: tr("recommended"), note: tr("recommendedNote"), star: true },
-            ].map((opt) => {
-              const selected = strategy === opt.key;
-              const showPoolWarning = opt.key === "recommended" && recBelow60k;
-              return (
-                <button
-                  key={opt.key}
-                  onClick={() => setStrategy(opt.key)}
-                  className={`strategy-card ${selected ? "selected" : "unselected"}`}
-                  style={{ fontFamily: "'Nunito Sans', sans-serif" }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 15, fontWeight: 800, color: selected ? "var(--selectedText)" : C.gold }}>
-                    {opt.label}
-                    {opt.star && <span aria-hidden="true" style={{ color: selected ? C.goldStrong : C.goldStrong, fontSize: 13 }}>★</span>}
-                  </div>
-                  <div style={{ fontSize: 12, fontWeight: 500, color: selected ? "var(--selectedTextMuted)" : C.sub, marginTop: 4, lineHeight: 1.4 }}>{opt.note}</div>
-                  {showPoolWarning && (
-                    <div style={{ fontSize: 11, fontWeight: 700, color: selected ? "#FBD9CE" : C.amber, marginTop: 6 }}>
-                      ⚠️ {tr("recPoolWarningShort")}
+        {/* TIME HUB — bottom tabs: Today · Timers · Events · BT Calculator.
+            The whole calculator below becomes the "BT Calculator" tab. */}
+        <TimeHub
+          lang={lang}
+          headerExtra={<>{langPicker}{themeButton}</>}
+          calculator={
+            <>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 20,
+                        padding: "20px 22px",
+                        marginBottom: 18,
+                        borderRadius: 22,
+                        background: "var(--headerBg)",
+                        border: "1px solid var(--headerBorder)",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <div>
+                        <div style={{ margin: 0, color: C.gold, fontFamily: "'Fredoka', sans-serif", fontSize: 30, fontWeight: 600, lineHeight: "36px", letterSpacing: -0.3 }}>
+                          Caroline's Bear Trap Squad Calculator
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        {langPicker}
+                        {themeButton}
+                        <BearMascot className="header-bear" />
+                      </div>
                     </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
 
-          {/* Ton Ton's reference ratios — shown for both strategies, since Manual
-              users benefit from the same guidance even while hand-tuning. */}
-          <div style={{ background: C.goldBg, border: `1.5px solid ${C.goldBorder}`, borderRadius: 14, padding: 12, marginBottom: 14, fontSize: 12.5, color: C.ink, lineHeight: 1.55 }}>
-            <div style={{ fontWeight: 800, color: C.gold, marginBottom: 2 }}>🐻 {tr("recSourceNote")}</div>
-            <div style={{ color: C.sub, fontSize: 11.5, marginBottom: 10 }}>{tr("recSourceSub")}</div>
+                    {/* ACCOUNT SWITCHER — its own prominent bar, not squeezed into the
+                        header, since many players run two separate Bear Traps. */}
+                    <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+                      {[
+                        { id: "A", accent: C.goldStrong },
+                        { id: "B", accent: TYPE_COLOR.lancer },
+                      ].map((acc) => {
+                        const selected = activeAccount === acc.id;
+                        return (
+                          <button
+                            key={acc.id}
+                            onClick={() => switchAccount(acc.id)}
+                            style={{
+                              flex: 1,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: 8,
+                              border: `2px solid ${selected ? acc.accent : C.cardBorder}`,
+                              background: selected ? acc.accent : C.surface,
+                              borderRadius: 16,
+                              padding: "12px 14px",
+                              cursor: "pointer",
+                              boxShadow: selected ? "0 3px 10px rgba(33,70,65,.25)" : "none",
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontWeight: 800,
+                                fontSize: 15,
+                                color: selected ? C.cocoaDark : C.ink,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {accountNames[acc.id]}
+                            </span>
+                            {selected && (
+                              <span
+                                role="button"
+                                aria-label={tr("renameAccountPrompt")}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRenameAccount(acc.id);
+                                }}
+                                style={{ fontSize: 14, cursor: "pointer", flexShrink: 0, opacity: 0.85 }}
+                              >
+                                ✏️
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 10 }}>
-              {[
-                { color: TYPE_COLOR.infantry, name: tType("infantry", lang), range: "0.5–3%" },
-                { color: TYPE_COLOR.lancer, name: tType("lancer", lang), range: "10–30%" },
-                { color: TYPE_COLOR.marksman, name: tType("marksman", lang), range: "81%+" },
-              ].map((row) => (
-                <div key={row.name} style={{ display: "flex", alignItems: "center", gap: 8, background: C.surface, borderRadius: 10, padding: "6px 10px" }}>
-                  <span style={{ width: 10, height: 10, borderRadius: 999, background: row.color, flexShrink: 0 }} />
-                  <span style={{ fontWeight: 700, flex: 1 }}>{row.name}</span>
-                  <span style={{ fontWeight: 800, color: C.gold }}>{row.range}</span>
-                </div>
-              ))}
-            </div>
+                    <div style={{ position: "sticky", top: 0, zIndex: 10, marginBottom: 16 }} className="calc-card">
+                      <div style={{ display: "flex", gap: 0, overflowX: "auto" }}>
+                        <SummaryStat label={tr("availableStat")} value={fmt(totalAvailable)} />
+                        <StatDivider />
+                        <SummaryStat label={tr("allocatedStat")} value={fmt(totalAllocated)} />
+                        <StatDivider />
+                        <SummaryStat label={tr("remainingStat")} value={fmt(totalRemaining)} />
+                        <StatDivider />
+                        <SummaryStat label={tr("fullSquadsLabel")} value={`${fullCount}/${numSquads}`} tone="green" />
+                        <StatDivider />
+                        <SummaryStat label={tr("partialStat")} value={partialCount} tone="amber" />
+                        <StatDivider />
+                        <SummaryStat label={tr("unfilledStat")} value={fmt(unfilledSpaces)} tone={unfilledSpaces > 0 ? "amber" : "green"} />
+                      </div>
+                    </div>
 
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>{tr("gen5Note")}</div>
-            <div>{tr("recHeroNote")}</div>
-          </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                      {/* TROOP POOL */}
+                      <Card>
+                      <SectionHeader step={1} title={tr("troopPool")} sub={tr("troopPoolSub")} />
+                      {noTroopsEntered && (
+                        <div style={{ background: C.amberBg, color: C.amber, borderRadius: 12, padding: "8px 10px", fontSize: 12, fontWeight: 500, marginBottom: 10 }}>
+                          {tr("noTroops")}
+                        </div>
+                      )}
+                      <div style={{ marginBottom: 12 }}>
+                        <ScreenshotScanner
+                          lang={lang}
+                          accounts={[{ id: "A", name: accountNames.A }, { id: "B", name: accountNames.B }]}
+                          activeAccountId={activeAccount}
+                          onApply={handleApplyScan}
+                        />
+                      </div>
+                      <label style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 12.5, fontWeight: 600, color: C.ink, cursor: "pointer", marginBottom: hasHelios ? 10 : 4 }}>
+                        <input
+                          type="checkbox"
+                          checked={hasHelios}
+                          onChange={(e) => setHasHelios(e.target.checked)}
+                          style={{ width: 17, height: 17, accentColor: C.goldStrong, cursor: "pointer" }}
+                        />
+                        {tr("hasHeliosLabel")}
+                      </label>
+                      {hasHelios && (
+                        <div>
+                          <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 15, fontWeight: 800, lineHeight: "20px", color: C.gold, marginBottom: 6 }}>T11 (Helios)</div>
+                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+                            <NumField label={tType("infantry", lang)} value={t11.infantry} onChange={(v) => setT11({ ...t11, infantry: v })} />
+                            <NumField label={tType("lancer", lang)} value={t11.lancer} onChange={(v) => setT11({ ...t11, lancer: v })} />
+                            <NumField label={tType("marksman", lang)} value={t11.marksman} onChange={(v) => setT11({ ...t11, marksman: v })} />
+                          </div>
+                        </div>
+                      )}
+                      <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 15, fontWeight: 800, lineHeight: "20px", color: C.gold, marginTop: 4, marginBottom: 6 }}>T10</div>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+                        <NumField label={tType("infantry", lang)} value={t10.infantry} onChange={(v) => setT10({ ...t10, infantry: v })} />
+                        <NumField label={tType("lancer", lang)} value={t10.lancer} onChange={(v) => setT10({ ...t10, lancer: v })} />
+                        <NumField label={tType("marksman", lang)} value={t10.marksman} onChange={(v) => setT10({ ...t10, marksman: v })} />
+                      </div>
+                      <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 15, fontWeight: 800, lineHeight: "20px", color: C.gold, marginBottom: 6 }}>T9</div>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+                        <NumField label={tType("infantry", lang)} value={t9.infantry} onChange={(v) => setT9({ ...t9, infantry: v })} />
+                        <NumField label={tType("lancer", lang)} value={t9.lancer} onChange={(v) => setT9({ ...t9, lancer: v })} />
+                        <NumField label={tType("marksman", lang)} value={t9.marksman} onChange={(v) => setT9({ ...t9, marksman: v })} />
+                      </div>
 
-          {strategy === "manual" && (
-            <div>
-              <NumField label={tr("minMarchMarksmanLabel")} value={minMarchMarksman} onChange={setMinMarchMarksman} />
-              <div style={{ fontSize: 11, color: C.sub, marginTop: 5, marginBottom: 12 }}>{tr("minMarchMarksmanHelp")}</div>
-              <Btn tone="gold" small onClick={handleAutoSplit}>{tr("autoSplitBtn")}</Btn>
-              <div style={{ marginTop: 14 }}>
-                <div key={flashSignal} className="flash-once">
-                  <CompositionInputs capacity={capacity} mode={mode} setMode={setMode} ratio={ratio} setRatio={setRatio} exact={exact} setExact={setExact} target={targetManual} lang={lang} />
-                </div>
-              </div>
-            </div>
-          )}
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+                        <TroopChip label="Inf" value={t10.infantry + t9.infantry} color={TYPE_COLOR.infantry} />
+                        <TroopChip label="Lan" value={t10.lancer + t9.lancer} color={TYPE_COLOR.lancer} />
+                        <TroopChip label="Mar" value={t10.marksman + t9.marksman} color={TYPE_COLOR.marksman} />
+                        <TroopChip label={tr("totalPoolLabel")} value={totalAvailable} color={C.gold} strong />
+                      </div>
 
-          {strategy === "recommended" && (
-            <div>
-              {recBelow60k && (
-                <div style={{ background: C.redBg, border: `1.5px solid ${C.red}`, borderRadius: 14, padding: 12, marginBottom: 14, fontSize: 12.5, color: C.red, fontWeight: 600, lineHeight: 1.5 }}>
-                  ⚠️ {tr("recPoolWarningBanner")}
-                </div>
-              )}
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <Btn tone="danger" onClick={clearTroops}>{tr("clearAll")}</Btn>
+                        <Btn tone="ghost" onClick={resetAll}>{tr("reset")}</Btn>
+                      </div>
+                    </Card>
 
-              <RatioSlider
-                label={`${tType("infantry", lang)} %`}
-                colorDot={TYPE_COLOR.infantry}
-                value={effectiveRecInfantryPct}
-                min={MIN_JOINER_INFANTRY_PCT * 100}
-                max={infantryEffectiveMax}
-                step={0.1}
-                onChange={setRecInfantryPct}
-                warningEmoji={infantryStockLimited && effectiveRecInfantryPct >= infantryEffectiveMax - 0.05 ? "📦" : null}
-                warningText={tr("infantryStockLimitWarning")}
-              />
-              <RatioSlider
-                label={`${tType("lancer", lang)} %`}
-                colorDot={TYPE_COLOR.lancer}
-                value={effectiveRecLancerPct}
-                min={5}
-                max={lancerEffectiveMax}
-                step={0.5}
-                onChange={setRecLancerPct}
-                warningEmoji={lancerStockLimited && effectiveRecLancerPct >= lancerEffectiveMax - 0.05 ? "📦" : null}
-                warningText={tr("lancerStockLimitWarning")}
-              />
-              <AutoRatioBar
-                label={`${tType("marksman", lang)} %`}
-                colorDot={TYPE_COLOR.marksman}
-                pct={recMarksmanPct}
-                displayValue={`${recMarksmanPct.toFixed(1)}%`}
-                autoLabel={tr("autoLabel")}
-                warningEmoji={recBelow60k ? "⚠️" : null}
-                warningText={recBelow60k ? tr("marksmanBelow60kWarning") : null}
-              />
-              <div style={{ fontSize: 11.5, color: C.sub, marginTop: -6, marginBottom: 14 }}>
-                {tType("marksman", lang)}: {fmt(recommendedTarget.marksman)}
-              </div>
+                      {/* RALLY LEADER + JOINER SQUADS — paired side by side on wide screens */}
+                      <div className="section-grid">
+                    <Card>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => setAdvancedOpen(!advancedOpen)}>
+                        <SectionHeader step={2} title={tr("rallyLeader")} sub={tr("rallyLeaderSub")} />
+                        <span style={{ color: C.gold, fontWeight: 600, fontSize: 18, flexShrink: 0, paddingLeft: 10 }}>{advancedOpen ? "−" : "+"}</span>
+                      </div>
+                      {advancedOpen && (
+                        <div>
+                          <NumField label={tr("rallyBaseCapacity")} value={rallyCapacity} onChange={setRallyCapacity} />
+                          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                            <NumField label={tr("cyrilleBoostLabel")} value={cyrilleBoost} onChange={setCyrilleBoost} />
+                            <NumField label={tr("snowApeBoostLabel")} value={snowApeBoost} onChange={setSnowApeBoost} />
+                          </div>
 
-              <div style={{ background: C.goldBg, border: `1.5px solid ${C.goldBorder}`, borderRadius: 14, padding: 10, marginBottom: 10 }}>
-                <TargetPreview target={recommendedTarget} lang={lang} />
-              </div>
-              {recommendedTarget.shortfall > 0 && (
-                <div style={{ color: C.amber, fontWeight: 500, fontSize: 12.5, marginBottom: 10 }}>
-                  {tFmt("spacesCantBeFilled", lang, { a: fmt(recommendedTarget.shortfall) })}
-                </div>
-              )}
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <Btn tone="ghost" onClick={applyRecommendedToManual}>{tWord("useInManual", lang)}</Btn>
-              </div>
-            </div>
-          )}
-        </Card>
+                          <div style={{ marginTop: 14 }}>
+                            <label style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 12.5, fontWeight: 500, color: C.ink, cursor: "pointer" }}>
+                              <input
+                                type="checkbox"
+                                checked={ministerBoost > 0}
+                                onChange={(e) => setMinisterBoost(e.target.checked ? 2000 : 0)}
+                                style={{ width: 17, height: 17, accentColor: C.goldStrong, cursor: "pointer" }}
+                              />
+                              {tr("ministerAppointed")}
+                            </label>
+                            {ministerBoost > 0 && (
+                              <div style={{ display: "flex", gap: 8, marginTop: 9 }}>
+                                <Btn tone={ministerBoost === 2000 ? "primary" : "ghost"} small onClick={() => setMinisterBoost(2000)}>{tr("minister2000")}</Btn>
+                                <Btn tone={ministerBoost === 3750 ? "primary" : "ghost"} small onClick={() => setMinisterBoost(3750)}>{tr("minister3750")}</Btn>
+                              </div>
+                            )}
+                          </div>
 
-        {/* SQUAD RESULTS */}
-        {strategy === "manual" && !targetManual.valid ? (
-          <div style={{ fontSize: 12.5, color: C.cocoaDark, fontWeight: 700, textAlign: "center", padding: "14px 10px", background: C.amberBg, border: `1.5px solid ${C.goldStrong}`, borderRadius: 14 }}>
-            ⚠ {tr("fixComposition")}
-          </div>
-        ) : (
-          <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, flexWrap: "wrap" }}>
-              <SectionHeader title={`${tr("squadResults")} (${numSquads})`} />
-              <Btn tone="ghost" small onClick={handleCopyPlan}>📋 {tr("copyPlan")}</Btn>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {computation.squads.map((sq, i) => (
-                <SquadCard
-                  key={i}
-                  index={i + 1}
-                  squadKey={i + 1}
-                  result={sq}
-                  invalid={false}
-                  onAcceptFill={acceptFill}
-                  onRemoveFill={removeFill}
-                  tierLabel={null}
-                  lang={lang}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+                          <div style={{ marginTop: 12, marginBottom: 10, fontSize: 12, fontWeight: 500, color: C.gold, background: C.goldBg, border: `1px solid ${C.goldBorder}`, borderRadius: 12, padding: "6px 10px" }}>
+                            {tr("effectiveCapacity")}: {fmt(rallyCapacity)} + {fmt(cyrilleBoost)} + {fmt(snowApeBoost)} + {fmt(ministerBoost)} = {fmt(effectiveRallyCapacity)}
+                          </div>
+                          <CompositionInputs capacity={effectiveRallyCapacity} mode={rallyMode} setMode={setRallyMode} ratio={rallyRatio} setRatio={setRallyRatio} exact={rallyExact} setExact={setRallyExact} target={rallyTarget} lang={lang} />
+                          {rallyComputation.result && (
+                            <div style={{ marginTop: 10 }}>
+                              <SquadCard index="Leader" squadKey="rally" result={rallyComputation.result} invalid={false} onAcceptFill={acceptFill} onRemoveFill={removeFill} lang={lang} />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </Card>
 
-        {/* REMAINING TROOPS */}
-        <Card>
-          <SectionHeader title={tr("remainingTroopsHeading")} />
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-            {TYPES.map((t) => (
-              <div key={t} style={{ background: C.inputBg, border: `1.5px solid ${C.inputBorder}`, borderRadius: 16, padding: "10px 8px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}>
-                  <span style={{ width: 7, height: 7, borderRadius: 999, background: TYPE_COLOR[t], display: "inline-block", flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, fontWeight: 700, color: C.gold }}>{tType(t, lang)}</span>
-                </div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>{fmt(remT11[t] + remT10[t] + remT9[t])}</div>
-                <div style={{ fontSize: 10.5, color: C.sub, marginTop: 3 }}>
-                  {hasHelios && <>T11 {fmt(remT11[t])} · </>}T10 {fmt(remT10[t])} · T9 {fmt(remT9[t])}
-                </div>
-              </div>
-            ))}
-          </div>
-          <div style={{ borderTop: `1.5px solid ${C.cardBorder}`, marginTop: 14, paddingTop: 12, fontSize: 12.5 }}>
-            <Row label={tr("totalAvailableLabel")} value={fmt(totalAvailable)} />
-            <Row label={tr("totalAllocatedLabel")} value={fmt(totalAllocated)} />
-            <Row label={tr("totalRemainingLabel")} value={fmt(totalRemaining)} />
-            <Row label={tr("capacityRequiredLabel")} value={fmt(totalCapacityRequired)} />
-            <Row label={tr("fullSquadsLabel")} value={fullCount} />
-            <Row label={tr("partialSquadsLabel")} value={partialCount} />
-            <Row label={tr("unfilledSpacesLabel")} value={fmt(unfilledSpaces)} />
-          </div>
-        </Card>
+                    {/* JOINER SQUADS (formerly Settings) */}
+                    <Card>
+                      <SectionHeader step={3} title={tr("joinerSquadsLabel")} sub={tr("settingsSub")} />
+                      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                        <NumField label={tr("squadCapacity")} value={capacity} onChange={setCapacity} />
+                        <NumField label={tr("numSquadsLabel")} value={numSquads} onChange={setNumSquads} />
+                      </div>
+                    </Card>
+                      </div>
 
-        <div style={{ textAlign: "center", color: C.sub, fontSize: 11, paddingBottom: 20 }}>
-          {tr("savedAutomatically")}
-        </div>
-        </div>
+                    {/* SQUAD STRATEGY */}
+                    <Card>
+                      <SectionHeader step={4} title={tr("squadStrategy")} sub={tr("squadStrategySub")} />
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, marginBottom: 14 }}>
+                        {[
+                          { key: "manual", label: tr("manual"), note: tr("manualNote"), star: false },
+                          { key: "recommended", label: tr("recommended"), note: tr("recommendedNote"), star: true },
+                        ].map((opt) => {
+                          const selected = strategy === opt.key;
+                          const showPoolWarning = opt.key === "recommended" && recBelow60k;
+                          return (
+                            <button
+                              key={opt.key}
+                              onClick={() => setStrategy(opt.key)}
+                              className={`strategy-card ${selected ? "selected" : "unselected"}`}
+                              style={{ fontFamily: "'Nunito Sans', sans-serif" }}
+                            >
+                              <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 15, fontWeight: 800, color: selected ? "var(--selectedText)" : C.gold }}>
+                                {opt.label}
+                                {opt.star && <span aria-hidden="true" style={{ color: selected ? C.goldStrong : C.goldStrong, fontSize: 13 }}>★</span>}
+                              </div>
+                              <div style={{ fontSize: 12, fontWeight: 500, color: selected ? "var(--selectedTextMuted)" : C.sub, marginTop: 4, lineHeight: 1.4 }}>{opt.note}</div>
+                              {showPoolWarning && (
+                                <div style={{ fontSize: 11, fontWeight: 700, color: selected ? "#FBD9CE" : C.amber, marginTop: 6 }}>
+                                  ⚠️ {tr("recPoolWarningShort")}
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Ton Ton's reference ratios — shown for both strategies, since Manual
+                          users benefit from the same guidance even while hand-tuning. */}
+                      <div style={{ background: C.goldBg, border: `1.5px solid ${C.goldBorder}`, borderRadius: 14, padding: 12, marginBottom: 14, fontSize: 12.5, color: C.ink, lineHeight: 1.55 }}>
+                        <div style={{ fontWeight: 800, color: C.gold, marginBottom: 2 }}>🐻 {tr("recSourceNote")}</div>
+                        <div style={{ color: C.sub, fontSize: 11.5, marginBottom: 10 }}>{tr("recSourceSub")}</div>
+
+                        <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 10 }}>
+                          {[
+                            { color: TYPE_COLOR.infantry, name: tType("infantry", lang), range: "0.5–3%" },
+                            { color: TYPE_COLOR.lancer, name: tType("lancer", lang), range: "10–30%" },
+                            { color: TYPE_COLOR.marksman, name: tType("marksman", lang), range: "81%+" },
+                          ].map((row) => (
+                            <div key={row.name} style={{ display: "flex", alignItems: "center", gap: 8, background: C.surface, borderRadius: 10, padding: "6px 10px" }}>
+                              <span style={{ width: 10, height: 10, borderRadius: 999, background: row.color, flexShrink: 0 }} />
+                              <span style={{ fontWeight: 700, flex: 1 }}>{row.name}</span>
+                              <span style={{ fontWeight: 800, color: C.gold }}>{row.range}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div style={{ fontWeight: 700, marginBottom: 6 }}>{tr("gen5Note")}</div>
+                        <div>{tr("recHeroNote")}</div>
+                      </div>
+
+                      {strategy === "manual" && (
+                        <div>
+                          <NumField label={tr("minMarchMarksmanLabel")} value={minMarchMarksman} onChange={setMinMarchMarksman} />
+                          <div style={{ fontSize: 11, color: C.sub, marginTop: 5, marginBottom: 12 }}>{tr("minMarchMarksmanHelp")}</div>
+                          <Btn tone="gold" small onClick={handleAutoSplit}>{tr("autoSplitBtn")}</Btn>
+                          <div style={{ marginTop: 14 }}>
+                            <div key={flashSignal} className="flash-once">
+                              <CompositionInputs capacity={capacity} mode={mode} setMode={setMode} ratio={ratio} setRatio={setRatio} exact={exact} setExact={setExact} target={targetManual} lang={lang} />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {strategy === "recommended" && (
+                        <div>
+                          {recBelow60k && (
+                            <div style={{ background: C.redBg, border: `1.5px solid ${C.red}`, borderRadius: 14, padding: 12, marginBottom: 14, fontSize: 12.5, color: C.red, fontWeight: 600, lineHeight: 1.5 }}>
+                              ⚠️ {tr("recPoolWarningBanner")}
+                            </div>
+                          )}
+
+                          <RatioSlider
+                            label={`${tType("infantry", lang)} %`}
+                            colorDot={TYPE_COLOR.infantry}
+                            value={effectiveRecInfantryPct}
+                            min={MIN_JOINER_INFANTRY_PCT * 100}
+                            max={infantryEffectiveMax}
+                            step={0.1}
+                            onChange={setRecInfantryPct}
+                            warningEmoji={infantryStockLimited && effectiveRecInfantryPct >= infantryEffectiveMax - 0.05 ? "📦" : null}
+                            warningText={tr("infantryStockLimitWarning")}
+                          />
+                          <RatioSlider
+                            label={`${tType("lancer", lang)} %`}
+                            colorDot={TYPE_COLOR.lancer}
+                            value={effectiveRecLancerPct}
+                            min={5}
+                            max={lancerEffectiveMax}
+                            step={0.5}
+                            onChange={setRecLancerPct}
+                            warningEmoji={lancerStockLimited && effectiveRecLancerPct >= lancerEffectiveMax - 0.05 ? "📦" : null}
+                            warningText={tr("lancerStockLimitWarning")}
+                          />
+                          <AutoRatioBar
+                            label={`${tType("marksman", lang)} %`}
+                            colorDot={TYPE_COLOR.marksman}
+                            pct={recMarksmanPct}
+                            displayValue={`${recMarksmanPct.toFixed(1)}%`}
+                            autoLabel={tr("autoLabel")}
+                            warningEmoji={recBelow60k ? "⚠️" : null}
+                            warningText={recBelow60k ? tr("marksmanBelow60kWarning") : null}
+                          />
+                          <div style={{ fontSize: 11.5, color: C.sub, marginTop: -6, marginBottom: 14 }}>
+                            {tType("marksman", lang)}: {fmt(recommendedTarget.marksman)}
+                          </div>
+
+                          <div style={{ background: C.goldBg, border: `1.5px solid ${C.goldBorder}`, borderRadius: 14, padding: 10, marginBottom: 10 }}>
+                            <TargetPreview target={recommendedTarget} lang={lang} />
+                          </div>
+                          {recommendedTarget.shortfall > 0 && (
+                            <div style={{ color: C.amber, fontWeight: 500, fontSize: 12.5, marginBottom: 10 }}>
+                              {tFmt("spacesCantBeFilled", lang, { a: fmt(recommendedTarget.shortfall) })}
+                            </div>
+                          )}
+                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                            <Btn tone="ghost" onClick={applyRecommendedToManual}>{tWord("useInManual", lang)}</Btn>
+                          </div>
+                        </div>
+                      )}
+                    </Card>
+
+                    {/* SQUAD RESULTS */}
+                    {strategy === "manual" && !targetManual.valid ? (
+                      <div style={{ fontSize: 12.5, color: C.cocoaDark, fontWeight: 700, textAlign: "center", padding: "14px 10px", background: C.amberBg, border: `1.5px solid ${C.goldStrong}`, borderRadius: 14 }}>
+                        ⚠ {tr("fixComposition")}
+                      </div>
+                    ) : (
+                      <div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, flexWrap: "wrap" }}>
+                          <SectionHeader title={`${tr("squadResults")} (${numSquads})`} />
+                          <Btn tone="ghost" small onClick={handleCopyPlan}>📋 {tr("copyPlan")}</Btn>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                          {computation.squads.map((sq, i) => (
+                            <SquadCard
+                              key={i}
+                              index={i + 1}
+                              squadKey={i + 1}
+                              result={sq}
+                              invalid={false}
+                              onAcceptFill={acceptFill}
+                              onRemoveFill={removeFill}
+                              tierLabel={null}
+                              lang={lang}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* REMAINING TROOPS */}
+                    <Card>
+                      <SectionHeader title={tr("remainingTroopsHeading")} />
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+                        {TYPES.map((t) => (
+                          <div key={t} style={{ background: C.inputBg, border: `1.5px solid ${C.inputBorder}`, borderRadius: 16, padding: "10px 8px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}>
+                              <span style={{ width: 7, height: 7, borderRadius: 999, background: TYPE_COLOR[t], display: "inline-block", flexShrink: 0 }} />
+                              <span style={{ fontSize: 11, fontWeight: 700, color: C.gold }}>{tType(t, lang)}</span>
+                            </div>
+                            <div style={{ fontSize: 16, fontWeight: 700, color: C.ink }}>{fmt(remT11[t] + remT10[t] + remT9[t])}</div>
+                            <div style={{ fontSize: 10.5, color: C.sub, marginTop: 3 }}>
+                              {hasHelios && <>T11 {fmt(remT11[t])} · </>}T10 {fmt(remT10[t])} · T9 {fmt(remT9[t])}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ borderTop: `1.5px solid ${C.cardBorder}`, marginTop: 14, paddingTop: 12, fontSize: 12.5 }}>
+                        <Row label={tr("totalAvailableLabel")} value={fmt(totalAvailable)} />
+                        <Row label={tr("totalAllocatedLabel")} value={fmt(totalAllocated)} />
+                        <Row label={tr("totalRemainingLabel")} value={fmt(totalRemaining)} />
+                        <Row label={tr("capacityRequiredLabel")} value={fmt(totalCapacityRequired)} />
+                        <Row label={tr("fullSquadsLabel")} value={fullCount} />
+                        <Row label={tr("partialSquadsLabel")} value={partialCount} />
+                        <Row label={tr("unfilledSpacesLabel")} value={fmt(unfilledSpaces)} />
+                      </div>
+                    </Card>
+
+                    <div style={{ textAlign: "center", color: C.sub, fontSize: 11, paddingBottom: 20 }}>
+                      {tr("savedAutomatically")}
+                    </div>
+                    </div>
+            </>
+          }
+        />
       </div>
 
       {toast && (
         <div
           style={{
             position: "fixed",
-            bottom: 20,
+            bottom: "calc(96px + env(safe-area-inset-bottom, 0px))", // clears the Time Hub tab bar
             left: "50%",
             transform: "translateX(-50%)",
             zIndex: 100,
