@@ -10,6 +10,6 @@ export { ResearchWidget } from "./widgets/ResearchWidget.jsx";
 export { ContributionWidget } from "./widgets/ContributionWidget.jsx";
 export { FriendsWidget } from "./widgets/FriendsWidget.jsx";
 export { HistoryWidget } from "./widgets/HistoryWidget.jsx";
-export { useNow } from "./hooks/useNow.js";
+export { useNow } from "./hooks/useNow.jsx";
 export { TIMEHUB_STRINGS } from "./i18n/index.js";
 export { StaminaWidget, TrekWidget } from "./widgets/DailyWidgets.jsx";

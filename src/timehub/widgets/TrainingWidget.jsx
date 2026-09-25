@@ -3,7 +3,8 @@
    to train using the right full-batch time for the troop type. */
 import React, { useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
-import { useNow } from "../hooks/useNow.js";
+import { success } from "../lib/feedback.js";
+import { useNow } from "../hooks/useNow.jsx";
 import { TRAINING_CAMPS, applyTraining, busyCamps, planFinish, finishTogether, sortTimers, campMaxFor, hasHelios } from "../lib/timers.js";
 import { zonedParts, zonedTimeToUtc, formatTime, formatDate, formatSpan, formatCountdown, formatCountdownClock, localDayRange, hhmmToMinutes } from "../lib/time.js";
 import { Section, Btn, Field, Seg, DurationFields, EMPTY_DUR, durFrom, durParse, FormActions, Icon, Ltr, Bidi, AccountSelect, AccountTag } from "../components/ui.jsx";
@@ -59,6 +60,7 @@ function TrainForm({ onDone, preset }) {
       timers: applyTraining(d.timers, list, at, newId),
       plans: extraPlan ? [...(d.plans || []).filter((x) => x.startAt > at), extraPlan] : d.plans,
     }));
+    success();
     onDone();
   }
 

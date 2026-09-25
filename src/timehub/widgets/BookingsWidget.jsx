@@ -2,7 +2,8 @@
    position ◀ ▶, UTC date (today / tomorrow), fixed 30-minute UTC slots. */
 import React, { useEffect, useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
-import { useNow } from "../hooks/useNow.js";
+import { success } from "../lib/feedback.js";
+import { useNow } from "../hooks/useNow.jsx";
 import {
   MINISTER_POSITIONS, POSITION_EFFECT, bookingWindow, daySlots, bookingStatus, bookingEnd, findConflicts,
   partitionBookings, validateBooking, isCustomTime,
@@ -47,6 +48,7 @@ function BookingForm({ initial, prefill, onDone }) {
       const exists = d.bookings.some((b) => b.id === item.id);
       return { ...d, bookings: exists ? d.bookings.map((b) => (b.id === item.id ? item : b)) : [...d.bookings, item] };
     });
+    success();
     onDone();
   }
 

@@ -3,7 +3,8 @@
    edited for one occurrence, this-and-future, or the whole schedule. */
 import React, { useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
-import { useNow } from "../hooks/useNow.js";
+import { success } from "../lib/feedback.js";
+import { useNow } from "../hooks/useNow.jsx";
 import { partitionEvents, validateEvent, eventName, isRecurring, overrideOccurrence, splitSeries, occurrencesBetween } from "../lib/events.js";
 import { TEMPLATES, eventFromTemplate, restoreTemplate } from "../lib/eventTemplates.js";
 import { computeReminders } from "../lib/reminders.js";
@@ -114,6 +115,7 @@ function EventForm({ initial, occKey, onDone, templateId, picker }) {
     } else {
       dispatch({ type: "upsert", collection: "events", item: draft });
     }
+    success();
     onDone();
   }
 

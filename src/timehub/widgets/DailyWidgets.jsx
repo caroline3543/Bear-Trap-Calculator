@@ -2,7 +2,8 @@
    Tundra Trek supplies. Numbers live in lib/daily.js. */
 import React, { useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
-import { useNow } from "../hooks/useNow.js";
+import { success } from "../lib/feedback.js";
+import { useNow } from "../hooks/useNow.jsx";
 import { staminaNow, dropsBetween, dropStatus, pruneClaims, isCurrentDrop, STAMINA_CAP } from "../lib/daily.js";
 import { formatTime, formatSpan, HOUR, MINUTE } from "../lib/time.js";
 import { Section, Btn, Ltr, AccountTag } from "../components/ui.jsx";
@@ -14,6 +15,7 @@ export function useClaim() {
   return (drop) => {
     const at = Date.now();
     for (const a of accountIds) updateAccount(a, (d) => ({ ...d, claims: { ...pruneClaims(d.claims, at), [drop.key]: at } }));
+    success();
   };
 }
 
@@ -29,6 +31,7 @@ function StaminaRow({ accountId }) {
     if (!Number.isInteger(n) || n < 0 || n > 9999) return;
     updateAccount(accountId, (d) => ({ ...d, stamina: { value: n, at: Date.now() } }));
     setEditing(false);
+    success();
   };
   let line = t("staminaUnset");
   let tone = "sub";

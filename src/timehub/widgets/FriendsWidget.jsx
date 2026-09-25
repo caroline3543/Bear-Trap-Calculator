@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
-import { useNow } from "../hooks/useNow.js";
+import { useNow } from "../hooks/useNow.jsx";
 import { classifyAt, DEFAULT_HOURS, validateHours } from "../lib/dayNight.js";
 import { formatTime, formatDate, offsetMinutes, formatHoursMinutes, isValidTimeZone, zoneCity } from "../lib/time.js";
 import { Section, Btn, Field, TimeZonePicker, FormActions, Icon, Ltr } from "../components/ui.jsx";

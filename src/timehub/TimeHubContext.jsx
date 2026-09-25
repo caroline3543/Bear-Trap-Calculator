@@ -2,7 +2,8 @@
    Context + store (v2). One unified dashboard for every account.
    Wrap any widget in <TimeHubProvider> to use it on its own.
    ============================================================ */
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { setFeedbackPrefs } from "./lib/feedback.js";
 import { loadState, saveState, newId } from "./lib/storage.js";
 import { deviceTimeZone } from "./lib/time.js";
 import { makeT, RTL_LANGS } from "./i18n/index.js";
@@ -10,6 +11,12 @@ import { updateAccountData, visibleAccountIds, primaryAccount, emptyAccountData,
 import { TEMPLATES } from "./lib/eventTemplates.js";
 
 const Ctx = createContext(null);
+const TAB_KEY = "timehub:tab";
+/** The open tab lives in its own context so switching tabs only re-renders the tab bar and panels. */
+const TabCtx = createContext({ tab: "today", setTab: () => {} });
+export function useTab() {
+  return useContext(TabCtx);
+}
 
 function reducer(state, action) {
   switch (action.type) {
@@ -41,23 +48,42 @@ export function TimeHubProvider({ lang = "en", children }) {
   const [rearrange, setRearrange] = useState(false);
   const [bookingDraft, setBookingDraft] = useState(null);
   const [trainDraft, setTrainDraft] = useState(null);
-  const setTab = useCallback((tab) => {
-    dispatch({ type: "settings", patch: { tab } });
-    if (typeof window !== "undefined") window.scrollTo({ top: 0 });
+  // Tab switches paint instantly (local state); remembering the tab happens in the background.
+  // (stored under its own key so a tab switch never re-renders the other tabs)
+  const [tab, setTabState] = useState(() => {
+    try { return localStorage.getItem(TAB_KEY) || state.settings.tab || "today"; } catch { return state.settings.tab || "today"; }
+  });
+  const setTab = useCallback((next) => {
+    setTabState(next);
+    try { localStorage.setItem(TAB_KEY, next); } catch { /* private mode */ }
   }, []);
 
+  // Save a moment after the last change (not on every tap), and always before the page goes away.
+  const latest = useRef(state);
+  latest.current = state;
   useEffect(() => {
-    saveState(state);
+    const id = setTimeout(() => saveState(latest.current), 400);
+    return () => clearTimeout(id);
   }, [state]);
+  useEffect(() => {
+    const flush = () => saveState(latest.current);
+    const onVis = () => { if (document.visibilityState === "hidden") flush(); };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onVis);
+    return () => { window.removeEventListener("pagehide", flush); document.removeEventListener("visibilitychange", onVis); };
+  }, []);
+  useEffect(() => {
+    setFeedbackPrefs({ sound: state.settings.sound !== false, haptics: state.settings.haptics !== false });
+  }, [state.settings.sound, state.settings.haptics]);
 
   const openBooking = useCallback((draft) => {
-    dispatch({ type: "settings", patch: { tab: "events" } });
+    setTab("events");
     setBookingDraft({ ...draft, nonce: Date.now() });
     setTimeout(() => document.getElementById("th-sec-bookings")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
   }, []);
   /** From an idle-camps card: open the training form pre-filled on the Timers tab. */
   const startTraining = useCallback((draft) => {
-    dispatch({ type: "settings", patch: { tab: "timers" } });
+    setTab("timers");
     setTrainDraft({ ...draft, nonce: Date.now() });
     setTimeout(() => document.getElementById("th-sec-training")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
   }, []);
@@ -82,11 +108,16 @@ export function TimeHubProvider({ lang = "en", children }) {
       updateAccount: (accountId, fn) => dispatch({ type: "accountData", accountId, fn }),
       setFilter: (f) => dispatch({ type: "settings", patch: { accountFilter: f } }),
       rearrange, setRearrange, bookingDraft, setBookingDraft, openBooking,
-      trainDraft, setTrainDraft, startTraining, setTab, tab: state.settings.tab || "today",
+      trainDraft, setTrainDraft, startTraining, setTab,
     };
   }, [state, lang, rearrange, bookingDraft, openBooking, trainDraft, startTraining, setTab]);
 
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  const tabValue = useMemo(() => ({ tab, setTab }), [tab, setTab]);
+  return (
+    <Ctx.Provider value={value}>
+      <TabCtx.Provider value={tabValue}>{children}</TabCtx.Provider>
+    </Ctx.Provider>
+  );
 }
 
 export function useTimeHub() {

@@ -3,7 +3,7 @@
    back to a download) or copy plain text for alliance chat. */
 import React, { useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
-import { useNow } from "../hooks/useNow.js";
+import { useNow } from "../hooks/useNow.jsx";
 import { eventOccurrence, eventName, isScheduled } from "../lib/events.js";
 import { shareRows, shareText } from "../lib/share.js";
 import { formatTime, formatDate, zoneCity } from "../lib/time.js";

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
-import { useNow } from "../hooks/useNow.js";
+import { success } from "../lib/feedback.js";
+import { useNow } from "../hooks/useNow.jsx";
 import { contribState, spendAttempt, setAttempts, adjustAttempts, reconfigure } from "../lib/contributions.js";
 import { formatCountdown, formatCountdownClock, formatTime, formatDate, MINUTE } from "../lib/time.js";
 import { Section, Btn, Field, Seg, FormActions, Ltr, Bidi, AccountTag } from "../components/ui.jsx";
@@ -98,10 +99,10 @@ function ContribBlock({ accountId, several }) {
   const contrib = dataFor(accountId).contrib;
   const live = contribState(contrib, now);
 
-  const spendAll = () => updateAccount((acc) => {
+  const spendAll = () => { success(); updateAccount((acc) => {
     const n = contribState(acc.contrib, Date.now()).count;
     return n > 0 ? { ...acc, contrib: spendAttempt(acc.contrib, Date.now(), n) || acc.contrib } : acc;
-  });
+  }); };
   const nudge = (d) => updateAccount((acc) => ({ ...acc, contrib: adjustAttempts(acc.contrib, Date.now(), d) }));
 
   return (

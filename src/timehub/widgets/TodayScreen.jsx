@@ -3,9 +3,10 @@
    which account, the local time, and whether anything needs doing.
    Action cards (idle camps, minister bookings) → week strip → schedule.
    ============================================================ */
-import React, { useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
-import { useNow } from "../hooks/useNow.js";
+import { success } from "../lib/feedback.js";
+import { useNow, useMinute } from "../hooks/useNow.jsx";
 import { buildAgenda } from "../lib/agenda.js";
 import { computeReminders, needsAttention } from "../lib/reminders.js";
 import { contribState, spendAttempt } from "../lib/contributions.js";
@@ -31,13 +32,15 @@ const BUFF_NAME = { strategy: "buffStrategyName", defense: "buffDefenseName", ne
 /* ---------- what needs doing (one card, like the calculator's steps) ---------- */
 export function useNeeds() {
   const { state, accountIds, dataFor } = useTimeHub();
-  const now = useNow();
-  const drops = dropsNeedingAction(state, accountIds, now);
-  const stamina = accountIds.map((a) => ({ a, s: staminaNow(dataFor(a).stamina, now) }))
-    .filter(({ s }) => s && (s.over || s.atCap || (s.fullAt && s.fullAt - now <= HOUR)));
-  const idle = accountIds.map((acc) => ({ acc, idle: idleCamps(dataFor(acc), now) })).filter((c) => c.idle);
-  const minister = needsAttention(computeReminders(state, now, accountIds));
-  return { drops, stamina, idle, minister, count: drops.length + stamina.length + idle.length + minister.length };
+  const now = useMinute(); // once a minute is plenty for "what needs doing"
+  return useMemo(() => {
+    const drops = dropsNeedingAction(state, accountIds, now);
+    const stamina = accountIds.map((a) => ({ a, s: staminaNow(dataFor(a).stamina, now) }))
+      .filter(({ s }) => s && (s.over || s.atCap || (s.fullAt && s.fullAt - now <= HOUR)));
+    const idle = accountIds.map((acc) => ({ acc, idle: idleCamps(dataFor(acc), now) })).filter((c) => c.idle);
+    const minister = needsAttention(computeReminders(state, now, accountIds));
+    return { drops, stamina, idle, minister, count: drops.length + stamina.length + idle.length + minister.length };
+  }, [state, accountIds.join(), now]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 function NeedRow({ tone = "warm", title, sub, children }) {
@@ -51,12 +54,21 @@ function NeedRow({ tone = "warm", title, sub, children }) {
 
 function NeedsYou() {
   const { t, tz, lang, accountById, startTraining, setTab } = useTimeHub();
-  const now = useNow();
+  const now = useMinute();
   const when = useWhenLocal();
   const claim = useClaim();
   const [asking, setAsking] = useState([]);
   const n = useNeeds();
-  if (!n.count) return null;
+  if (!n.count) {
+    return (
+      <section className="th-card th-caught-up" aria-label={t("allCaughtUp")}>
+        <span className="th-caught-bear" aria-hidden="true">
+          <svg width="46" height="38" viewBox="0 0 64 52"><circle cx="14" cy="10" r="7" className="fur" /><circle cx="50" cy="10" r="7" className="fur" /><ellipse cx="32" cy="28" rx="22" ry="20" className="fur" /><ellipse cx="32" cy="34" rx="9" ry="7" className="face" /><path d="M22 24q3-3 6 0M36 24q3-3 6 0" stroke="#241B10" strokeWidth="2.4" fill="none" strokeLinecap="round" /><path d="M28 36q4 3 8 0" stroke="#241B10" strokeWidth="2" fill="none" strokeLinecap="round" /></svg>
+        </span>
+        <div><b>{t("allCaughtUp")}</b><div className="th-need-sub">{t("allCaughtUpSub")}</div></div>
+      </section>
+    );
+  }
   return (
     <section className="th-card" aria-label={t("needsYou")}>
       <div className="th-sec-head"><SectionIcon name="bell" /><span className="th-sec-title">{t("needsYou")}</span></div>
@@ -100,15 +112,16 @@ function NeedsYou() {
 /** Like the calculator's AVAILABLE / ALLOCATED strip. */
 export function StatStrip() {
   const { t, tz, lang, state, accountIds } = useTimeHub();
-  const now = useNow();
-  const next = buildAgenda(state, now, now + 7 * 24 * HOUR, accountIds, now).find((i) => i.start > now && i.kind !== "contrib");
+  const now = useMinute();
+  const next = useMemo(() => buildAgenda(state, now, now + 7 * 24 * HOUR, accountIds, now).find((i) => i.start > now && i.kind !== "contrib"),
+    [state, accountIds.join(), now]); // eslint-disable-line react-hooks/exhaustive-deps
   const n = useNeeds();
   return (
     <div className="th-stats" role="group" aria-label={t("atAGlance")}>
       <div><span>{t("localTime")}</span><b><Ltr>{formatTime(now, tz, lang)}</Ltr></b></div>
       <div className="muted"><span>UTC</span><b><Ltr>{formatTime(now, "UTC", lang)}</Ltr></b></div>
       <div><span>{t("nextLabel")}</span><b>{next ? <Bidi>{formatSpan(next.start - now, lang)}</Bidi> : "—"}</b></div>
-      <div className={n.count ? "todo" : ""}><span>{t("toDo")}</span><b>{n.count}</b></div>
+      <div className={n.count ? "todo" : "clear"}><span>{t("toDo")}</span><b key={n.count} className="th-bump">{n.count || "✓"}</b></div>
     </div>
   );
 }
@@ -116,8 +129,8 @@ export function StatStrip() {
 /* ---------- week strip ---------- */
 function WeekStrip({ offset, setOffset }) {
   const { t, tz, lang, state, accountIds } = useTimeHub();
-  const now = useNow();
-  const days = weekStrip(state, accountIds, now, tz);
+  const now = useMinute();
+  const days = useMemo(() => weekStrip(state, accountIds, now, tz), [state, accountIds.join(), Math.floor(now / 3600000), tz]); // eslint-disable-line react-hooks/exhaustive-deps
   const wd = new Intl.DateTimeFormat(intlLocale(lang), { timeZone: tz, weekday: "short" });
   const dn = new Intl.DateTimeFormat(intlLocale(lang), { timeZone: tz, day: "numeric" });
   return (
@@ -150,6 +163,7 @@ function UpdateTime({ item, onDone }) {
     if (r.error) return;
     const at = Date.now();
     updateAccount(item.accountId, (d) => ({ ...d, timers: d.timers.map((x) => (ids.includes(x.id) ? { ...x, endAt: at + r.ms, startedAt: Math.min(x.startedAt, at) } : x)) }));
+    success();
     onDone();
   };
   return (
@@ -187,7 +201,7 @@ function Row({ i, day, rems, open, setOpen }) {
 
   const actions = [];
   if (i.kind === "contrib") {
-    actions.push(<Btn key="spend" small tone="gold" onClick={() => updateAccount(i.accountId, (d) => ({ ...d, contrib: spendAttempt(d.contrib, Date.now(), contribState(d.contrib, Date.now()).count) || d.contrib }))}>{t("spendAll", { n: i.ref.max })}</Btn>);
+    actions.push(<Btn key="spend" small tone="gold" onClick={() => { success(); updateAccount(i.accountId, (d) => ({ ...d, contrib: spendAttempt(d.contrib, Date.now(), contribState(d.contrib, Date.now()).count) || d.contrib })); }}>{t("spendAll", { n: i.ref.max })}</Btn>);
   }
   const need = myRems.find((r) => r.status === "open" || r.status === "unsure");
   if (need) actions.push(<Btn key="book" small tone="gold" onClick={() => openBooking({ accountId: need.accountId, startAt: Math.floor(need.occ.start / 1800000) * 1800000, position: "minister_strategy", eventKey: need.key })}>{t("bookShort")} · {accountById(need.accountId)?.name}</Btn>);
@@ -251,14 +265,14 @@ function groupTraining(items) {
 /* ---------- schedule ---------- */
 function Schedule({ offset, setOffset }) {
   const { t, tz, lang, state, accountIds, templates, accountById } = useTimeHub();
-  const now = useNow();
+  const now = useMinute(); // rows keep their own 1-second countdowns
   const when = useWhenLocal();
   const [showPast, setShowPast] = useState(false);
   const [openId, setOpenId] = useState(null);
   const day = localDayRange(now, tz, offset);
-  const items = groupTraining(buildAgenda(state, day.start, day.end, accountIds, now));
+  const items = useMemo(() => groupTraining(buildAgenda(state, day.start, day.end, accountIds, now)), [state, accountIds.join(), day.start, now]); // eslint-disable-line react-hooks/exhaustive-deps
   const { past, rest } = splitNow(items);
-  const rems = computeReminders(state, now, accountIds);
+  const rems = useMemo(() => computeReminders(state, now, accountIds), [state, accountIds.join(), now]); // eslint-disable-line react-hooks/exhaustive-deps
   const after = offset === 0 ? [
     ...stillRunning(state, accountIds, day.end).filter((r) => r.endAt < day.end + 12 * HOUR).map((r) => ({
       id: r.id, at: r.endAt, acc: r.acc,

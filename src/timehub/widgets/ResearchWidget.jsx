@@ -2,7 +2,8 @@
    Dawn Academy), grouped by account. Time left only — research length is fixed by the game. */
 import React, { useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
-import { useNow } from "../hooks/useNow.js";
+import { success } from "../lib/feedback.js";
+import { useNow } from "../hooks/useNow.jsx";
 import { RESEARCH_LOCATIONS, sortTimers } from "../lib/timers.js";
 import { Section, Btn, Field, Seg, DurationFields, EMPTY_DUR, durFrom, durParse, FormActions, Icon, AccountSelect, AccountTag } from "../components/ui.jsx";
 import { TimerRow } from "./TimerCard.jsx";
@@ -24,6 +25,7 @@ function ResearchForm({ initial, onDone }) {
       const exists = d.timers.some((x) => x.id === item.id);
       return { ...d, timers: exists ? d.timers.map((x) => (x.id === item.id ? item : x)) : [...d.timers, item] };
     });
+    success();
     onDone();
   }
   return (

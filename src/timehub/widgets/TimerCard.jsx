@@ -2,7 +2,7 @@
    Actions tuck behind "⋯" so the widget stays short. */
 import React, { useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
-import { useNow } from "../hooks/useNow.js";
+import { useNow } from "../hooks/useNow.jsx";
 import { timerStatus, timerProgress, restartTimer } from "../lib/timers.js";
 import { rememberEnd } from "../lib/today.js";
 import { formatTime, formatCountdownClock, localDayRange, intlLocale } from "../lib/time.js";

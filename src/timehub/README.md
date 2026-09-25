@@ -190,3 +190,19 @@ Saves go to localStorage on every change.
   (+120 at 00:00 and 12:00 UTC), Tundra Trek (+20 at 00:00 UTC automatic, +10 at 08:00 and 16:00
   UTC by hand), then training, research and contributions. Numbers live in `lib/daily.js`.
 - **Events:** events, minister bookings, share with alliance, history.
+
+
+## Feel: speed, haptics, sound, animation
+- Tabs switch on touch-down (not finger-lift); the tab bar answers first, the screen follows
+  (`useDeferredValue`). Each tab's content is memoised; the calculator stays mounted once visited;
+  each tab keeps its scroll position. The open tab is stored under `timehub:tab`, outside app state.
+- Heavy screens use `useMinute()` (once a minute) and `useMemo`; only countdowns tick every second,
+  and tabs you're not looking at stop ticking (`<ActiveTab>`). Saves are batched (400 ms) and
+  flushed when the app is hidden or closed.
+- `lib/feedback.js`: light haptic + click on every press (Android vibration; iPhone system tick via
+  a hidden `<input switch>`), a chime + snowflake burst on useful actions (claim, spend all, start
+  training, save booking/event/research, answer a minister reminder, update stamina or time left).
+  Sound and haptics can be turned off under ⚙; animations respect reduced-motion.
+- Little animations: sliding amber tab pill with an icon hop, button press, pop on success,
+  counters that bump, a bear that wiggles when tapped, and an "All caught up" bear when nothing
+  needs you.

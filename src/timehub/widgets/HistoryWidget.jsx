@@ -1,7 +1,7 @@
 /* Past events (hide keeps them, delete is explicit) + expired bookings, for the filtered accounts. */
 import React from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
-import { useNow } from "../hooks/useNow.js";
+import { useNow } from "../hooks/useNow.jsx";
 import { partitionEvents, relevantTime, eventName } from "../lib/events.js";
 import { partitionBookings } from "../lib/bookings.js";
 import { matchesFilter } from "../lib/accounts.js";

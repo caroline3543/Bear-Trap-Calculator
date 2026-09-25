@@ -749,3 +749,63 @@ button[aria-pressed="true"] .th-dots i { box-shadow: 0 0 0 1.5px var(--selectedT
 .th-drop-main b { font-size: 14px; }
 .th-sec-head > .th-sec-title { font-weight: 800; font-size: 17px; color: var(--ink); }
 .th-host-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+/* ================= feel: instant taps, haptic-friendly, little animations ================= */
+.th-root button, .th-root a, .th-root select, .th-root label, .th-tabbar button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.th-panel[hidden] { display: none !important; }
+.th-hidden { display: none; }
+.th-panel.on { animation: th-fade .14s ease-out; }
+.th-panel.on .th-card { animation: th-rise .18s ease-out both; }
+.th-panel.on .th-card:nth-child(2) { animation-delay: .03s; }
+.th-panel.on .th-card:nth-child(3) { animation-delay: .06s; }
+
+/* press feedback on every button */
+.th-root button:not(:disabled), .th-root .th-btn { transition: transform .08s ease, box-shadow .08s ease, background-color .15s ease; }
+.th-root button:not(:disabled):active { transform: translateY(1px) scale(.97); }
+.th-root .th-btn.gold:active, .th-accbtn[aria-pressed="true"]:active { box-shadow: 0 1px 0 var(--btnGoldShadow, #B9782E); }
+
+/* tab bar: the amber pill slides to the chosen tab; the icon does a little hop */
+.th-tabbar { position: fixed; }
+.th-tabbar .th-tabpill { position: absolute; top: 8px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); left: 10px;
+  width: calc((100% - 20px - (var(--n) - 1) * 4px) / var(--n)); border-radius: 14px; background: var(--goldStrong);
+  box-shadow: 0 3px 0 var(--btnGoldShadow, #B9782E); transform: translateX(calc(var(--i) * (100% + 4px)));
+  transition: transform .22s cubic-bezier(.3, 1.4, .5, 1); z-index: 0; }
+.dark .th-tabbar .th-tabpill { background: #9C6A2C; }
+[dir="rtl"] .th-tabbar .th-tabpill { left: auto; right: 10px; transform: translateX(calc(var(--i) * -1 * (100% + 4px))); }
+.th-tabbar button { position: relative; z-index: 1; }
+.th-tabbar button.on { background: transparent !important; box-shadow: none !important; }
+.th-tabbar button.on svg { animation: th-hop .32s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes th-hop { 0% { transform: translateY(0) scale(1); } 40% { transform: translateY(-5px) scale(1.12); } 100% { transform: none; } }
+@media (min-width: 900px) { .th-tabbar .th-tabpill { top: 6px; bottom: 6px; left: 10px; } }
+
+/* success: button pops, snowflakes burst */
+.th-pop { animation: th-pop .35s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes th-pop { 0% { transform: scale(1); } 35% { transform: scale(1.1); } 100% { transform: scale(1); } }
+.th-burst { position: fixed; inset: 0; pointer-events: none; z-index: 9999; }
+.th-burst i { position: absolute; font-style: normal; font-size: 13px; color: var(--goldStrong, #E9A548); transform: translate(-50%, -50%);
+  animation: th-flake .75s cubic-bezier(.2, .8, .3, 1) forwards; text-shadow: 0 1px 0 rgba(0,0,0,.08); }
+.th-burst i:nth-child(3n) { color: var(--teal, #3FA7A1); }
+@keyframes th-flake { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.4); } 20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy) + 14px)) rotate(var(--rot)) scale(1); } }
+
+/* counters and bars move instead of jumping */
+.th-bump { animation: th-pop .3s ease-out; display: inline-block; }
+.th-stats .clear b { color: var(--green); }
+.th-bar span, .th-trow-bar span, .th-progress span { transition: width .6s ease; }
+
+/* the bear: tap for a wiggle; bounces when you're all caught up */
+.th-bear-clock { cursor: pointer; transform-origin: 50% 90%; }
+.th-bear-clock.wiggle { animation: th-wiggle .5s ease-in-out; }
+@keyframes th-wiggle { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-8deg); } 50% { transform: rotate(7deg); } 75% { transform: rotate(-4deg); } }
+.th-caught-up { display: flex; align-items: center; gap: 12px; background: var(--greenBg); border-color: transparent; }
+.th-caught-up b { font-size: 15px; color: var(--green); }
+.th-caught-bear { display: inline-flex; animation: th-bob 2.4s ease-in-out infinite; }
+.th-caught-bear .fur { fill: #6B4938; } .th-caught-bear .face { fill: #FFFFFF; }
+.dark .th-caught-bear .fur { fill: #C9A07A; } .dark .th-caught-bear .face { fill: #F3EDE0; }
+@keyframes th-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .th-panel.on, .th-panel.on .th-card, .th-tabbar button.on svg, .th-pop, .th-bump, .th-bear-clock.wiggle, .th-caught-bear { animation: none !important; }
+  .th-tabbar .th-tabpill, .th-bar span, .th-trow-bar span { transition: none !important; }
+  .th-burst { display: none; }
+}

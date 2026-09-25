@@ -3,10 +3,11 @@
      <TimeHub lang={lang} />
    Inherits the calculator's CSS variables (light/dark) from its wrapper.
    ============================================================ */
-import React, { useEffect, useState } from "react";
+import React, { useDeferredValue, useEffect, useState } from "react";
 import "./timehub.css";
-import { TimeHubProvider, useTimeHub } from "./TimeHubContext.jsx";
-import { useNow } from "./hooks/useNow.js";
+import { TimeHubProvider, useTimeHub, useTab } from "./TimeHubContext.jsx";
+import { useNow, useMinute, ActiveTab } from "./hooks/useNow.jsx";
+import { onPress, playSound } from "./lib/feedback.js";
 import { zoneCity, deviceTimeZone, intlLocale } from "./lib/time.js";
 import { splitColumns } from "./lib/layout.js";
 import { TimeZonePicker, BrushUnderline, SectionIcon, TabIcon } from "./components/ui.jsx";
@@ -26,8 +27,10 @@ import { AccountsPanel } from "./widgets/AccountsPanel.jsx";
 /** One slim line: local (12-hour) and UTC (24-hour) at normal text size. */
 /** Bear with a little clock — the calculator's mascot, on Time Hub tabs. */
 function BearClock() {
+  const [wiggle, setWiggle] = useState(0);
   return (
-    <svg className="th-bear-clock" width="62" height="50" viewBox="0 0 86 70" aria-hidden="true">
+    <svg key={wiggle} className={`th-bear-clock ${wiggle ? "wiggle" : ""}`} width="62" height="50" viewBox="0 0 86 70" aria-hidden="true"
+      onClick={() => { setWiggle((w) => w + 1); playSound("soft"); }}>
       <circle cx="18" cy="14" r="9" className="fur" /><circle cx="18" cy="14" r="4.5" className="face" opacity=".85" />
       <circle cx="56" cy="14" r="9" className="fur" /><circle cx="56" cy="14" r="4.5" className="face" opacity=".85" />
       <ellipse cx="37" cy="34" rx="25" ry="23" className="fur" />
@@ -43,7 +46,7 @@ function BearClock() {
 /** Compact header for Time Hub tabs: bear, tab title, local date · city, settings. */
 function Header({ title, headerExtra, onSettings, settingsOpen }) {
   const { tz, lang, t } = useTimeHub();
-  const now = useNow();
+  const now = useMinute();
   const long = new Intl.DateTimeFormat(intlLocale(lang), { timeZone: tz, weekday: "long", day: "numeric", month: "short" }).format(now);
   return (
     <header className="th-mhdr">
@@ -85,12 +88,17 @@ const TABS = [
   { id: "calc", icon: "trap" },
 ];
 
-function TabBar({ hasCalc }) {
-  const { t, tab, setTab } = useTimeHub();
+function TabBar({ hasCalc, active }) {
+  const { t } = useTimeHub();
+  const { setTab } = useTab();
+  const tabs = TABS.filter((x) => x.id !== "calc" || hasCalc);
+  const idx = Math.max(0, tabs.findIndex((x) => x.id === active));
   return (
-    <nav className="th-tabbar" aria-label={t("mainNav")}>
-      {TABS.filter((x) => x.id !== "calc" || hasCalc).map((x) => (
-        <button key={x.id} type="button" aria-current={tab === x.id ? "page" : undefined} className={tab === x.id ? "on" : ""} onClick={() => setTab(x.id)}>
+    <nav className="th-tabbar" aria-label={t("mainNav")} style={{ "--n": tabs.length, "--i": idx }}>
+      <span className="th-tabpill" aria-hidden="true" />
+      {tabs.map((x) => (
+        <button key={x.id} type="button" aria-current={active === x.id ? "page" : undefined} className={active === x.id ? "on" : ""}
+          onPointerDown={() => active !== x.id && setTab(x.id)} onClick={() => setTab(x.id)}>
           <TabIcon name={x.icon} />
           <span>{t(`tab_${x.id}`)}</span>
         </button>
@@ -142,36 +150,77 @@ function SettingsPanel({ headerExtra }) {
             <button type="button" className="th-link" onClick={() => dispatch({ type: "settings", patch: { displayTz: null } })}>{t("useDevice")} ({deviceTimeZone()})</button>
           )}
           <label className="th-check"><input type="checkbox" checked={state.settings.compact} onChange={(e) => dispatch({ type: "settings", patch: { compact: e.target.checked } })} />{t("compact")}</label>
+          <label className="th-check"><input type="checkbox" checked={state.settings.sound !== false} onChange={(e) => dispatch({ type: "settings", patch: { sound: e.target.checked } })} />{t("soundsSetting")}</label>
+          <label className="th-check"><input type="checkbox" checked={state.settings.haptics !== false} onChange={(e) => dispatch({ type: "settings", patch: { haptics: e.target.checked } })} />{t("hapticsSetting")}</label>
         </div>
       </section>
     </div>
   );
 }
 
-function TimeHubBody({ showHeader, headerExtra, calculator }) {
-  const { t, dir, compact, tab } = useTimeHub();
-  const [settings, setSettings] = useState(false);
-  const active = tab === "calc" && !calculator ? "today" : tab;
-  if (active === "calc") {
-    return (
-      <div className={`th-root th-app is-calc ${compact ? "th-compact" : ""}`} dir={dir}>
-        <div className="th-calc-slot">{calculator}</div>
-        <TabBar hasCalc />
-      </div>
-    );
-  }
+/* Each tab's content is memoised: switching tabs doesn't re-render the other tabs. */
+const TodayPanel = React.memo(function TodayPanel() { return <TodayScreen />; });
+const TimersPanel = React.memo(function TimersPanel() {
+  return <Stack><StaminaWidget /><TrekWidget /><TrainingWidget /><ResearchWidget /><ContributionWidget /></Stack>;
+});
+const EventsPanel = React.memo(function EventsPanel() {
+  return <Stack><EventsWidget /><BookingsWidget /><ShareCard /><HistoryWidget /></Stack>;
+});
+const CalcPanel = React.memo(function CalcPanel({ calculator }) { return <div className="th-calc-slot">{calculator}</div>; });
+const Panel = React.memo(function Panel({ on, children }) {
   return (
-    <div className={`th-root th-app ${compact ? "th-compact" : ""}`} dir={dir}>
-      {showHeader && <Header title={t(`tab_${active}`)} headerExtra={headerExtra} settingsOpen={settings} onSettings={() => setSettings(!settings)} />}
-      {settings ? <SettingsPanel headerExtra={headerExtra} /> : <AccountGrid onAdd={() => setSettings(true)} />}
-      {!settings && (
-        <main className="th-tabpanel" key={active}>
-          {active === "today" && <TodayScreen />}
-          {active === "timers" && <Stack><StaminaWidget /><TrekWidget /><TrainingWidget /><ResearchWidget /><ContributionWidget /></Stack>}
-          {active === "events" && <Stack><EventsWidget /><BookingsWidget /><ShareCard /><HistoryWidget /></Stack>}
-        </main>
-      )}
-      <TabBar hasCalc={!!calculator} />
+    <div className={`th-panel ${on ? "on" : ""}`} hidden={!on}>
+      <ActiveTab active={on}>{children}</ActiveTab>
+    </div>
+  );
+});
+
+const TODAY_EL = <TodayPanel />;
+const TIMERS_EL = <TimersPanel />;
+const EVENTS_EL = <EventsPanel />;
+
+function TimeHubBody({ showHeader, headerExtra, calculator }) {
+  const { t, dir, compact } = useTimeHub();
+  const { tab } = useTab();
+  const [settings, setSettings] = useState(false);
+  const pressed = tab === "calc" && !calculator ? "today" : tab;
+  // The tab bar answers at once; the screen swap renders right after (and can't block the tap).
+  const active = useDeferredValue(pressed);
+  // Panels stay mounted once visited (switching back is instant); hidden ones stop ticking.
+  const [visited, setVisited] = useState(() => new Set([active]));
+  if (!visited.has(active)) setVisited(new Set([...visited, active]));
+  // After the first screen is up, quietly prepare the other tabs so their first open is instant too.
+  useEffect(() => {
+    const all = ["today", "timers", "events", ...(calculator ? ["calc"] : [])];
+    const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1200));
+    const id = idle(() => setVisited((v) => (all.every((x) => v.has(x)) ? v : new Set([...v, ...all]))));
+    return () => (window.cancelIdleCallback || clearTimeout)(id);
+  }, [calculator]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Each tab keeps its own scroll position.
+  const scrolls = React.useRef({});
+  const prev = React.useRef(active);
+  React.useLayoutEffect(() => {
+    if (prev.current === active) return;
+    scrolls.current[prev.current] = window.scrollY;
+    prev.current = active;
+    window.scrollTo(0, scrolls.current[active] || 0);
+    setSettings(false);
+  }, [active]);
+
+  const panel = (id, content) => visited.has(id) && <Panel key={id} on={active === id}>{content}</Panel>;
+
+  return (
+    <div className={`th-root th-app ${active === "calc" ? "is-calc" : ""} ${compact ? "th-compact" : ""}`} dir={dir}
+      onPointerDownCapture={(e) => onPress(e.target)}>
+      {active !== "calc" && showHeader && <Header title={t(`tab_${active}`)} headerExtra={headerExtra} settingsOpen={settings} onSettings={() => setSettings(!settings)} />}
+      {active !== "calc" && (settings ? <SettingsPanel headerExtra={headerExtra} /> : <AccountGrid onAdd={() => setSettings(true)} />)}
+      <main className={settings && active !== "calc" ? "th-hidden" : ""}>
+        {panel("today", TODAY_EL)}
+        {panel("timers", TIMERS_EL)}
+        {panel("events", EVENTS_EL)}
+        {calculator && panel("calc", <CalcPanel calculator={calculator} />)}
+      </main>
+      <TabBar hasCalc={!!calculator} active={pressed} />
     </div>
   );
 }

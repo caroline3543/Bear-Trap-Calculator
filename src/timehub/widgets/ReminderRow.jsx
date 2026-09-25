@@ -3,6 +3,7 @@
    "Don't remind me" is the only thing that turns reminders off for the event. */
 import React, { useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
+import { success } from "../lib/feedback.js";
 import { BUFF_CHOICES, suggestedBuff } from "../lib/reminders.js";
 import { slotContaining } from "../lib/bookings.js";
 import { eventName } from "../lib/events.js";
@@ -54,7 +55,7 @@ export function ReminderRow({ r, showName = true, slim = false, onAsk }) {
         </div>
         <p className="th-note">{t("buffNote")}</p>
         <div className="th-item-actions">
-          <Btn small tone="gold" onClick={() => { setSaved({ state: "booked", buff }); setAsking(false); }}>{t("save")}</Btn>
+          <Btn small tone="gold" onClick={() => { setSaved({ state: "booked", buff }); setAsking(false); success(); }}>{t("save")}</Btn>
           <Btn small onClick={() => setAsking(false)}>{t("cancel")}</Btn>
         </div>
       </div>
