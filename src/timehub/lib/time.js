@@ -70,8 +70,9 @@ export function intlLocale(lang) {
 }
 
 const dtfCache = new Map();
-function dtf(locale, opts) {
-  const key = locale + JSON.stringify(opts);
+/** Cached Intl.DateTimeFormat. `id` is a cheap cache key (avoids JSON-stringifying options on every call). */
+function dtf(locale, opts, id) {
+  const key = id ? `${id}|${locale}|${opts.timeZone || ""}` : locale + JSON.stringify(opts);
   let f = dtfCache.get(key);
   if (!f) {
     f = new Intl.DateTimeFormat(locale, opts);
@@ -80,12 +81,33 @@ function dtf(locale, opts) {
   return f;
 }
 
+/* Results of pure time functions are memoised (same inputs → same answer, so nothing can go
+   stale — a zone's DST rule is part of the input instant). Bounded so memory stays flat. */
+function memo(limit = 3000) {
+  const m = new Map();
+  return (key, compute) => {
+    let v = m.get(key);
+    if (v === undefined) {
+      v = compute();
+      if (m.size >= limit) m.clear();
+      m.set(key, v);
+    }
+    return v;
+  };
+}
+const partsMemo = memo();
+const timeMemo = memo();
+const dateMemo = memo();
+
 /** Wall-clock parts of an instant in a zone (numbers). */
 export function zonedParts(ms, tz) {
+  return partsMemo(`${tz}|${ms}`, () => zonedPartsRaw(ms, tz));
+}
+function zonedPartsRaw(ms, tz) {
   const parts = dtf("en-US", {
     timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit",
     hour: "2-digit", minute: "2-digit", second: "2-digit", weekday: "short",
-  }).formatToParts(new Date(ms));
+  }, "parts").formatToParts(new Date(ms));
   const o = {};
   for (const p of parts) o[p.type] = p.value;
   return {
@@ -109,18 +131,20 @@ export function calendarDayDiff(a, b, tz) {
 
 /** UTC (the game's clock) is always 24-hour; every local/other-zone time is 12-hour. */
 export function formatTime(ms, tz, lang) {
-  if (tz === "UTC") return dtf(intlLocale(lang), { timeZone: "UTC", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(ms));
-  return dtf(intlLocale(lang), { timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(ms)).replace(/[ \u202F]/g, "\u00A0");
+  return timeMemo(`${lang}|${tz}|${ms}`, () => {
+    if (tz === "UTC") return dtf(intlLocale(lang), { timeZone: "UTC", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }, "t24").format(new Date(ms));
+    return dtf(intlLocale(lang), { timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true }, "t12").format(new Date(ms)).replace(/[ \u202F]/g, "\u00A0");
+  });
 }
 
 /** Live clock with seconds (12-hour for local, 24-hour for UTC). */
 export function formatClock(ms, tz, lang) {
-  if (tz === "UTC") return dtf(intlLocale(lang), { timeZone: "UTC", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).format(new Date(ms));
-  return dtf(intlLocale(lang), { timeZone: tz, hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true }).format(new Date(ms)).replace(/[ \u202F]/g, "\u00A0");
+  if (tz === "UTC") return dtf(intlLocale(lang), { timeZone: "UTC", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }, "c24").format(new Date(ms));
+  return dtf(intlLocale(lang), { timeZone: tz, hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true }, "c12").format(new Date(ms)).replace(/[ \u202F]/g, "\u00A0");
 }
 
 export function formatDate(ms, tz, lang) {
-  return dtf(intlLocale(lang), { timeZone: tz, weekday: "short", day: "numeric", month: "short" }).format(new Date(ms));
+  return dateMemo(`${lang}|${tz}|${ms}`, () => dtf(intlLocale(lang), { timeZone: tz, weekday: "short", day: "numeric", month: "short" }, "date").format(new Date(ms)));
 }
 
 /** "GMT+13" style label for a zone at a given instant (reflects DST at that instant). */
@@ -373,4 +397,15 @@ export function tidyHHMM(text) {
   if (d.includes(":")) return d.slice(0, 5);
   if (d.length === 4) return `${d.slice(0, 2)}:${d.slice(2)}`;
   return d.slice(0, 4);
+}
+
+/* Cached formatters for UI labels (created once per locale/zone, not on every render). */
+export function formatWeekdayShort(ms, tz, lang) {
+  return dtf(intlLocale(lang), { timeZone: tz, weekday: "short" }, "wd").format(ms);
+}
+export function formatDayNumber(ms, tz, lang) {
+  return dtf(intlLocale(lang), { timeZone: tz, day: "numeric" }, "dn").format(ms);
+}
+export function formatLongDay(ms, tz, lang) {
+  return dtf(intlLocale(lang), { timeZone: tz, weekday: "long", day: "numeric", month: "short" }, "ld").format(ms);
 }

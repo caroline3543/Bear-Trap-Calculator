@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
 import { success } from "../lib/feedback.js";
-import { useNow } from "../hooks/useNow.jsx";
+import { useClockFor } from "../hooks/useNow.jsx";
 import { contribState, spendAttempt, setAttempts, adjustAttempts, reconfigure } from "../lib/contributions.js";
 import { formatCountdown, formatCountdownClock, formatTime, formatDate, MINUTE } from "../lib/time.js";
-import { Section, Btn, Field, Seg, FormActions, Ltr, Bidi, AccountTag } from "../components/ui.jsx";
+import { Section, Btn, Field, Seg, FormActions, Ltr, Bidi, AccountTag, Remaining, ProgressFill } from "../components/ui.jsx";
 
 function parseMmSs(s) {
   const m = /^\s*(\d{1,3}):(\d{2})\s*$/.exec(s || "");
@@ -15,7 +15,7 @@ function parseMmSs(s) {
 function MatchForm({ contrib, accountId, onDone }) {
   const { t, updateAccount: upd } = useTimeHub();
   const updateAccount = (fn) => upd(accountId, fn);
-  const now = useNow();
+  const now = Date.now(); // form prefill only
   const live = contribState(contrib, now);
   const [count, setCount] = useState(String(live.count));
   const [next, setNext] = useState("");
@@ -94,9 +94,10 @@ function RulesForm({ contrib, accountId, onDone }) {
 function ContribBlock({ accountId, several }) {
   const { t, tz, lang, dataFor, updateAccount: upd } = useTimeHub();
   const updateAccount = (fn) => upd(accountId, fn);
-  const now = useNow();
   const [panel, setPanel] = useState(null); // null | "match" | "rules"
   const contrib = dataFor(accountId).contrib;
+  const peek = contribState(contrib, Date.now());
+  const now = useClockFor([peek.nextAt]); // re-render when the next attempt arrives
   const live = contribState(contrib, now);
 
   const spendAll = () => { success(); updateAccount((acc) => {
@@ -118,8 +119,8 @@ function ContribBlock({ accountId, several }) {
             <div><span>{t("contribFullHint")}</span></div>
           ) : (
             <>
-              <div><span>{t("nextPlusOne")}</span><b><Bidi>{formatCountdownClock(live.nextAt - now, lang)}</Bidi></b></div>
-              <div><span>{t("fullIn")}</span><b><Bidi>{formatCountdown(live.fullAt - now, lang)}</Bidi></b></div>
+              <div><span>{t("nextPlusOne")}</span><b><Remaining to={live.nextAt} fmt="clock" /></b></div>
+              <div><span>{t("fullIn")}</span><b><Remaining to={live.fullAt} /></b></div>
               <div><span>{t("fullAt")}</span><b><Ltr>{formatTime(live.fullAt, tz, lang)}</Ltr> <span style={{ fontWeight: 600, color: "var(--sub)" }}>{formatDate(live.fullAt, tz, lang)}</span></b></div>
             </>
           )}
@@ -132,7 +133,7 @@ function ContribBlock({ accountId, several }) {
       </div>
       {!live.full && (
         <div className="th-progress" role="progressbar" aria-label={t("nextAttempt")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(live.progress * 100)}>
-          <span style={{ width: `${live.progress * 100}%` }} />
+          <ProgressFill start={live.nextAt - contrib.intervalMs} end={live.nextAt} />
         </div>
       )}
       <div className="th-big-actions" style={{ marginTop: 10 }}>

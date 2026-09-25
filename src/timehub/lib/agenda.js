@@ -17,11 +17,19 @@ function statusOf(start, end, now) {
 }
 
 /** Everything touching [from, to) for the given account ids (shared events always included). */
+/** What the player chose to track (⚙ → What to track). Missing keys mean "yes". */
+export function tracking(state) {
+  const t = state.settings?.track || {};
+  return { reset: t.reset !== false, store: t.store !== false, trek: t.trek !== false, stamina: t.stamina !== false, contrib: t.contrib !== false };
+}
+
 export function buildAgenda(state, from, to, accountIds, now) {
   const items = [];
   const acc = new Set(accountIds);
+  const track = tracking(state);
   for (const ev of state.events) {
     if (ev.archived || (ev.accountId && !acc.has(ev.accountId))) continue;
+    if (!track.reset && ev.templateId === "daily_reset") continue;
     for (const o of occurrencesBetween(ev, from, to - 1)) {
       if ((o.end ?? o.start) < from && o.start < from) continue;
       items.push({ id: `ev:${ev.id}:${o.key}`, kind: "event", start: o.start, end: o.end, accountId: ev.accountId, ref: { ev, occ: o }, status: statusOf(o.start, o.end, now) });
@@ -44,18 +52,19 @@ export function buildAgenda(state, from, to, accountIds, now) {
       items.push({ id: `pl:${p.id}`, kind: "plan", start: p.startAt, end: null, accountId: id, ref: p, status: now >= p.startAt ? "done" : "upcoming" });
     }
     const c = contribState(d.contrib, now);
-    if (!c.full && c.fullAt >= from && c.fullAt < to) {
+    if (track.contrib && !c.full && c.fullAt >= from && c.fullAt < to) {
       items.push({ id: `ct:${id}`, kind: "contrib", start: c.fullAt, end: null, accountId: id, ref: c, status: "upcoming" });
     }
   }
   // free daily drops (shared by every account; claim state is per account)
   for (const d of dropsBetween(from, to)) {
+    if (!track[d.kind]) continue;
     const st = accountIds.map((a) => dropStatus(d, state.accountData[a]?.claims, now));
     const allDone = st.every((x) => x === "auto" || x === "claimed" || x === "missed") || !isCurrentDrop(d, now);
     items.push({ id: `dr:${d.key}`, kind: "drop", start: d.at, end: null, accountId: null, ref: { drop: d, statuses: st }, status: now < d.at ? "upcoming" : allDone ? "done" : "now" });
   }
   // stamina reaching the passive-regen cap (per account)
-  for (const id of accountIds) {
+  for (const id of track.stamina ? accountIds : []) {
     const sn = staminaNow(state.accountData[id]?.stamina, now);
     if (sn && sn.fullAt && sn.fullAt >= from && sn.fullAt < to) {
       items.push({ id: `st:${id}`, kind: "stamina", start: sn.fullAt, end: null, accountId: id, ref: sn, status: now >= sn.fullAt ? "done" : "upcoming" });

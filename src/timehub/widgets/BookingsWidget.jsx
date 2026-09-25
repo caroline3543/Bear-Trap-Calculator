@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
 import { success } from "../lib/feedback.js";
-import { useNow } from "../hooks/useNow.jsx";
+import { useMinute, useClockFor } from "../hooks/useNow.jsx";
 import {
   MINISTER_POSITIONS, POSITION_EFFECT, bookingWindow, daySlots, bookingStatus, bookingEnd, findConflicts,
   partitionBookings, validateBooking, isCustomTime,
@@ -17,7 +17,7 @@ function slotLabel(start, lang) {
 
 function BookingForm({ initial, prefill, onDone }) {
   const { t, lang, tz, newId, dataFor, defaultAccountId, updateAccount } = useTimeHub();
-  const now = useNow();
+  const now = useMinute(); // slots are 30 minutes
   const { from } = bookingWindow(now);
   const start0 = initial?.startAt ?? prefill?.startAt ?? null;
   const [accountId, setAccountId] = useState(initial?.accountId || prefill?.accountId || defaultAccountId);
@@ -107,7 +107,7 @@ function BookingForm({ initial, prefill, onDone }) {
 
 export function BookingsWidget({ move }) {
   const { t, tz, lang, accountIds, dataFor, updateAccount, bookingDraft, setBookingDraft, accountById } = useTimeHub();
-  const now = useNow();
+  const now = useClockFor(accountIds.flatMap((a) => dataFor(a).bookings.flatMap((b) => [b.startAt, b.startAt + 30 * 60000])));
   const [editing, setEditing] = useState(null); // null | "new" | id
   const [openId, setOpenId] = useState(null);
   useEffect(() => { if (bookingDraft) setEditing("new"); }, [bookingDraft]);
@@ -140,7 +140,7 @@ export function BookingsWidget({ move }) {
                   <AccountTag accountId={b.accountId} />
                 </div>
               </div>
-              {status === "active" ? <Countdown ms={end - now} label={t("endsIn")} /> : <Countdown ms={b.startAt - now} label={t("startsIn")} />}
+              {status === "active" ? <Countdown to={end} label={t("endsIn")} /> : <Countdown to={b.startAt} label={t("startsIn")} />}
             </div>
             <button type="button" className="th-link th-ev-more" aria-expanded={openId === b.id} onClick={() => setOpenId(openId === b.id ? null : b.id)}>{openId === b.id ? t("lessDetails") : t("moreDetails")}</button>
             {openId === b.id && (

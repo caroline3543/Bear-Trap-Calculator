@@ -3,14 +3,14 @@
 import React, { useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
 import { success } from "../lib/feedback.js";
-import { useNow } from "../hooks/useNow.jsx";
+import { useClockFor } from "../hooks/useNow.jsx";
 import { RESEARCH_LOCATIONS, sortTimers } from "../lib/timers.js";
 import { Section, Btn, Field, Seg, DurationFields, EMPTY_DUR, durFrom, durParse, FormActions, Icon, AccountSelect, AccountTag } from "../components/ui.jsx";
 import { TimerRow } from "./TimerCard.jsx";
 
 function ResearchForm({ initial, onDone }) {
   const { t, newId, defaultAccountId, updateAccount } = useTimeHub();
-  const now = useNow();
+  const now = Date.now(); // only used to prefill the form
   const [accountId, setAccountId] = useState(initial?.accountId || defaultAccountId);
   const [category, setCategory] = useState(initial?.category || RESEARCH_LOCATIONS[0]);
   const [dur, setDur] = useState(initial ? durFrom(initial.endAt - now) : EMPTY_DUR);
@@ -43,7 +43,7 @@ function ResearchForm({ initial, onDone }) {
 
 export function ResearchWidget({ move }) {
   const { t, accountIds, dataFor, multi } = useTimeHub();
-  const now = useNow();
+  const now = useClockFor(accountIds.flatMap((a) => dataFor(a).timers.filter((x) => x.kind === "research").map((x) => x.endAt)));
   const [editing, setEditing] = useState(null);
   const groups = accountIds
     .map((acc) => ({ acc, timers: sortTimers(dataFor(acc).timers.filter((x) => x.kind === "research"), now) }))

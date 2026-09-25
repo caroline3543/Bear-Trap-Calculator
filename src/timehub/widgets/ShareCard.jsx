@@ -3,7 +3,7 @@
    back to a download) or copy plain text for alliance chat. */
 import React, { useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
-import { useNow } from "../hooks/useNow.jsx";
+import { useMinute } from "../hooks/useNow.jsx";
 import { eventOccurrence, eventName, isScheduled } from "../lib/events.js";
 import { shareRows, shareText } from "../lib/share.js";
 import { formatTime, formatDate, zoneCity } from "../lib/time.js";
@@ -40,7 +40,7 @@ function drawImage({ title, sub, utc, rows }) {
 
 export function ShareCard() {
   const { t, lang, tz, state, templates, accounts, filter } = useTimeHub();
-  const now = useNow();
+  const now = useMinute();
   const evs = state.events.filter((e) => !e.archived && isScheduled(e) && e.templateId !== "daily_reset" && (!e.accountId || filter === "all" || e.accountId === filter));
   const [id, setId] = useState(null);
   const [msg, setMsg] = useState("");

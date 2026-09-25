@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
-import { useNow } from "../hooks/useNow.jsx";
+import { useMinute } from "../hooks/useNow.jsx";
 import { classifyAt, DEFAULT_HOURS, validateHours } from "../lib/dayNight.js";
 import { formatTime, formatDate, offsetMinutes, formatHoursMinutes, isValidTimeZone, zoneCity } from "../lib/time.js";
 import { Section, Btn, Field, TimeZonePicker, FormActions, Icon, Ltr } from "../components/ui.jsx";
@@ -72,7 +72,7 @@ function FriendForm({ initial, onDone }) {
 
 export function FriendsWidget({ move: sectionMove }) {
   const { t, tz, lang, state, dispatch } = useTimeHub();
-  const now = useNow();
+  const now = useMinute();
   const [editing, setEditing] = useState(null);
   const [open, setOpen] = useState(null);
   const [q, setQ] = useState("");

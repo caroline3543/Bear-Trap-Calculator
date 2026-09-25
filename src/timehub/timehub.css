@@ -527,7 +527,7 @@ a.th-btn { text-decoration: none; }
 .th-app > .th-acct-chips::-webkit-scrollbar { display: none; }
 
 /* tab bar */
-.th-tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px)); background: var(--cardBgT); border-top: 1px solid var(--cardBorderT); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.th-tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px)); background: var(--cardBgT); border-top: 1px solid var(--cardBorderT);  }
 .th-tabbar button { display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 52px; background: none; border: none; color: var(--sub); font: 700 11.5px 'Nunito Sans', sans-serif; cursor: pointer; }
 .th-tabbar .pill { display: flex; align-items: center; justify-content: center; width: 48px; height: 28px; border-radius: 999px; transition: background-color .15s ease; }
 .th-tabbar button.on { color: var(--gold); font-weight: 800; }
@@ -789,7 +789,7 @@ button[aria-pressed="true"] .th-dots i { box-shadow: 0 0 0 1.5px var(--selectedT
 /* counters and bars move instead of jumping */
 .th-bump { animation: th-pop .3s ease-out; display: inline-block; }
 .th-stats .clear b { color: var(--green); }
-.th-bar span, .th-trow-bar span, .th-progress span { transition: width .6s ease; }
+.th-bar span { transition: width .6s ease; }
 
 /* the bear: tap for a wiggle; bounces when you're all caught up */
 .th-bear-clock { cursor: pointer; transform-origin: 50% 90%; }
@@ -835,8 +835,9 @@ button[aria-pressed="true"] .th-dots i { box-shadow: 0 0 0 1.5px var(--selectedT
 [dir="rtl"] .th-need.leaving { transform: translateX(-40px) scale(.96); }
 
 /* schedule: the Now dot breathes; the next item glows softly; countdowns under 5 min pulse */
-.th-now-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); display: inline-block; margin-inline-end: 4px; animation: th-breathe 2s ease-in-out infinite; }
-@keyframes th-breathe { 0%, 100% { box-shadow: 0 0 0 0 rgba(198,93,67,.45); } 50% { box-shadow: 0 0 0 5px rgba(198,93,67,0); } }
+.th-now-dot { position: relative; width: 7px; height: 7px; border-radius: 50%; background: var(--amber); display: inline-block; margin-inline-end: 4px; }
+.th-now-dot::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid var(--amber); opacity: 0; animation: th-ring 2s ease-out infinite; }
+@keyframes th-ring { 0% { transform: scale(.5); opacity: .6; } 100% { transform: scale(1.4); opacity: 0; } }
 .th-srow.next .th-srow-main::after { content: ""; position: absolute; inset: 4px 8px; border-radius: 12px; border: 1.5px solid var(--goldStrong); opacity: 0; animation: th-glow 3s ease-in-out infinite; pointer-events: none; }
 @keyframes th-glow { 0%, 100% { opacity: 0; } 50% { opacity: .55; } }
 .th-countbtn.urgent { border-color: var(--amber); color: var(--amber); animation: th-urgent 1.2s ease-in-out infinite; }
@@ -847,10 +848,12 @@ button[aria-pressed="true"] .th-dots i { box-shadow: 0 0 0 1.5px var(--selectedT
 /* week strip: the chosen day pops */
 .th-week-days button[aria-pressed="true"] { animation: th-pop .3s cubic-bezier(.3, 1.6, .5, 1); }
 
-/* progress bars: a soft moving sheen while something is running; near-full stamina pulses */
-.th-bar span, .th-trow-bar span, .th-progress span { position: relative; overflow: hidden; }
-.th-bar span::after, .th-trow-bar span::after, .th-progress span::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent); transform: translateX(-100%); animation: th-sheen 2.6s ease-in-out infinite; }
-@keyframes th-sheen { 60%, 100% { transform: translateX(100%); } }
+/* progress bars are filled by one long CSS animation each (compositor-only, no re-renders);
+   near-full stamina pulses */
+.th-fill { display: block; height: 100%; width: 100%; border-radius: inherit; background: var(--teal); transform-origin: left center;
+  transform: scaleX(var(--p)); animation-name: th-fill; animation-timing-function: linear; animation-fill-mode: forwards; will-change: transform; }
+[dir="rtl"] .th-fill { transform-origin: right center; }
+@keyframes th-fill { from { transform: scaleX(var(--p)); } to { transform: scaleX(1); } }
 .th-bar span.t-amber { animation: th-breathe-bar 1.6s ease-in-out infinite; }
 @keyframes th-breathe-bar { 0%, 100% { opacity: 1; } 50% { opacity: .65; } }
 
@@ -865,7 +868,24 @@ button[aria-pressed="true"] .th-dots i { box-shadow: 0 0 0 1.5px var(--selectedT
 @media (prefers-reduced-motion: reduce) {
   .th-drift, .th-srow.next .th-srow-main::after { display: none; }
   .th-bear-clock .eyes, .th-bear-clock .hands, .th-accbtn[aria-pressed="true"] i, .th-stats .todo b, .th-now-dot, .th-countbtn.urgent,
-  .th-week-days button[aria-pressed="true"], .th-bar span::after, .th-trow-bar span::after, .th-progress span::after, .th-bar span.t-amber,
+  .th-week-days button[aria-pressed="true"], .th-now-dot::after, .th-bar span.t-amber,
   .th-drop, .th-drop.ready .th-btn { animation: none !important; }
   .th-need, .th-sec-head .th-num { transition: none !important; }
 }
+
+/* Loops pause inside hidden tabs (and the browser pauses everything when the app is in the background). */
+.th-panel[hidden] *, .th-panel[hidden] *::before, .th-panel[hidden] *::after { animation-play-state: paused !important; }
+
+/* restart all camps + gentle overnight notes */
+.th-restart { gap: 10px; }
+.th-restart-title { font-size: 15px; color: var(--gold); }
+.th-restart-row { display: grid; gap: 8px; padding: 10px 12px; border-radius: 14px; background: var(--inputBg); border: 1px solid var(--cardBorderT); }
+.th-restart-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; align-items: baseline; font-size: 13.5px; }
+.th-restart-head .t-warn { color: var(--statusT9Text); font-weight: 800; }
+.th-restart-head .t-ok { color: var(--green); font-weight: 800; }
+.th-moon { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: var(--tierTrackBg); font-size: 12.5px; line-height: 1.45; font-weight: 600; color: var(--ink); }
+.th-group .th-moon { margin: 6px 0; }
+.th-sleep-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 8px; }
+.th-sleep-grid label { display: grid; gap: 4px; font-size: 12px; font-weight: 700; color: var(--sub); min-width: 0; }
+.th-sleep-grid .th-input { min-width: 0; width: 100%; box-sizing: border-box; }
+.th-suggest { font-size: 12.5px; font-weight: 800; color: var(--gold); }

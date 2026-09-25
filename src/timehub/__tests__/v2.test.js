@@ -605,3 +605,58 @@ test("only the newest hand-claim drop of each kind asks for action", async () =>
   const older = dropsBetween(now - DAY, now).find((d) => d.id === "trek8");
   assert.equal(isCurrentDrop(older, now), false);
 });
+
+/* ---------- what to track + 24/7 training guidance ---------- */
+import { tracking, buildAgenda as agenda2 } from "../lib/agenda.js";
+import { inSleepWindow, nextLocalTime, timingCheck, nextCycleCheck } from "../lib/sleep.js";
+
+test("turning off Trek / Storehouse / reset / stamina / contributions removes them everywhere they're listed", () => {
+  const now = Date.UTC(2026, 8, 24, 7, 43);
+  const s = emptyState(now, mkId);
+  s.accountData.A.stamina = { value: 190, at: now };
+  s.accountData.A.contrib = setAttempts(DEFAULT_CONTRIB, now, 15);
+  const day = [now, now + DAY];
+  const kinds = (st) => new Set(agenda2(st, ...day, ["A"], now).map((i) => (i.kind === "drop" ? i.ref.drop.kind : i.kind === "event" ? i.ref.ev.templateId : i.kind)));
+  const all = kinds(s);
+  for (const k of ["store", "trek", "stamina", "contrib", "daily_reset"]) assert.ok(all.has(k), k);
+  s.settings.track = { reset: false, store: false, trek: false, stamina: false, contrib: false };
+  const none = kinds(s);
+  for (const k of ["store", "trek", "stamina", "contrib", "daily_reset"]) assert.ok(!none.has(k), k);
+  assert.equal(dropsNeedingAction(s, ["A"], Date.UTC(2026, 8, 24, 8, 5)).length, 0);
+  assert.deepEqual(tracking({ settings: {} }), { reset: true, store: true, trek: true, stamina: true, contrib: true });
+});
+
+test("sleep window 22:00–07:00 (wraps midnight) in local time", () => {
+  const tz = "Pacific/Auckland"; // NZST +12 before 27 Sep
+  const at = (h, m = 0) => zonedTimeToUtc(2026, 9, 24, h, m, tz);
+  assert.equal(inSleepWindow(at(21, 59), tz), false);
+  assert.equal(inSleepWindow(at(22, 0), tz), true);
+  assert.equal(inSleepWindow(at(1, 30), tz), true);
+  assert.equal(inSleepWindow(at(6, 59), tz), true);
+  assert.equal(inSleepWindow(at(7, 0), tz), false);
+  assert.equal(nextLocalTime(at(14, 5), "21:45", tz), at(21, 45));
+  assert.equal(nextLocalTime(at(22, 5), "21:45", tz), zonedTimeToUtc(2026, 9, 25, 21, 45, tz));
+});
+
+test("timing check: overnight finish → suggest a shorter run ending ~21:45; fine finishes get no nagging", () => {
+  const tz = "Pacific/Auckland";
+  const start = zonedTimeToUtc(2026, 9, 24, 14, 5, tz);
+  const ok = timingCheck(start, 6 * HOUR, tz); // 8:05 PM
+  assert.deepEqual([ok.overnight, ok.suggestion], [false, null]);
+  const late = timingCheck(start, 11 * HOUR + 25 * MINUTE, tz); // 1:30 AM
+  assert.equal(late.overnight, true);
+  assert.equal(late.suggestion.kind, "bed");
+  assert.equal(late.suggestion.durationMs, 7 * HOUR + 40 * MINUTE); // 14:05 → 21:45
+  assert.equal(formatTime(late.suggestion.finishAt, tz, "en"), "9:45\u00A0PM");
+  // started late at night: shortening can't help (it would just end earlier in the night)
+  const night = timingCheck(zonedTimeToUtc(2026, 9, 24, 23, 0, tz), 11 * HOUR, tz); // 10:00 AM → fine
+  assert.equal(night.overnight, false);
+  const night2 = timingCheck(zonedTimeToUtc(2026, 9, 24, 21, 50, tz), 6 * HOUR, tz); // 3:50 AM
+  assert.deepEqual([night2.overnight, night2.suggestion], [true, null]);
+  // a camp training now that ends at 1:20 AM: advice is for the next cycle (restart when up)
+  const nc = nextCycleCheck(zonedTimeToUtc(2026, 9, 25, 1, 20, tz), 16 * HOUR, tz);
+  assert.equal(formatTime(nc.restartAt, tz, "en"), "7:00\u00A0AM");
+  assert.equal(nc.suggestion.kind, "bed");
+  assert.equal(formatTime(nc.suggestion.finishAt, tz, "en"), "9:45\u00A0PM");
+  assert.equal(nextCycleCheck(zonedTimeToUtc(2026, 9, 25, 20, 0, tz), 6 * HOUR, tz), null);
+});

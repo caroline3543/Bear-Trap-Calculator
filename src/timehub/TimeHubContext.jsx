@@ -120,6 +120,18 @@ export function TimeHubProvider({ lang = "en", children }) {
   );
 }
 
+/**
+ * Tabs you aren't looking at keep the data they last showed: changing account, claiming
+ * something, or editing on the visible tab doesn't re-render the hidden ones. They catch up
+ * the moment they're shown again.
+ */
+export function FreezeWhenHidden({ active, children }) {
+  const value = useContext(Ctx);
+  const frozen = useRef(value);
+  if (active) frozen.current = value;
+  return <Ctx.Provider value={frozen.current}>{children}</Ctx.Provider>;
+}
+
 export function useTimeHub() {
   const v = useContext(Ctx);
   if (!v) throw new Error("Time Hub widgets must be inside <TimeHubProvider>.");

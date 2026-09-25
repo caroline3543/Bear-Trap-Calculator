@@ -5,13 +5,14 @@
    ============================================================ */
 import React, { startTransition, useEffect, useState } from "react";
 import "./timehub.css";
-import { TimeHubProvider, useTimeHub, useTab } from "./TimeHubContext.jsx";
+import { TimeHubProvider, useTimeHub, useTab, FreezeWhenHidden } from "./TimeHubContext.jsx";
 import { useNow, useMinute, ActiveTab } from "./hooks/useNow.jsx";
 import { onPress } from "./lib/feedback.js";
-import { zoneCity, deviceTimeZone, intlLocale } from "./lib/time.js";
+import { zoneCity, deviceTimeZone, formatLongDay } from "./lib/time.js";
 import { splitColumns } from "./lib/layout.js";
 import { TimeZonePicker, BrushUnderline, SectionIcon, TabIcon } from "./components/ui.jsx";
 import { ALL, MAX_ACCOUNTS } from "./lib/accounts.js";
+import { tracking } from "./lib/agenda.js";
 import { StaminaWidget, TrekWidget } from "./widgets/DailyWidgets.jsx";
 import { TodayScreen } from "./widgets/TodayScreen.jsx";
 import { BookingsWidget } from "./widgets/BookingsWidget.jsx";
@@ -47,7 +48,7 @@ function BearClock() {
 function Header({ title, headerExtra, onSettings, settingsOpen }) {
   const { tz, lang, t } = useTimeHub();
   const now = useMinute();
-  const long = new Intl.DateTimeFormat(intlLocale(lang), { timeZone: tz, weekday: "long", day: "numeric", month: "short" }).format(now);
+  const long = formatLongDay(now, tz, lang);
   return (
     <header className="th-mhdr">
       <span className="th-drift" aria-hidden="true"><i>❄</i><i>❄</i><i>✦</i></span>
@@ -154,6 +155,32 @@ function SettingsPanel({ headerExtra }) {
           <label className="th-check"><input type="checkbox" checked={state.settings.haptics !== false} onChange={(e) => dispatch({ type: "settings", patch: { haptics: e.target.checked } })} />{t("hapticsSetting")}</label>
         </div>
       </section>
+      <section className="th-card" aria-label={t("whatToTrack")}>
+        <div className="th-sec-head"><SectionIcon name="bell" /><span className="th-sec-title">{t("whatToTrack")}</span></div>
+        <BrushUnderline />
+        <p className="th-sec-sub">{t("whatToTrackSub")}</p>
+        <div className="th-form" style={{ margin: 0 }}>
+          {[["reset", "trackReset"], ["store", "trackStore"], ["trek", "trackTrek"], ["stamina", "trackStamina"], ["contrib", "trackContrib"]].map(([k, key]) => (
+            <label key={k} className="th-check">
+              <input type="checkbox" checked={state.settings.track?.[k] !== false}
+                onChange={(e) => dispatch({ type: "settings", patch: { track: { ...state.settings.track, [k]: e.target.checked } } })} />{t(key)}
+            </label>
+          ))}
+        </div>
+      </section>
+      <section className="th-card" aria-label={t("sleepHours")}>
+        <div className="th-sec-head"><SectionIcon name="plan" /><span className="th-sec-title">{t("sleepHours")}</span></div>
+        <BrushUnderline />
+        <p className="th-sec-sub">{t("sleepHoursSub")}</p>
+        <div className="th-sleep-grid">
+          {[["start", "sleepFrom"], ["end", "sleepUntil"], ["target", "finishBeforeBed"]].map(([k, key]) => (
+            <label key={k}><span>{t(key)}</span>
+              <input className="th-input" type="time" step="300" value={state.settings.sleep?.[k] || ""}
+                onChange={(e) => e.target.value && dispatch({ type: "settings", patch: { sleep: { ...state.settings.sleep, [k]: e.target.value } } })} />
+            </label>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
@@ -161,7 +188,17 @@ function SettingsPanel({ headerExtra }) {
 /* Each tab's content is memoised: switching tabs doesn't re-render the other tabs. */
 const TodayPanel = React.memo(function TodayPanel() { return <TodayScreen />; });
 const TimersPanel = React.memo(function TimersPanel() {
-  return <Stack><StaminaWidget /><TrekWidget /><TrainingWidget /><ResearchWidget /><ContributionWidget /></Stack>;
+  const { state } = useTimeHub();
+  const tr = tracking(state);
+  return (
+    <Stack>
+      {(tr.stamina || tr.store) && <StaminaWidget />}
+      {tr.trek && <TrekWidget />}
+      <TrainingWidget />
+      <ResearchWidget />
+      {tr.contrib && <ContributionWidget />}
+    </Stack>
+  );
 });
 const EventsPanel = React.memo(function EventsPanel() {
   return <Stack><EventsWidget /><BookingsWidget /><ShareCard /><HistoryWidget /></Stack>;
@@ -170,7 +207,9 @@ const CalcPanel = React.memo(function CalcPanel({ calculator }) { return <div cl
 const Panel = React.memo(function Panel({ on, children }) {
   return (
     <div className={`th-panel ${on ? "on" : ""}`} hidden={!on}>
-      <ActiveTab active={on}>{children}</ActiveTab>
+      <FreezeWhenHidden active={on}>
+        <ActiveTab active={on}>{children}</ActiveTab>
+      </FreezeWhenHidden>
     </div>
   );
 });

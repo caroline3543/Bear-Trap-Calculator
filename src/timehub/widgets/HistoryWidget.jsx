@@ -1,7 +1,7 @@
 /* Past events (hide keeps them, delete is explicit) + expired bookings, for the filtered accounts. */
 import React from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
-import { useNow } from "../hooks/useNow.jsx";
+import { useMinute } from "../hooks/useNow.jsx";
 import { partitionEvents, relevantTime, eventName } from "../lib/events.js";
 import { partitionBookings } from "../lib/bookings.js";
 import { matchesFilter } from "../lib/accounts.js";
@@ -10,7 +10,7 @@ import { Section, Btn, Ltr, AccountTag } from "../components/ui.jsx";
 
 export function HistoryWidget({ move }) {
   const { t, tz, lang, state, dispatch, accounts, filter, accountIds, dataFor, updateAccount, templates } = useTimeHub();
-  const now = useNow();
+  const now = useMinute();
   const showArchived = state.settings.showArchived;
   const { past } = partitionEvents(state.events.filter((e) => matchesFilter(e.accountId, accounts, filter)), now);
   const visiblePast = past.filter((r) => showArchived || !r.ev.archived);

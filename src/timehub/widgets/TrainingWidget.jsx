@@ -4,15 +4,16 @@
 import React, { useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
 import { success } from "../lib/feedback.js";
-import { useNow } from "../hooks/useNow.jsx";
+import { useMinute, useClockFor } from "../hooks/useNow.jsx";
 import { TRAINING_CAMPS, applyTraining, busyCamps, planFinish, finishTogether, sortTimers, campMaxFor, hasHelios } from "../lib/timers.js";
+import { timingCheck, nextCycleCheck } from "../lib/sleep.js";
 import { zonedParts, zonedTimeToUtc, formatTime, formatDate, formatSpan, formatCountdown, formatCountdownClock, localDayRange, hhmmToMinutes } from "../lib/time.js";
-import { Section, Btn, Field, Seg, DurationFields, EMPTY_DUR, durFrom, durParse, FormActions, Icon, Ltr, Bidi, AccountSelect, AccountTag } from "../components/ui.jsx";
+import { Section, Btn, Field, Seg, DurationFields, EMPTY_DUR, durFrom, durParse, FormActions, Icon, Ltr, Bidi, AccountSelect, AccountTag, Remaining } from "../components/ui.jsx";
 import { TimerRow, useWhenLocal } from "./TimerCard.jsx";
 
 function TrainForm({ onDone, preset }) {
   const { t, lang, tz, newId, dataFor, defaultAccountId, updateAccount } = useTimeHub();
-  const now = useNow();
+  const now = useMinute(); // the planner works in minutes
   const [accountId, setAccountId] = useState(preset?.accountId || defaultAccountId);
   const [mode, setMode] = useState("left"); // left | finish
   const [share, setShare] = useState(preset?.camp ? "each" : "same");
@@ -254,22 +255,127 @@ function CampTimes() {
   );
 }
 
+/* ---------- Restart All Camps + 24/7 timing guidance ---------- */
+/** Camps of one account that aren't training, with the length to restart them for. */
+function restartable(data, now) {
+  return TRAINING_CAMPS.map((camp) => {
+    const mine = (data.timers || []).filter((x) => x.kind === "training" && x.category === camp);
+    if (mine.some((x) => x.endAt > now)) return null;
+    const last = mine.sort((a, b) => b.endAt - a.endAt)[0];
+    const troop = last?.troop === "helios" ? "helios" : "normal";
+    const fullMs = last?.durationMs > 0 ? last.durationMs : campMaxFor(data, camp, troop);
+    return { camp, troop, fullMs: fullMs > 0 ? fullMs : null };
+  }).filter(Boolean);
+}
+
+function MoonNote({ children }) {
+  return <div className="th-moon"><span aria-hidden="true">🌙</span><div>{children}</div></div>;
+}
+
+function RestartAll({ acc, onDone }) {
+  const { t, tz, lang, dataFor, updateAccount, newId, state } = useTimeHub();
+  const sleep = state.settings.sleep;
+  const now = useMinute();
+  const list = restartable(dataFor(acc), now);
+  const [pick, setPick] = useState({}); // camp → "full" | "short"
+  const label = (c) => (c.troop === "helios" ? t("heliosCamp", { camp: t(c.camp) }) : t(c.camp));
+  const rows = list.map((c) => ({ ...c, check: c.fullMs ? timingCheck(now, c.fullMs, tz, sleep) : null }));
+  const ready = rows.filter((c) => c.fullMs);
+  function go() {
+    const at = Date.now();
+    const entries = ready.map((c) => ({ camp: c.camp, troop: c.troop, durationMs: pick[c.camp] === "short" && c.check?.suggestion ? c.check.suggestion.durationMs : c.fullMs }));
+    updateAccount(acc, (d) => ({ ...d, timers: applyTraining(d.timers, entries, at, newId) }));
+    success();
+    onDone();
+  }
+  return (
+    <div className="th-form th-restart">
+      <b className="th-restart-title">{t("restartAllTitle")}</b>
+      {rows.some((c) => c.check?.suggestion) && (
+        <MoonNote>{t("timingSuggestionShort", { n: rows.filter((c) => c.check?.suggestion).length, finish: formatTime(rows.find((c) => c.check?.suggestion).check.suggestion.finishAt, tz, lang) })}</MoonNote>
+      )}
+      {rows.map((c) => (
+        <div key={c.camp} className="th-restart-row">
+          <div className="th-restart-head">
+            <b>{label(c)}</b>
+            {c.fullMs
+              ? <span className={c.check.overnight ? "t-warn" : "t-ok"}>{t("fullTraining")} {formatSpan(c.fullMs, lang)} → <Ltr>{formatTime(c.check.fullEnd, tz, lang)}</Ltr> {c.check.overnight ? "🌙" : "✓"}</span>
+              : <span className="th-hint">{t("noFullBatch")}</span>}
+          </div>
+          {c.check?.suggestion && (
+            <>
+              <span className="th-suggest">{t("suggestedLine", { dur: formatSpan(c.check.suggestion.durationMs, lang), finish: formatTime(c.check.suggestion.finishAt, tz, lang) })}</span>
+              <Seg value={pick[c.camp] || "full"} onChange={(v) => setPick({ ...pick, [c.camp]: v })} label={label(c)} options={[
+                { value: "full", label: `${t("fullWord")} · ${formatSpan(c.fullMs, lang)}` },
+                { value: "short", label: `${t("aboutWord")} ${formatSpan(c.check.suggestion.durationMs, lang)}` },
+              ]} />
+            </>
+          )}
+          {c.check?.overnight && !c.check.suggestion && <MoonNote>{t("finishesWhileAsleep", { time: formatTime(c.check.fullEnd, tz, lang) })}</MoonNote>}
+        </div>
+      ))}
+      <p className="th-note">💡 {t("tip247")}</p>
+      <div className="th-form-actions">
+        <Btn tone="gold" onClick={go} disabled={!ready.length}>{t("restartNCamps", { n: ready.length })}</Btn>
+        <Btn onClick={onDone}>{t("cancel")}</Btn>
+      </div>
+      <p className="th-note">{t("adjustInGame")}</p>
+    </div>
+  );
+}
+
+/** For camps training now whose finish lands in the night: a gentle note about the next cycle. */
+function NextCycleNotes({ acc, timers }) {
+  const { t, tz, lang, dataFor, state } = useTimeHub();
+  const sleep = state.settings.sleep;
+  const data = dataFor(acc);
+  const now = Date.now();
+  const seen = new Set();
+  const notes = [];
+  for (const x of timers.filter((y) => y.endAt > now)) {
+    const key = Math.floor(x.endAt / 60000);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const fullMs = x.durationMs > 0 ? x.durationMs : campMaxFor(data, x.category, x.troop === "helios" ? "helios" : "normal");
+    if (!fullMs) continue;
+    const nc = nextCycleCheck(x.endAt, fullMs, tz, sleep);
+    if (!nc) continue;
+    const names = timers.filter((y) => Math.floor(y.endAt / 60000) === key).map((y) => t(`short_${y.category}`)).join(", ");
+    notes.push(
+      <MoonNote key={key}>
+        {t("currentEndsAt", { camps: names, time: formatTime(x.endAt, tz, lang) })}{" "}
+        {nc.suggestion
+          ? t("nextCycleTip", { dur: formatSpan(nc.suggestion.durationMs, lang), finish: formatTime(nc.suggestion.finishAt, tz, lang) })
+          : t("waitsTillMorning")}
+      </MoonNote>
+    );
+  }
+  return notes;
+}
+
 function AccountTimers({ acc, timers, plans, setPanel }) {
-  const { t, tz, lang, updateAccount, multi } = useTimeHub();
-  const now = useNow();
+  const { t, tz, lang, updateAccount, multi, dataFor } = useTimeHub();
+  const now = useClockFor([...timers.map((x) => x.endAt), ...plans.map((p) => p.startAt)]);
   const when = useWhenLocal();
   const running = timers.filter((x) => x.endAt > now);
   const groups = finishTogether(running);
   const allTogether = groups.length === 1 && groups[0].timers.length === running.length && running.length > 1 ? groups[0] : null;
-  const edit = (x) => () => setPanel({ preset: { accountId: acc, camp: x.category, troop: x.troop, ms: x.endAt - now } });
+  const edit = (x) => () => setPanel({ preset: { accountId: acc, camp: x.category, troop: x.troop, ms: x.endAt - Date.now() } });
   const lab = (x) => (x.troop === "helios" ? t("heliosCamp", { camp: t(x.category) }) : undefined);
+  const [restarting, setRestarting] = useState(false);
+  const idleCount = restartable(dataFor(acc), now).length;
   return (
     <div className="th-group">
       {multi && <div className="th-group-head"><AccountTag accountId={acc} /></div>}
+      {idleCount > 0 && !restarting && (
+        <Btn tone="gold" block onClick={() => setRestarting(true)}>↻ {t("restartAll", { n: idleCount })}</Btn>
+      )}
+      {restarting && <RestartAll acc={acc} onDone={() => setRestarting(false)} />}
+      <NextCycleNotes acc={acc} timers={timers} />
       {plans.map((p) => (
         <div key={p.id} className="th-plan-row reminder">
           <span>{t("startTrainingAt", { camps: p.camps.map((c) => t(c)).join(", ") })} · <b><Ltr>{when(p.startAt)}</Ltr></b>
-            {p.startAt > now && <> · <Bidi>{formatCountdown(p.startAt - now, lang)}</Bidi></>}</span>
+            {p.startAt > now && <> · <Remaining to={p.startAt} /></>}</span>
           <Btn small onClick={() => updateAccount(acc, (d) => ({ ...d, plans: d.plans.filter((x) => x.id !== p.id) }))}>{t("dismiss")}</Btn>
         </div>
       ))}
@@ -280,7 +386,7 @@ function AccountTimers({ acc, timers, plans, setPanel }) {
               <div className="th-trow-name">{t("allCampsTogether")}</div>
               <div className="th-trow-when"><Ltr>{when(allTogether.endAt)}</Ltr> · <Ltr>{formatTime(allTogether.endAt, "UTC", lang)}</Ltr> UTC</div>
             </div>
-            <div className="th-trow-count" role="timer"><Bidi>{formatCountdownClock(allTogether.endAt - now, lang)}</Bidi></div>
+            <div className="th-trow-count" role="timer"><Remaining to={allTogether.endAt} fmt="clock" /></div>
           </div>
           <div className="th-together-camps">
             {allTogether.timers.map((x) => <TimerRow key={x.id} timer={x} accountId={acc} onEdit={edit(x)} label={lab(x)} slim />)}
@@ -296,7 +402,7 @@ function AccountTimers({ acc, timers, plans, setPanel }) {
 
 export function TrainingWidget({ move }) {
   const { t, tz, lang, accountIds, dataFor, updateAccount, trainDraft, setTrainDraft } = useTimeHub();
-  const now = useNow();
+  const now = useClockFor(accountIds.flatMap((a) => dataFor(a).timers.filter((x) => x.kind === "training").map((x) => x.endAt)));
   const [panel, setPanel] = useState(null); // null | "new" | {preset}
   React.useEffect(() => { if (trainDraft) { setPanel({ preset: trainDraft, key: trainDraft.nonce }); setTrainDraft(null); } }, [trainDraft]);
   const byAccount = accountIds.map((acc) => ({ acc, timers: sortTimers(dataFor(acc).timers.filter((x) => x.kind === "training"), now).sort((a, b) => (a.endAt > now) - (b.endAt > now) || Math.floor(a.endAt / 60000) - Math.floor(b.endAt / 60000) || TRAINING_CAMPS.indexOf(a.category) - TRAINING_CAMPS.indexOf(b.category)), plans: (dataFor(acc).plans || []).filter((p) => p.target > now) }));
@@ -313,7 +419,7 @@ export function TrainingWidget({ move }) {
       {panel === "new" && <TrainForm onDone={() => setPanel(null)} />}
       {panel?.preset && <TrainForm key={panel.key || "p"} preset={panel.preset} onDone={() => setPanel(null)} />}
       {count === 0 && !panel && <div className="th-empty">{t("emptyTraining")}</div>}
-      {byAccount.filter((a) => a.timers.length || a.plans.length).map(({ acc, timers, plans }) => (
+      {byAccount.filter((a) => a.timers.length || a.plans.length || restartable(dataFor(a.acc), now).some((c) => c.fullMs)).map(({ acc, timers, plans }) => (
         <AccountTimers key={acc} acc={acc} timers={timers} plans={plans} setPanel={setPanel} />
       ))}
 

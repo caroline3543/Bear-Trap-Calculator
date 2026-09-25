@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
 import { success } from "../lib/feedback.js";
-import { useNow } from "../hooks/useNow.jsx";
-import { staminaNow, dropsBetween, dropStatus, pruneClaims, isCurrentDrop, STAMINA_CAP } from "../lib/daily.js";
+import { useMinute, useClockFor } from "../hooks/useNow.jsx";
+import { staminaNow, dropsBetween, dropStatus, pruneClaims, isCurrentDrop, STAMINA_CAP, STAMINA_REGEN_MS } from "../lib/daily.js";
 import { formatTime, formatSpan, HOUR, MINUTE } from "../lib/time.js";
 import { Section, Btn, Ltr, AccountTag } from "../components/ui.jsx";
 import { useWhenLocal } from "./TimerCard.jsx";
@@ -21,10 +21,13 @@ export function useClaim() {
 
 function StaminaRow({ accountId }) {
   const { t, lang, dataFor, updateAccount } = useTimeHub();
-  const now = useNow();
+  const st = dataFor(accountId).stamina;
+  // stamina only changes every 5 minutes: re-render on the next +1 (and when it reaches 200)
+  const nextStep = st && st.value < STAMINA_CAP ? st.at + (Math.floor((Date.now() - st.at) / STAMINA_REGEN_MS) + 1) * STAMINA_REGEN_MS : null;
+  const now = useClockFor([nextStep]);
   const when = useWhenLocal();
   const [editing, setEditing] = useState(false);
-  const cur = staminaNow(dataFor(accountId).stamina, now);
+  const cur = staminaNow(st, now);
   const [val, setVal] = useState(cur ? String(cur.value) : "");
   const save = () => {
     const n = Number(val);
@@ -65,7 +68,7 @@ function StaminaRow({ accountId }) {
 
 function DropTile({ d, claim }) {
   const { t, tz, lang, accountIds, dataFor } = useTimeHub();
-  const now = useNow();
+  const now = useClockFor([d.at]);
   const statuses = accountIds.map((a) => { const x = dropStatus(d, dataFor(a).claims, now); return x === "ready" && !isCurrentDrop(d, now) ? "missed" : x; });
   const ready = statuses.includes("ready");
   const done = !ready && statuses.every((s) => s === "claimed" || s === "auto" || s === "missed");
@@ -94,13 +97,14 @@ function dropsAround(kind, now) {
 }
 
 export function StaminaWidget() {
-  const { t, accountIds } = useTimeHub();
-  const now = useNow();
+  const { t, accountIds, state } = useTimeHub();
+  const now = useMinute();
   const claim = useClaim();
+  const track = state.settings.track || {};
   return (
-    <Section id="stamina" icon="bolt" title={t("secStamina")} sub={t("staminaSub")}>
-      {accountIds.map((a) => <StaminaRow key={a} accountId={a} />)}
-      <div className="th-drops two">{dropsAround("store", now).map((d) => <DropTile key={d.key} d={d} claim={claim} />)}</div>
+    <Section id="stamina" icon="bolt" title={t("secStamina")} sub={track.stamina !== false ? t("staminaSub") : null}>
+      {track.stamina !== false && accountIds.map((a) => <StaminaRow key={a} accountId={a} />)}
+      {track.store !== false && <div className="th-drops two">{dropsAround("store", now).map((d) => <DropTile key={d.key} d={d} claim={claim} />)}</div>}
       <p className="th-note">{t("staminaDaily")}</p>
     </Section>
   );
@@ -108,7 +112,7 @@ export function StaminaWidget() {
 
 export function TrekWidget() {
   const { t } = useTimeHub();
-  const now = useNow();
+  const now = useMinute();
   const claim = useClaim();
   return (
     <Section id="trek" icon="boot" title={t("secTrek")} sub={t("trekSub")}>

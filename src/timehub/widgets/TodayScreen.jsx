@@ -6,14 +6,14 @@
 import React, { useMemo, useRef, useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
 import { success } from "../lib/feedback.js";
-import { useNow, useMinute } from "../hooks/useNow.jsx";
+import { useMinute, useClockFor } from "../hooks/useNow.jsx";
 import { buildAgenda } from "../lib/agenda.js";
 import { computeReminders, needsAttention } from "../lib/reminders.js";
 import { contribState, spendAttempt } from "../lib/contributions.js";
 import { idleCamps, splitNow, stillRunning, weekStrip } from "../lib/today.js";
 import { dropsNeedingAction, dropsBetween, staminaNow } from "../lib/daily.js";
-import { localDayRange, formatTime, formatDate, formatSpan, formatCountdown, formatCountdownClock, zonedParts, intlLocale, HOUR, MINUTE } from "../lib/time.js";
-import { Ltr, Bidi, AccountTag, Btn, SleepingBear, DurationFields, durFrom, durParse, CalendarButtons, BrushUnderline, SectionIcon } from "../components/ui.jsx";
+import { localDayRange, formatTime, formatDate, formatSpan, zonedParts, formatWeekdayShort, formatDayNumber, HOUR, MINUTE } from "../lib/time.js";
+import { Ltr, Bidi, AccountTag, Btn, SleepingBear, DurationFields, durFrom, durParse, CalendarButtons, BrushUnderline, SectionIcon, Remaining } from "../components/ui.jsx";
 import { itemTitle, toCalendarItem } from "../components/labels.js";
 import { ReminderRow } from "./ReminderRow.jsx";
 import { useWhenLocal } from "./TimerCard.jsx";
@@ -35,7 +35,7 @@ export function useNeeds() {
   const now = useMinute(); // once a minute is plenty for "what needs doing"
   return useMemo(() => {
     const drops = dropsNeedingAction(state, accountIds, now);
-    const stamina = accountIds.map((a) => ({ a, s: staminaNow(dataFor(a).stamina, now) }))
+    const stamina = (state.settings.track?.stamina === false ? [] : accountIds).map((a) => ({ a, s: staminaNow(dataFor(a).stamina, now) }))
       .filter(({ s }) => s && (s.over || s.atCap || (s.fullAt && s.fullAt - now <= HOUR)));
     const idle = accountIds.map((acc) => ({ acc, idle: idleCamps(dataFor(acc), now) })).filter((c) => c.idle);
     const minister = needsAttention(computeReminders(state, now, accountIds));
@@ -134,8 +134,8 @@ function WeekStrip({ offset, setOffset }) {
   const { t, tz, lang, state, accountIds } = useTimeHub();
   const now = useMinute();
   const days = useMemo(() => weekStrip(state, accountIds, now, tz), [state, accountIds.join(), Math.floor(now / 3600000), tz]); // eslint-disable-line react-hooks/exhaustive-deps
-  const wd = new Intl.DateTimeFormat(intlLocale(lang), { timeZone: tz, weekday: "short" });
-  const dn = new Intl.DateTimeFormat(intlLocale(lang), { timeZone: tz, day: "numeric" });
+  const wd = { format: (ms) => formatWeekdayShort(ms, tz, lang) };
+  const dn = { format: (ms) => formatDayNumber(ms, tz, lang) };
   return (
     <div className="th-week" aria-label={t("thisWeek")}>
       <div className="th-week-days" role="group" aria-label={t("chooseDay")}>
@@ -158,7 +158,7 @@ function WeekStrip({ offset, setOffset }) {
 /* ---------- one schedule row ---------- */
 function UpdateTime({ item, onDone }) {
   const { t, updateAccount } = useTimeHub();
-  const now = useNow();
+  const now = Date.now(); // only used to prefill
   const ids = item.group ? item.group.map((g) => g.id) : [item.ref.id];
   const [v, setV] = useState(durFrom(item.start - now));
   const save = () => {
@@ -181,9 +181,9 @@ function UpdateTime({ item, onDone }) {
 }
 
 function Row({ i, day, rems, open, setOpen, isNext }) {
-  const { t, tz, lang, dir, templates, updateAccount, openBooking, setTab, accountById } = useTimeHub();
+  const { t, tz, lang, dir, templates, updateAccount, openBooking, setTab, accountById, update } = useTimeHub();
   const claim = useClaim();
-  const now = useNow();
+  const now = useClockFor([i.start - 5 * 60000, i.start]); // only for the "under 5 minutes" styling
   const [editing, setEditing] = useState(false);
   const x0 = useRef(null);
   const swiped = useRef(false);
@@ -212,6 +212,9 @@ function Row({ i, day, rems, open, setOpen, isNext }) {
   if (i.kind === "booking") actions.push(<Btn key="bk" small onClick={() => setTab("events")}>{t("secBookings")}</Btn>);
   if (i.kind === "drop" && i.status !== "upcoming" && i.ref.drop.manual && i.ref.statuses.includes("ready")) actions.push(<Btn key="cl" small onClick={() => claim(i.ref.drop)}>{t("claimed")}</Btn>);
   if (i.kind === "stamina") actions.push(<Btn key="stu" small onClick={() => setTab("timers")}>{t("update")}</Btn>);
+  // things some players don't care about can be switched off right here
+  const trackKey = i.kind === "drop" ? i.ref.drop.kind : i.kind === "stamina" ? "stamina" : i.kind === "contrib" ? "contrib" : i.kind === "event" && i.ref.ev.templateId === "daily_reset" ? "reset" : null;
+  if (trackKey) actions.push(<Btn key="untrack" small onClick={() => update((s) => ({ ...s, settings: { ...s.settings, track: { ...s.settings.track, [trackKey]: false } } }))}>{t("dontTrack")}</Btn>);
   if (i.kind === "plan") actions.push(<Btn key="pl" small onClick={() => updateAccount(i.accountId, (d) => ({ ...d, plans: (d.plans || []).filter((p) => p.id !== i.ref.id) }))}>{t("dismiss")}</Btn>);
   actions.push(<CalendarButtons key="cal" items={[toCalendarItem(i, t, templates, accountById(i.accountId)?.name)]} filename={i.id} />);
 
@@ -228,7 +231,7 @@ function Row({ i, day, rems, open, setOpen, isNext }) {
           <span className="th-srow-tags">
             {timer && (
               <button type="button" className={`th-countbtn ${i.start - now < 5 * 60000 ? "urgent" : ""}`} onClick={() => setEditing(!editing)} aria-label={`${t("updateTimeLeft")}: ${title}`}>
-                <Bidi>{formatCountdownClock(i.start - now, lang)}</Bidi>
+                <Remaining to={i.start} fmt="clock" />
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z" /></svg>
               </button>
             )}

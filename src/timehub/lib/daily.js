@@ -81,8 +81,9 @@ export function isCurrentDrop(d, now) {
 /** Manual drops that are claimable now (newest of each kind) or due within `soonMs`, for the given accounts. */
 export function dropsNeedingAction(state, accountIds, now, soonMs = 30 * MINUTE) {
   const out = [];
+  const track = state.settings?.track || {};
   for (const d of dropsBetween(now - DAY, now + soonMs)) {
-    if (!d.manual || !isCurrentDrop(d, now)) continue;
+    if (!d.manual || !isCurrentDrop(d, now) || track[d.kind] === false) continue;
     const accs = accountIds.filter((a) => {
       const s = dropStatus(d, state.accountData[a]?.claims, now);
       return s === "ready" || s === "upcoming";

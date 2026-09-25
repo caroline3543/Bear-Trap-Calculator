@@ -4,7 +4,7 @@
 import React, { useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
 import { success } from "../lib/feedback.js";
-import { useNow } from "../hooks/useNow.jsx";
+import { useMinute, useClockFor } from "../hooks/useNow.jsx";
 import { partitionEvents, validateEvent, eventName, isRecurring, overrideOccurrence, splitSeries, occurrencesBetween } from "../lib/events.js";
 import { TEMPLATES, eventFromTemplate, restoreTemplate } from "../lib/eventTemplates.js";
 import { computeReminders } from "../lib/reminders.js";
@@ -64,7 +64,7 @@ function TimeOptionsEditor({ group, onClose }) {
 /* ---------- event form ---------- */
 function EventForm({ initial, occKey, onDone, templateId, picker }) {
   const { t, lang, tz, state, dispatch, update, newId, templates, defaultAccountId } = useTimeHub();
-  const now = useNow();
+  const now = useMinute();
   const base = initial || (templateId ? eventFromTemplate(templateId, { id: newId(), now, accountId: TEMPLATES[templateId].legion ? defaultAccountId : null }) : null);
   const tpl = base?.templateId ? templates[base.templateId] : null;
   const recurring = !!initial && isRecurring(initial) && occKey != null;
@@ -222,7 +222,7 @@ function EventForm({ initial, occKey, onDone, templateId, picker }) {
 /* ---------- card ---------- */
 function EventCard({ ev, occ, reminders, onEdit }) {
   const { t, tz, lang, dispatch, update, newId, templates, accountById, accountIds } = useTimeHub();
-  const now = useNow();
+  const now = useClockFor([occ.start, occ.end, occ.start != null ? occ.start - SOON_MS : null]);
   const [open, setOpen] = useState(false);
   const acct = ev.accountId ? accountById(ev.accountId) : null;
   const name = eventName(ev, t, templates);
@@ -251,8 +251,8 @@ function EventCard({ ev, occ, reminders, onEdit }) {
             {ev.accountId ? <AccountTag accountId={ev.accountId} /> : null}
           </div>
         </div>
-        {occ.status === "upcoming" && <Countdown ms={occ.start - now} label={t("startsIn")} />}
-        {occ.status === "in_progress" && <Countdown ms={occ.end - now} label={t("endsIn")} />}
+        {occ.status === "upcoming" && <Countdown to={occ.start} label={t("startsIn")} />}
+        {occ.status === "in_progress" && <Countdown to={occ.end} label={t("endsIn")} />}
         {occ.status === "unset" && <Btn small tone="gold" onClick={onEdit}>{t("setTime")}</Btn>}
       </div>
       {reminders.map((r) => <ReminderRow key={r.key} r={r} showName={false} />)}
@@ -307,10 +307,11 @@ function NewEventForm({ onDone }) {
 
 export function EventsWidget({ move }) {
   const { t, state, accounts, filter, accountIds, templates, dispatch, newId, defaultAccountId } = useTimeHub();
-  const now = useNow();
+  const now = useMinute(); // order/grouping; each card handles its own exact moment
   const [editing, setEditing] = useState(null); // null | "new" | "pick" | {id, occKey} | {tpl}
   const [showDisabled, setShowDisabled] = useState(false);
-  const visible = state.events.filter((e) => !e.archived && matchesFilter(e.accountId, accounts, filter));
+  const hideReset = state.settings.track?.reset === false;
+  const visible = state.events.filter((e) => !e.archived && matchesFilter(e.accountId, accounts, filter) && !(hideReset && e.templateId === "daily_reset"));
   const { current } = partitionEvents(visible, now);
   const active = current.filter((r) => r.occ.status !== "disabled");
   const disabled = current.filter((r) => r.occ.status === "disabled");

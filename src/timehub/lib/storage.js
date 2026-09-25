@@ -21,6 +21,7 @@ import { sanitizeLayout } from "./layout.js";
 import { TEMPLATES, DEFAULT_TIME_OPTIONS, REMINDER_LEAD_MS, seedTemplates } from "./eventTemplates.js";
 import { RECURRENCE_TYPES } from "./events.js";
 import { BUFF_CHOICES } from "./reminders.js";
+import { DEFAULT_SLEEP } from "./sleep.js";
 
 export const STORAGE_KEY = "timehub:v1";
 export const SCHEMA_VERSION = 2;
@@ -39,6 +40,7 @@ function defaultSettings() {
     displayTz: null, compact: false, collapsed: {}, showArchived: false,
     layout: sanitizeLayout([]), accountFilter: ALL, calendarAlarmMin: 10, setupDismissed: false,
     knownTemplates: Object.keys(TEMPLATES), timeOptionsRev: TIME_OPTIONS_REV, tab: "today", haptics: true,
+    track: { reset: true, store: true, trek: true, stamina: true, contrib: true }, sleep: { ...DEFAULT_SLEEP },
   };
 }
 
@@ -263,6 +265,8 @@ export function sanitizeState(raw, now = Date.now(), makeId = newId) {
       setupDismissed: s.setupDismissed === true,
       tab: ["today", "timers", "events", "calc"].includes(s.tab) ? s.tab : "today",
       haptics: s.haptics !== false,
+      track: Object.fromEntries(["reset", "store", "trek", "stamina", "contrib"].map((k) => [k, s.track?.[k] !== false])),
+      sleep: ["start", "end", "target"].every((k) => hhmmToMinutes(s.sleep?.[k]) != null) ? { start: s.sleep.start, end: s.sleep.end, target: s.sleep.target } : { ...DEFAULT_SLEEP },
     },
     accounts, accountData,
     events,

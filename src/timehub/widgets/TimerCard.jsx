@@ -2,28 +2,28 @@
    Actions tuck behind "⋯" so the widget stays short. */
 import React, { useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
-import { useNow } from "../hooks/useNow.jsx";
+import { useMinute, useClockFor } from "../hooks/useNow.jsx";
 import { timerStatus, timerProgress, restartTimer } from "../lib/timers.js";
 import { rememberEnd } from "../lib/today.js";
-import { formatTime, formatCountdownClock, localDayRange, intlLocale } from "../lib/time.js";
-import { Btn, Ltr, Bidi, CalendarButtons } from "../components/ui.jsx";
+import { formatTime, localDayRange, formatWeekdayShort } from "../lib/time.js";
+import { Btn, Ltr, CalendarButtons, Remaining, ProgressFill } from "../components/ui.jsx";
 
 /** "9:09 PM" today, "tomorrow 6:38 AM", or "Sat 6:38 AM". */
 export function useWhenLocal() {
   const { t, tz, lang } = useTimeHub();
-  const now = useNow();
+  const now = useMinute();
   return (ms) => {
     const today = localDayRange(now, tz);
     const time = formatTime(ms, tz, lang);
     if (ms >= today.start && ms < today.end) return time;
     if (ms >= today.end && ms < localDayRange(now, tz, 1).end) return `${t("tomorrowLower")} ${time}`;
-    return `${new Intl.DateTimeFormat(intlLocale(lang), { timeZone: tz, weekday: "short" }).format(ms)} ${time}`;
+    return `${formatWeekdayShort(ms, tz, lang)} ${time}`;
   };
 }
 
 export function TimerRow({ timer: x, accountId, onEdit, label, slim }) {
   const { t, lang, updateAccount, accountById } = useTimeHub();
-  const now = useNow();
+  const now = useClockFor([x.endAt]); // re-renders when it finishes, not every second
   const when = useWhenLocal();
   const [open, setOpen] = useState(false);
   const ready = timerStatus(x, now) === "ready";
@@ -56,9 +56,9 @@ export function TimerRow({ timer: x, accountId, onEdit, label, slim }) {
             : <>{t("finishes")} <Ltr>{when(x.endAt)}</Ltr> · <Ltr>{formatTime(x.endAt, "UTC", lang)}</Ltr> UTC</>}
         </div>
       </div>
-      <div className="th-trow-count" role="timer">{ready ? <span className="th-ready-dot">{t("readyNow")}</span> : <Bidi>{formatCountdownClock(x.endAt - now, lang)}</Bidi>}</div>
+      <div className="th-trow-count" role="timer">{ready ? <span className="th-ready-dot">{t("readyNow")}</span> : <Remaining to={x.endAt} fmt="clock" />}</div>
       <button type="button" className="th-more" aria-expanded={open} aria-label={`${t("options")}: ${label || t(x.category)}`} onClick={() => setOpen(!open)}>⋯</button>
-      {!ready && <div className="th-trow-bar" aria-hidden="true"><span style={{ width: `${timerProgress(x, now) * 100}%` }} /></div>}
+      {!ready && <div className="th-trow-bar" aria-hidden="true"><ProgressFill start={x.startedAt} end={x.endAt} /></div>}
       {open && (
         <div className="th-item-actions th-trow-actions">
           {ready ? (

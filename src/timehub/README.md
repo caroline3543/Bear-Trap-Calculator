@@ -91,7 +91,7 @@ timehub/
   index.js               public exports
   lib/                   pure logic (no React): time, events, bookings, timers,
                          contributions, dayNight, cities, storage
-  hooks/useNow.js        one shared 1-second clock
+  hooks/useNow.jsx       one shared clock (useNow / useMinute / useClockFor)
   components/ui.jsx      Section, buttons, pills, UTC/local pair, pickers, inputs
   widgets/               one file per widget
   i18n/                  en + it, es, ko, de (set1) + ru, pl, tr, ar (set2)
@@ -210,3 +210,28 @@ Saves go to localStorage on every change.
   clock hand, hopping account dot, TO DO nudge, Needs-you rows slide away when done, breathing Now
   dot, glowing next item, pulsing countdowns under 5 min, sheen on running progress bars, popping
   week day and drop tiles.
+
+
+## Performance model (Sep 2026 profiling)
+- **One clock.** `hooks/useNow.jsx` runs a single timeout per second for the whole app.
+  - `<Remaining to={ts}>` / `<Countdown to={ts}>` are the only things that re-render every second.
+  - Widgets use `useClockFor([timestamps])` (re-render when a timer finishes, an event starts, a
+    booking ends, the next contribution arrives…) or `useMinute()` for lists and "in 3h 42m" text.
+  - Progress bars are one long CSS animation each (`<ProgressFill>`), not re-renders.
+- **Hidden tabs** are frozen (`FreezeWhenHidden`): account switches and edits don't re-render them;
+  their clocks pause (`<ActiveTab>`), their layout is cached (`content-visibility: hidden`) and their
+  animation loops pause.
+- **Time maths**: formatters are cached with cheap keys; `zonedParts`, `formatTime`, `formatDate`
+  results are memoised (pure functions of instant + zone + language, so they never go stale).
+- **Storage**: one debounced write after changes (flushed on hide/close); nothing is written by the clock.
+- No network or database calls in the Time Hub.
+
+## What to track · Restart All Camps
+- ⚙ → **What to track**: daily reset, Storehouse stamina, Tundra Trek, Chief stamina, contributions.
+  Turning one off removes it from Today, Timers, Needs you and calendar exports
+  (`settings.track`, read via `tracking()` in `lib/agenda.js`). Schedule rows also offer "Don't track this".
+- **Restart all camps** (Training): restarts every idle/finished camp with its last length (or its
+  full-batch time); camps already training are never touched. If a finish would land in the sleep
+  window (default 22:00–07:00, ⚙ → Sleep hours) it suggests a shorter run ending around 21:45
+  (`lib/sleep.js`). Only times are calculated — never troop numbers. Running camps that end
+  overnight get a gentle note about the next cycle.

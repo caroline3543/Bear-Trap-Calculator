@@ -1,9 +1,11 @@
 /* ============================================================
    ONE shared clock for every widget. A single timer ticks on each
    whole second; all subscribers read the same `now`.
-   • useNow()    — changes every second (countdowns).
-   • useMinute() — changes once a minute (lists, schedules, "needs you"),
-                   so heavy screens don't rebuild every second.
+   • useNow()          — every second. Only the small countdown texts use it.
+   • useMinute()       — once a minute (lists, "in 3h 42m", schedules).
+   • useClockFor(ts[]) — re-renders only when the minute changes OR one of the
+                         given timestamps is crossed (a timer finishing, an event
+                         starting), so widgets update exactly when their state changes.
    • Screens that are hidden (other tabs) stop ticking via <ActiveTab>.
    Correctness never depends on the tick: every countdown is computed
    from absolute timestamps, and returning to the app recalculates at once.
@@ -73,4 +75,25 @@ export function useNow() {
 export function useMinute() {
   const active = useContext(ActiveCtx);
   return useSyncExternalStore(active ? subscribe : noSubscribe, getMinute, getMinute);
+}
+
+/**
+ * Re-render when the minute changes or when `now` passes any of `times` (ms timestamps).
+ * Returns the current time. Use this for status (ready / started / done), and put the
+ * per-second text in <Remaining>.
+ */
+export function useClockFor(times) {
+  const active = useContext(ActiveCtx);
+  const snap = () => {
+    let crossed = 0;
+    for (const t of times) if (Number.isFinite(t) && t <= now) crossed++;
+    return Math.floor(now / 60000) * 1000 + crossed;
+  };
+  useSyncExternalStore(active ? subscribe : noSubscribe, snap, snap);
+  return now;
+}
+
+/** The current time without subscribing (for one-off reads in handlers/initial state). */
+export function nowOnce() {
+  return Date.now();
 }

@@ -5,7 +5,8 @@ import {
   parseUtcInput, toUtcFields, parseDuration, formatDurationInput,
 } from "../lib/time.js";
 import { searchZones } from "../lib/cities.js";
-import { parseTimerDigits, formatSpan, parseDaysTime, splitDaysTime, tidyHHMM } from "../lib/time.js";
+import { parseTimerDigits, formatSpan, parseDaysTime, splitDaysTime, tidyHHMM, formatCountdownClock } from "../lib/time.js";
+import { useNow } from "../hooks/useNow.jsx";
 import { buildICS, googleCalendarLink, downloadICS } from "../lib/ics.js";
 
 /* ---------- icons (simple strokes, colour from CSS) ---------- */
@@ -284,13 +285,35 @@ export function TimePair({ ms, label }) {
   );
 }
 
-export function Countdown({ ms, label }) {
-  const { lang } = useTimeHub();
+/** Self-ticking countdown: only this little text re-renders every second.
+ *  Pass `to` (target timestamp). `ms` is still accepted for fixed values. */
+export function Countdown({ to, ms, label }) {
   return (
     <div style={{ textAlign: "end", flexShrink: 0 }}>
       {label && <div className="th-countdown-label">{label}</div>}
-      <div className="th-countdown" role="timer" aria-live="off"><Bidi>{formatCountdown(ms, lang)}</Bidi></div>
+      <div className="th-countdown" role="timer" aria-live="off">{to != null ? <Remaining to={to} /> : <Remaining fixed={ms} />}</div>
     </div>
+  );
+}
+
+const FORMATS = { countdown: formatCountdown, clock: formatCountdownClock, span: formatSpan };
+/** Time left until `to` (or since, with `since`), re-rendering only itself each second. */
+export const Remaining = React.memo(function Remaining({ to, since, fixed, fmt = "countdown" }) {
+  const { lang } = useTimeHub();
+  const now = useNow();
+  const ms = fixed != null ? fixed : since != null ? now - since : to - now;
+  return <Bidi>{FORMATS[fmt](Math.max(0, ms), lang)}</Bidi>;
+});
+
+/** Progress bar filled by the browser (a CSS animation), not by re-rendering every second. */
+export function ProgressFill({ start, end, className = "" }) {
+  const now = Date.now();
+  const span = end - start;
+  const p = span > 0 ? Math.min(1, Math.max(0, (now - start) / span)) : 1;
+  const left = Math.max(0, end - now);
+  return (
+    <span key={`${start}-${end}`} className={`th-fill ${className}`}
+      style={{ "--p": p, animationDuration: `${left}ms`, animationPlayState: left > 0 ? "running" : "paused" }} />
   );
 }
 
