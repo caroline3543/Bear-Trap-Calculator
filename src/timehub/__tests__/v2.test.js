@@ -623,7 +623,7 @@ test("turning off Trek / Storehouse / reset / stamina / contributions removes th
   const none = kinds(s);
   for (const k of ["store", "trek", "stamina", "contrib", "daily_reset"]) assert.ok(!none.has(k), k);
   assert.equal(dropsNeedingAction(s, ["A"], Date.UTC(2026, 8, 24, 8, 5)).length, 0);
-  assert.deepEqual(tracking({ settings: {} }), { reset: true, store: true, trek: true, stamina: true, contrib: true });
+  assert.deepEqual(tracking({ settings: {} }), { reset: true, store: true, trek: true, stamina: true, contrib: true, intel: true });
 });
 
 test("sleep window 22:00–07:00 (wraps midnight) in local time", () => {
@@ -659,4 +659,60 @@ test("timing check: overnight finish → suggest a shorter run ending ~21:45; fi
   assert.equal(nc.suggestion.kind, "bed");
   assert.equal(formatTime(nc.suggestion.finishAt, tz, "en"), "9:45\u00A0PM");
   assert.equal(nextCycleCheck(zonedTimeToUtc(2026, 9, 25, 20, 0, tz), 6 * HOUR, tz), null);
+});
+
+/* ---------- Alliance Championship prep + Lighthouse intel ---------- */
+import { champRounds, upcomingThursdays, isThursdayStart, PREP_ROUNDS } from "../lib/championship.js";
+import { intelPeriod, intelRefreshesBetween, intelNeedingAction } from "../lib/daily.js";
+
+test("championship prep rounds: exact UTC windows, every 14 days from the chosen Thursday", () => {
+  const thu = Date.UTC(2026, 9, 1); // Thu 1 Oct 2026
+  assert.equal(isThursdayStart(thu), true);
+  assert.equal(isThursdayStart(thu + HOUR), false);
+  const r = champRounds(thu, thu, thu + 3 * DAY);
+  const utc = (ms) => new Date(ms).toISOString().slice(5, 16).replace("T", " ");
+  assert.deepEqual(r.map((x) => `R${x.round} ${utc(x.start)}–${utc(x.end)}`), [
+    "R1 10-01 00:00–10-01 11:00", "R2 10-01 12:00–10-02 00:00", "R3 10-02 01:00–10-02 12:00",
+    "R4 10-02 13:00–10-03 00:00", "R5 10-03 01:00–10-03 12:00",
+  ]);
+  assert.equal(champRounds(thu, thu + 7 * DAY, thu + 10 * DAY).length, 0); // the off week
+  assert.equal(champRounds(thu, thu + 14 * DAY, thu + 17 * DAY)[0].start, thu + 14 * DAY);
+  assert.equal(champRounds(thu, thu - 14 * DAY, thu - 11 * DAY).length, 5); // works backwards too
+  assert.equal(PREP_ROUNDS.length, 5);
+  // local view: Round 1 opens Thu 1 PM in Auckland (NZDT, +13)
+  assert.equal(formatTime(r[0].start, "Pacific/Auckland", "en"), "1:00\u00A0PM");
+  // picker offers this Thursday until its prep is over, then next
+  assert.deepEqual(upcomingThursdays(Date.UTC(2026, 8, 29, 12)), [thu, thu + 7 * DAY]);
+  assert.deepEqual(upcomingThursdays(Date.UTC(2026, 9, 3, 13)), [thu + 7 * DAY, thu + 14 * DAY]);
+});
+
+test("championship shows on the schedule only for the leader in charge", () => {
+  const thu = Date.UTC(2026, 9, 1);
+  const s = emptyState(thu, mkId);
+  const rounds = (st) => agenda2(st, thu, thu + 3 * DAY, ["A"], thu).filter((i) => i.kind === "champ").length;
+  assert.equal(rounds(s), 0);
+  s.settings.champ = { leader: true, anchor: thu };
+  assert.equal(rounds(s), 5);
+  s.settings.champ = { leader: false, anchor: thu };
+  assert.equal(rounds(s), 0);
+});
+
+test("Lighthouse intel: refreshes 00/08/16 UTC; nag within the hour before the next one until cleared", () => {
+  const day = Date.UTC(2026, 8, 24);
+  assert.deepEqual(intelRefreshesBetween(day, day + DAY).map((ms) => new Date(ms).getUTCHours()), [0, 8, 16]);
+  const p = intelPeriod(day + 10 * HOUR);
+  assert.deepEqual([new Date(p.start).getUTCHours(), new Date(p.next).getUTCHours()], [8, 16]);
+  assert.equal(p.key, "intel@2026-09-24T08");
+  assert.equal(new Date(intelPeriod(day + 20 * HOUR).next).toISOString(), "2026-09-25T00:00:00.000Z");
+  const s = emptyState(day, mkId);
+  assert.equal(intelNeedingAction(s, ["A"], day + 10 * HOUR), null); // next refresh 6 h away
+  const soon = intelNeedingAction(s, ["A"], day + 15 * HOUR + 20 * MINUTE);
+  assert.deepEqual([soon.accounts, soon.key], [["A"], "intel@2026-09-24T08"]);
+  s.accountData.A.claims = { [soon.key]: day + 15 * HOUR };
+  assert.equal(intelNeedingAction(s, ["A"], day + 15 * HOUR + 20 * MINUTE), null);
+  s.settings.track = { ...s.settings.track, intel: false };
+  s.accountData.A.claims = {};
+  assert.equal(intelNeedingAction(s, ["A"], day + 15 * HOUR + 20 * MINUTE), null);
+  const items = agenda2({ ...s, settings: { ...s.settings, track: { intel: true } } }, day, day + DAY, ["A"], day + 9 * HOUR).filter((i) => i.kind === "intel");
+  assert.deepEqual(items.map((i) => i.status), ["done", "now", "upcoming"]);
 });

@@ -235,3 +235,15 @@ Saves go to localStorage on every change.
   window (default 22:00–07:00, ⚙ → Sleep hours) it suggests a shorter run ending around 21:45
   (`lib/sleep.js`). Only times are calculated — never troop numbers. Running camps that end
   overnight get a gentle note about the next cycle.
+
+## Alliance Championship (leaders) · Lighthouse intel
+- **Championship prep** (`lib/championship.js`): asked once on Today — "Are you a leader in charge of
+  the Alliance Championship?" — then which Thursday the next one starts (the app doesn't guess the
+  fortnight). Every 14 days, prep rounds in UTC: R1 Thu 00:00–11:00, R2 Thu 12:00–Fri 00:00,
+  R3 Fri 01:00–12:00, R4 Fri 13:00–Sat 00:00, R5 Sat 01:00–12:00. Shown on the schedule and week
+  strip (purple dot), and in Needs you while a round is open. Change under ⚙ → Alliance Championship
+  (`settings.champ = { leader, anchor }`).
+- **Lighthouse intel** (`lib/daily.js`): refreshes 00:00, 08:00, 16:00 UTC (~8 missions; they last
+  roughly 12–16 h; the Lighthouse holds two refreshes). Timers tab card with "Cleared" per account;
+  Needs you nudges in the hour before the next refresh until the batch is cleared; schedule rows for
+  each refresh. Can be switched off under ⚙ → What to track.

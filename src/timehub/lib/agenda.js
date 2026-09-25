@@ -7,7 +7,8 @@
 import { occurrencesBetween, JUST_STARTED_MS } from "./events.js";
 import { bookingEnd } from "./bookings.js";
 import { contribState } from "./contributions.js";
-import { dropsBetween, dropStatus, staminaNow, isCurrentDrop } from "./daily.js";
+import { dropsBetween, dropStatus, staminaNow, isCurrentDrop, intelRefreshesBetween, intelPeriod } from "./daily.js";
+import { champRounds } from "./championship.js";
 
 function statusOf(start, end, now) {
   const e = end ?? start + JUST_STARTED_MS;
@@ -20,7 +21,7 @@ function statusOf(start, end, now) {
 /** What the player chose to track (⚙ → What to track). Missing keys mean "yes". */
 export function tracking(state) {
   const t = state.settings?.track || {};
-  return { reset: t.reset !== false, store: t.store !== false, trek: t.trek !== false, stamina: t.stamina !== false, contrib: t.contrib !== false };
+  return { reset: t.reset !== false, store: t.store !== false, trek: t.trek !== false, stamina: t.stamina !== false, contrib: t.contrib !== false, intel: t.intel !== false };
 }
 
 export function buildAgenda(state, from, to, accountIds, now) {
@@ -62,6 +63,20 @@ export function buildAgenda(state, from, to, accountIds, now) {
     const st = accountIds.map((a) => dropStatus(d, state.accountData[a]?.claims, now));
     const allDone = st.every((x) => x === "auto" || x === "claimed" || x === "missed") || !isCurrentDrop(d, now);
     items.push({ id: `dr:${d.key}`, kind: "drop", start: d.at, end: null, accountId: null, ref: { drop: d, statuses: st }, status: now < d.at ? "upcoming" : allDone ? "done" : "now" });
+  }
+  // Lighthouse intel refreshes (shared; "cleared" is per account)
+  if (track.intel) {
+    for (const at of intelRefreshesBetween(from, to)) {
+      const period = intelPeriod(at);
+      items.push({ id: `in:${at}`, kind: "intel", start: at, end: null, accountId: null, ref: { at, key: period.key }, status: now < at ? "upcoming" : now < period.next ? "now" : "done" });
+    }
+  }
+  // Alliance Championship prep rounds (only for the leader in charge)
+  const champ = state.settings?.champ;
+  if (champ?.leader && champ.anchor) {
+    for (const r of champRounds(champ.anchor, from, to)) {
+      items.push({ id: `ch:${r.key}`, kind: "champ", start: r.start, end: r.end, accountId: null, ref: r, status: now < r.start ? "upcoming" : now < r.end ? "now" : "done" });
+    }
   }
   // stamina reaching the passive-regen cap (per account)
   for (const id of track.stamina ? accountIds : []) {

@@ -25,6 +25,8 @@ export function itemTitle(item, t, templates) {
       return d.kind === "store" ? t("dropStore", { n: d.amount }) : t(d.manual ? "dropTrek" : "dropTrekAuto", { n: d.amount });
     }
     case "stamina": return t("staminaFull");
+    case "intel": return t("intelRefresh");
+    case "champ": return t("champRound", { n: item.ref.round });
     case "plan": return t("startTrainingAt", { camps: item.ref.camps.map((c) => t(c)).join(", ") });
     default: return "";
   }

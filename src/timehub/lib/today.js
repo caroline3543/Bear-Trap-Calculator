@@ -5,6 +5,7 @@
 import { TRAINING_CAMPS, campMaxFor } from "./timers.js";
 import { occurrencesBetween } from "./events.js";
 import { localDayRange, MINUTE } from "./time.js";
+import { champRounds } from "./championship.js";
 
 export const IDLE_MIN_MS = 15 * MINUTE;
 
@@ -64,7 +65,7 @@ export function stillRunning(state, accountIds, dayEnd) {
   return out;
 }
 
-/** Colour group for the week strip. */
+/** Colour group for the week strip (events only; championship weeks are added in weekStrip). */
 export function dotKind(ev) {
   if (ev.templateId?.startsWith("bear_trap")) return "bear";
   if (ev.templateId === "foundry" || ev.templateId === "canyon_clash") return "foundry";
@@ -85,6 +86,8 @@ export function weekStrip(state, accountIds, now, tz, days = 7) {
       if (!k || kinds.includes(k)) continue;
       if (occurrencesBetween(ev, r.start, r.end - 1).some((o) => o.start >= r.start && o.start < r.end)) kinds.push(k);
     }
+    const champ = state.settings?.champ;
+    if (champ?.leader && champ.anchor && champRounds(champ.anchor, r.start, r.end).length) kinds.push("champ");
     out.push({ offset: d, start: r.start, end: r.end, dots: kinds });
   }
   return out;

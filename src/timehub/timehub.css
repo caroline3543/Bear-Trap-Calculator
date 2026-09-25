@@ -889,3 +889,16 @@ button[aria-pressed="true"] .th-dots i { box-shadow: 0 0 0 1.5px var(--selectedT
 .th-sleep-grid label { display: grid; gap: 4px; font-size: 12px; font-weight: 700; color: var(--sub); min-width: 0; }
 .th-sleep-grid .th-input { min-width: 0; width: 100%; box-sizing: border-box; }
 .th-suggest { font-size: 12.5px; font-weight: 800; color: var(--gold); }
+
+/* championship + intel */
+.d-champ { background: #8A6BC8; }
+.th-champ-q { background: var(--statusT9Bg); border-color: transparent; }
+.th-champ-pick { display: grid; gap: 6px; margin-top: 6px; }
+.th-intel-now { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
+.th-intel-now > div { padding: 10px 12px; border-radius: 14px; background: var(--inputBg); border: 1px solid var(--cardBorderT); display: grid; gap: 1px; }
+.th-intel-now span { font-size: 10.5px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: var(--sub); }
+.th-intel-now b { font: 600 19px/22px 'Fredoka', 'Nunito Sans', sans-serif; }
+.th-intel-now small { font-size: 11.5px; font-weight: 700; color: var(--sub); }
+.th-intel-acc { display: flex; align-items: center; gap: 8px; padding: 8px 2px; border-top: 1px solid var(--cardBorderT); }
+.th-intel-acc .th-tone { flex: 1; }
+.th-intel-acc.done .th-tone { color: var(--green); }

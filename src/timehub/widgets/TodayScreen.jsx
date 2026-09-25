@@ -11,7 +11,9 @@ import { buildAgenda } from "../lib/agenda.js";
 import { computeReminders, needsAttention } from "../lib/reminders.js";
 import { contribState, spendAttempt } from "../lib/contributions.js";
 import { idleCamps, splitNow, stillRunning, weekStrip } from "../lib/today.js";
-import { dropsNeedingAction, dropsBetween, staminaNow } from "../lib/daily.js";
+import { dropsNeedingAction, dropsBetween, staminaNow, intelNeedingAction, INTEL_MISSIONS_PER_REFRESH } from "../lib/daily.js";
+import { champRounds } from "../lib/championship.js";
+import { ChampQuestion } from "./ChampIntel.jsx";
 import { localDayRange, formatTime, formatDate, formatSpan, zonedParts, formatWeekdayShort, formatDayNumber, HOUR, MINUTE } from "../lib/time.js";
 import { Ltr, Bidi, AccountTag, Btn, SleepingBear, DurationFields, durFrom, durParse, CalendarButtons, BrushUnderline, SectionIcon, Remaining } from "../components/ui.jsx";
 import { itemTitle, toCalendarItem } from "../components/labels.js";
@@ -39,7 +41,10 @@ export function useNeeds() {
       .filter(({ s }) => s && (s.over || s.atCap || (s.fullAt && s.fullAt - now <= HOUR)));
     const idle = accountIds.map((acc) => ({ acc, idle: idleCamps(dataFor(acc), now) })).filter((c) => c.idle);
     const minister = needsAttention(computeReminders(state, now, accountIds));
-    return { drops, stamina, idle, minister, count: drops.length + stamina.length + idle.length + minister.length };
+    const intel = intelNeedingAction(state, accountIds, now);
+    const champ = state.settings.champ;
+    const round = champ?.leader && champ.anchor ? champRounds(champ.anchor, now, now + 1).find((r) => r.start <= now && now < r.end) : null;
+    return { drops, stamina, idle, minister, intel, round, count: drops.length + stamina.length + idle.length + minister.length + (intel ? 1 : 0) + (round ? 1 : 0) };
   }, [state, accountIds.join(), now]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
@@ -53,7 +58,7 @@ function NeedRow({ tone = "warm", title, sub, children, leaving }) {
 }
 
 function NeedsYou() {
-  const { t, tz, lang, accountById, startTraining, setTab } = useTimeHub();
+  const { t, tz, lang, accountById, startTraining, setTab, updateAccount } = useTimeHub();
   const now = useMinute();
   const when = useWhenLocal();
   const claim = useClaim();
@@ -85,6 +90,16 @@ function NeedsYou() {
             {status === "ready" && <Btn small onClick={() => later(d.key, () => claim(d))}>{t("claimed")}</Btn>}
           </NeedRow>
         ))}
+        {n.round && (
+          <NeedRow tone="gold" title={t("champRoundOpen", { n: n.round.round })} sub={t("champRoundUntil", { time: formatTime(n.round.end, tz, lang) })} />
+        )}
+        {n.intel && (
+          <NeedRow key={n.intel.key} tone="gold" leaving={leaving.includes(n.intel.key)}
+            title={t("intelSoon", { time: formatTime(n.intel.next, tz, lang) })}
+            sub={<>{t("intelSoonSub", { in: formatSpan(n.intel.next - now, lang) })} · {n.intel.accounts.length > 1 ? t("nAccounts", { n: n.intel.accounts.length }) : accountById(n.intel.accounts[0])?.name}</>}>
+            <Btn small onClick={() => later(n.intel.key, () => { const at = Date.now(); n.intel.accounts.forEach((a) => updateAccount(a, (d) => ({ ...d, claims: { ...d.claims, [n.intel.key]: at } }))); success(); })}>{t("cleared")}</Btn>
+          </NeedRow>
+        )}
         {n.stamina.map(({ a, s }) => (
           <NeedRow key={`st${a}`} tone="amber"
             title={s.over || s.atCap ? t("staminaAtCapShort") : t("staminaSoon", { time: formatSpan(s.fullAt - now, lang) })}
@@ -149,7 +164,7 @@ function WeekStrip({ offset, setOffset }) {
         ))}
       </div>
       <div className="th-legend">
-        {["bear", "foundry", "frostfire"].map((k) => <span key={k}><i className={`d-${k}`} />{t(`dot_${k}`)}</span>)}
+        {["bear", "foundry", "frostfire", ...(state.settings.champ?.leader && state.settings.champ.anchor ? ["champ"] : [])].map((k) => <span key={k}><i className={`d-${k}`} />{t(`dot_${k}`)}</span>)}
       </div>
     </div>
   );
@@ -181,7 +196,7 @@ function UpdateTime({ item, onDone }) {
 }
 
 function Row({ i, day, rems, open, setOpen, isNext }) {
-  const { t, tz, lang, dir, templates, updateAccount, openBooking, setTab, accountById, update } = useTimeHub();
+  const { t, tz, lang, dir, templates, updateAccount, openBooking, setTab, accountById, update, accountIds: accountIdsAll } = useTimeHub();
   const claim = useClaim();
   const now = useClockFor([i.start - 5 * 60000, i.start]); // only for the "under 5 minutes" styling
   const [editing, setEditing] = useState(false);
@@ -213,7 +228,8 @@ function Row({ i, day, rems, open, setOpen, isNext }) {
   if (i.kind === "drop" && i.status !== "upcoming" && i.ref.drop.manual && i.ref.statuses.includes("ready")) actions.push(<Btn key="cl" small onClick={() => claim(i.ref.drop)}>{t("claimed")}</Btn>);
   if (i.kind === "stamina") actions.push(<Btn key="stu" small onClick={() => setTab("timers")}>{t("update")}</Btn>);
   // things some players don't care about can be switched off right here
-  const trackKey = i.kind === "drop" ? i.ref.drop.kind : i.kind === "stamina" ? "stamina" : i.kind === "contrib" ? "contrib" : i.kind === "event" && i.ref.ev.templateId === "daily_reset" ? "reset" : null;
+  const trackKey = i.kind === "drop" ? i.ref.drop.kind : i.kind === "stamina" ? "stamina" : i.kind === "contrib" ? "contrib" : i.kind === "intel" ? "intel" : i.kind === "event" && i.ref.ev.templateId === "daily_reset" ? "reset" : null;
+  if (i.kind === "intel" && i.status === "now") actions.push(<Btn key="ic" small onClick={() => { const at = Date.now(); accountIdsAll.forEach((a) => updateAccount(a, (d) => ({ ...d, claims: { ...d.claims, [i.ref.key]: at } }))); success(); }}>{t("cleared")}</Btn>);
   if (trackKey) actions.push(<Btn key="untrack" small onClick={() => update((s) => ({ ...s, settings: { ...s.settings, track: { ...s.settings.track, [trackKey]: false } } }))}>{t("dontTrack")}</Btn>);
   if (i.kind === "plan") actions.push(<Btn key="pl" small onClick={() => updateAccount(i.accountId, (d) => ({ ...d, plans: (d.plans || []).filter((p) => p.id !== i.ref.id) }))}>{t("dismiss")}</Btn>);
   actions.push(<CalendarButtons key="cal" items={[toCalendarItem(i, t, templates, accountById(i.accountId)?.name)]} filename={i.id} />);
@@ -239,6 +255,8 @@ function Row({ i, day, rems, open, setOpen, isNext }) {
             {i.kind === "contrib" && <span className="th-srow-note">{i.ref.max} / {i.ref.max}</span>}
             {i.kind === "drop" && <span className={`th-srow-note ${i.ref.drop.manual ? "warn" : ""}`}>{i.ref.drop.manual ? t("claimByHand") : t("automatic")} · {t("allAccountsShort")}</span>}
             {i.kind === "stamina" && <span className="th-srow-note">{t("regenStops")}</span>}
+            {i.kind === "intel" && <span className="th-srow-note">{t("intelRowNote", { n: INTEL_MISSIONS_PER_REFRESH })}</span>}
+            {i.kind === "champ" && <span className="th-srow-note warn">{t("champRowNote", { time: formatTime(i.end, tz, lang) })}</span>}
             {i.group && <span className="th-srow-note">{i.group.map((g) => (g.troop === "helios" ? t("heliosCamp", { camp: t(`short_${g.category}`) }) : t(`short_${g.category}`))).join(" · ")}</span>}
             {crossesIn && <span className="th-srow-note">{t("fromYesterday")}</span>}
             {i.end && i.end > day.end && <span className="th-srow-note">{t("continuesTomorrow")}</span>}
@@ -357,6 +375,7 @@ export function TodayScreen() {
   return (
     <div className="th-screen">
       <StatStrip />
+      <ChampQuestion />
       <NeedsYou />
       <Schedule offset={offset} setOffset={setOffset} />
       <FriendsWidget />

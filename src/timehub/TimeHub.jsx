@@ -14,6 +14,7 @@ import { TimeZonePicker, BrushUnderline, SectionIcon, TabIcon } from "./componen
 import { ALL, MAX_ACCOUNTS } from "./lib/accounts.js";
 import { tracking } from "./lib/agenda.js";
 import { StaminaWidget, TrekWidget } from "./widgets/DailyWidgets.jsx";
+import { IntelWidget, ChampWeekPicker, useChamp } from "./widgets/ChampIntel.jsx";
 import { TodayScreen } from "./widgets/TodayScreen.jsx";
 import { BookingsWidget } from "./widgets/BookingsWidget.jsx";
 import { EventsWidget } from "./widgets/EventsWidget.jsx";
@@ -136,6 +137,19 @@ function Stack({ children }) {
   );
 }
 
+function ChampSettings() {
+  const { t } = useTimeHub();
+  const [champ, set] = useChamp();
+  return (
+    <section className="th-card" aria-label={t("champTitle")}>
+      <div className="th-sec-head"><SectionIcon name="foundry" /><span className="th-sec-title">{t("champTitle")}</span></div>
+      <BrushUnderline />
+      <label className="th-check"><input type="checkbox" checked={!!champ.leader} onChange={(e) => set({ leader: e.target.checked })} />{t("champLeaderCheck")}</label>
+      {champ.leader && <ChampWeekPicker />}
+    </section>
+  );
+}
+
 function SettingsPanel({ headerExtra }) {
   const { t, tz, state, dispatch } = useTimeHub();
   return (
@@ -160,7 +174,7 @@ function SettingsPanel({ headerExtra }) {
         <BrushUnderline />
         <p className="th-sec-sub">{t("whatToTrackSub")}</p>
         <div className="th-form" style={{ margin: 0 }}>
-          {[["reset", "trackReset"], ["store", "trackStore"], ["trek", "trackTrek"], ["stamina", "trackStamina"], ["contrib", "trackContrib"]].map(([k, key]) => (
+          {[["reset", "trackReset"], ["store", "trackStore"], ["trek", "trackTrek"], ["intel", "trackIntel"], ["stamina", "trackStamina"], ["contrib", "trackContrib"]].map(([k, key]) => (
             <label key={k} className="th-check">
               <input type="checkbox" checked={state.settings.track?.[k] !== false}
                 onChange={(e) => dispatch({ type: "settings", patch: { track: { ...state.settings.track, [k]: e.target.checked } } })} />{t(key)}
@@ -168,6 +182,7 @@ function SettingsPanel({ headerExtra }) {
           ))}
         </div>
       </section>
+      <ChampSettings />
       <section className="th-card" aria-label={t("sleepHours")}>
         <div className="th-sec-head"><SectionIcon name="plan" /><span className="th-sec-title">{t("sleepHours")}</span></div>
         <BrushUnderline />
@@ -194,6 +209,7 @@ const TimersPanel = React.memo(function TimersPanel() {
     <Stack>
       {(tr.stamina || tr.store) && <StaminaWidget />}
       {tr.trek && <TrekWidget />}
+      {tr.intel && <IntelWidget />}
       <TrainingWidget />
       <ResearchWidget />
       {tr.contrib && <ContributionWidget />}

@@ -99,3 +99,43 @@ export function pruneClaims(claims, now) {
   for (const [k, v] of Object.entries(claims || {})) if (Number.isFinite(v) && now - v < 3 * DAY) keep[k] = v;
   return keep;
 }
+
+/* ============================================================
+   LIGHTHOUSE INTEL MISSIONS — refresh at 00:00, 08:00 and 16:00 UTC.
+   ~8 standard missions per refresh; missions last roughly 12–16 h and the
+   Lighthouse holds up to 2 refresh periods. Best practice: clear (or at least
+   claim) missions before the next refresh so none are lost.
+   "Cleared" is recorded per account per refresh period: claims["intel@<period start ISO>"].
+   ============================================================ */
+export const INTEL_HOURS = [0, 8, 16];
+export const INTEL_MISSIONS_PER_REFRESH = 8;
+
+export function intelRefreshesBetween(from, to) {
+  const out = [];
+  for (let day = Math.floor(from / DAY) * DAY; day < to; day += DAY) {
+    for (const h of INTEL_HOURS) {
+      const at = day + h * HOUR;
+      if (at >= from && at < to) out.push(at);
+    }
+  }
+  return out;
+}
+
+/** The refresh period we're in: { start, next, key }. */
+export function intelPeriod(now) {
+  const day = Math.floor(now / DAY) * DAY;
+  const starts = [...INTEL_HOURS.map((h) => day + h * HOUR), day + DAY];
+  let start = starts[0];
+  for (const s of starts) if (s <= now) start = s;
+  const next = starts.find((s) => s > now);
+  return { start, next, key: `intel@${new Date(start).toISOString().slice(0, 13)}` };
+}
+
+/** Accounts that haven't cleared the current batch while the next refresh is within `soonMs`. */
+export function intelNeedingAction(state, accountIds, now, soonMs = HOUR) {
+  if (state.settings?.track?.intel === false) return null;
+  const p = intelPeriod(now);
+  if (p.next - now > soonMs) return null;
+  const accounts = accountIds.filter((a) => !state.accountData[a]?.claims?.[p.key]);
+  return accounts.length ? { ...p, accounts } : null;
+}
