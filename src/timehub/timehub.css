@@ -536,8 +536,8 @@ a.th-btn { text-decoration: none; }
 
 /* screens + entrance */
 .th-screen { display: flex; flex-direction: column; gap: 14px; }
-.th-tabpanel { animation: th-fade .18s ease-out; }
-.th-tabpanel .th-card, .th-tabpanel .th-action { animation: th-rise .2s ease-out both; }
+
+
 @keyframes th-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes th-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .th-root .th-btn:active { transform: translateY(2px); }
@@ -752,12 +752,10 @@ button[aria-pressed="true"] .th-dots i { box-shadow: 0 0 0 1.5px var(--selectedT
 
 /* ================= feel: instant taps, haptic-friendly, little animations ================= */
 .th-root button, .th-root a, .th-root select, .th-root label, .th-tabbar button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-.th-panel[hidden] { display: none !important; }
+/* Hidden tabs keep their layout cached (content-visibility), so showing them again is cheap. */
+.th-panel[hidden] { display: block !important; content-visibility: hidden; position: absolute; left: 0; top: 0; width: 100%; height: 0; overflow: hidden; pointer-events: none; }
+.th-app main { position: relative; }
 .th-hidden { display: none; }
-.th-panel.on { animation: th-fade .14s ease-out; }
-.th-panel.on .th-card { animation: th-rise .18s ease-out both; }
-.th-panel.on .th-card:nth-child(2) { animation-delay: .03s; }
-.th-panel.on .th-card:nth-child(3) { animation-delay: .06s; }
 
 /* press feedback on every button */
 .th-root button:not(:disabled), .th-root .th-btn { transition: transform .08s ease, box-shadow .08s ease, background-color .15s ease; }
@@ -808,4 +806,66 @@ button[aria-pressed="true"] .th-dots i { box-shadow: 0 0 0 1.5px var(--selectedT
   .th-panel.on, .th-panel.on .th-card, .th-tabbar button.on svg, .th-pop, .th-bump, .th-bear-clock.wiggle, .th-caught-bear { animation: none !important; }
   .th-tabbar .th-tabpill, .th-bar span, .th-trow-bar span { transition: none !important; }
   .th-burst { display: none; }
+}
+
+/* ================= more little animations (none of them delay content) ================= */
+/* header: snowflakes drift past the bear; the bear blinks now and then */
+.th-mhdr { position: relative; overflow: hidden; }
+.th-drift { position: absolute; inset: 0; pointer-events: none; }
+.th-drift i { position: absolute; top: -12px; font-style: normal; font-size: 11px; color: var(--teal); opacity: 0; animation: th-snow 7s linear infinite; }
+.th-drift i:nth-child(1) { left: 18%; animation-delay: .5s; }
+.th-drift i:nth-child(2) { left: 64%; animation-delay: 3.2s; font-size: 9px; }
+.th-drift i:nth-child(3) { left: 86%; animation-delay: 5.1s; color: var(--goldStrong); }
+@keyframes th-snow { 0% { opacity: 0; transform: translate(0, 0) rotate(0); } 10% { opacity: .7; } 85% { opacity: .5; } 100% { opacity: 0; transform: translate(-14px, 88px) rotate(160deg); } }
+.th-bear-clock .eyes { transform-origin: 37px 31px; animation: th-blink 5.5s infinite; }
+@keyframes th-blink { 0%, 94%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
+.th-bear-clock .hands { transform-origin: 68px 52px; animation: th-tick 8s steps(8) infinite; }
+@keyframes th-tick { to { transform: rotate(360deg); } }
+
+/* account buttons: the chosen one's dot hops */
+.th-accbtn[aria-pressed="true"] i { animation: th-hop .35s cubic-bezier(.3, 1.6, .5, 1); }
+
+/* at-a-glance: TO DO nudges you now and then while there's something to do */
+.th-stats .todo b { animation: th-nudge 6s ease-in-out infinite; transform-origin: 50% 80%; }
+@keyframes th-nudge { 0%, 88%, 100% { transform: rotate(0); } 91% { transform: rotate(-10deg) scale(1.1); } 94% { transform: rotate(8deg) scale(1.1); } 97% { transform: rotate(-4deg); } }
+
+/* needs you: rows slide away once dealt with */
+.th-need { transition: opacity .22s ease, transform .22s ease, max-height .22s ease, padding .22s ease, margin .22s ease; max-height: 240px; }
+.th-need.leaving { opacity: 0; transform: translateX(40px) scale(.96); max-height: 0; padding-block: 0; margin: 0; }
+[dir="rtl"] .th-need.leaving { transform: translateX(-40px) scale(.96); }
+
+/* schedule: the Now dot breathes; the next item glows softly; countdowns under 5 min pulse */
+.th-now-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); display: inline-block; margin-inline-end: 4px; animation: th-breathe 2s ease-in-out infinite; }
+@keyframes th-breathe { 0%, 100% { box-shadow: 0 0 0 0 rgba(198,93,67,.45); } 50% { box-shadow: 0 0 0 5px rgba(198,93,67,0); } }
+.th-srow.next .th-srow-main::after { content: ""; position: absolute; inset: 4px 8px; border-radius: 12px; border: 1.5px solid var(--goldStrong); opacity: 0; animation: th-glow 3s ease-in-out infinite; pointer-events: none; }
+@keyframes th-glow { 0%, 100% { opacity: 0; } 50% { opacity: .55; } }
+.th-countbtn.urgent { border-color: var(--amber); color: var(--amber); animation: th-urgent 1.2s ease-in-out infinite; }
+@keyframes th-urgent { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+.th-srow-hit:active ~ .th-srow-time, .th-srow-hit:active ~ .th-srow-body { transform: scale(.985); }
+.th-srow-time, .th-srow-body { transition: transform .1s ease; }
+
+/* week strip: the chosen day pops */
+.th-week-days button[aria-pressed="true"] { animation: th-pop .3s cubic-bezier(.3, 1.6, .5, 1); }
+
+/* progress bars: a soft moving sheen while something is running; near-full stamina pulses */
+.th-bar span, .th-trow-bar span, .th-progress span { position: relative; overflow: hidden; }
+.th-bar span::after, .th-trow-bar span::after, .th-progress span::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent); transform: translateX(-100%); animation: th-sheen 2.6s ease-in-out infinite; }
+@keyframes th-sheen { 60%, 100% { transform: translateX(100%); } }
+.th-bar span.t-amber { animation: th-breathe-bar 1.6s ease-in-out infinite; }
+@keyframes th-breathe-bar { 0%, 100% { opacity: 1; } 50% { opacity: .65; } }
+
+/* drops: state changes pop in */
+.th-drop { animation: th-pop .28s ease-out; transition: background-color .2s ease, border-color .2s ease; }
+.th-drop.ready .th-btn { animation: th-nudge 4s ease-in-out infinite; }
+
+/* section circles tilt when opened/closed */
+.th-sec-head .th-num { transition: transform .25s cubic-bezier(.3, 1.6, .5, 1); }
+.th-sec-head:has(.th-sec-toggle[aria-expanded="false"]) .th-num { transform: rotate(-20deg) scale(.92); }
+
+@media (prefers-reduced-motion: reduce) {
+  .th-drift, .th-srow.next .th-srow-main::after { display: none; }
+  .th-bear-clock .eyes, .th-bear-clock .hands, .th-accbtn[aria-pressed="true"] i, .th-stats .todo b, .th-now-dot, .th-countbtn.urgent,
+  .th-week-days button[aria-pressed="true"], .th-bar span::after, .th-trow-bar span::after, .th-progress span::after, .th-bar span.t-amber,
+  .th-drop, .th-drop.ready .th-btn { animation: none !important; }
+  .th-need, .th-sec-head .th-num { transition: none !important; }
 }

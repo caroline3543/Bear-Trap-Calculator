@@ -38,7 +38,7 @@ function defaultSettings() {
   return {
     displayTz: null, compact: false, collapsed: {}, showArchived: false,
     layout: sanitizeLayout([]), accountFilter: ALL, calendarAlarmMin: 10, setupDismissed: false,
-    knownTemplates: Object.keys(TEMPLATES), timeOptionsRev: TIME_OPTIONS_REV, tab: "today", sound: true, haptics: true,
+    knownTemplates: Object.keys(TEMPLATES), timeOptionsRev: TIME_OPTIONS_REV, tab: "today", haptics: true,
   };
 }
 
@@ -262,7 +262,6 @@ export function sanitizeState(raw, now = Date.now(), makeId = newId) {
       calendarAlarmMin: isNum(s.calendarAlarmMin) && s.calendarAlarmMin >= 0 && s.calendarAlarmMin <= 1440 ? s.calendarAlarmMin : 10,
       setupDismissed: s.setupDismissed === true,
       tab: ["today", "timers", "events", "calc"].includes(s.tab) ? s.tab : "today",
-      sound: s.sound !== false,
       haptics: s.haptics !== false,
     },
     accounts, accountData,

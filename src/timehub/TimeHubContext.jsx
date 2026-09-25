@@ -73,8 +73,8 @@ export function TimeHubProvider({ lang = "en", children }) {
     return () => { window.removeEventListener("pagehide", flush); document.removeEventListener("visibilitychange", onVis); };
   }, []);
   useEffect(() => {
-    setFeedbackPrefs({ sound: state.settings.sound !== false, haptics: state.settings.haptics !== false });
-  }, [state.settings.sound, state.settings.haptics]);
+    setFeedbackPrefs({ haptics: state.settings.haptics !== false });
+  }, [state.settings.haptics]);
 
   const openBooking = useCallback((draft) => {
     setTab("events");

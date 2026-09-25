@@ -3,11 +3,11 @@
      <TimeHub lang={lang} />
    Inherits the calculator's CSS variables (light/dark) from its wrapper.
    ============================================================ */
-import React, { useDeferredValue, useEffect, useState } from "react";
+import React, { startTransition, useEffect, useState } from "react";
 import "./timehub.css";
 import { TimeHubProvider, useTimeHub, useTab } from "./TimeHubContext.jsx";
 import { useNow, useMinute, ActiveTab } from "./hooks/useNow.jsx";
-import { onPress, playSound } from "./lib/feedback.js";
+import { onPress } from "./lib/feedback.js";
 import { zoneCity, deviceTimeZone, intlLocale } from "./lib/time.js";
 import { splitColumns } from "./lib/layout.js";
 import { TimeZonePicker, BrushUnderline, SectionIcon, TabIcon } from "./components/ui.jsx";
@@ -30,13 +30,13 @@ function BearClock() {
   const [wiggle, setWiggle] = useState(0);
   return (
     <svg key={wiggle} className={`th-bear-clock ${wiggle ? "wiggle" : ""}`} width="62" height="50" viewBox="0 0 86 70" aria-hidden="true"
-      onClick={() => { setWiggle((w) => w + 1); playSound("soft"); }}>
+      onClick={() => setWiggle((w) => w + 1)}>
       <circle cx="18" cy="14" r="9" className="fur" /><circle cx="18" cy="14" r="4.5" className="face" opacity=".85" />
       <circle cx="56" cy="14" r="9" className="fur" /><circle cx="56" cy="14" r="4.5" className="face" opacity=".85" />
       <ellipse cx="37" cy="34" rx="25" ry="23" className="fur" />
       <path d="M16 52 Q37 64 58 52 L56 60 Q37 70 18 60z" className="scarf" />
       <ellipse cx="37" cy="41" rx="11" ry="9" className="face" />
-      <circle cx="28" cy="31" r="2.6" fill="#241B10" /><circle cx="46" cy="31" r="2.6" fill="#241B10" />
+      <g className="eyes"><circle cx="28" cy="31" r="2.6" fill="#241B10" /><circle cx="46" cy="31" r="2.6" fill="#241B10" /></g>
       <ellipse cx="37" cy="38" rx="4" ry="3" fill="#241B10" />
       <circle cx="68" cy="52" r="13" className="clock" /><path d="M68 45v8l5 3" className="hands" />
     </svg>
@@ -50,6 +50,7 @@ function Header({ title, headerExtra, onSettings, settingsOpen }) {
   const long = new Intl.DateTimeFormat(intlLocale(lang), { timeZone: tz, weekday: "long", day: "numeric", month: "short" }).format(now);
   return (
     <header className="th-mhdr">
+      <span className="th-drift" aria-hidden="true"><i>❄</i><i>❄</i><i>✦</i></span>
       <BearClock />
       <div className="th-mhdr-main">
         <h1 className="th-mhdr-title">{title}</h1>
@@ -150,7 +151,6 @@ function SettingsPanel({ headerExtra }) {
             <button type="button" className="th-link" onClick={() => dispatch({ type: "settings", patch: { displayTz: null } })}>{t("useDevice")} ({deviceTimeZone()})</button>
           )}
           <label className="th-check"><input type="checkbox" checked={state.settings.compact} onChange={(e) => dispatch({ type: "settings", patch: { compact: e.target.checked } })} />{t("compact")}</label>
-          <label className="th-check"><input type="checkbox" checked={state.settings.sound !== false} onChange={(e) => dispatch({ type: "settings", patch: { sound: e.target.checked } })} />{t("soundsSetting")}</label>
           <label className="th-check"><input type="checkbox" checked={state.settings.haptics !== false} onChange={(e) => dispatch({ type: "settings", patch: { haptics: e.target.checked } })} />{t("hapticsSetting")}</label>
         </div>
       </section>
@@ -184,8 +184,8 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
   const { tab } = useTab();
   const [settings, setSettings] = useState(false);
   const pressed = tab === "calc" && !calculator ? "today" : tab;
-  // The tab bar answers at once; the screen swap renders right after (and can't block the tap).
-  const active = useDeferredValue(pressed);
+  // One synchronous swap: the tab and its screen appear in the same frame (no in-between state).
+  const active = pressed;
   // Panels stay mounted once visited (switching back is instant); hidden ones stop ticking.
   const [visited, setVisited] = useState(() => new Set([active]));
   if (!visited.has(active)) setVisited(new Set([...visited, active]));
@@ -193,7 +193,8 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
   useEffect(() => {
     const all = ["today", "timers", "events", ...(calculator ? ["calc"] : [])];
     const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1200));
-    const id = idle(() => setVisited((v) => (all.every((x) => v.has(x)) ? v : new Set([...v, ...all]))));
+    // in a transition, so a tap during this background work always wins
+    const id = idle(() => startTransition(() => setVisited((v) => (all.every((x) => v.has(x)) ? v : new Set([...v, ...all])))));
     return () => (window.cancelIdleCallback || clearTimeout)(id);
   }, [calculator]); // eslint-disable-line react-hooks/exhaustive-deps
   // Each tab keeps its own scroll position.

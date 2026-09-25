@@ -70,7 +70,7 @@ function DropTile({ d, claim }) {
   const ready = statuses.includes("ready");
   const done = !ready && statuses.every((s) => s === "claimed" || s === "auto" || s === "missed");
   return (
-    <div className={`th-drop ${ready ? "ready" : done ? "done" : ""}`}>
+    <div className={`th-drop ${ready ? "ready" : done ? "done" : ""}`} key={ready ? "r" : done ? "d" : "u"}>
       <div className="th-drop-time"><b><Ltr>{formatTime(d.at, tz, lang)}</Ltr></b><small><Ltr>{formatTime(d.at, "UTC", lang)}</Ltr> UTC</small></div>
       <div className="th-drop-main">
         <b>+{d.amount} {d.kind === "store" ? t("staminaWord") : t("suppliesWord")}</b>

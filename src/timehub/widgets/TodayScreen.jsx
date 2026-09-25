@@ -43,9 +43,9 @@ export function useNeeds() {
   }, [state, accountIds.join(), now]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
-function NeedRow({ tone = "warm", title, sub, children }) {
+function NeedRow({ tone = "warm", title, sub, children, leaving }) {
   return (
-    <div className={`th-need ${tone}`}>
+    <div className={`th-need ${tone} ${leaving ? "leaving" : ""}`}>
       <div className="th-need-main"><div className="th-need-title">{title}</div><div className="th-need-sub">{sub}</div></div>
       {children}
     </div>
@@ -58,6 +58,9 @@ function NeedsYou() {
   const when = useWhenLocal();
   const claim = useClaim();
   const [asking, setAsking] = useState([]);
+  const [leaving, setLeaving] = useState([]);
+  // let the row slide away first, then update (feels like it was dealt with, not just vanished)
+  const later = (key, fn) => { setLeaving((l) => [...l, key]); setTimeout(fn, 230); };
   const n = useNeeds();
   if (!n.count) {
     return (
@@ -76,10 +79,10 @@ function NeedsYou() {
       <p className="th-sec-sub">{t("needsYouSub")}</p>
       <div className="th-needs">
         {n.drops.map(({ drop: d, status, accounts }) => (
-          <NeedRow key={d.key} tone="gold"
+          <NeedRow key={d.key} tone="gold" leaving={leaving.includes(d.key)}
             title={`${d.kind === "store" ? t("dropStore", { n: d.amount }) : t("dropTrek", { n: d.amount })} · ${formatTime(d.at, tz, lang)}`}
             sub={<>{status === "ready" ? t("readyToClaim") : t("inTime", { time: formatSpan(d.at - now, lang) })} · {accounts.length > 1 ? t("nAccounts", { n: accounts.length }) : accountById(accounts[0])?.name}</>}>
-            {status === "ready" && <Btn small onClick={() => claim(d)}>{t("claimed")}</Btn>}
+            {status === "ready" && <Btn small onClick={() => later(d.key, () => claim(d))}>{t("claimed")}</Btn>}
           </NeedRow>
         ))}
         {n.stamina.map(({ a, s }) => (
@@ -177,7 +180,7 @@ function UpdateTime({ item, onDone }) {
   );
 }
 
-function Row({ i, day, rems, open, setOpen }) {
+function Row({ i, day, rems, open, setOpen, isNext }) {
   const { t, tz, lang, dir, templates, updateAccount, openBooking, setTab, accountById } = useTimeHub();
   const claim = useClaim();
   const now = useNow();
@@ -213,7 +216,7 @@ function Row({ i, day, rems, open, setOpen }) {
   actions.push(<CalendarButtons key="cal" items={[toCalendarItem(i, t, templates, accountById(i.accountId)?.name)]} filename={i.id} />);
 
   return (
-    <li className={`th-srow ${i.status} ${open ? "open" : ""} ${i.kind === "drop" && i.ref.drop.manual && i.status !== "done" ? "hl" : ""}`}>
+    <li className={`th-srow ${i.status} ${open ? "open" : ""} ${isNext ? "next" : ""} ${i.kind === "drop" && i.ref.drop.manual && i.status !== "done" ? "hl" : ""}`}>
       <div className="th-srow-main" onPointerDown={onPointerDown} onPointerUp={onPointerUp}>
         <button type="button" className="th-srow-hit" aria-expanded={open} aria-label={`${title} · ${t("options")}`} onClick={() => { if (swiped.current) { swiped.current = false; return; } setOpen(!open); }} />
         <span className="th-srow-time">
@@ -224,7 +227,7 @@ function Row({ i, day, rems, open, setOpen }) {
           <span className="th-srow-title">{title}</span>
           <span className="th-srow-tags">
             {timer && (
-              <button type="button" className="th-countbtn" onClick={() => setEditing(!editing)} aria-label={`${t("updateTimeLeft")}: ${title}`}>
+              <button type="button" className={`th-countbtn ${i.start - now < 5 * 60000 ? "urgent" : ""}`} onClick={() => setEditing(!editing)} aria-label={`${t("updateTimeLeft")}: ${title}`}>
                 <Bidi>{formatCountdownClock(i.start - now, lang)}</Bidi>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z" /></svg>
               </button>
@@ -285,7 +288,8 @@ function Schedule({ offset, setOffset }) {
   const isToday = offset === 0;
   const heading = offset === 0 ? t("todaysSchedule") : offset === 1 ? t("tomorrowsSchedule") : formatDate(day.start + 1, tz, lang);
   let lastPart = null;
-  const rowProps = (i) => ({ i, day, rems, open: openId === i.id, setOpen: (v) => setOpenId(v ? i.id : null) });
+  const nextId = rest.find((x) => x.status === "upcoming")?.id;
+  const rowProps = (i) => ({ i, day, rems, open: openId === i.id, setOpen: (v) => setOpenId(v ? i.id : null), isNext: i.id === nextId });
 
   return (
     <section className="th-card th-sched" aria-label={heading} id="th-sec-today">
@@ -305,7 +309,7 @@ function Schedule({ offset, setOffset }) {
       {isToday && items.length + after.length > 0 && (
         <div className="th-now-mark" aria-label={`${t("now")} ${formatTime(now, tz, lang)}`}>
           <span className="line" />
-          <span className="label"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M12 2v20M4 7l16 10M20 7L4 17" /></svg>{t("now")} <Ltr>{formatTime(now, tz, lang)}</Ltr></span>
+          <span className="label"><span className="th-now-dot" aria-hidden="true" /><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M12 2v20M4 7l16 10M20 7L4 17" /></svg>{t("now")} <Ltr>{formatTime(now, tz, lang)}</Ltr></span>
           <span className="line short" />
         </div>
       )}

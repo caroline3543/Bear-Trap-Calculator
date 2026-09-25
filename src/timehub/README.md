@@ -193,16 +193,20 @@ Saves go to localStorage on every change.
 
 
 ## Feel: speed, haptics, sound, animation
-- Tabs switch on touch-down (not finger-lift); the tab bar answers first, the screen follows
-  (`useDeferredValue`). Each tab's content is memoised; the calculator stays mounted once visited;
+- Tabs switch on touch-down (not finger-lift) in one frame. Hidden tabs keep their layout cached
+  (`content-visibility: hidden`) so showing them again is cheap; background preparation runs in a transition. Each tab's content is memoised; the calculator stays mounted once visited;
   each tab keeps its scroll position. The open tab is stored under `timehub:tab`, outside app state.
 - Heavy screens use `useMinute()` (once a minute) and `useMemo`; only countdowns tick every second,
   and tabs you're not looking at stop ticking (`<ActiveTab>`). Saves are batched (400 ms) and
   flushed when the app is hidden or closed.
-- `lib/feedback.js`: light haptic + click on every press (Android vibration; iPhone system tick via
+- `lib/feedback.js` (no sounds): light haptic on every press (Android vibration; iPhone system tick via
   a hidden `<input switch>`), a chime + snowflake burst on useful actions (claim, spend all, start
   training, save booking/event/research, answer a minister reminder, update stamina or time left).
-  Sound and haptics can be turned off under ⚙; animations respect reduced-motion.
+  Haptics can be turned off under ⚙; animations respect reduced-motion.
 - Little animations: sliding amber tab pill with an icon hop, button press, pop on success,
   counters that bump, a bear that wiggles when tapped, and an "All caught up" bear when nothing
   needs you.
+- More motion (never delays content): drifting snow and a blinking bear in the header, a ticking
+  clock hand, hopping account dot, TO DO nudge, Needs-you rows slide away when done, breathing Now
+  dot, glowing next item, pulsing countdowns under 5 min, sheen on running progress bars, popping
+  week day and drop tiles.
