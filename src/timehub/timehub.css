@@ -908,3 +908,18 @@ button[aria-pressed="true"] .th-dots i { box-shadow: 0 0 0 1.5px var(--selectedT
    makes the browser re-measure the rest of the tab. */
 .th-card, .th-srow, .th-trow, .th-stam, .th-drop, .th-ev, .th-need { contain: layout style; }
 .th-speed { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(92px + env(safe-area-inset-bottom, 0px)); z-index: 30; padding: 6px 12px; border-radius: 999px; background: var(--gold); color: var(--surface); font: 800 12.5px 'Nunito Sans', sans-serif; pointer-events: none; }
+
+/* speed test switches (only while the test runs) */
+html.th-diag-noanim .th-root *, html.th-diag-noanim .th-root *::before, html.th-diag-noanim .th-root *::after { animation: none !important; transition: none !important; }
+html.th-diag-noshadow .th-root *, html.th-diag-noshadow .th-tabbar { box-shadow: none !important; }
+html.th-diag-nolayers .th-root * { will-change: auto !important; }
+html.th-diag-nocontain .th-root * { contain: none !important; }
+.th-speedtest { display: grid; gap: 10px; }
+.th-speed-table { display: grid; gap: 2px; font-size: 12px; font-variant-numeric: tabular-nums; overflow-x: auto; }
+.th-speed-table > div { display: grid; grid-template-columns: minmax(120px, 1.6fr) repeat(4, minmax(48px, 1fr)); gap: 4px; padding: 4px 6px; border-radius: 8px; }
+.th-speed-table > div:nth-child(even) { background: var(--inputBg); }
+.th-speed-table .head { font-weight: 800; color: var(--sub); }
+.th-speed-table span[role="cell"] { text-align: end; font-weight: 800; }
+.th-speed-table .head span:not(:first-child) { text-align: end; }
+.th-speed-split { font-size: 12px; color: var(--sub); display: grid; gap: 2px; }
+.th-speed-split b { color: var(--ink); }

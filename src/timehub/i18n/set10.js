@@ -29,6 +29,12 @@ export const en = {
   intelSoon: "Lighthouse refreshes at {time}",
   intelSoonSub: "clear or claim your intel missions · in {in}",
   showSpeed: "Show tab speed (for testing)",
+  speedTest: "Speed test",
+  speedTestHelp: "Switches tabs by itself (about 45 seconds) and measures each switch, then repeats with one thing turned off at a time. Take a screenshot of the results or copy them.",
+  speedTestRun: "Run speed test",
+  speedTestRunning: "Testing… don't touch the screen",
+  speedTestResults: "Speed test results",
+  copyResults: "Copy results",
   trackIntel: "Lighthouse intel missions",
 };
 export const it = {
@@ -61,6 +67,12 @@ export const it = {
   intelSoon: "Il Faro si aggiorna alle {time}",
   intelSoonSub: "completa o riscuoti le missioni intel · tra {in}",
   showSpeed: "Mostra la velocità delle schede (per test)",
+  speedTest: "Test di velocità",
+  speedTestHelp: "Cambia scheda da solo (circa 30 secondi) e misura ogni cambio, poi ripete spegnendo una cosa alla volta. Fai uno screenshot dei risultati o copiali.",
+  speedTestRun: "Avvia il test",
+  speedTestRunning: "Test in corso… non toccare lo schermo",
+  speedTestResults: "Risultati del test",
+  copyResults: "Copia risultati",
   trackIntel: "Missioni intel del Faro",
 };
 export const es = {
@@ -93,6 +105,12 @@ export const es = {
   intelSoon: "El Faro se renueva a las {time}",
   intelSoonSub: "completa o reclama tus misiones · en {in}",
   showSpeed: "Mostrar velocidad de pestañas (para pruebas)",
+  speedTest: "Prueba de velocidad",
+  speedTestHelp: "Cambia de pestaña solo (unos 30 segundos) y mide cada cambio; luego repite apagando una cosa cada vez. Haz captura de los resultados o cópialos.",
+  speedTestRun: "Iniciar prueba",
+  speedTestRunning: "Probando… no toques la pantalla",
+  speedTestResults: "Resultados",
+  copyResults: "Copiar resultados",
   trackIntel: "Misiones de inteligencia del Faro",
 };
 export const ko = {
@@ -125,6 +143,12 @@ export const ko = {
   intelSoon: "등대가 {time}에 갱신돼요",
   intelSoonSub: "정보 임무를 완료하거나 수령하세요 · {in} 후",
   showSpeed: "탭 속도 표시 (테스트용)",
+  speedTest: "속도 테스트",
+  speedTestHelp: "탭을 자동으로 전환(약 30초)하며 매번 측정하고, 한 가지씩 끄면서 반복해요. 결과를 캡처하거나 복사하세요.",
+  speedTestRun: "테스트 시작",
+  speedTestRunning: "테스트 중… 화면을 만지지 마세요",
+  speedTestResults: "테스트 결과",
+  copyResults: "결과 복사",
   trackIntel: "등대 정보 임무",
 };
 export const de = {
@@ -157,6 +181,12 @@ export const de = {
   intelSoon: "Leuchtturm aktualisiert sich um {time}",
   intelSoonSub: "Aufklärungsmissionen erledigen oder abholen · in {in}",
   showSpeed: "Tab-Geschwindigkeit anzeigen (zum Testen)",
+  speedTest: "Geschwindigkeitstest",
+  speedTestHelp: "Wechselt selbst die Tabs (etwa 30 Sekunden), misst jeden Wechsel und wiederholt es, wobei jeweils eine Sache ausgeschaltet wird. Mach einen Screenshot oder kopiere die Ergebnisse.",
+  speedTestRun: "Test starten",
+  speedTestRunning: "Test läuft … Bildschirm nicht berühren",
+  speedTestResults: "Testergebnisse",
+  copyResults: "Ergebnisse kopieren",
   trackIntel: "Leuchtturm-Aufklärungsmissionen",
 };
 export const ru = {
@@ -189,6 +219,12 @@ export const ru = {
   intelSoon: "Маяк обновится в {time}",
   intelSoonSub: "выполните или заберите разведзадания · через {in}",
   showSpeed: "Показывать скорость вкладок (для проверки)",
+  speedTest: "Тест скорости",
+  speedTestHelp: "Сам переключает вкладки (около 30 секунд) и замеряет каждое переключение, затем повторяет, отключая по одной вещи. Сделайте скриншот результатов или скопируйте их.",
+  speedTestRun: "Запустить тест",
+  speedTestRunning: "Идёт тест… не трогайте экран",
+  speedTestResults: "Результаты теста",
+  copyResults: "Скопировать результаты",
   trackIntel: "Разведзадания Маяка",
 };
 export const pl = {
@@ -221,6 +257,12 @@ export const pl = {
   intelSoon: "Latarnia odświeża się o {time}",
   intelSoonSub: "wykonaj lub odbierz misje wywiadowcze · za {in}",
   showSpeed: "Pokaż szybkość kart (do testów)",
+  speedTest: "Test szybkości",
+  speedTestHelp: "Sam przełącza karty (ok. 30 sekund) i mierzy każde przełączenie, potem powtarza, wyłączając po jednej rzeczy. Zrób zrzut ekranu wyników albo je skopiuj.",
+  speedTestRun: "Uruchom test",
+  speedTestRunning: "Trwa test… nie dotykaj ekranu",
+  speedTestResults: "Wyniki testu",
+  copyResults: "Kopiuj wyniki",
   trackIntel: "Misje wywiadowcze Latarni",
 };
 export const tr = {
@@ -253,6 +295,12 @@ export const tr = {
   intelSoon: "Deniz Feneri {time} saatinde yenilenir",
   intelSoonSub: "istihbarat görevlerini bitir ya da al · {in} sonra",
   showSpeed: "Sekme hızını göster (test için)",
+  speedTest: "Hız testi",
+  speedTestHelp: "Sekmeleri kendisi değiştirir (yaklaşık 30 saniye) ve her geçişi ölçer, sonra her seferinde bir şeyi kapatarak tekrarlar. Sonuçların ekran görüntüsünü al ya da kopyala.",
+  speedTestRun: "Testi başlat",
+  speedTestRunning: "Test sürüyor… ekrana dokunma",
+  speedTestResults: "Test sonuçları",
+  copyResults: "Sonuçları kopyala",
   trackIntel: "Deniz Feneri istihbarat görevleri",
 };
 export const ar = {
@@ -285,5 +333,11 @@ export const ar = {
   intelSoon: "تتحدث المنارة عند {time}",
   intelSoonSub: "أنجز مهام الاستخبارات أو استلمها · بعد {in}",
   showSpeed: "إظهار سرعة التبويبات (للاختبار)",
+  speedTest: "اختبار السرعة",
+  speedTestHelp: "يبدّل التبويبات بنفسه (نحو 30 ثانية) ويقيس كل تبديل، ثم يعيد مع إيقاف شيء واحد في كل مرة. التقط صورة للنتائج أو انسخها.",
+  speedTestRun: "بدء الاختبار",
+  speedTestRunning: "جارٍ الاختبار… لا تلمس الشاشة",
+  speedTestResults: "نتائج الاختبار",
+  copyResults: "نسخ النتائج",
   trackIntel: "مهام استخبارات المنارة",
 };

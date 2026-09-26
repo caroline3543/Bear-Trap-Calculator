@@ -8,6 +8,8 @@ import "./timehub.css";
 import { TimeHubProvider, useTimeHub, useTab, FreezeWhenHidden } from "./TimeHubContext.jsx";
 import { useNow, useMinute, ActiveTab } from "./hooks/useNow.jsx";
 import { onPress } from "./lib/feedback.js";
+import { flushSync } from "react-dom";
+import { SpeedTest, diag } from "./widgets/SpeedTest.jsx";
 import { zoneCity, deviceTimeZone, formatLongDay } from "./lib/time.js";
 import { splitColumns } from "./lib/layout.js";
 import { TimeZonePicker, BrushUnderline, SectionIcon, TabIcon } from "./components/ui.jsx";
@@ -150,7 +152,7 @@ function ChampSettings() {
   );
 }
 
-function SettingsPanel({ headerExtra }) {
+function SettingsPanel({ headerExtra, closeSettings, reopenSettings, hasCalc }) {
   const { t, tz, state, dispatch } = useTimeHub();
   return (
     <div className="th-screen th-settings">
@@ -169,6 +171,11 @@ function SettingsPanel({ headerExtra }) {
           <label className="th-check"><input type="checkbox" checked={state.settings.haptics !== false} onChange={(e) => dispatch({ type: "settings", patch: { haptics: e.target.checked } })} />{t("hapticsSetting")}</label>
           <label className="th-check"><input type="checkbox" checked={!!state.settings.showSpeed} onChange={(e) => dispatch({ type: "settings", patch: { showSpeed: e.target.checked } })} />{t("showSpeed")}</label>
         </div>
+      </section>
+      <section className="th-card" aria-label={t("speedTest")}>
+        <div className="th-sec-head"><SectionIcon name="plan" /><span className="th-sec-title">{t("speedTest")}</span></div>
+        <BrushUnderline />
+        <SpeedTest closeSettings={closeSettings} reopenSettings={reopenSettings} hasCalc={hasCalc} />
       </section>
       <section className="th-card" aria-label={t("whatToTrack")}>
         <div className="th-sec-head"><SectionIcon name="bell" /><span className="th-sec-title">{t("whatToTrack")}</span></div>
@@ -264,7 +271,8 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
     setSettings(false);
   }, [active]);
 
-  const panel = (id, content) => visited.has(id) && <Panel key={id} on={active === id}>{content}</Panel>;
+  const panel = (id, content) => visited.has(id) && (diag.keepTabs || active === id) && <Panel key={id} on={active === id}>{content}</Panel>;
+  React.useLayoutEffect(() => { diag.onCommit?.(); diag.onCommit = null; });
 
   // Optional speed readout (⚙ → Show tab speed): time from your tap to the new tab being drawn.
   const { state } = useTimeHub();
@@ -280,7 +288,7 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
     <div className={`th-root th-app ${active === "calc" ? "is-calc" : ""} ${compact ? "th-compact" : ""}`} dir={dir}
       onPointerDownCapture={(e) => onPress(e.target)}>
       {active !== "calc" && showHeader && <Header title={t(`tab_${active}`)} headerExtra={headerExtra} settingsOpen={settings} onSettings={() => setSettings(!settings)} />}
-      {active !== "calc" && (settings ? <SettingsPanel headerExtra={headerExtra} /> : <AccountGrid onAdd={() => setSettings(true)} />)}
+      {active !== "calc" && (settings ? <SettingsPanel headerExtra={headerExtra} hasCalc={!!calculator} closeSettings={() => flushSync(() => setSettings(false))} reopenSettings={() => setSettings(true)} /> : <AccountGrid onAdd={() => setSettings(true)} />)}
       <main className={settings && active !== "calc" ? "th-hidden" : ""}>
         {panel("today", TODAY_EL)}
         {panel("timers", TIMERS_EL)}
