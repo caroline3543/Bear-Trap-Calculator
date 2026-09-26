@@ -128,7 +128,7 @@ export function StatStrip() {
     [state, accountIds.join(), now]); // eslint-disable-line react-hooks/exhaustive-deps
   const n = useNeeds();
   return (
-    <div className="th-stats" role="group" aria-label={t("atAGlance")}>
+    <div className="th-stats in-header" role="group" aria-label={t("atAGlance")}>
       <div><span>{t("localTime")}</span><b><Ltr>{formatTime(now, tz, lang)}</Ltr></b></div>
       <div className="muted"><span>UTC</span><b><Ltr>{formatTime(now, "UTC", lang)}</Ltr></b></div>
       <div><span>{t("nextLabel")}</span><b>{next ? <Bidi>{formatSpan(next.start - now, lang)}</Bidi> : "—"}</b></div>
@@ -357,7 +357,6 @@ export function TodayScreen() {
   const [offset, setOffset] = useState(0);
   return (
     <div className="th-screen">
-      <StatStrip />
       <ChampQuestion />
       <NeedsYou />
       <Schedule offset={offset} setOffset={setOffset} />

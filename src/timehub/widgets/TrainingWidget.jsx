@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
 import { success } from "../lib/feedback.js";
 import { useMinute, useClockFor } from "../hooks/useNow.jsx";
-import { TRAINING_CAMPS, applyTraining, busyCamps, planFinish, finishTogether, sortTimers, campMaxFor, hasHelios } from "../lib/timers.js";
+import { TRAINING_CAMPS, applyTraining, busyCamps, planFinish, finishTogether, sortTimers, campMaxFor, hasHelios, campTroopsFor, troopsForDuration, durationForTroops } from "../lib/timers.js";
 import { timingCheck, nextCycleCheck, finishAdvice, nextFinishTarget, inSleepWindow } from "../lib/sleep.js";
 import { ALL } from "../lib/accounts.js";
 import { parseCompactTime, zonedParts, zonedTimeToUtc, formatTime, formatDate, formatSpan, formatCountdown, formatCountdownClock, localDayRange, hhmmToMinutes } from "../lib/time.js";
@@ -167,6 +167,11 @@ function TrainForm({ onDone, preset, accountId }) {
           {!isAdvice && inSleepWindow(target, tz, sleep) && advice && <> {t("outcomeAsleep")}</>}
         </p>
       )}
+      {hhmm && !tooLong.length && plans.every((x) => x.plan.ok) && plans.some((x) => campTroopsFor(data, x.camp)) && (
+        <p className="th-troops-line">
+          {t("troopsToTrain")}: {plans.filter((x) => campTroopsFor(data, x.camp)).map((x) => `${t(`short_${x.camp}`)} ${troopsForDuration(x.plan.trainFor, campMaxFor(data, x.camp, x.troop), campTroopsFor(data, x.camp)).toLocaleString(lang)}`).join(" · ")}
+        </p>
+      )}
 
       {/* 5. Limitation: never plan past the account's maximum */}
       {tooLong.length > 0 && latest && (
@@ -211,6 +216,8 @@ function CampTimes({ accountId }) {
   const load = (d) => ({
     same: sameNow(d),
     all: durFrom(TRAINING_CAMPS.map((c) => d.campMax?.[c]).find((x) => x > 0)),
+    troopsAll: String(TRAINING_CAMPS.map((c) => d.campTroops?.[c]).find((x) => x > 0) || ""),
+    troops: Object.fromEntries(TRAINING_CAMPS.map((c) => [c, d.campTroops?.[c] ? String(d.campTroops[c]) : ""])),
     normal: Object.fromEntries(TRAINING_CAMPS.map((c) => [c, durFrom(d.campMax?.[c])])),
     heliosOn: (d.helios?.classes || []).length > 0,
     classes: [...(d.helios?.classes || [])],
@@ -228,6 +235,7 @@ function CampTimes({ accountId }) {
     updateAccount(accountId, (d) => ({
       ...d,
       campSame: f.same,
+      campTroops: Object.fromEntries(TRAINING_CAMPS.map((c) => [c, Number(f.same ? f.troopsAll : f.troops[c]) || 0]).filter(([, n]) => n > 0)),
       campMax: Object.fromEntries(TRAINING_CAMPS.map((c) => [c, f.same ? val(f.all) : val(f.normal[c])])),
       helios: { classes, max: Object.fromEntries(TRAINING_CAMPS.map((c) => [c, classes.includes(c) ? val(f.helios[c]) : d.helios?.max?.[c] ?? null])) },
     }));
@@ -236,7 +244,8 @@ function CampTimes({ accountId }) {
   }
   const span = (ms) => (ms ? formatSpan(ms, lang) : "—");
   const summary = [
-    ...(sameNow(data) ? [`${t("allCamps")} ${span(data.campMax?.infantry_camp)}`] : TRAINING_CAMPS.map((c) => `${t(`short_${c}`)} ${span(data.campMax?.[c])}`)),
+    ...(sameNow(data) ? [`${t("allCamps")} ${span(data.campMax?.infantry_camp)}${data.campTroops?.infantry_camp ? ` (${data.campTroops.infantry_camp.toLocaleString(lang)})` : ""}`]
+      : TRAINING_CAMPS.map((c) => `${t(`short_${c}`)} ${span(data.campMax?.[c])}${data.campTroops?.[c] ? ` (${data.campTroops[c].toLocaleString(lang)})` : ""}`)),
     ...(data.helios?.classes || []).map((c) => `${t("heliosCamp", { camp: t(`short_${c}`) })} ${span(data.helios.max?.[c])}`),
   ].join(" · ");
 
@@ -262,6 +271,17 @@ function CampTimes({ accountId }) {
         : TRAINING_CAMPS.map((c) => (
           <DurationFields key={c} value={f.normal[c]} onChange={(v) => setF({ ...f, normal: { ...f.normal, [c]: v } })} label={t(c)} optional />
         ))}
+      <span className="th-label">{t("batchSizeQ")}</span>
+      <div className="th-batch-row">
+        {(f.same ? [["all", t("everyCamp")]] : TRAINING_CAMPS.map((c) => [c, t(`short_${c}`)])).map(([k, lab]) => (
+          <label key={k} className="th-troops-in">
+            <span className="th-hint">{lab}</span>
+            <input className="th-input" inputMode="numeric" placeholder="3400" value={k === "all" ? f.troopsAll : f.troops[k]}
+              onChange={(e) => { const v = e.target.value.replace(/\D/g, ""); setF(k === "all" ? { ...f, troopsAll: v } : { ...f, troops: { ...f.troops, [k]: v } }); }} />
+          </label>
+        ))}
+      </div>
+      <p className="th-note">{t("batchSizeHelp")}</p>
       <label className="th-check"><input type="checkbox" checked={f.heliosOn} onChange={(e) => setF({ ...f, heliosOn: e.target.checked })} />{t("haveHelios")}</label>
       {f.heliosOn && (
         <>
@@ -308,14 +328,34 @@ function RestartAll({ acc, onDone }) {
   const { t, tz, lang, dataFor, updateAccount, newId, state } = useTimeHub();
   const sleep = state.settings.sleep;
   const now = useMinute();
-  const list = restartable(dataFor(acc), now);
-  const [pick, setPick] = useState({}); // camp → "full" | "short"
+  const data = dataFor(acc);
+  const list = restartable(data, now);
   const label = (c) => (c.troop === "helios" ? t("heliosCamp", { camp: t(c.camp) }) : t(c.camp));
-  const rows = list.map((c) => ({ ...c, check: c.fullMs ? timingCheck(now, c.fullMs, tz, sleep) : null }));
+  const rows = list.map((c) => ({ ...c, batch: campTroopsFor(data, c.camp), check: c.fullMs ? timingCheck(now, c.fullMs, tz, sleep) : null }));
   const ready = rows.filter((c) => c.fullMs);
+  const troopsKnown = ready.some((c) => c.batch);
+  const [unit, setUnit] = useState(troopsKnown ? "troops" : "time"); // how the player enters it: time | troops
+  // what the player typed per camp (defaults: the full batch)
+  const [dur, setDur] = useState(() => Object.fromEntries(ready.map((c) => [c.camp, durFrom(c.fullMs)])));
+  const [troops, setTroops] = useState(() => Object.fromEntries(ready.map((c) => [c.camp, c.batch ? String(c.batch) : ""])));
+  const msFor = (c) => {
+    if (unit === "troops" && c.batch) {
+      const n = Number(String(troops[c.camp] || "").replace(/\D/g, ""));
+      return n > 0 && n <= c.batch ? durationForTroops(n, c.fullMs, c.batch) : n > c.batch ? { over: true } : null;
+    }
+    const r = durParse(dur[c.camp] || EMPTY_DUR);
+    return r.error || !r.ms ? null : r.ms > c.fullMs ? { over: true } : r.ms;
+  };
+  const values = ready.map((c) => ({ c, ms: msFor(c) }));
+  const valid = values.filter((v) => typeof v.ms === "number" && v.ms > 0);
+  const useSuggestion = (c) => {
+    const ms = c.check.suggestion.durationMs;
+    setDur({ ...dur, [c.camp]: durFrom(ms) });
+    if (c.batch) setTroops({ ...troops, [c.camp]: String(troopsForDuration(ms, c.fullMs, c.batch)) });
+  };
   function go() {
     const at = Date.now();
-    const entries = ready.map((c) => ({ camp: c.camp, troop: c.troop, durationMs: pick[c.camp] === "short" && c.check?.suggestion ? c.check.suggestion.durationMs : c.fullMs }));
+    const entries = valid.map(({ c, ms }) => ({ camp: c.camp, troop: c.troop, durationMs: ms }));
     updateAccount(acc, (d) => ({ ...d, timers: applyTraining(d.timers, entries, at, newId) }));
     success();
     onDone();
@@ -326,32 +366,55 @@ function RestartAll({ acc, onDone }) {
       {rows.some((c) => c.check?.suggestion) && (
         <MoonNote>{t("timingSuggestionShort", { n: rows.filter((c) => c.check?.suggestion).length, finish: formatTime(rows.find((c) => c.check?.suggestion).check.suggestion.finishAt, tz, lang) })}</MoonNote>
       )}
-      {rows.map((c) => (
-        <div key={c.camp} className="th-restart-row">
-          <div className="th-restart-head">
-            <b>{label(c)}</b>
-            {c.fullMs
-              ? <span className={c.check.overnight ? "t-warn" : "t-ok"}>{t("fullTraining")} {formatSpan(c.fullMs, lang)} → <Ltr>{formatTime(c.check.fullEnd, tz, lang)}</Ltr> {c.check.overnight ? "🌙" : "✓"}</span>
-              : <span className="th-hint">{t("noFullBatch")}</span>}
+      {troopsKnown
+        ? <Seg value={unit} onChange={setUnit} label={t("enterAs")} options={[{ value: "troops", label: t("byTroops") }, { value: "time", label: t("byTime") }]} />
+        : <p className="th-note">{t("troopsHint")}</p>}
+      {rows.map((c) => {
+        const v = values.find((x) => x.c.camp === c.camp)?.ms;
+        const ms = typeof v === "number" ? v : null;
+        const useTroops = unit === "troops" && c.batch;
+        const sug = c.check?.suggestion;
+        return (
+          <div key={c.camp} className="th-restart-row">
+            <div className="th-restart-head">
+              <b>{label(c)}</b>
+              {c.fullMs
+                ? <span className={c.check.overnight ? "t-warn" : "t-ok"}>{t("fullTraining")} {formatSpan(c.fullMs, lang)}{c.batch ? ` · ${c.batch.toLocaleString(lang)}` : ""} → <Ltr>{formatTime(c.check.fullEnd, tz, lang)}</Ltr> {c.check.overnight ? "🌙" : "✓"}</span>
+                : <span className="th-hint">{t("noFullBatch")}</span>}
+            </div>
+            {c.fullMs && (
+              <>
+                {useTroops ? (
+                  <label className="th-troops-in">
+                    <span className="th-label">{t("troopsToTrain")}</span>
+                    <input className="th-input" inputMode="numeric" value={troops[c.camp] ?? ""} placeholder={String(c.batch)}
+                      onChange={(e) => setTroops({ ...troops, [c.camp]: e.target.value.replace(/[^\d]/g, "") })} />
+                  </label>
+                ) : (
+                  <DurationFields value={dur[c.camp] || EMPTY_DUR} onChange={(x) => setDur({ ...dur, [c.camp]: x })} label={t("trainForLabel")} />
+                )}
+                <span className={`th-restart-read ${v && v.over ? "bad" : ""}`}>
+                  {v && v.over
+                    ? t(useTroops ? "overBatchTroops" : "overBatchTime", { max: useTroops ? c.batch.toLocaleString(lang) : formatSpan(c.fullMs, lang) })
+                    : ms ? <>{useTroops ? `= ${formatSpan(ms, lang)} → ` : "→ "}<b><Ltr>{formatTime(now + ms, tz, lang)}</Ltr></b>{!useTroops && c.batch ? ` · ≈ ${troopsForDuration(ms, c.fullMs, c.batch).toLocaleString(lang)} ${t("troopsWord")}` : ""}</> : ""}
+                </span>
+                {sug && (
+                  <button type="button" className="th-suggest-btn" onClick={() => useSuggestion(c)}>
+                    {useTroops
+                      ? t("suggestTroops", { n: troopsForDuration(sug.durationMs, c.fullMs, c.batch).toLocaleString(lang), finish: formatTime(sug.finishAt, tz, lang) })
+                      : t("suggestedLine", { dur: formatSpan(sug.durationMs, lang), finish: formatTime(sug.finishAt, tz, lang) })}
+                  </button>
+                )}
+              </>
+            )}
           </div>
-          {c.check?.suggestion && (
-            <>
-              <span className="th-suggest">{t("suggestedLine", { dur: formatSpan(c.check.suggestion.durationMs, lang), finish: formatTime(c.check.suggestion.finishAt, tz, lang) })}</span>
-              <Seg value={pick[c.camp] || "full"} onChange={(v) => setPick({ ...pick, [c.camp]: v })} label={label(c)} options={[
-                { value: "full", label: `${t("fullWord")} · ${formatSpan(c.fullMs, lang)}` },
-                { value: "short", label: `${t("aboutWord")} ${formatSpan(c.check.suggestion.durationMs, lang)}` },
-              ]} />
-            </>
-          )}
-          {c.check?.overnight && !c.check.suggestion && <MoonNote>{t("finishesWhileAsleep", { time: formatTime(c.check.fullEnd, tz, lang) })}</MoonNote>}
-        </div>
-      ))}
+        );
+      })}
       <p className="th-note">💡 {t("tip247")}</p>
       <div className="th-form-actions">
-        <Btn tone="gold" onClick={go} disabled={!ready.length}>{t("restartNCamps", { n: ready.length })}</Btn>
+        <Btn tone="gold" onClick={go} disabled={!valid.length || values.some((x) => x.ms && x.ms.over)}>{t("restartNCamps", { n: valid.length })}</Btn>
         <Btn onClick={onDone}>{t("cancel")}</Btn>
       </div>
-      <p className="th-note">{t("adjustInGame")}</p>
     </div>
   );
 }

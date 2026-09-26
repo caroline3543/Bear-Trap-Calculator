@@ -974,3 +974,16 @@ html.th-diag-nograin [style*="paperGrain"] { display: none !important; }
 .th-tour-actions { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
 .th-tour-focus { outline: 3px solid var(--goldStrong) !important; outline-offset: 3px; border-radius: 18px; }
 .th-app.th-touring { padding-bottom: 300px; }
+
+/* troops ⇄ time */
+.th-troops-in { display: grid; gap: 4px; min-width: 0; }
+.th-troops-in .th-input { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.th-batch-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 8px; }
+.th-restart-read { font-size: 13px; font-weight: 700; color: var(--sub); }
+.th-restart-read b { color: var(--ink); }
+.th-restart-read.bad { color: var(--amber); }
+.th-troops-line { margin: 0; font-size: 13px; font-weight: 800; color: var(--gold); }
+
+/* Today: local time strip lives inside the header card (one section) */
+.th-mhdr { flex-wrap: wrap; }
+.th-stats.in-header { flex-basis: 100%; margin-top: 4px; padding: 10px 0 0; border: none; border-top: 1px solid var(--cardBorderT); border-radius: 0; background: none; box-shadow: none; }

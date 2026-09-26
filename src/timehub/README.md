@@ -262,3 +262,13 @@ Saves go to localStorage on every change.
 - Today's schedule has no time-of-day bands.
 - First-use walkthrough (`widgets/Tour.jsx`): 8 short steps, highlights one setting at a time,
   skippable, stored in `settings.tour`; replay from ⚙.
+
+## Language detection · troops ⇄ time · Today header
+- `lib/language.js → detectLanguage()`: first visit only — phone language list first, then the
+  country implied by the time zone, else English. A saved choice always wins. Used by App.jsx/main.jsx.
+- Camp times take an optional **full batch size (troops)** (`accountData.campTroops`, follows the
+  same/different choice). Restart All then lets the player type **troops** (or time) per camp and
+  shows the resulting time and finish; suggestions appear as troop counts. Finish At lists the troops
+  to train per camp. Conversion is proportional (`troopsForDuration`, `durationForTroops`), capped
+  at a full batch.
+- Today: the Local time / UTC / Next / To do strip sits inside the "Today" header card.

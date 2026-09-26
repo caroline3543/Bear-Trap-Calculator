@@ -750,3 +750,34 @@ test("Finish At advice: bedtime when reachable, never beyond the maximum, else a
   assert.equal(nextFinishTarget(at(24, 18), "22:00", tz), at(24, 22));
   assert.equal(nextFinishTarget(at(24, 18), "01:30", tz), at(25, 1, 30));
 });
+
+/* ---------- first-visit language detection ---------- */
+import { detectLanguage } from "../lib/language.js";
+test("language: phone language first, then the time zone's country, then English", () => {
+  const L = ["en", "it", "es", "ko", "de", "ru", "pl", "tr", "ar"];
+  assert.equal(detectLanguage(L, ["it-IT", "en-GB"], "Pacific/Auckland"), "it");
+  assert.equal(detectLanguage(L, ["en-NZ"], "Europe/Rome"), "en"); // English speaker in Italy keeps English
+  assert.equal(detectLanguage(L, ["pt-BR"], "America/Sao_Paulo"), "en"); // Portuguese isn't in the app → English
+  assert.equal(detectLanguage(L, ["pt-PT", "es-419"], "Europe/Lisbon"), "es"); // second phone language used
+  assert.equal(detectLanguage(L, [], "Europe/Warsaw"), "pl");
+  assert.equal(detectLanguage(L, ["xx"], "Asia/Riyadh"), "ar");
+  assert.equal(detectLanguage(L, ["ko_KR"], null), "ko");
+  assert.equal(detectLanguage(L, [], "Pacific/Auckland"), "en");
+});
+
+/* ---------- troops ⇄ time ---------- */
+import { troopsForDuration, durationForTroops, campTroopsFor } from "../lib/timers.js";
+test("troops ⇄ time: proportional to the full batch, never beyond it", () => {
+  const full = 5 * HOUR + 40 * MINUTE, batch = 3400; // 6 s per troop
+  assert.equal(troopsForDuration(3 * HOUR + 45 * MINUTE, full, batch), 2250);
+  assert.equal(durationForTroops(2250, full, batch), 3 * HOUR + 45 * MINUTE);
+  assert.equal(troopsForDuration(9 * HOUR, full, batch), batch); // capped
+  assert.equal(durationForTroops(99999, full, batch), full);
+  assert.equal(troopsForDuration(HOUR, full, null), 0);
+  assert.equal(campTroopsFor({ campTroops: { infantry_camp: 3400 } }, "infantry_camp"), 3400);
+  assert.equal(campTroopsFor({}, "lancer_camp"), null);
+  const s = emptyState(T0, mkId);
+  s.accountData.A.campTroops = { infantry_camp: 3400, lancer_camp: -5 };
+  const r = (async () => (await import("../lib/storage.js")).sanitizeState(JSON.parse(JSON.stringify(s)), T0, mkId))();
+  return r.then((x) => assert.deepEqual(x.accountData.A.campTroops, { infantry_camp: 3400 }));
+});

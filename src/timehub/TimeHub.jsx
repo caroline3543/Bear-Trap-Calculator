@@ -18,7 +18,7 @@ import { ALL, MAX_ACCOUNTS } from "./lib/accounts.js";
 import { tracking } from "./lib/agenda.js";
 import { StaminaWidget, TrekWidget } from "./widgets/DailyWidgets.jsx";
 import { ChampWeekPicker, useChamp } from "./widgets/ChampIntel.jsx";
-import { TodayScreen } from "./widgets/TodayScreen.jsx";
+import { TodayScreen, StatStrip } from "./widgets/TodayScreen.jsx";
 import { BookingsWidget } from "./widgets/BookingsWidget.jsx";
 import { EventsWidget } from "./widgets/EventsWidget.jsx";
 import { TrainingWidget } from "./widgets/TrainingWidget.jsx";
@@ -49,7 +49,7 @@ function BearClock() {
 }
 
 /** Compact header for Time Hub tabs: bear, tab title, local date · city, settings. */
-function Header({ title, headerExtra, onSettings, settingsOpen }) {
+function Header({ title, headerExtra, onSettings, settingsOpen, children }) {
   const { tz, lang, t } = useTimeHub();
   const now = useMinute();
   const long = formatLongDay(now, tz, lang);
@@ -64,6 +64,7 @@ function Header({ title, headerExtra, onSettings, settingsOpen }) {
       <div className="th-mhdr-tools">
         <button type="button" className="th-iconbtn" aria-expanded={settingsOpen} aria-label={t("settingsTitle")} title={t("settingsTitle")} onClick={onSettings}><TabIcon name="gear" size={19} /></button>
       </div>
+      {children}
     </header>
   );
 }
@@ -294,7 +295,11 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
   return (
     <div className={`th-root th-app ${active === "calc" ? "is-calc" : ""} ${compact ? "th-compact" : ""} ${tour != null ? "th-touring" : ""}`} dir={dir}
       onPointerDownCapture={(e) => onPress(e.target)}>
-      {active !== "calc" && showHeader && <Header title={t(`tab_${active}`)} headerExtra={headerExtra} settingsOpen={settings} onSettings={() => setSettings(!settings)} />}
+      {active !== "calc" && showHeader && (
+        <Header title={t(`tab_${active}`)} headerExtra={headerExtra} settingsOpen={settings} onSettings={() => setSettings(!settings)}>
+          {active === "today" && !settings && <StatStrip />}
+        </Header>
+      )}
       {active !== "calc" && (settings ? <SettingsPanel headerExtra={headerExtra} hasCalc={!!calculator} closeSettings={() => flushSync(() => setSettings(false))} reopenSettings={() => setSettings(true)} startTour={() => setTour(0)} /> : <AccountGrid onAdd={() => setSettings(true)} />)}
       <main className={settings && active !== "calc" ? "th-hidden" : ""}>
         {panel("today", TODAY_EL)}

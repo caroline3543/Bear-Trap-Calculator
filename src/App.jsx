@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import TimeHub from "./timehub/TimeHub.jsx";
 import paperGrainTile from "./paper-grain.png";
+import { detectLanguage } from "./timehub/lib/language.js";
 
 /* ============================================================
    THEME / TOKENS — per design-system spec (cosy winter camping).
@@ -2349,7 +2350,8 @@ export default function App() {
 
   const [advancedOpen, setAdvancedOpen] = useState(saved?.advancedOpen ?? true);
   const [darkMode, setDarkMode] = useState(saved?.darkMode ?? false);
-  const [lang, setLang] = useState(saved?.lang ?? "en");
+  // First visit: the phone's language (or its time zone's country); after that, the saved choice.
+  const [lang, setLang] = useState(() => saved?.lang ?? detectLanguage(LANGUAGES.map((l) => l.code)));
 
   const [fills, setFills] = useState(saved?.fills ?? {});
   function acceptFill(key, tier, type, amount) {

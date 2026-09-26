@@ -13,3 +13,4 @@ export { HistoryWidget } from "./widgets/HistoryWidget.jsx";
 export { useNow } from "./hooks/useNow.jsx";
 export { TIMEHUB_STRINGS } from "./i18n/index.js";
 export { StaminaWidget, TrekWidget } from "./widgets/DailyWidgets.jsx";
+export { detectLanguage } from "./lib/language.js";

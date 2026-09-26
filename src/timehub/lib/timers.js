@@ -100,3 +100,25 @@ export function finishTogether(timers) {
   }
   return [...map.values()].filter((g) => g.length > 1).map((g) => ({ endAt: g[0].endAt, timers: g }));
 }
+
+/* ---------- troops ⇄ time (optional) ----------
+   In the game, training time grows in step with the number of troops. If the player tells us a
+   camp's full batch size (troops) and how long that full batch takes, one converts to the other. */
+
+/** Full batch size for a camp (troops), or null if not set. Helios uses the same batch size. */
+export function campTroopsFor(data, camp) {
+  const n = data?.campTroops?.[camp];
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/** How many troops fit in `durationMs` (rounded down, never above the full batch). */
+export function troopsForDuration(durationMs, fullMs, fullTroops) {
+  if (!(fullMs > 0) || !(fullTroops > 0) || !(durationMs > 0)) return 0;
+  return Math.min(fullTroops, Math.floor((fullTroops * durationMs) / fullMs));
+}
+
+/** How long `troops` take (to the second), capped at the full batch time. */
+export function durationForTroops(troops, fullMs, fullTroops) {
+  if (!(fullMs > 0) || !(fullTroops > 0) || !(troops > 0)) return 0;
+  return Math.min(fullMs, Math.round(((troops / fullTroops) * fullMs) / 1000) * 1000);
+}
