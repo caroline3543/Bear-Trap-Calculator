@@ -10,13 +10,14 @@ import { useNow, useMinute, ActiveTab } from "./hooks/useNow.jsx";
 import { onPress } from "./lib/feedback.js";
 import { flushSync } from "react-dom";
 import { SpeedTest, diag } from "./widgets/SpeedTest.jsx";
+import { Tour } from "./widgets/Tour.jsx";
 import { zoneCity, deviceTimeZone, formatLongDay } from "./lib/time.js";
 import { splitColumns } from "./lib/layout.js";
-import { TimeZonePicker, BrushUnderline, SectionIcon, TabIcon } from "./components/ui.jsx";
+import { TimeZonePicker, BrushUnderline, SectionIcon, TabIcon, Btn } from "./components/ui.jsx";
 import { ALL, MAX_ACCOUNTS } from "./lib/accounts.js";
 import { tracking } from "./lib/agenda.js";
 import { StaminaWidget, TrekWidget } from "./widgets/DailyWidgets.jsx";
-import { IntelWidget, ChampWeekPicker, useChamp } from "./widgets/ChampIntel.jsx";
+import { ChampWeekPicker, useChamp } from "./widgets/ChampIntel.jsx";
 import { TodayScreen } from "./widgets/TodayScreen.jsx";
 import { BookingsWidget } from "./widgets/BookingsWidget.jsx";
 import { EventsWidget } from "./widgets/EventsWidget.jsx";
@@ -143,7 +144,7 @@ function ChampSettings() {
   const { t } = useTimeHub();
   const [champ, set] = useChamp();
   return (
-    <section className="th-card" aria-label={t("champTitle")}>
+    <section className="th-card" id="th-set-champ" aria-label={t("champTitle")}>
       <div className="th-sec-head"><SectionIcon name="foundry" /><span className="th-sec-title">{t("champTitle")}</span></div>
       <BrushUnderline />
       <label className="th-check"><input type="checkbox" checked={!!champ.leader} onChange={(e) => set({ leader: e.target.checked })} />{t("champLeaderCheck")}</label>
@@ -152,13 +153,14 @@ function ChampSettings() {
   );
 }
 
-function SettingsPanel({ headerExtra, closeSettings, reopenSettings, hasCalc }) {
+function SettingsPanel({ headerExtra, closeSettings, reopenSettings, hasCalc, startTour }) {
   const { t, tz, state, dispatch } = useTimeHub();
   return (
     <div className="th-screen th-settings">
+      <Btn onClick={startTour}>{t("tourReplay")}</Btn>
       {headerExtra && <section className="th-card th-host-tools" aria-label={t("languageTheme")}>{headerExtra}</section>}
-      <AccountsPanel onClose={null} />
-      <section className="th-card" aria-label={t("settingsTitle")}>
+      <div id="th-set-accounts"><AccountsPanel onClose={null} /></div>
+      <section className="th-card" id="th-set-general" aria-label={t("settingsTitle")}>
         <div className="th-sec-head"><SectionIcon name="gear" /><span className="th-sec-title">{t("settingsTitle")}</span></div>
         <BrushUnderline />
         <div className="th-form" style={{ margin: 0 }}>
@@ -177,7 +179,7 @@ function SettingsPanel({ headerExtra, closeSettings, reopenSettings, hasCalc }) 
         <BrushUnderline />
         <SpeedTest closeSettings={closeSettings} reopenSettings={reopenSettings} hasCalc={hasCalc} />
       </section>
-      <section className="th-card" aria-label={t("whatToTrack")}>
+      <section className="th-card" id="th-set-track" aria-label={t("whatToTrack")}>
         <div className="th-sec-head"><SectionIcon name="bell" /><span className="th-sec-title">{t("whatToTrack")}</span></div>
         <BrushUnderline />
         <p className="th-sec-sub">{t("whatToTrackSub")}</p>
@@ -191,7 +193,7 @@ function SettingsPanel({ headerExtra, closeSettings, reopenSettings, hasCalc }) 
         </div>
       </section>
       <ChampSettings />
-      <section className="th-card" aria-label={t("sleepHours")}>
+      <section className="th-card" id="th-set-sleep" aria-label={t("sleepHours")}>
         <div className="th-sec-head"><SectionIcon name="plan" /><span className="th-sec-title">{t("sleepHours")}</span></div>
         <BrushUnderline />
         <p className="th-sec-sub">{t("sleepHoursSub")}</p>
@@ -217,7 +219,6 @@ const TimersPanel = React.memo(function TimersPanel() {
     <Stack>
       {(tr.stamina || tr.store) && <StaminaWidget />}
       {tr.trek && <TrekWidget />}
-      {tr.intel && <IntelWidget />}
       <TrainingWidget />
       <ResearchWidget />
       {tr.contrib && <ContributionWidget />}
@@ -246,6 +247,12 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
   const { t, dir, compact } = useTimeHub();
   const { tab } = useTab();
   const [settings, setSettings] = useState(false);
+  const { state: hubState } = useTimeHub();
+  const [tour, setTour] = useState(null);
+  useEffect(() => {
+    if (hubState.settings.tour == null) { const id = setTimeout(() => setTour(0), 700); return () => clearTimeout(id); }
+    return undefined;
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const pressed = tab === "calc" && !calculator ? "today" : tab;
   // One synchronous swap: the tab and its screen appear in the same frame (no in-between state).
   const active = pressed;
@@ -285,16 +292,17 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
   }, [active, state.settings.showSpeed]);
 
   return (
-    <div className={`th-root th-app ${active === "calc" ? "is-calc" : ""} ${compact ? "th-compact" : ""}`} dir={dir}
+    <div className={`th-root th-app ${active === "calc" ? "is-calc" : ""} ${compact ? "th-compact" : ""} ${tour != null ? "th-touring" : ""}`} dir={dir}
       onPointerDownCapture={(e) => onPress(e.target)}>
       {active !== "calc" && showHeader && <Header title={t(`tab_${active}`)} headerExtra={headerExtra} settingsOpen={settings} onSettings={() => setSettings(!settings)} />}
-      {active !== "calc" && (settings ? <SettingsPanel headerExtra={headerExtra} hasCalc={!!calculator} closeSettings={() => flushSync(() => setSettings(false))} reopenSettings={() => setSettings(true)} /> : <AccountGrid onAdd={() => setSettings(true)} />)}
+      {active !== "calc" && (settings ? <SettingsPanel headerExtra={headerExtra} hasCalc={!!calculator} closeSettings={() => flushSync(() => setSettings(false))} reopenSettings={() => setSettings(true)} startTour={() => setTour(0)} /> : <AccountGrid onAdd={() => setSettings(true)} />)}
       <main className={settings && active !== "calc" ? "th-hidden" : ""}>
         {panel("today", TODAY_EL)}
         {panel("timers", TIMERS_EL)}
         {panel("events", EVENTS_EL)}
         {calculator && panel("calc", <CalcPanel calculator={calculator} />)}
       </main>
+      {tour != null && <Tour step={tour} setStep={setTour} setSettings={setSettings} />}
       <TabBar hasCalc={!!calculator} active={pressed} />
       {state.settings.showSpeed && speed && <div className="th-speed" role="status">{t(`tab_${speed.tab}`)} · {speed.ms} ms</div>}
     </div>

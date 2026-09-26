@@ -716,3 +716,37 @@ test("Lighthouse intel: refreshes 00/08/16 UTC; nag within the hour before the n
   const items = agenda2({ ...s, settings: { ...s.settings, track: { intel: true } } }, day, day + DAY, ["A"], day + 9 * HOUR).filter((i) => i.kind === "intel");
   assert.deepEqual(items.map((i) => i.status), ["done", "now", "upcoming"]);
 });
+
+/* ---------- Finish At: compact input + advice within the account's maximum ---------- */
+import { parseCompactTime } from "../lib/time.js";
+import { finishAdvice, nextFinishTarget } from "../lib/sleep.js";
+
+test("Finish At accepts compact numbers: 2200, 0130, 928 …", () => {
+  assert.equal(parseCompactTime("2200"), "22:00");
+  assert.equal(parseCompactTime("0130"), "01:30");
+  assert.equal(parseCompactTime("928"), "09:28");
+  assert.equal(parseCompactTime("7"), "07:00");
+  assert.equal(parseCompactTime("21"), "21:00");
+  assert.equal(parseCompactTime("22:00"), "22:00");
+  for (const bad of ["", "2400", "1260", "12345", "abc"]) assert.equal(parseCompactTime(bad), null, bad);
+});
+
+test("Finish At advice: bedtime when reachable, never beyond the maximum, else a full batch", () => {
+  const tz = "Pacific/Auckland";
+  const at = (d, h, m = 0) => zonedTimeToUtc(2026, 9, d, h, m, tz);
+  // 6 PM, max 6 h: finish at 9:45 PM (3h45), then a full batch runs overnight until 3:45 AM
+  const a = finishAdvice(at(24, 18), 6 * HOUR, tz);
+  assert.equal(a.kind, "bed");
+  assert.equal(a.durationMs, 3 * HOUR + 45 * MINUTE);
+  assert.equal(formatTime(a.overnightEnd, tz, "en"), "3:45\u00A0AM");
+  // 1 PM, max 6 h: bedtime is 8h45 away (too long) → full batch, ends 7:00 PM
+  const b = finishAdvice(at(24, 13), 6 * HOUR, tz);
+  assert.deepEqual([b.kind, b.durationMs, formatTime(b.finishAt, tz, "en")], ["full", 6 * HOUR, "7:00\u00A0PM"]);
+  // 9:40 PM (5 min before bedtime): too close → full batch
+  assert.equal(finishAdvice(at(24, 21, 40), 6 * HOUR, tz).kind, "full");
+  for (const x of [a, b]) assert.ok(x.durationMs <= 6 * HOUR);
+  assert.equal(finishAdvice(at(24, 18), 0, tz), null);
+  // typed times land on the next occurrence
+  assert.equal(nextFinishTarget(at(24, 18), "22:00", tz), at(24, 22));
+  assert.equal(nextFinishTarget(at(24, 18), "01:30", tz), at(25, 1, 30));
+});

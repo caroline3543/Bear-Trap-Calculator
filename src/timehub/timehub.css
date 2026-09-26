@@ -120,7 +120,7 @@
   border-radius: 12px; padding: 10px 15px; min-height: 42px; cursor: pointer;
   font: 800 14px/18px 'Nunito Sans', sans-serif; letter-spacing: .1px; border: none;
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  transition: transform .12s ease, filter .12s ease;
+  transition: transform .12s ease;
 }
 .th-btn:active { transform: translateY(1px) scale(.98); }
 .th-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
@@ -944,3 +944,33 @@ html.th-diag-nochrome .th-mhdr, html.th-diag-nochrome .th-accgrid { display: non
 html.th-diag-nocv .th-panel[hidden] { display: none !important; }
 html.th-diag-noblend *, html.th-diag-noblend *::before, html.th-diag-noblend *::after { mix-blend-mode: normal !important; }
 html.th-diag-nograin [style*="paperGrain"] { display: none !important; }
+
+/* Training Camps: account → Finish At → suggestion → outcome → limit → secondary */
+.th-train-acc { display: grid; gap: 6px; margin-bottom: 12px; }
+.th-train-acc-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.th-accpill { min-height: 38px; padding: 0 12px; border-radius: 999px; border: 1.5px solid var(--btnSecondaryBorder); background: var(--btnSecondaryBg); color: var(--ink); font: 800 13.5px 'Nunito Sans', sans-serif; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.th-accpill i { width: 8px; height: 8px; border-radius: 50%; background: var(--ac); }
+.th-accpill[aria-pressed="true"] { background: var(--goldStrong); border-color: var(--btnGoldShadow, #B9782E); color: var(--cocoaDark, #3B2A12); }
+.th-finishform { gap: 10px; }
+.th-finish { display: grid; gap: 4px; }
+.th-finish-q { font-weight: 800; font-size: 14.5px; color: var(--ink); }
+.th-finish-input { width: 100%; box-sizing: border-box; min-height: 60px; padding: 0 14px; border-radius: 14px; border: 2px solid var(--goldBorder); background: var(--inputBg); color: var(--ink);
+  font: 600 32px/1 'Fredoka', 'Nunito Sans', sans-serif; letter-spacing: 2px; font-variant-numeric: tabular-nums; }
+.th-finish-input:focus { outline: none; border-color: var(--teal); }
+.th-finish-read { font-size: 13px; color: var(--sub); font-weight: 700; }
+.th-finish-read b { color: var(--ink); font-size: 15px; }
+.th-suggest-btn { justify-self: start; min-height: 40px; padding: 0 14px; border-radius: 12px; border: 1.5px dashed var(--goldBorder); background: var(--goldBg); color: var(--gold); font: 800 13.5px 'Nunito Sans', sans-serif; cursor: pointer; }
+.th-outcome { margin: 0; font-size: 13.5px; line-height: 1.5; font-weight: 700; color: var(--ink); }
+.th-limit { display: grid; gap: 8px; padding: 10px 12px; border-radius: 12px; background: var(--statusT9Bg); color: var(--statusT9Text); font-size: 13px; font-weight: 700; line-height: 1.45; }
+.th-secondary summary { cursor: pointer; font-size: 13px; font-weight: 800; color: var(--gold); padding: 6px 0; }
+
+/* first-use walkthrough (no animation) */
+.th-tour { position: fixed; left: 12px; right: 12px; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); z-index: 26; max-width: 560px; margin: 0 auto;
+  padding: 14px 16px; border-radius: 18px; background: var(--cardBgT); border: 2px solid var(--goldStrong); box-shadow: 0 8px 24px rgba(33,70,65,.18); display: grid; gap: 6px; }
+.th-tour-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.th-tour-top b { font-size: 15.5px; color: var(--gold); }
+.th-tour-count { font-size: 12px; font-weight: 800; color: var(--sub); }
+.th-tour p { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--ink); }
+.th-tour-actions { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.th-tour-focus { outline: 3px solid var(--goldStrong) !important; outline-offset: 3px; border-radius: 18px; }
+.th-app.th-touring { padding-bottom: 300px; }

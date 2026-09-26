@@ -247,3 +247,18 @@ Saves go to localStorage on every change.
   roughly 12–16 h; the Lighthouse holds two refreshes). Timers tab card with "Cleared" per account;
   Needs you nudges in the hour before the next refresh until the batch is cleared; schedule rows for
   each refresh. Can be switched off under ⚙ → What to track.
+
+## Training Camps: Finish At first (Sep 2026)
+- One account per Training Camps page (pills at the top; follows the global account filter). Camp
+  times, the form, running camps, Restart All and notes all use that account.
+- The form opens on **Finish At**: type 2200 / 0130 / 928 (`parseCompactTime`). It's prefilled with
+  a suggestion from `finishAdvice` (lib/sleep.js): finish at the "before bed" time if a batch can
+  reach it within the account's maximum (`campMaxFor`, the camp that runs out first), so a full
+  batch can run overnight; otherwise a full batch. `planFinish` checks every camp — a time beyond the
+  maximum shows the latest possible finish with "Use …" and "Remind me to start at …".
+  "Enter time left instead" keeps the old mode.
+- Full-batch times: "Same for all camps" or "Different per camp" (`accountData.campSame`).
+- Lighthouse intel is no longer on Timers (still in Today's Needs you + schedule).
+- Today's schedule has no time-of-day bands.
+- First-use walkthrough (`widgets/Tour.jsx`): 8 short steps, highlights one setting at a time,
+  skippable, stored in `settings.tour`; replay from ⚙.

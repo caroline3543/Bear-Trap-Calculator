@@ -409,3 +409,18 @@ export function formatDayNumber(ms, tz, lang) {
 export function formatLongDay(ms, tz, lang) {
   return dtf(intlLocale(lang), { timeZone: tz, weekday: "long", day: "numeric", month: "short" }, "ld").format(ms);
 }
+
+/**
+ * Compact clock entry without a colon: "2200" → "22:00", "0130" → "01:30", "928" → "09:28",
+ * "7" → "07:00", "21" → "21:00". Also accepts "22:00" / "9.28". Returns "HH:MM" or null.
+ */
+export function parseCompactTime(input) {
+  const d = String(input ?? "").replace(/\D/g, "");
+  if (!d || d.length > 4) return null;
+  let h, m;
+  if (d.length <= 2) { h = +d; m = 0; }
+  else if (d.length === 3) { h = +d.slice(0, 1); m = +d.slice(1); }
+  else { h = +d.slice(0, 2); m = +d.slice(2); }
+  if (h > 23 || m > 59) return null;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}

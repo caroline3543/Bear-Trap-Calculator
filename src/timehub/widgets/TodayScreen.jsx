@@ -22,13 +22,6 @@ import { useWhenLocal } from "./TimerCard.jsx";
 import { useClaim } from "./DailyWidgets.jsx";
 import { FriendsWidget } from "./FriendsWidget.jsx";
 
-const PARTS = [["night", 0], ["morning", 5], ["afternoon", 12], ["evening", 17], ["lateNight", 22]];
-function partOf(ms, tz) {
-  const h = zonedParts(ms, tz).hour;
-  let name = "night";
-  for (const [n, from] of PARTS) if (h >= from) name = n;
-  return name;
-}
 const BUFF_NAME = { strategy: "buffStrategyName", defense: "buffDefenseName", neither: "buffNeither", unsure: "bookingUnknown" };
 
 /* ---------- what needs doing (one card, like the calculator's steps) ---------- */
@@ -308,7 +301,6 @@ function Schedule({ offset, setOffset }) {
   ].sort((a, b) => a.at - b.at) : [];
   const isToday = offset === 0;
   const heading = offset === 0 ? t("todaysSchedule") : offset === 1 ? t("tomorrowsSchedule") : formatDate(day.start + 1, tz, lang);
-  let lastPart = null;
   const nextId = rest.find((x) => x.status === "upcoming")?.id;
   const rowProps = (i) => ({ i, day, rems, open: openId === i.id, setOpen: (v) => setOpenId(v ? i.id : null), isNext: i.id === nextId });
 
@@ -336,16 +328,7 @@ function Schedule({ offset, setOffset }) {
       )}
       {rest.length > 0 && (
         <ol className="th-slist">
-          {rest.map((i) => {
-            const part = partOf(Math.max(i.start, day.start), tz);
-            const header = part !== lastPart ? (lastPart = part) : null;
-            return (
-              <React.Fragment key={i.id}>
-                {header && <li className={`th-band b-${part}`} aria-hidden="true">{t(`part_${part}`)}</li>}
-                <Row {...rowProps(i)} />
-              </React.Fragment>
-            );
-          })}
+          {rest.map((i) => <Row key={i.id} {...rowProps(i)} />)}
         </ol>
       )}
       {after.length > 0 && (

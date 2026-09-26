@@ -19,6 +19,7 @@ export function emptyAccountData() {
     plans: [],
     lastEnded: {},
     stamina: null,
+    campSame: null,
     claims: {},
     helios: { classes: [], max: { infantry_camp: null, lancer_camp: null, marksman_camp: null } },
   };

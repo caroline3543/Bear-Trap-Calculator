@@ -1,11 +1,10 @@
 /* Alliance Championship (leader in charge) + Lighthouse intel missions. */
 import React from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
-import { useMinute, useClockFor } from "../hooks/useNow.jsx";
+import { useMinute } from "../hooks/useNow.jsx";
 import { upcomingThursdays, champRounds, PREP_ROUNDS } from "../lib/championship.js";
-import { intelPeriod, pruneClaims, INTEL_MISSIONS_PER_REFRESH } from "../lib/daily.js";
 import { formatTime, formatDate, HOUR } from "../lib/time.js";
-import { Section, Btn, Ltr, AccountTag, SectionIcon, BrushUnderline, Remaining } from "../components/ui.jsx";
+import { Btn, SectionIcon, BrushUnderline } from "../components/ui.jsx";
 import { success } from "../lib/feedback.js";
 
 /** Setting champ = { leader, anchor } in one place. */
@@ -69,34 +68,6 @@ export function ChampQuestion() {
       )}
       <p className="th-note">{t("champChangeLater")}</p>
     </section>
-  );
-}
-
-/** Timers tab: the current batch of intel missions, per account. */
-export function IntelWidget() {
-  const { t, tz, lang, accountIds, updateAccount, dataFor } = useTimeHub();
-  const peek = intelPeriod(Date.now());
-  const now = useClockFor([peek.next]);
-  const p = intelPeriod(now);
-  const clear = (acc) => { const at = Date.now(); updateAccount(acc, (d) => ({ ...d, claims: { ...pruneClaims(d.claims, at), [p.key]: at } })); success(); };
-  return (
-    <Section id="intel" icon="event" title={t("secIntel")} sub={t("intelSub", { n: INTEL_MISSIONS_PER_REFRESH })}>
-      <div className="th-intel-now">
-        <div><span>{t("intelArrived")}</span><b><Ltr>{formatTime(p.start, tz, lang)}</Ltr></b><small><Ltr>{formatTime(p.start, "UTC", lang)}</Ltr> UTC</small></div>
-        <div><span>{t("intelNext")}</span><b><Ltr>{formatTime(p.next, tz, lang)}</Ltr></b><small><Remaining to={p.next} /></small></div>
-      </div>
-      {accountIds.map((a) => {
-        const done = !!dataFor(a).claims?.[p.key];
-        return (
-          <div key={a} className={`th-intel-acc ${done ? "done" : ""}`}>
-            <AccountTag accountId={a} />
-            <span className="th-tone">{done ? t("intelClearedTick") : t("intelNotYet")}</span>
-            {!done && <Btn small onClick={() => clear(a)}>{t("cleared")}</Btn>}
-          </div>
-        );
-      })}
-      <p className="th-note">💡 {t("intelTip")}</p>
-    </Section>
   );
 }
 

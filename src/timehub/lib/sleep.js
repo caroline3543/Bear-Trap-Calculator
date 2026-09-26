@@ -56,3 +56,26 @@ export function nextCycleCheck(endAt, fullMs, tz, sleep = DEFAULT_SLEEP) {
   const check = timingCheck(restartAt, fullMs, tz, sleep);
   return { endsOvernight: true, restartAt, ...check };
 }
+
+/**
+ * Finish-At advice for training that starts now, using the account's maximum training time
+ * (from campMaxFor). Aims for the "finish before bed" time (default 21:45) so the camps can be
+ * restarted before sleeping and a full batch runs overnight.
+ * → { finishAt, durationMs, kind: "bed" | "full", overnightEnd } — never longer than maxMs.
+ *   "bed":  finish at bedtime, then restart; overnightEnd = when that full batch ends.
+ *   "full": bedtime is out of reach in one batch (or too close) — a full batch is the best option.
+ */
+export function finishAdvice(now, maxMs, tz, sleep = DEFAULT_SLEEP) {
+  if (!(maxMs > 0)) return null;
+  const bed = nextLocalTime(now, sleep.target, tz);
+  const toBed = Math.floor((bed - now) / MINUTE) * MINUTE;
+  if (toBed >= 15 * MINUTE && toBed <= maxMs) {
+    return { kind: "bed", finishAt: now + toBed, durationMs: toBed, overnightEnd: now + toBed + maxMs };
+  }
+  return { kind: "full", finishAt: now + maxMs, durationMs: maxMs, overnightEnd: null };
+}
+
+/** Next occurrence of a local HH:MM from now (today if still ahead, otherwise tomorrow). */
+export function nextFinishTarget(now, hhmm, tz) {
+  return nextLocalTime(now, hhmm, tz);
+}

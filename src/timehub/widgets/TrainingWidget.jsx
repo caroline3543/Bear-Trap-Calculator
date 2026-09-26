@@ -6,23 +6,28 @@ import { useTimeHub } from "../TimeHubContext.jsx";
 import { success } from "../lib/feedback.js";
 import { useMinute, useClockFor } from "../hooks/useNow.jsx";
 import { TRAINING_CAMPS, applyTraining, busyCamps, planFinish, finishTogether, sortTimers, campMaxFor, hasHelios } from "../lib/timers.js";
-import { timingCheck, nextCycleCheck } from "../lib/sleep.js";
-import { zonedParts, zonedTimeToUtc, formatTime, formatDate, formatSpan, formatCountdown, formatCountdownClock, localDayRange, hhmmToMinutes } from "../lib/time.js";
+import { timingCheck, nextCycleCheck, finishAdvice, nextFinishTarget, inSleepWindow } from "../lib/sleep.js";
+import { ALL } from "../lib/accounts.js";
+import { parseCompactTime, zonedParts, zonedTimeToUtc, formatTime, formatDate, formatSpan, formatCountdown, formatCountdownClock, localDayRange, hhmmToMinutes } from "../lib/time.js";
 import { Section, Btn, Field, Seg, DurationFields, EMPTY_DUR, durFrom, durParse, FormActions, Icon, Ltr, Bidi, AccountSelect, AccountTag, Remaining } from "../components/ui.jsx";
 import { TimerRow, useWhenLocal } from "./TimerCard.jsx";
 
-function TrainForm({ onDone, preset }) {
-  const { t, lang, tz, newId, dataFor, defaultAccountId, updateAccount } = useTimeHub();
+/** Local "HH:MM" of an instant, as the digits typed into Finish At (e.g. "2145"). */
+function digitsAt(ms, tz) {
+  const p = zonedParts(ms, tz);
+  return `${String(p.hour).padStart(2, "0")}${String(p.minute).padStart(2, "0")}`;
+}
+
+function TrainForm({ onDone, preset, accountId }) {
+  const { t, lang, tz, newId, dataFor, updateAccount, state } = useTimeHub();
+  const sleep = state.settings.sleep;
   const now = useMinute(); // the planner works in minutes
-  const [accountId, setAccountId] = useState(preset?.accountId || defaultAccountId);
-  const [mode, setMode] = useState("left"); // left | finish
+  const [mode, setMode] = useState(preset?.ms ? "left" : "finish"); // finish (default) | left
   const [share, setShare] = useState(preset?.camp ? "each" : "same");
   const [shared, setShared] = useState(preset?.camps && preset.ms ? durFrom(preset.ms) : EMPTY_DUR);
   const [each, setEach] = useState(() => Object.fromEntries(TRAINING_CAMPS.map((c) => [c, preset?.camp === c ? durFrom(preset.ms) : EMPTY_DUR])));
   const [ticked, setTicked] = useState(() => Object.fromEntries(TRAINING_CAMPS.map((c) => [c, preset?.camps ? preset.camps.includes(c) : true])));
   const [troops, setTroops] = useState(() => Object.fromEntries(TRAINING_CAMPS.map((c) => [c, (preset?.camp === c && preset.troop === "helios") || preset?.troops?.[c] === "helios" ? "helios" : "normal"])));
-  const [targetDay, setTargetDay] = useState(0);
-  const [targetTime, setTargetTime] = useState("22:00");
   const [confirm, setConfirm] = useState(null);
   const [error, setError] = useState(null);
   const data = dataFor(accountId);
@@ -34,25 +39,41 @@ function TrainForm({ onDone, preset }) {
       ))}
     </span>
   );
+  const campChecks = (
+    <div className="th-checks">
+      {TRAINING_CAMPS.map((c) => (
+        <div key={c} className="th-camp-pick">
+          <label className="th-check"><input type="checkbox" checked={ticked[c]} onChange={(e) => setTicked({ ...ticked, [c]: e.target.checked })} />{t(c)}</label>
+          {ticked[c] && troopToggle(c)}
+        </div>
+      ))}
+    </div>
+  );
 
   const switchShare = (v) => {
     if (v === "each" && (shared.days || shared.hhmm)) setEach((e) => Object.fromEntries(TRAINING_CAMPS.map((c) => [c, e[c].days || e[c].hhmm ? e[c] : shared])));
     setShare(v);
   };
 
-  // --- time-left entries
+  // --- time-left entries (secondary mode)
   const entries = share === "same"
     ? TRAINING_CAMPS.filter((c) => ticked[c]).map((camp) => ({ camp, troop: troopOf(camp), r: durParse(shared) }))
     : TRAINING_CAMPS.filter((c) => each[c].days || each[c].hhmm).map((camp) => ({ camp, troop: troopOf(camp), r: durParse(each[camp]) }));
 
-  // --- finish-at planner
-  const day = localDayRange(now, tz, targetDay);
-  const p = zonedParts(day.start + 1, tz);
-  const tMin = hhmmToMinutes(targetTime);
-  const target = tMin == null ? NaN : zonedTimeToUtc(p.year, p.month, p.day, Math.floor(tMin / 60), tMin % 60, tz);
+  // --- Finish At (default mode): uses the account's existing maximum training times
   const planCamps = TRAINING_CAMPS.filter((c) => ticked[c]);
+  const maxes = planCamps.map((c) => ({ camp: c, max: campMaxFor(data, c, troopOf(c)) }));
+  const known = maxes.filter((m) => m.max > 0);
+  const limit = known.length ? known.reduce((a, b) => (b.max < a.max ? b : a)) : null; // the camp that runs out first
+  const advice = limit ? finishAdvice(now, limit.max, tz, sleep) : null;
+  const [raw, setRaw] = useState(() => (advice ? digitsAt(advice.finishAt, tz) : ""));
+  const hhmm = parseCompactTime(raw);
+  const target = hhmm ? nextFinishTarget(now, hhmm, tz) : NaN;
   const plans = planCamps.map((camp) => ({ camp, troop: troopOf(camp), plan: planFinish(target, now, campMaxFor(data, camp, troopOf(camp))) }));
-  const anyMissingMax = planCamps.some((c) => !campMaxFor(data, c, troopOf(c)));
+  const tooLong = plans.filter((x) => x.plan.ok && !x.plan.fitsMax);
+  const latest = limit ? now + limit.max : null;
+  const isAdvice = advice && Number.isFinite(target) && Math.abs(target - advice.finishAt) < 60000;
+  const dayWord = Number.isFinite(target) ? (localDayRange(now, tz, 0).end > target ? t("today") : t("tomorrow")) : "";
 
   function commit(list, extraPlan) {
     const at = Date.now();
@@ -80,109 +101,116 @@ function TrainForm({ onDone, preset }) {
 
   function startPlanNow() {
     if (!plans.length) return setError(t("errPickCamp"));
+    if (!hhmm) return setError(t("errFinishTime"));
     if (plans.some((x) => !x.plan.ok)) return setError(t("errPlanPast"));
+    if (tooLong.length) return setError(t("errTooLong"));
     setError(null);
     withConfirm(plans.map(({ camp, troop, plan }) => ({ camp, troop, durationMs: plan.trainFor })));
   }
 
   function remindLater() {
-    const late = plans.filter((x) => x.plan.ok && !x.plan.fitsMax);
-    const startAt = Math.min(...late.map((x) => x.plan.startAt));
-    updateAccount(accountId, (d) => ({ ...d, plans: [...(d.plans || []).filter((x) => x.startAt > Date.now()), { id: newId(), camps: late.map((x) => x.camp), startAt, target }] }));
+    const startAt = Math.min(...tooLong.map((x) => x.plan.startAt));
+    updateAccount(accountId, (d) => ({ ...d, plans: [...(d.plans || []).filter((x) => x.startAt > Date.now()), { id: newId(), camps: tooLong.map((x) => x.camp), startAt, target }] }));
     onDone();
   }
 
-  return (
-    <div className="th-form">
-      <AccountSelect value={accountId} onChange={setAccountId} />
-      <Seg value={mode} onChange={setMode} label={t("enterBy")} options={[{ value: "left", label: t("timeLeft") }, { value: "finish", label: t("finishAt") }]} />
-      {mode === "left" && (
+  if (mode === "left") {
+    return (
+      <div className="th-form">
         <Field label={t("camps")} as="div">
           <Seg value={share} onChange={switchShare} label={t("camps")} options={[{ value: "same", label: t("sameForAll") }, { value: "each", label: t("setEachCamp") }]} />
         </Field>
-      )}
-
-      {mode === "left" && share === "same" && (
-        <>
-          <DurationFields value={shared} onChange={setShared} label={t("timeLeftAll")} />
-          <div className="th-checks">
+        {share === "same" && (<><DurationFields value={shared} onChange={setShared} label={t("timeLeftAll")} />{campChecks}</>)}
+        {share === "each" && (
+          <div className="th-camp-rows">
             {TRAINING_CAMPS.map((c) => (
-              <div key={c} className="th-camp-pick">
-                <label className="th-check"><input type="checkbox" checked={ticked[c]} onChange={(e) => setTicked({ ...ticked, [c]: e.target.checked })} />{t(c)}</label>
-                {ticked[c] && troopToggle(c)}
+              <div key={c} className="th-camp-each">
+                <DurationFields value={each[c]} onChange={(v) => setEach({ ...each, [c]: v })} label={t(c)} optional />
+                {troopToggle(c)}
               </div>
             ))}
+            <p className="th-note">{t("emptyRowNote")}</p>
           </div>
-        </>
+        )}
+        {error && <span className="th-error" role="alert">{error}</span>}
+        {confirm && <div className="th-warn" role="alert">{t("replaceCamps", { camps: confirm.busy.map((c) => t(c)).join(", ") })}</div>}
+        <FormActions onSave={() => (confirm ? commit(confirm.list, confirm.extraPlan) : saveLeft())} onCancel={onDone} saveLabel={confirm ? t("replace") : t("startTimers")} />
+        <button type="button" className="th-link" onClick={() => setMode("finish")}>{t("useFinishAtInstead")}</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="th-form th-finishform">
+      {/* 2. What time will my camps finish? */}
+      <label className="th-finish">
+        <span className="th-finish-q">{t("finishAtQ")}</span>
+        <input className="th-finish-input" inputMode="numeric" autoComplete="off" placeholder="2200" maxLength={5}
+          aria-describedby="th-finish-read" value={raw} onChange={(e) => { setRaw(e.target.value.replace(/[^\d:.]/g, "")); setError(null); setConfirm(null); }} />
+        <span id="th-finish-read" className="th-finish-read">
+          {hhmm ? <><b><Ltr>{formatTime(target, tz, lang)}</Ltr></b> {dayWord} · <Ltr>{formatTime(target, "UTC", lang)}</Ltr> UTC</> : raw ? t("finishInvalid") : t("finishHint")}
+        </span>
+      </label>
+
+      {/* 3. Suggested finish (only when it differs from what's typed) */}
+      {advice && !isAdvice && (
+        <button type="button" className="th-suggest-btn" onClick={() => setRaw(digitsAt(advice.finishAt, tz))}>
+          {t(advice.kind === "bed" ? "suggestBed" : "suggestFull", { time: formatTime(advice.finishAt, tz, lang) })}
+        </button>
       )}
-      {mode === "left" && share === "each" && (
-        <div className="th-camp-rows">
-          {TRAINING_CAMPS.map((c) => (
-            <div key={c} className="th-camp-each">
-              <DurationFields value={each[c]} onChange={(v) => setEach({ ...each, [c]: v })} label={t(c)} optional />
-              {troopToggle(c)}
-            </div>
-          ))}
-          <p className="th-note">{t("emptyRowNote")}</p>
+
+      {/* 4. What will happen */}
+      {hhmm && plans.length > 0 && !tooLong.length && plans.every((x) => x.plan.ok) && (
+        <p className="th-outcome">
+          {t("outcomeTrainFor", { dur: formatSpan(plans[0].plan.trainFor, lang), time: formatTime(target, tz, lang) })}
+          {isAdvice && advice.kind === "bed" && <> {t("outcomeOvernight", { end: formatTime(advice.overnightEnd, tz, lang) })}</>}
+          {!isAdvice && inSleepWindow(target, tz, sleep) && advice && <> {t("outcomeAsleep")}</>}
+        </p>
+      )}
+
+      {/* 5. Limitation: never plan past the account's maximum */}
+      {tooLong.length > 0 && latest && (
+        <div className="th-limit" role="alert">
+          <span>{t("limitMax", { camp: t(limit.camp), max: formatSpan(limit.max, lang), time: formatTime(target, tz, lang), latest: formatTime(latest, tz, lang) })}</span>
+          <span className="th-item-actions">
+            <Btn small tone="gold" onClick={() => setRaw(digitsAt(latest, tz))}>{t("useTime", { time: formatTime(latest, tz, lang) })}</Btn>
+            <Btn small onClick={remindLater}>{t("remindStartAt", { time: formatTime(Math.min(...tooLong.map((x) => x.plan.startAt)), tz, lang) })}</Btn>
+          </span>
         </div>
       )}
-
-      {mode === "finish" && (
-        <>
-          <Field label={t("finishDay")} as="div">
-            <Seg value={targetDay} onChange={setTargetDay} label={t("finishDay")} options={[{ value: 0, label: t("today") }, { value: 1, label: t("tomorrow") }]} />
-          </Field>
-          <Field label={`${t("finishTime")} (${t("local")})`}>
-            <input className="th-input" type="time" step="300" value={targetTime} onChange={(e) => setTargetTime(e.target.value)} />
-          </Field>
-          {Number.isFinite(target) && <span className="th-hint">= {t("utc")} <Ltr>{formatTime(target, "UTC", lang)}</Ltr> · {formatDate(target, "UTC", lang)}</span>}
-          <div className="th-checks">
-            {TRAINING_CAMPS.map((c) => (
-              <div key={c} className="th-camp-pick">
-                <label className="th-check"><input type="checkbox" checked={ticked[c]} onChange={(e) => setTicked({ ...ticked, [c]: e.target.checked })} />{t(c)}</label>
-                {ticked[c] && troopToggle(c)}
-              </div>
-            ))}
-          </div>
-          <div className="th-plan">
-            {plans.map(({ camp, plan }) => (
-              <div key={camp} className={`th-plan-row ${plan.ok && !plan.fitsMax ? "warn" : ""}`}>
-                <b>{troopOf(camp) === "helios" ? t("heliosCamp", { camp: t(camp) }) : t(camp)}</b>
-                {!plan.ok ? <span className="th-error">{t(plan.error)}</span>
-                  : plan.fitsMax ? <span>{t("trainFor")} <Bidi>{formatSpan(plan.trainFor, lang)}</Bidi></span>
-                  : <span>{t("maxIs", { max: formatSpan(plan.trainFor, lang) })} {t("startFullBatchAt", { time: formatTime(plan.startAt, tz, lang) })}</span>}
-              </div>
-            ))}
-          </div>
-          {anyMissingMax && <p className="th-note">{t("noMaxNote")}</p>}
-        </>
-      )}
-
+      {!known.length && <p className="th-note">{t("noMaxNote")}</p>}
       {error && <span className="th-error" role="alert">{error}</span>}
       {confirm && <div className="th-warn" role="alert">{t("replaceCamps", { camps: confirm.busy.map((c) => t(c)).join(", ") })}</div>}
 
-      {mode === "left" ? (
-        <FormActions onSave={() => (confirm ? commit(confirm.list, confirm.extraPlan) : saveLeft())} onCancel={onDone} saveLabel={confirm ? t("replace") : t("startTimers")} />
-      ) : (
-        <div className="th-form-actions">
-          <Btn tone="gold" onClick={() => (confirm ? commit(confirm.list, confirm.extraPlan) : startPlanNow())}>{confirm ? t("replace") : t("startNow")}</Btn>
-          {plans.some((x) => x.plan.ok && !x.plan.fitsMax) && !confirm && <Btn onClick={remindLater}>{t("remindMeLater")}</Btn>}
-          <Btn onClick={onDone}>{t("cancel")}</Btn>
-        </div>
-      )}
+      {/* primary action */}
+      <Btn tone="gold" block onClick={() => (confirm ? commit(confirm.list, confirm.extraPlan) : startPlanNow())} disabled={!hhmm || !!tooLong.length}>
+        {confirm ? t("replace") : hhmm ? t("startFinishing", { time: formatTime(target, tz, lang) }) : t("startNow")}
+      </Btn>
+
+      {/* 6. Secondary */}
+      <details className="th-secondary">
+        <summary>{t("whichCamps")}</summary>
+        {campChecks}
+      </details>
+      <div className="th-item-actions">
+        <button type="button" className="th-link" onClick={() => setMode("left")}>{t("useTimeLeftInstead")}</button>
+        <button type="button" className="th-link" onClick={onDone}>{t("cancel")}</button>
+      </div>
     </div>
   );
 }
 
 /* Asked right in the widget (not a settings page) and always editable. Per account:
    a full-batch time for each camp, plus Helios classes with their own times. */
-function CampTimes() {
-  const { t, lang, dataFor, defaultAccountId, updateAccount, multi } = useTimeHub();
-  const [accountId, setAccountId] = useState(defaultAccountId);
+function CampTimes({ accountId }) {
+  const { t, lang, dataFor, updateAccount } = useTimeHub();
   const data = dataFor(accountId);
   const anySet = TRAINING_CAMPS.some((c) => data.campMax?.[c]);
   const [open, setOpen] = useState(!anySet);
+  const sameNow = (d) => d.campSame ?? (new Set(TRAINING_CAMPS.map((c) => d.campMax?.[c] || 0)).size === 1);
   const load = (d) => ({
+    same: sameNow(d),
+    all: durFrom(TRAINING_CAMPS.map((c) => d.campMax?.[c]).find((x) => x > 0)),
     normal: Object.fromEntries(TRAINING_CAMPS.map((c) => [c, durFrom(d.campMax?.[c])])),
     heliosOn: (d.helios?.classes || []).length > 0,
     classes: [...(d.helios?.classes || [])],
@@ -190,16 +218,17 @@ function CampTimes() {
   });
   const [f, setF] = useState(() => load(data));
   const [saved, setSaved] = useState(false);
-  const pick = (id) => { setAccountId(id); setF(load(dataFor(id))); setSaved(false); };
+  React.useEffect(() => { setF(load(dataFor(accountId))); setOpen(!TRAINING_CAMPS.some((c) => dataFor(accountId).campMax?.[c])); setSaved(false); }, [accountId]); // eslint-disable-line react-hooks/exhaustive-deps
   const bad = (v) => (v.days || v.hhmm) && durParse(v).error;
   const val = (v) => { const r = durParse(v); return r.error ? null : r.ms; };
-  const invalid = TRAINING_CAMPS.some((c) => bad(f.normal[c]) || (f.heliosOn && f.classes.includes(c) && bad(f.helios[c])));
+  const invalid = (f.same ? bad(f.all) : TRAINING_CAMPS.some((c) => bad(f.normal[c]))) || TRAINING_CAMPS.some((c) => f.heliosOn && f.classes.includes(c) && bad(f.helios[c]));
   function save() {
     if (invalid) return;
     const classes = f.heliosOn ? TRAINING_CAMPS.filter((c) => f.classes.includes(c)) : [];
     updateAccount(accountId, (d) => ({
       ...d,
-      campMax: Object.fromEntries(TRAINING_CAMPS.map((c) => [c, val(f.normal[c])])),
+      campSame: f.same,
+      campMax: Object.fromEntries(TRAINING_CAMPS.map((c) => [c, f.same ? val(f.all) : val(f.normal[c])])),
       helios: { classes, max: Object.fromEntries(TRAINING_CAMPS.map((c) => [c, classes.includes(c) ? val(f.helios[c]) : d.helios?.max?.[c] ?? null])) },
     }));
     setSaved(true);
@@ -207,7 +236,7 @@ function CampTimes() {
   }
   const span = (ms) => (ms ? formatSpan(ms, lang) : "—");
   const summary = [
-    ...TRAINING_CAMPS.map((c) => `${t(`short_${c}`)} ${span(data.campMax?.[c])}`),
+    ...(sameNow(data) ? [`${t("allCamps")} ${span(data.campMax?.infantry_camp)}`] : TRAINING_CAMPS.map((c) => `${t(`short_${c}`)} ${span(data.campMax?.[c])}`)),
     ...(data.helios?.classes || []).map((c) => `${t("heliosCamp", { camp: t(`short_${c}`) })} ${span(data.helios.max?.[c])}`),
   ].join(" · ");
 
@@ -215,7 +244,7 @@ function CampTimes() {
     return (
       <div className="th-camptimes closed">
         <div>
-          <span className="th-label">{t("fullBatchTimes")}</span>{multi && <> <AccountTag accountId={accountId} /></>}
+          <span className="th-label">{t("fullBatchTimes")}</span>
           <div className="th-camptimes-sum">{summary}</div>
         </div>
         <Btn small onClick={() => { setF(load(data)); setOpen(true); }}>{t("edit")}</Btn>
@@ -226,10 +255,13 @@ function CampTimes() {
     <div className="th-camptimes">
       <b className="th-camptimes-q">{anySet ? t("fullBatchTimes") : t("campTimesPrompt")}</b>
       <p className="th-note">{t("campTimesHelp")}</p>
-      <AccountSelect value={accountId} onChange={pick} />
-      {TRAINING_CAMPS.map((c) => (
-        <DurationFields key={c} value={f.normal[c]} onChange={(v) => setF({ ...f, normal: { ...f.normal, [c]: v } })} label={t(c)} optional />
-      ))}
+      <Seg value={f.same ? "same" : "each"} onChange={(v) => setF({ ...f, same: v === "same", normal: v === "each" && (f.all.days || f.all.hhmm) ? Object.fromEntries(TRAINING_CAMPS.map((c) => [c, f.normal[c].days || f.normal[c].hhmm ? f.normal[c] : f.all])) : f.normal })}
+        label={t("campTimesSameQ")} options={[{ value: "same", label: t("sameAllCamps") }, { value: "each", label: t("differentPerCamp") }]} />
+      {f.same
+        ? <DurationFields value={f.all} onChange={(v) => setF({ ...f, all: v })} label={t("everyCamp")} optional />
+        : TRAINING_CAMPS.map((c) => (
+          <DurationFields key={c} value={f.normal[c]} onChange={(v) => setF({ ...f, normal: { ...f.normal, [c]: v } })} label={t(c)} optional />
+        ))}
       <label className="th-check"><input type="checkbox" checked={f.heliosOn} onChange={(e) => setF({ ...f, heliosOn: e.target.checked })} />{t("haveHelios")}</label>
       {f.heliosOn && (
         <>
@@ -366,7 +398,7 @@ function AccountTimers({ acc, timers, plans, setPanel }) {
   const idleCount = restartable(dataFor(acc), now).length;
   return (
     <div className="th-group">
-      {multi && <div className="th-group-head"><AccountTag accountId={acc} /></div>}
+
       {idleCount > 0 && !restarting && (
         <Btn tone="gold" block onClick={() => setRestarting(true)}>↻ {t("restartAll", { n: idleCount })}</Btn>
       )}
@@ -401,28 +433,48 @@ function AccountTimers({ acc, timers, plans, setPanel }) {
 }
 
 export function TrainingWidget({ move }) {
-  const { t, tz, lang, accountIds, dataFor, updateAccount, trainDraft, setTrainDraft } = useTimeHub();
-  const now = useClockFor(accountIds.flatMap((a) => dataFor(a).timers.filter((x) => x.kind === "training").map((x) => x.endAt)));
+  const { t, accounts, filter, dataFor, defaultAccountId, trainDraft, setTrainDraft, multi } = useTimeHub();
+  // 1. Which account am I configuring? — one choice for the whole Training Camps page.
+  const [acc, setAcc] = useState(defaultAccountId);
+  React.useEffect(() => { if (filter !== ALL) setAcc(filter); }, [filter]);
+  const account = accounts.some((a) => a.id === acc) ? acc : defaultAccountId;
+  const data = dataFor(account);
+  const now = useClockFor(data.timers.filter((x) => x.kind === "training").map((x) => x.endAt));
   const [panel, setPanel] = useState(null); // null | "new" | {preset}
-  React.useEffect(() => { if (trainDraft) { setPanel({ preset: trainDraft, key: trainDraft.nonce }); setTrainDraft(null); } }, [trainDraft]);
-  const byAccount = accountIds.map((acc) => ({ acc, timers: sortTimers(dataFor(acc).timers.filter((x) => x.kind === "training"), now).sort((a, b) => (a.endAt > now) - (b.endAt > now) || Math.floor(a.endAt / 60000) - Math.floor(b.endAt / 60000) || TRAINING_CAMPS.indexOf(a.category) - TRAINING_CAMPS.indexOf(b.category)), plans: (dataFor(acc).plans || []).filter((p) => p.target > now) }));
-  const count = byAccount.reduce((n, a) => n + a.timers.length, 0);
+  React.useEffect(() => {
+    if (trainDraft) {
+      if (trainDraft.accountId) setAcc(trainDraft.accountId);
+      setPanel({ preset: trainDraft, key: trainDraft.nonce });
+      setTrainDraft(null);
+    }
+  }, [trainDraft]); // eslint-disable-line react-hooks/exhaustive-deps
+  const timers = sortTimers(data.timers.filter((x) => x.kind === "training"), now).sort((a, b) => (a.endAt > now) - (b.endAt > now) || Math.floor(a.endAt / 60000) - Math.floor(b.endAt / 60000) || TRAINING_CAMPS.indexOf(a.category) - TRAINING_CAMPS.indexOf(b.category));
+  const plans = (data.plans || []).filter((p) => p.target > now);
+  const campsSet = TRAINING_CAMPS.some((c) => data.campMax?.[c]);
 
   return (
-    <Section id="training" icon="training" title={t("secTraining")} count={count} move={move}
-      action={!panel && (
-        <span className="th-head-actions">
-          <Btn tone="gold" small icon={<Icon.plus />} onClick={() => setPanel("new")}>{t("add")}</Btn>
-        </span>
-      )}>
-      <CampTimes />
-      {panel === "new" && <TrainForm onDone={() => setPanel(null)} />}
-      {panel?.preset && <TrainForm key={panel.key || "p"} preset={panel.preset} onDone={() => setPanel(null)} />}
-      {count === 0 && !panel && <div className="th-empty">{t("emptyTraining")}</div>}
-      {byAccount.filter((a) => a.timers.length || a.plans.length || restartable(dataFor(a.acc), now).some((c) => c.fullMs)).map(({ acc, timers, plans }) => (
-        <AccountTimers key={acc} acc={acc} timers={timers} plans={plans} setPanel={setPanel} />
-      ))}
-
+    <Section id="training" icon="training" title={t("secTraining")} count={timers.length} move={move}>
+      {multi && (
+        <div className="th-train-acc" role="group" aria-label={t("trainingFor")}>
+          <span className="th-label">{t("trainingFor")}</span>
+          <div className="th-train-acc-row">
+            {accounts.map((a) => (
+              <button key={a.id} type="button" className={`th-accpill c${a.color}`} aria-pressed={a.id === account} onClick={() => { setAcc(a.id); setPanel(null); }}>
+                <i aria-hidden="true" />{a.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {!campsSet && <CampTimes accountId={account} />}
+      {!panel && <Btn tone="gold" block onClick={() => setPanel("new")}>{t("setFinishTime")}</Btn>}
+      {panel === "new" && <TrainForm key={account} accountId={account} onDone={() => setPanel(null)} />}
+      {panel?.preset && <TrainForm key={`${account}-${panel.key || "p"}`} accountId={account} preset={panel.preset} onDone={() => setPanel(null)} />}
+      {timers.length === 0 && !panel && <div className="th-empty">{t("emptyTraining")}</div>}
+      {(timers.length > 0 || plans.length > 0 || restartable(data, now).some((c) => c.fullMs)) && (
+        <AccountTimers key={account} acc={account} timers={timers} plans={plans} setPanel={setPanel} />
+      )}
+      {campsSet && <CampTimes accountId={account} />}
     </Section>
   );
 }
