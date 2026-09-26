@@ -923,3 +923,24 @@ html.th-diag-nocontain .th-root * { contain: none !important; }
 .th-speed-table .head span:not(:first-child) { text-align: end; }
 .th-speed-split { font-size: 12px; color: var(--sub); display: grid; gap: 2px; }
 .th-speed-split b { color: var(--ink); }
+
+/* ---- rendering isolation switches (only while the rendering test runs) ---- */
+html.th-diag-nobackdrop *, html.th-diag-nobackdrop *::before, html.th-diag-nobackdrop *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html.th-diag-opaque { --cardBgT: #F7F3E8 !important; }
+html.th-diag-opaque.dark, html.th-diag-opaque .dark { --cardBgT: #26211C !important; }
+html.th-diag-opaque .th-root *, html.th-diag-opaque .th-tabbar { opacity: 1 !important; }
+html.th-diag-noshadow *, html.th-diag-noshadow *::before, html.th-diag-noshadow *::after { box-shadow: none !important; text-shadow: none !important; }
+html.th-diag-nogradient, html.th-diag-nogradient body, html.th-diag-nogradient *, html.th-diag-nogradient *::before, html.th-diag-nogradient *::after { background-image: none !important; }
+html.th-diag-nofilter *, html.th-diag-nofilter *::before, html.th-diag-nofilter *::after { filter: none !important; }
+html.th-diag-noclip .th-root *, html.th-diag-noclip .th-mhdr, html.th-diag-noclip .th-tabbar { overflow: visible !important; clip-path: none !important; }
+html.th-diag-nofixed .th-tabbar { position: static !important; }
+html.th-diag-notransform .th-root *, html.th-diag-notransform .th-root *::before, html.th-diag-notransform .th-root *::after, html.th-diag-notransform .th-tabbar * { transform: none !important; will-change: auto !important; animation: none !important; transition: none !important; }
+html.th-diag-nomask *, html.th-diag-nomask *::before, html.th-diag-nomask *::after { -webkit-mask: none !important; mask: none !important; clip-path: none !important; }
+html.th-diag-noradius .th-root *, html.th-diag-noradius .th-root *::before, html.th-diag-noradius .th-root *::after, html.th-diag-noradius .th-tabbar, html.th-diag-noradius .th-tabbar * { border-radius: 0 !important; }
+html.th-diag-nosvg .th-root svg, html.th-diag-nosvg .th-tabbar svg { display: none !important; }
+html.th-diag-nofonts .th-root, html.th-diag-nofonts .th-root *, html.th-diag-nofonts .th-tabbar * { font-family: -apple-system, system-ui, "Helvetica Neue", Arial, sans-serif !important; }
+html.th-diag-noemoji .th-moon > span, html.th-diag-noemoji .th-burst, html.th-diag-noemoji .th-drift { display: none !important; }
+html.th-diag-nochrome .th-mhdr, html.th-diag-nochrome .th-accgrid { display: none !important; }
+html.th-diag-nocv .th-panel[hidden] { display: none !important; }
+html.th-diag-noblend *, html.th-diag-noblend *::before, html.th-diag-noblend *::after { mix-blend-mode: normal !important; }
+html.th-diag-nograin [style*="paperGrain"] { display: none !important; }

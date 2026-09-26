@@ -35,6 +35,10 @@ export const en = {
   speedTestRunning: "Testing… don't touch the screen",
   speedTestResults: "Speed test results",
   copyResults: "Copy results",
+  renderTestRun: "Run rendering test",
+  renderTestHelp: "Rendering test (about 5 minutes): turns off one visual feature at a time and times the drawing stage. Copy the results and send them.",
+  drawMs: "draw ms",
+  totalMs: "total ms",
   trackIntel: "Lighthouse intel missions",
 };
 export const it = {
@@ -73,6 +77,10 @@ export const it = {
   speedTestRunning: "Test in corso… non toccare lo schermo",
   speedTestResults: "Risultati del test",
   copyResults: "Copia risultati",
+  renderTestRun: "Avvia test di rendering",
+  renderTestHelp: "Test di rendering (circa 5 minuti): spegne una caratteristica grafica alla volta e misura la fase di disegno. Copia i risultati e inviali.",
+  drawMs: "disegno ms",
+  totalMs: "totale ms",
   trackIntel: "Missioni intel del Faro",
 };
 export const es = {
@@ -111,6 +119,10 @@ export const es = {
   speedTestRunning: "Probando… no toques la pantalla",
   speedTestResults: "Resultados",
   copyResults: "Copiar resultados",
+  renderTestRun: "Iniciar prueba de renderizado",
+  renderTestHelp: "Prueba de renderizado (unos 5 minutos): apaga un efecto visual cada vez y mide la fase de dibujo. Copia los resultados y envíalos.",
+  drawMs: "dibujo ms",
+  totalMs: "total ms",
   trackIntel: "Misiones de inteligencia del Faro",
 };
 export const ko = {
@@ -149,6 +161,10 @@ export const ko = {
   speedTestRunning: "테스트 중… 화면을 만지지 마세요",
   speedTestResults: "테스트 결과",
   copyResults: "결과 복사",
+  renderTestRun: "렌더링 테스트 시작",
+  renderTestHelp: "렌더링 테스트(약 5분): 시각 효과를 하나씩 끄고 그리기 단계를 측정해요. 결과를 복사해서 보내 주세요.",
+  drawMs: "그리기 ms",
+  totalMs: "전체 ms",
   trackIntel: "등대 정보 임무",
 };
 export const de = {
@@ -187,6 +203,10 @@ export const de = {
   speedTestRunning: "Test läuft … Bildschirm nicht berühren",
   speedTestResults: "Testergebnisse",
   copyResults: "Ergebnisse kopieren",
+  renderTestRun: "Rendering-Test starten",
+  renderTestHelp: "Rendering-Test (etwa 5 Minuten): schaltet jeweils einen visuellen Effekt aus und misst das Zeichnen. Ergebnisse kopieren und schicken.",
+  drawMs: "Zeichnen ms",
+  totalMs: "gesamt ms",
   trackIntel: "Leuchtturm-Aufklärungsmissionen",
 };
 export const ru = {
@@ -225,6 +245,10 @@ export const ru = {
   speedTestRunning: "Идёт тест… не трогайте экран",
   speedTestResults: "Результаты теста",
   copyResults: "Скопировать результаты",
+  renderTestRun: "Запустить тест отрисовки",
+  renderTestHelp: "Тест отрисовки (около 5 минут): по очереди отключает один визуальный эффект и замеряет этап рисования. Скопируйте результаты и пришлите.",
+  drawMs: "рисование мс",
+  totalMs: "всего мс",
   trackIntel: "Разведзадания Маяка",
 };
 export const pl = {
@@ -263,6 +287,10 @@ export const pl = {
   speedTestRunning: "Trwa test… nie dotykaj ekranu",
   speedTestResults: "Wyniki testu",
   copyResults: "Kopiuj wyniki",
+  renderTestRun: "Uruchom test renderowania",
+  renderTestHelp: "Test renderowania (ok. 5 minut): wyłącza po jednym efekcie wizualnym i mierzy etap rysowania. Skopiuj wyniki i wyślij je.",
+  drawMs: "rysowanie ms",
+  totalMs: "razem ms",
   trackIntel: "Misje wywiadowcze Latarni",
 };
 export const tr = {
@@ -301,6 +329,10 @@ export const tr = {
   speedTestRunning: "Test sürüyor… ekrana dokunma",
   speedTestResults: "Test sonuçları",
   copyResults: "Sonuçları kopyala",
+  renderTestRun: "Görüntü testini başlat",
+  renderTestHelp: "Görüntü testi (yaklaşık 5 dakika): her seferinde bir görsel özelliği kapatıp çizim aşamasını ölçer. Sonuçları kopyalayıp gönder.",
+  drawMs: "çizim ms",
+  totalMs: "toplam ms",
   trackIntel: "Deniz Feneri istihbarat görevleri",
 };
 export const ar = {
@@ -339,5 +371,9 @@ export const ar = {
   speedTestRunning: "جارٍ الاختبار… لا تلمس الشاشة",
   speedTestResults: "نتائج الاختبار",
   copyResults: "نسخ النتائج",
+  renderTestRun: "بدء اختبار الرسم",
+  renderTestHelp: "اختبار الرسم (نحو 5 دقائق): يوقف ميزة مرئية واحدة كل مرة ويقيس مرحلة الرسم. انسخ النتائج وأرسلها.",
+  drawMs: "الرسم ms",
+  totalMs: "الإجمالي ms",
   trackIntel: "مهام استخبارات المنارة",
 };
