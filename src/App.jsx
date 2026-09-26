@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import TimeHub from "./timehub/TimeHub.jsx";
+import paperGrainTile from "./paper-grain.png";
 
 /* ============================================================
    THEME / TOKENS — per design-system spec (cosy winter camping).
@@ -3005,7 +3006,9 @@ export default function App() {
           <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0.42  0 0 0 0 0.29  0 0 0 0 0.22  0 0 0 0.5 0" />
         </filter>
       </svg>
-      <div style={{ position: "absolute", inset: 0, zIndex: 0, filter: "url(#paperGrain)", opacity: 0.08, mixBlendMode: "multiply", pointerEvents: "none" }} />
+      {/* Same grain, pre-rendered once from the paperGrain filter above into a seamless tile.
+          A live SVG filter over the whole page made iPhone Safari take ~1 s to redraw the Time Hub tabs. */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 0, backgroundImage: `url(${paperGrainTile})`, backgroundSize: "128px 128px", backgroundRepeat: "repeat", opacity: 0.08, mixBlendMode: "multiply", pointerEvents: "none" }} />
 
       {/* Decorative watercolor corner accents — low opacity, never behind text */}
       <div style={{ position: "absolute", inset: 0, zIndex: 0, overflow: "hidden" }}>
