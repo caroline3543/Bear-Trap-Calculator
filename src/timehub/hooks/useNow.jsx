@@ -10,7 +10,7 @@
    Correctness never depends on the tick: every countdown is computed
    from absolute timestamps, and returning to the app recalculates at once.
    ============================================================ */
-import React, { createContext, useContext, useSyncExternalStore } from "react";
+import React, { createContext, useCallback, useContext, useLayoutEffect, useRef, useSyncExternalStore } from "react";
 
 const listeners = new Set();
 let now = Date.now();
@@ -56,25 +56,45 @@ function subscribe(listener) {
     }
   };
 }
-const noSubscribe = () => () => {};
 
 const getSnapshot = () => now;
 const getMinute = () => Math.floor(now / 60000) * 60000;
 
-/** False inside a tab that isn't showing: its clocks pause until you come back. */
-const ActiveCtx = createContext(true);
+/**
+ * Hidden tabs don't tick, and showing a tab costs almost nothing:
+ * the gate object is stable (flipping it never re-renders the tab), hidden clocks simply don't
+ * notify, and on reveal each clock is poked once — React then re-renders only the pieces whose
+ * value actually changed (countdown texts; minute-level widgets only if the minute moved).
+ * The hidden tab's DOM stays untouched while hidden, so the browser can reuse its layout.
+ */
+const ActiveCtx = createContext(null);
 export function ActiveTab({ active, children }) {
-  return <ActiveCtx.Provider value={active}>{children}</ActiveCtx.Provider>;
+  const gate = useRef(null);
+  if (!gate.current) gate.current = { active, listeners: new Set() };
+  gate.current.active = active;
+  useLayoutEffect(() => {
+    if (active) gate.current.listeners.forEach((l) => l());
+  }, [active]);
+  return <ActiveCtx.Provider value={gate.current}>{children}</ActiveCtx.Provider>;
+}
+
+function useGatedSubscribe() {
+  const gate = useContext(ActiveCtx);
+  return useCallback((listener) => {
+    if (!gate) return subscribe(listener);
+    const wrapped = () => { if (gate.active) listener(); };
+    gate.listeners.add(listener);
+    const off = subscribe(wrapped);
+    return () => { gate.listeners.delete(listener); off(); };
+  }, [gate]);
 }
 
 export function useNow() {
-  const active = useContext(ActiveCtx);
-  return useSyncExternalStore(active ? subscribe : noSubscribe, getSnapshot, getSnapshot);
+  return useSyncExternalStore(useGatedSubscribe(), getSnapshot, getSnapshot);
 }
 
 export function useMinute() {
-  const active = useContext(ActiveCtx);
-  return useSyncExternalStore(active ? subscribe : noSubscribe, getMinute, getMinute);
+  return useSyncExternalStore(useGatedSubscribe(), getMinute, getMinute);
 }
 
 /**
@@ -83,13 +103,13 @@ export function useMinute() {
  * per-second text in <Remaining>.
  */
 export function useClockFor(times) {
-  const active = useContext(ActiveCtx);
+  const sub = useGatedSubscribe();
   const snap = () => {
     let crossed = 0;
     for (const t of times) if (Number.isFinite(t) && t <= now) crossed++;
     return Math.floor(now / 60000) * 1000 + crossed;
   };
-  useSyncExternalStore(active ? subscribe : noSubscribe, snap, snap);
+  useSyncExternalStore(sub, snap, snap);
   return now;
 }
 

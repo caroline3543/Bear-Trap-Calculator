@@ -28,6 +28,7 @@ export const en = {
   intelRowNote: "~{n} new missions · clear the last batch first",
   intelSoon: "Lighthouse refreshes at {time}",
   intelSoonSub: "clear or claim your intel missions · in {in}",
+  showSpeed: "Show tab speed (for testing)",
   trackIntel: "Lighthouse intel missions",
 };
 export const it = {
@@ -59,6 +60,7 @@ export const it = {
   intelRowNote: "~{n} nuove missioni · completa prima il gruppo precedente",
   intelSoon: "Il Faro si aggiorna alle {time}",
   intelSoonSub: "completa o riscuoti le missioni intel · tra {in}",
+  showSpeed: "Mostra la velocità delle schede (per test)",
   trackIntel: "Missioni intel del Faro",
 };
 export const es = {
@@ -90,6 +92,7 @@ export const es = {
   intelRowNote: "~{n} misiones nuevas · completa antes la tanda anterior",
   intelSoon: "El Faro se renueva a las {time}",
   intelSoonSub: "completa o reclama tus misiones · en {in}",
+  showSpeed: "Mostrar velocidad de pestañas (para pruebas)",
   trackIntel: "Misiones de inteligencia del Faro",
 };
 export const ko = {
@@ -121,6 +124,7 @@ export const ko = {
   intelRowNote: "새 임무 약 {n}개 · 이전 임무 먼저 완료",
   intelSoon: "등대가 {time}에 갱신돼요",
   intelSoonSub: "정보 임무를 완료하거나 수령하세요 · {in} 후",
+  showSpeed: "탭 속도 표시 (테스트용)",
   trackIntel: "등대 정보 임무",
 };
 export const de = {
@@ -152,6 +156,7 @@ export const de = {
   intelRowNote: "~{n} neue Missionen · vorher die letzte Lieferung erledigen",
   intelSoon: "Leuchtturm aktualisiert sich um {time}",
   intelSoonSub: "Aufklärungsmissionen erledigen oder abholen · in {in}",
+  showSpeed: "Tab-Geschwindigkeit anzeigen (zum Testen)",
   trackIntel: "Leuchtturm-Aufklärungsmissionen",
 };
 export const ru = {
@@ -183,6 +188,7 @@ export const ru = {
   intelRowNote: "~{n} новых заданий · сначала выполните предыдущие",
   intelSoon: "Маяк обновится в {time}",
   intelSoonSub: "выполните или заберите разведзадания · через {in}",
+  showSpeed: "Показывать скорость вкладок (для проверки)",
   trackIntel: "Разведзадания Маяка",
 };
 export const pl = {
@@ -214,6 +220,7 @@ export const pl = {
   intelRowNote: "~{n} nowych misji · najpierw wykonaj poprzednie",
   intelSoon: "Latarnia odświeża się o {time}",
   intelSoonSub: "wykonaj lub odbierz misje wywiadowcze · za {in}",
+  showSpeed: "Pokaż szybkość kart (do testów)",
   trackIntel: "Misje wywiadowcze Latarni",
 };
 export const tr = {
@@ -245,6 +252,7 @@ export const tr = {
   intelRowNote: "~{n} yeni görev · önce önceki partiyi bitir",
   intelSoon: "Deniz Feneri {time} saatinde yenilenir",
   intelSoonSub: "istihbarat görevlerini bitir ya da al · {in} sonra",
+  showSpeed: "Sekme hızını göster (test için)",
   trackIntel: "Deniz Feneri istihbarat görevleri",
 };
 export const ar = {
@@ -276,5 +284,6 @@ export const ar = {
   intelRowNote: "نحو {n} مهام جديدة · أنجز الدفعة السابقة أولًا",
   intelSoon: "تتحدث المنارة عند {time}",
   intelSoonSub: "أنجز مهام الاستخبارات أو استلمها · بعد {in}",
+  showSpeed: "إظهار سرعة التبويبات (للاختبار)",
   trackIntel: "مهام استخبارات المنارة",
 };

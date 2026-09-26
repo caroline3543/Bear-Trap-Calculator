@@ -40,7 +40,7 @@ function defaultSettings() {
   return {
     displayTz: null, compact: false, collapsed: {}, showArchived: false,
     layout: sanitizeLayout([]), accountFilter: ALL, calendarAlarmMin: 10, setupDismissed: false,
-    knownTemplates: Object.keys(TEMPLATES), timeOptionsRev: TIME_OPTIONS_REV, tab: "today", haptics: true,
+    knownTemplates: Object.keys(TEMPLATES), timeOptionsRev: TIME_OPTIONS_REV, tab: "today", haptics: true, showSpeed: false,
     track: { reset: true, store: true, trek: true, stamina: true, contrib: true, intel: true }, sleep: { ...DEFAULT_SLEEP },
     champ: { leader: null, anchor: null },
   };
@@ -267,6 +267,7 @@ export function sanitizeState(raw, now = Date.now(), makeId = newId) {
       setupDismissed: s.setupDismissed === true,
       tab: ["today", "timers", "events", "calc"].includes(s.tab) ? s.tab : "today",
       haptics: s.haptics !== false,
+      showSpeed: s.showSpeed === true,
       track: Object.fromEntries(["reset", "store", "trek", "stamina", "contrib", "intel"].map((k) => [k, s.track?.[k] !== false])),
       champ: { leader: s.champ?.leader === true ? true : s.champ?.leader === false ? false : null, anchor: isThursdayStart(s.champ?.anchor) ? s.champ.anchor : null },
       sleep: ["start", "end", "target"].every((k) => hhmmToMinutes(s.sleep?.[k]) != null) ? { start: s.sleep.start, end: s.sleep.end, target: s.sleep.target } : { ...DEFAULT_SLEEP },

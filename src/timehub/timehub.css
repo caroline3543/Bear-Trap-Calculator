@@ -753,7 +753,7 @@ button[aria-pressed="true"] .th-dots i { box-shadow: 0 0 0 1.5px var(--selectedT
 /* ================= feel: instant taps, haptic-friendly, little animations ================= */
 .th-root button, .th-root a, .th-root select, .th-root label, .th-tabbar button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 /* Hidden tabs keep their layout cached (content-visibility), so showing them again is cheap. */
-.th-panel[hidden] { display: block !important; content-visibility: hidden; position: absolute; left: 0; top: 0; width: 100%; height: 0; overflow: hidden; pointer-events: none; }
+.th-panel[hidden] { display: block !important; content-visibility: hidden; contain-intrinsic-size: none; }
 .th-app main { position: relative; }
 .th-hidden { display: none; }
 
@@ -812,14 +812,14 @@ button[aria-pressed="true"] .th-dots i { box-shadow: 0 0 0 1.5px var(--selectedT
 /* header: snowflakes drift past the bear; the bear blinks now and then */
 .th-mhdr { position: relative; overflow: hidden; }
 .th-drift { position: absolute; inset: 0; pointer-events: none; }
-.th-drift i { position: absolute; top: -12px; font-style: normal; font-size: 11px; color: var(--teal); opacity: 0; animation: th-snow 7s linear infinite; }
+.th-drift i { position: absolute; top: -12px; font-style: normal; font-size: 11px; color: var(--teal); opacity: 0; animation: th-snow 7s linear 2; will-change: transform, opacity; }
 .th-drift i:nth-child(1) { left: 18%; animation-delay: .5s; }
 .th-drift i:nth-child(2) { left: 64%; animation-delay: 3.2s; font-size: 9px; }
 .th-drift i:nth-child(3) { left: 86%; animation-delay: 5.1s; color: var(--goldStrong); }
 @keyframes th-snow { 0% { opacity: 0; transform: translate(0, 0) rotate(0); } 10% { opacity: .7; } 85% { opacity: .5; } 100% { opacity: 0; transform: translate(-14px, 88px) rotate(160deg); } }
-.th-bear-clock .eyes { transform-origin: 37px 31px; animation: th-blink 5.5s infinite; }
+.th-bear-clock .eyes { transform-origin: 37px 31px; animation: th-blink 5.5s 3; }
 @keyframes th-blink { 0%, 94%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
-.th-bear-clock .hands { transform-origin: 68px 52px; animation: th-tick 8s steps(8) infinite; }
+.th-bear-clock .hands { transform-origin: 68px 52px; animation: th-tick 8s steps(8) 1; }
 @keyframes th-tick { to { transform: rotate(360deg); } }
 
 /* account buttons: the chosen one's dot hops */
@@ -861,9 +861,9 @@ button[aria-pressed="true"] .th-dots i { box-shadow: 0 0 0 1.5px var(--selectedT
 .th-drop { animation: th-pop .28s ease-out; transition: background-color .2s ease, border-color .2s ease; }
 .th-drop.ready .th-btn { animation: th-nudge 4s ease-in-out infinite; }
 
-/* section circles tilt when opened/closed */
+/* section circles: a little tilt when pressed (no :has(), which is slow to re-check in Safari) */
 .th-sec-head .th-num { transition: transform .25s cubic-bezier(.3, 1.6, .5, 1); }
-.th-sec-head:has(.th-sec-toggle[aria-expanded="false"]) .th-num { transform: rotate(-20deg) scale(.92); }
+.th-sec-head:active .th-num { transform: rotate(-20deg) scale(.92); }
 
 @media (prefers-reduced-motion: reduce) {
   .th-drift, .th-srow.next .th-srow-main::after { display: none; }
@@ -875,6 +875,7 @@ button[aria-pressed="true"] .th-dots i { box-shadow: 0 0 0 1.5px var(--selectedT
 
 /* Loops pause inside hidden tabs (and the browser pauses everything when the app is in the background). */
 .th-panel[hidden] *, .th-panel[hidden] *::before, .th-panel[hidden] *::after { animation-play-state: paused !important; }
+/* the calculator tab hides the Time Hub header; nothing up there should keep drawing */
 
 /* restart all camps + gentle overnight notes */
 .th-restart { gap: 10px; }
@@ -902,3 +903,8 @@ button[aria-pressed="true"] .th-dots i { box-shadow: 0 0 0 1.5px var(--selectedT
 .th-intel-acc { display: flex; align-items: center; gap: 8px; padding: 8px 2px; border-top: 1px solid var(--cardBorderT); }
 .th-intel-acc .th-tone { flex: 1; }
 .th-intel-acc.done .th-tone { color: var(--green); }
+
+/* Each card lays itself out independently, so a countdown changing inside one card never
+   makes the browser re-measure the rest of the tab. */
+.th-card, .th-srow, .th-trow, .th-stam, .th-drop, .th-ev, .th-need { contain: layout style; }
+.th-speed { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(92px + env(safe-area-inset-bottom, 0px)); z-index: 30; padding: 6px 12px; border-radius: 999px; background: var(--gold); color: var(--surface); font: 800 12.5px 'Nunito Sans', sans-serif; pointer-events: none; }

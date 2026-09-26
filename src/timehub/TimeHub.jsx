@@ -101,7 +101,7 @@ function TabBar({ hasCalc, active }) {
       <span className="th-tabpill" aria-hidden="true" />
       {tabs.map((x) => (
         <button key={x.id} type="button" aria-current={active === x.id ? "page" : undefined} className={active === x.id ? "on" : ""}
-          onPointerDown={() => active !== x.id && setTab(x.id)} onClick={() => setTab(x.id)}>
+          onPointerDown={() => { window.__thTap = performance.now(); if (active !== x.id) setTab(x.id); }} onClick={() => setTab(x.id)}>
           <TabIcon name={x.icon} />
           <span>{t(`tab_${x.id}`)}</span>
         </button>
@@ -167,6 +167,7 @@ function SettingsPanel({ headerExtra }) {
           )}
           <label className="th-check"><input type="checkbox" checked={state.settings.compact} onChange={(e) => dispatch({ type: "settings", patch: { compact: e.target.checked } })} />{t("compact")}</label>
           <label className="th-check"><input type="checkbox" checked={state.settings.haptics !== false} onChange={(e) => dispatch({ type: "settings", patch: { haptics: e.target.checked } })} />{t("hapticsSetting")}</label>
+          <label className="th-check"><input type="checkbox" checked={!!state.settings.showSpeed} onChange={(e) => dispatch({ type: "settings", patch: { showSpeed: e.target.checked } })} />{t("showSpeed")}</label>
         </div>
       </section>
       <section className="th-card" aria-label={t("whatToTrack")}>
@@ -265,6 +266,16 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
 
   const panel = (id, content) => visited.has(id) && <Panel key={id} on={active === id}>{content}</Panel>;
 
+  // Optional speed readout (⚙ → Show tab speed): time from your tap to the new tab being drawn.
+  const { state } = useTimeHub();
+  const [speed, setSpeed] = useState(null);
+  React.useLayoutEffect(() => {
+    if (!state.settings.showSpeed || !window.__thTap) return;
+    const t0 = window.__thTap;
+    window.__thTap = 0;
+    requestAnimationFrame(() => requestAnimationFrame(() => setSpeed({ tab: active, ms: Math.round(performance.now() - t0) })));
+  }, [active, state.settings.showSpeed]);
+
   return (
     <div className={`th-root th-app ${active === "calc" ? "is-calc" : ""} ${compact ? "th-compact" : ""}`} dir={dir}
       onPointerDownCapture={(e) => onPress(e.target)}>
@@ -277,6 +288,7 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
         {calculator && panel("calc", <CalcPanel calculator={calculator} />)}
       </main>
       <TabBar hasCalc={!!calculator} active={pressed} />
+      {state.settings.showSpeed && speed && <div className="th-speed" role="status">{t(`tab_${speed.tab}`)} · {speed.ms} ms</div>}
     </div>
   );
 }
