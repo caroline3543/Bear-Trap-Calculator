@@ -4,7 +4,7 @@ import { success } from "../lib/feedback.js";
 import { useClockFor } from "../hooks/useNow.jsx";
 import { contribState, spendAttempt, setAttempts, adjustAttempts, reconfigure } from "../lib/contributions.js";
 import { formatCountdown, formatCountdownClock, formatTime, formatDate, MINUTE } from "../lib/time.js";
-import { Section, Btn, Field, Seg, FormActions, Ltr, Bidi, AccountTag, Remaining, ProgressFill } from "../components/ui.jsx";
+import { Section, Btn, Field, Seg, FormActions, Ltr, Bidi, Remaining, GroupName } from "../components/ui.jsx";
 
 function parseMmSs(s) {
   const m = /^\s*(\d{1,3}):(\d{2})\s*$/.exec(s || "");
@@ -91,7 +91,8 @@ function RulesForm({ contrib, accountId, onDone }) {
   );
 }
 
-function ContribBlock({ accountId, several }) {
+/** One compact row per account: count, FULL or the next +1, and −/+. Tap for the rest. */
+function ContribRow({ accountId, showName, open, onToggle }) {
   const { t, tz, lang, dataFor, updateAccount: upd } = useTimeHub();
   const updateAccount = (fn) => upd(accountId, fn);
   const [panel, setPanel] = useState(null); // null | "match" | "rules"
@@ -99,65 +100,75 @@ function ContribBlock({ accountId, several }) {
   const peek = contribState(contrib, Date.now());
   const now = useClockFor([peek.nextAt]); // re-render when the next attempt arrives
   const live = contribState(contrib, now);
-
   const spendAll = () => { success(); updateAccount((acc) => {
     const n = contribState(acc.contrib, Date.now()).count;
     return n > 0 ? { ...acc, contrib: spendAttempt(acc.contrib, Date.now(), n) || acc.contrib } : acc;
   }); };
   const nudge = (d) => updateAccount((acc) => ({ ...acc, contrib: adjustAttempts(acc.contrib, Date.now(), d) }));
-
   return (
-    <div className={several ? "th-item" : ""}>
-      {several && <div style={{ marginBottom: 8 }}><AccountTag accountId={accountId} /></div>}
-      <div className="th-contrib">
-        <div>
-          <div className="th-contrib-count" aria-live="polite"><Ltr>{live.count} / {live.max}</Ltr></div>
-          <div className={`th-contrib-state ${live.full ? "full" : ""}`}>{live.full ? t("fullStatus") : t("attempts")}</div>
-        </div>
-        <div className="th-contrib-stats">
-          {live.full ? (
-            <div><span>{t("contribFullHint")}</span></div>
-          ) : (
-            <>
-              <div><span>{t("nextPlusOne")}</span><b><Remaining to={live.nextAt} fmt="clock" /></b></div>
-              <div><span>{t("fullIn")}</span><b><Remaining to={live.fullAt} /></b></div>
-              <div><span>{t("fullAt")}</span><b><Ltr>{formatTime(live.fullAt, tz, lang)}</Ltr> <span style={{ fontWeight: 600, color: "var(--sub)" }}>{formatDate(live.fullAt, tz, lang)}</span></b></div>
-            </>
-          )}
-        </div>
-        {live.max <= 40 && !several && (
-          <div className="th-pips" aria-hidden="true" style={{ gridTemplateColumns: `repeat(${live.max}, minmax(0, 1fr))` }}>
-            {Array.from({ length: live.max }, (_, i) => <i key={i} className={i < live.count ? "on" : ""} />)}
-          </div>
-        )}
-      </div>
-      {!live.full && (
-        <div className="th-progress" role="progressbar" aria-label={t("nextAttempt")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(live.progress * 100)}>
-          <ProgressFill start={live.nextAt - contrib.intervalMs} end={live.nextAt} />
-        </div>
-      )}
-      <div className="th-big-actions" style={{ marginTop: 10 }}>
-        <Btn tone="gold" onClick={spendAll} disabled={live.count < 1}>{live.count < 1 ? t("noAttempts") : t("spendAll", { n: live.count })}</Btn>
+    <div className={`th-contrib-row ${live.full ? "full" : ""} ${open ? "open" : ""}`}>
+      <div className="th-contrib-line">
+        <button type="button" className="th-contrib-tap" aria-expanded={open} onClick={onToggle}>
+          {showName ? <GroupName accountId={accountId} /> : <span className="th-grp-name">{t("attempts")}</span>}
+          <span className="th-contrib-num"><Ltr>{live.count} / {live.max}</Ltr></span>
+          <span className={`th-contrib-st ${live.full ? "full" : ""}`}>{live.full ? t("fullStatus") : <>+1 · <Remaining to={live.nextAt} fmt="clock" /></>}</span>
+        </button>
         <Btn className="icon" onClick={() => nudge(-1)} disabled={live.count < 1} aria-label={t("removeOne")} title={t("removeOne")}>−</Btn>
         <Btn className="icon" onClick={() => nudge(+1)} disabled={live.full} aria-label={t("addOne")} title={t("addOne")}>+</Btn>
       </div>
-      {panel === "match" && <MatchForm contrib={contrib} accountId={accountId} onDone={() => setPanel(null)} />}
-      {panel === "rules" && <RulesForm contrib={contrib} accountId={accountId} onDone={() => setPanel(null)} />}
-      {!panel && (
-        <div className="th-item-actions">
-          <Btn small onClick={() => setPanel("match")}>{t("matchGame")}</Btn>
-          <Btn small onClick={() => setPanel("rules")}>{t("contribSettings")}</Btn>
+      {open && (
+        <div className="th-contrib-more">
+          {!live.full && (
+            <div className="th-contrib-stats">
+              <div><span>{t("fullIn")}</span><b><Remaining to={live.fullAt} /></b></div>
+              <div><span>{t("fullAt")}</span><b><Ltr>{formatTime(live.fullAt, tz, lang)}</Ltr> <span style={{ fontWeight: 600, color: "var(--sub)" }}>{formatDate(live.fullAt, tz, lang)}</span></b></div>
+            </div>
+          )}
+          {live.full && <p className="th-note">{t("contribFullHint")}</p>}
+          {panel === "match" && <MatchForm contrib={contrib} accountId={accountId} onDone={() => setPanel(null)} />}
+          {panel === "rules" && <RulesForm contrib={contrib} accountId={accountId} onDone={() => setPanel(null)} />}
+          {!panel && (
+            <div className="th-item-actions">
+              <Btn small tone="gold" onClick={spendAll} disabled={live.count < 1}>{live.count < 1 ? t("noAttempts") : t("spendAll", { n: live.count })}</Btn>
+              <Btn small onClick={() => setPanel("match")}>{t("matchGame")}</Btn>
+              <Btn small onClick={() => setPanel("rules")}>{t("contribSettings")}</Btn>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-export function ContributionWidget({ move }) {
-  const { t, accountIds } = useTimeHub();
+/** Folded view: are any trackers full (attempts being wasted)? When is the next +1? */
+function ContribSummary() {
+  const { t, lang, accountIds, dataFor } = useTimeHub();
+  const peeks = accountIds.map((a) => contribState(dataFor(a).contrib, Date.now()));
+  const now = useClockFor(peeks.map((p) => p.nextAt));
+  const lives = accountIds.map((a) => contribState(dataFor(a).contrib, now));
+  const full = lives.filter((l) => l.full).length;
+  const notFull = lives.filter((l) => !l.full).sort((a, b) => a.nextAt - b.nextAt);
+  if (lives.length === 1) {
+    const l = lives[0];
+    return l.full ? <span className="attn">{l.count} / {l.max} · {t("fullStatus")}</span> : <span>{l.count} / {l.max} · +1 <b><Remaining to={l.nextAt} fmt="clock" /></b></span>;
+  }
+  if (full === lives.length) return <span className="attn">{t("allNFull", { n: full })}</span>;
   return (
-    <Section id="contrib" icon="contrib" title={t("secContrib")} move={move}>
-      {accountIds.map((id) => <ContribBlock key={id} accountId={id} several={accountIds.length > 1} />)}
+    <span>
+      {full > 0 && <span className="attn">{t("nFull", { n: full })} · </span>}
+      {t("nextPlusOneShort")} <b><Remaining to={notFull[0].nextAt} fmt="clock" /></b>
+    </span>
+  );
+}
+
+export function ContributionWidget({ move }) {
+  const { t, accountIds, multi } = useTimeHub();
+  const [openId, setOpenId] = useState(null);
+  return (
+    <Section id="contrib" icon="contrib" title={t("secContrib")} count={multi ? accountIds.length : 0} move={move} defaultClosed summary={<ContribSummary />}>
+      <div className="th-contrib-list">
+        {accountIds.map((id) => <ContribRow key={id} accountId={id} showName={multi} open={openId === id} onToggle={() => setOpenId(openId === id ? null : id)} />)}
+      </div>
       <p className="th-note">{t("contribNote")}</p>
     </Section>
   );

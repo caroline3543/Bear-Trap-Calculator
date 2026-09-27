@@ -21,7 +21,7 @@ export function useWhenLocal() {
   };
 }
 
-export function TimerRow({ timer: x, accountId, onEdit, label, slim }) {
+export function TimerRow({ timer: x, accountId, onEdit, label, slim, compact }) {
   const { t, lang, updateAccount, accountById } = useTimeHub();
   const now = useClockFor([x.endAt]); // re-renders when it finishes, not every second
   const when = useWhenLocal();
@@ -44,6 +44,32 @@ export function TimerRow({ timer: x, accountId, onEdit, label, slim }) {
         <div className="th-trow-main"><div className="th-trow-name">{label || t(x.category)}</div></div>
         <button type="button" className="th-more" aria-expanded={open} aria-label={`${t("options")}: ${label || t(x.category)}`} onClick={() => setOpen(!open)}>⋯</button>
         {actions}
+      </div>
+    );
+  }
+  if (compact) {
+    return (
+      <div className={`th-crow ${ready ? "ready" : ""}`}>
+        <div className="th-crow-name">{label || t(x.category)}<small>{ready ? t(x.kind === "training" ? "stTrained" : "stDone") : <Ltr>{when(x.endAt)}</Ltr>}</small></div>
+        <div className="th-crow-count" role="timer">{ready ? <span className="th-ready-dot">{t("readyNow")}</span> : <Remaining to={x.endAt} fmt="clock" />}</div>
+        <button type="button" className="th-more" aria-expanded={open} aria-label={`${t("options")}: ${label || t(x.category)}`} onClick={() => setOpen(!open)}>⋯</button>
+        {open && (
+          <div className="th-item-actions th-trow-actions">
+            {ready ? (
+              <>
+                <Btn small tone="primary" onClick={() => remove(false)}>{t("dismiss")}</Btn>
+                <Btn small onClick={restart}>{t("restart")}</Btn>
+              </>
+            ) : (
+              <>
+                {onEdit && <Btn small onClick={onEdit}>{t("edit")}</Btn>}
+                <Btn small onClick={restart}>{t("restart")}</Btn>
+                <Btn small tone="danger" onClick={() => remove(true)}>{t("cancel")}</Btn>
+                <CalendarButtons items={[{ uid: `tm:${x.id}`, start: x.endAt, title: title + (acct ? ` (${acct.name})` : "") }]} filename={`${x.category}-${x.id}`} />
+              </>
+            )}
+          </div>
+        )}
       </div>
     );
   }

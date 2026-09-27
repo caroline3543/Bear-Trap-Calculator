@@ -96,13 +96,46 @@ function dropsAround(kind, now) {
   return [...past.slice(-Math.max(1, n - next.length)), ...next].slice(0, n);
 }
 
+function StaminaSummary() {
+  const { t, lang, accountIds, dataFor, accountById, multi, state } = useTimeHub();
+  const now = useMinute();
+  const track = state.settings.track || {};
+  const parts = [];
+  if (track.stamina !== false) {
+    const rows = accountIds.map((a) => ({ a, s: staminaNow(dataFor(a).stamina, now) })).filter((r) => r.s);
+    const urgent = rows.find((r) => r.s.atCap || (r.s.fullAt && r.s.fullAt - now <= 60 * 60000));
+    if (urgent) parts.push(<span key="u" className="attn">{urgent.s.atCap ? t("staminaAtCapShort") : t("staminaSoon", { time: formatSpan(urgent.s.fullAt - now, lang) })}{multi ? ` · ${accountById(urgent.a)?.name}` : ""}</span>);
+    else if (rows.length) parts.push(<span key="v">{rows.map((r) => (multi ? `${accountById(r.a)?.name} ${r.s.value}` : `${r.s.value} / ${STAMINA_CAP}`)).join(" · ")}</span>);
+  }
+  if (track.store !== false) {
+    const ready = dropsAround("store", now).some((d) => accountIds.some((a) => dropStatus(d, dataFor(a).claims, now) === "ready" && isCurrentDrop(d, now)));
+    if (ready) parts.push(<span key="s" className="attn">{t("storehouseReady")}</span>);
+  }
+  return parts.length ? <span>{parts.reduce((acc, p, i) => (i ? [...acc, " · ", p] : [p]), [])}</span> : <span>{t("staminaSub")}</span>;
+}
+
+function TrekSummary() {
+  const { t, tz, lang, accountIds, dataFor } = useTimeHub();
+  const now = useMinute();
+  const list = dropsAround("trek", now);
+  const ready = list.some((d) => d.manual && accountIds.some((a) => dropStatus(d, dataFor(a).claims, now) === "ready" && isCurrentDrop(d, now)));
+  const next = list.find((d) => d.at > now && d.manual);
+  return (
+    <span>
+      {ready && <span className="attn">{t("readyToClaim")}</span>}
+      {ready && next && " · "}
+      {next && <>{t("nextClaim")} <b><Ltr>{formatTime(next.at, tz, lang)}</Ltr></b></>}
+    </span>
+  );
+}
+
 export function StaminaWidget() {
   const { t, accountIds, state } = useTimeHub();
   const now = useMinute();
   const claim = useClaim();
   const track = state.settings.track || {};
   return (
-    <Section id="stamina" icon="bolt" title={t("secStamina")} sub={track.stamina !== false ? t("staminaSub") : null}>
+    <Section id="stamina" icon="bolt" title={t("secStamina")} sub={track.stamina !== false ? t("staminaSub") : null} defaultClosed summary={<StaminaSummary />}>
       {track.stamina !== false && accountIds.map((a) => <StaminaRow key={a} accountId={a} />)}
       {track.store !== false && <div className="th-drops two">{dropsAround("store", now).map((d) => <DropTile key={d.key} d={d} claim={claim} />)}</div>}
       <p className="th-note">{t("staminaDaily")}</p>
@@ -115,7 +148,7 @@ export function TrekWidget() {
   const now = useMinute();
   const claim = useClaim();
   return (
-    <Section id="trek" icon="boot" title={t("secTrek")} sub={t("trekSub")}>
+    <Section id="trek" icon="boot" title={t("secTrek")} sub={t("trekSub")} defaultClosed summary={<TrekSummary />}>
       <div className="th-drops">{dropsAround("trek", now).map((d) => <DropTile key={d.key} d={d} claim={claim} />)}</div>
       <p className="th-note">{t("trekNote")}</p>
     </Section>

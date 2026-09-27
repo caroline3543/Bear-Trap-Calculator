@@ -781,3 +781,84 @@ test("troops ⇄ time: proportional to the full batch, never beyond it", () => {
   const r = (async () => (await import("../lib/storage.js")).sanitizeState(JSON.parse(JSON.stringify(s)), T0, mkId))();
   return r.then((x) => assert.deepEqual(x.accountData.A.campTroops, { infantry_camp: 3400 }));
 });
+
+/* ---------- Today plan: free time, personal tasks, one chip per account ---------- */
+import { buildTimeline, parseTaskDuration, placeTask, rowChips, occupancy } from "../lib/plan.js";
+
+const pev = (id, start, end, accountId) => ({ id, kind: "event", start, end, accountId, ref: { ev: { templateId: null } } });
+const pinst = (id, kind, start, accountId) => ({ id, kind, start, end: null, accountId, ref: {} });
+const view = (tl) => tl.map((e) => e.type === "gap" ? `gap ${(e.ms / MINUTE)}m` : e.type === "task" ? `task ${e.task.title}` : `item ${e.item.id}`);
+
+test("acceptance: Bear Trap 09–10, research 12:00 → 2h free; add dinner 45 and kitchen 30", () => {
+  const D = Date.UTC(2026, 8, 24), H = (h, m = 0) => D + h * HOUR + m * MINUTE;
+  const items = [pev("bear", H(9), H(10), "A"), pinst("research", "research", H(12), "B")];
+  const now = H(8);
+  let tl = buildTimeline(items, [], D, D + DAY, now);
+  assert.deepEqual(view(tl).slice(0, 4), ["gap 60m", "item bear", "gap 120m", "item research"]);
+  const gap = tl.find((e) => e.type === "gap" && e.start === H(10));
+  const dinnerMs = parseTaskDuration("45");
+  const p1 = placeTask(gap, dinnerMs);
+  assert.deepEqual([p1.fits, p1.start, p1.end], [true, H(10), H(10, 45)]);
+  const tasks = [{ id: "t1", title: "Make dinner", start: p1.start, end: p1.end, done: false }];
+  tl = buildTimeline(items, tasks, D, D + DAY, now);
+  const g2 = tl.find((e) => e.type === "gap" && e.start === H(10, 45));
+  assert.equal(g2.ms, 75 * MINUTE); // 1h 15m free
+  const p2 = placeTask(g2, parseTaskDuration("30"));
+  tasks.push({ id: "t2", title: "Clean kitchen", start: p2.start, end: p2.end, done: false });
+  tl = buildTimeline(items, tasks, D, D + DAY, now);
+  assert.deepEqual(view(tl).slice(1, 6), ["item bear", "task Make dinner", "task Clean kitchen", "gap 45m", "item research"]);
+  assert.equal(p2.start, H(10, 45));
+  assert.equal(p2.end, H(11, 15));
+  // too long: say by how much, don't overlap silently
+  const tooLong = placeTask(tl.find((e) => e.type === "gap" && e.start === H(11, 15)), 2 * HOUR);
+  assert.deepEqual([tooLong.fits, tooLong.over], [false, 75 * MINUTE]);
+});
+
+test("free time: overlapping events merge, unknown ends claim no gap, done tasks take no time, only from now", () => {
+  const D = Date.UTC(2026, 8, 24), H = (h, m = 0) => D + h * HOUR + m * MINUTE;
+  const a = pev("a", H(10), H(11)), b = pev("b", H(10, 30), H(12)), c = pinst("c", "training", H(14));
+  let tl = buildTimeline([a, b, c], [], D, D + DAY, H(9));
+  assert.deepEqual(view(tl).slice(0, 5), ["gap 60m", "item a", "item b", "gap 120m", "item c"]);
+  const unknown = pev("u", H(13), null);
+  assert.equal(occupancy(unknown), "unknown");
+  tl = buildTimeline([a, unknown, c], [], D, D + DAY, H(9));
+  assert.deepEqual(view(tl).slice(0, 5), ["gap 60m", "item a", "gap 120m", "item u", "item c"]); // nothing between u and c
+  const done = { id: "d", title: "Shower", start: H(11), end: H(11, 30), done: true };
+  tl = buildTimeline([a, c], [done], D, D + DAY, H(9));
+  assert.ok(view(tl).includes("gap 180m")); // 11:00 → 14:00 still free
+  tl = buildTimeline([a, c], [], D, D + DAY, H(12)); // it's noon: past gaps disappear, the next one starts now
+  assert.equal(tl.find((e) => e.type === "gap").start, H(12));
+  assert.equal(occupancy({ kind: "event", start: 1, end: null, ref: { ev: { templateId: "daily_reset" } } }), "instant");
+});
+
+test("task length typing: 30 → 30m, 90 → 1h30, 130 → 1h30, 230 → 2h30", () => {
+  assert.equal(parseTaskDuration("30"), 30 * MINUTE);
+  assert.equal(parseTaskDuration("90"), 90 * MINUTE);
+  assert.equal(parseTaskDuration("130"), 90 * MINUTE);
+  assert.equal(parseTaskDuration("230"), 150 * MINUTE);
+  assert.equal(parseTaskDuration("1:30"), 90 * MINUTE);
+  for (const bad of ["", "0", "abc", "199", "12345"]) assert.equal(parseTaskDuration(bad), null, bad);
+});
+
+test("an account chip can't appear twice on one row", () => {
+  const rems = [{ key: "k1", accountId: "B" }];
+  const one = rowChips("B", rems); // Farm event: chip once, minister line without a second chip
+  assert.equal(one.itemChip, "B");
+  assert.equal(one.reminders[0].chip, false);
+  const shared = rowChips(null, [{ key: "k1", accountId: "A" }, { key: "k2", accountId: "B" }]); // shared event: one per account line
+  assert.deepEqual(shared.reminders.map((r) => r.chip), [true, true]);
+  const chipsShown = [one.itemChip, ...one.reminders.filter((r) => r.chip).map((r) => r.accountId)];
+  assert.equal(new Set(chipsShown).size, chipsShown.length);
+});
+
+test("tasks survive save/load; junk and old tasks are dropped", async () => {
+  const { sanitizeState } = await import("../lib/storage.js");
+  const s = emptyState(T0, mkId);
+  s.tasks = [
+    { id: "t1", title: " Make dinner ", start: T0, end: T0 + 45 * MINUTE, done: true },
+    { id: "t2", title: "", start: T0, end: T0 + MINUTE },
+    { id: "t3", title: "Old", start: T0 - 9 * DAY, end: T0 - 9 * DAY + HOUR },
+  ];
+  const r = sanitizeState(JSON.parse(JSON.stringify(s)), T0, mkId);
+  assert.deepEqual(r.tasks, [{ id: "t1", title: "Make dinner", start: T0, end: T0 + 45 * MINUTE, done: true }]);
+});

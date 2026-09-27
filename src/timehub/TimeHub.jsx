@@ -70,11 +70,11 @@ function Header({ title, headerExtra, onSettings, settingsOpen, children }) {
 }
 
 /** Same big account buttons as the calculator (up to 4) plus All. */
-function AccountGrid({ onAdd }) {
+function AccountGrid({ onAdd, compact }) {
   const { t, accounts, filter, setFilter } = useTimeHub();
   const multi = accounts.length > 1;
   return (
-    <div className="th-accgrid" role="group" aria-label={t("showAccounts")}>
+    <div className={`th-accgrid ${compact ? "compact" : ""}`} role="group" aria-label={t("showAccounts")}>
       {multi && (
         <button type="button" className="th-accbtn all" aria-pressed={filter === ALL} onClick={() => setFilter(ALL)}>{t("allAccounts")}</button>
       )}
@@ -300,7 +300,7 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
           {active === "today" && !settings && <StatStrip />}
         </Header>
       )}
-      {active !== "calc" && (settings ? <SettingsPanel headerExtra={headerExtra} hasCalc={!!calculator} closeSettings={() => flushSync(() => setSettings(false))} reopenSettings={() => setSettings(true)} startTour={() => setTour(0)} /> : <AccountGrid onAdd={() => setSettings(true)} />)}
+      {active !== "calc" && (settings ? <SettingsPanel headerExtra={headerExtra} hasCalc={!!calculator} closeSettings={() => flushSync(() => setSettings(false))} reopenSettings={() => setSettings(true)} startTour={() => setTour(0)} /> : <AccountGrid compact={active === "timers"} onAdd={() => setSettings(true)} />)}
       <main className={settings && active !== "calc" ? "th-hidden" : ""}>
         {panel("today", TODAY_EL)}
         {panel("timers", TIMERS_EL)}

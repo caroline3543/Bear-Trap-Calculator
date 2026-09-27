@@ -58,6 +58,7 @@ export function emptyState(now = Date.now(), makeId = newId) {
     timeOptions: Object.fromEntries(Object.entries(DEFAULT_TIME_OPTIONS).map(([k, v]) => [k, [...v]])),
     reminders: {},
     friends: [],
+    tasks: [],
   };
 }
 
@@ -244,7 +245,7 @@ export function sanitizeState(raw, now = Date.now(), makeId = newId) {
 
   const s = raw.settings && typeof raw.settings === "object" ? raw.settings : {};
   const collapsed = {};
-  if (s.collapsed && typeof s.collapsed === "object") for (const k of Object.keys(s.collapsed)) collapsed[k] = s.collapsed[k] === true;
+  if (s.collapsed && typeof s.collapsed === "object") for (const k of Object.keys(s.collapsed)) if (typeof s.collapsed[k] === "boolean") collapsed[k] = s.collapsed[k];
   const friends = list(raw.friends, cleanFriend).sort((a, b) => a.order - b.order).map((f, i) => ({ ...f, order: i }));
 
   // Seed templates added after this state was created (once — a deleted template stays deleted).
@@ -280,7 +281,18 @@ export function sanitizeState(raw, now = Date.now(), makeId = newId) {
     timeOptions: cleanTimeOptions(raw.timeOptions, s.timeOptionsRev !== TIME_OPTIONS_REV),
     reminders: cleanReminders(raw.reminders),
     friends,
+    tasks: cleanTasks(raw.tasks, now),
   };
+}
+
+/** Personal tasks: { id, title, start, end, done } — kept for 7 days. */
+function cleanTasks(list, now) {
+  if (!Array.isArray(list)) return [];
+  return list
+    .filter((t) => t && typeof t.id === "string" && typeof t.title === "string" && t.title.trim() && isNum(t.start) && isNum(t.end) && t.end > t.start && t.end - t.start <= 24 * 3600000)
+    .filter((t) => t.end > now - 7 * 24 * 3600000)
+    .slice(0, 300)
+    .map((t) => ({ id: t.id, title: t.title.trim().slice(0, 120), start: t.start, end: t.end, done: t.done === true }));
 }
 
 export function loadState(storage = globalThis.localStorage, now = Date.now()) {

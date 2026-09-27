@@ -12,6 +12,7 @@ import { computeReminders, needsAttention } from "../lib/reminders.js";
 import { contribState, spendAttempt } from "../lib/contributions.js";
 import { idleCamps, splitNow, stillRunning, weekStrip } from "../lib/today.js";
 import { dropsNeedingAction, dropsBetween, staminaNow, intelNeedingAction, INTEL_MISSIONS_PER_REFRESH } from "../lib/daily.js";
+import { buildTimeline, parseTaskDuration, placeTask, resizeTask, pruneTasks, rowChips } from "../lib/plan.js";
 import { champRounds } from "../lib/championship.js";
 import { ChampQuestion } from "./ChampIntel.jsx";
 import { localDayRange, formatTime, formatDate, formatSpan, zonedParts, formatWeekdayShort, formatDayNumber, HOUR, MINUTE } from "../lib/time.js";
@@ -254,15 +255,102 @@ function Row({ i, day, rems, open, setOpen, isNext }) {
             {crossesIn && <span className="th-srow-note">{t("fromYesterday")}</span>}
             {i.end && i.end > day.end && <span className="th-srow-note">{t("continuesTomorrow")}</span>}
           </span>
-          {myRems.map((r) => {
+          {rowChips(i.accountId, myRems).reminders.map((r) => {
             const ok = r.status === "covered" || r.status === "booked";
             const txt = r.status === "covered" ? t(r.booking.position) : r.status === "booked" || r.status === "unsure" ? t(BUFF_NAME[r.buff] || "bookingUnknown") : r.status === "dismissed" ? t("reminderDismissed") : t("ministerNeededShort");
-            return <span key={r.key} className={`th-min ${ok ? "ok" : "todo"}`}><AccountTag accountId={r.accountId} /> {ok ? "✓ " : ""}{txt}</span>;
+            return <span key={r.key} className={`th-min ${ok ? "ok" : "todo"}`}>{r.chip && <><AccountTag accountId={r.accountId} /> </>}{ok ? "✓ " : ""}{txt}</span>;
           })}
         </span>
       </div>
       {open && <div className="th-srow-actions">{actions}</div>}
       {editing && <UpdateTime item={i} onDone={() => setEditing(false)} />}
+    </li>
+  );
+}
+
+/* ---------- personal tasks & free time ---------- */
+function TaskForm({ gap, task, onDone }) {
+  const { t, lang, update, newId } = useTimeHub();
+  const [title, setTitle] = useState(task?.title || "");
+  const [dur, setDur] = useState(task ? String(Math.round((task.end - task.start) / 60000)) : "");
+  const [warn, setWarn] = useState(null);
+  const ms = parseTaskDuration(dur);
+  const save = (overrideMs, force) => {
+    const len = overrideMs ?? ms;
+    if (!title.trim() || !len) return;
+    if (task) {
+      update((s) => ({ ...s, tasks: s.tasks.map((x) => (x.id === task.id ? { ...resizeTask(x, len), title: title.trim() } : x)) }));
+      success();
+      return onDone();
+    }
+    const p = placeTask(gap, len);
+    if (!p.fits && !force) return setWarn({ len, free: gap.ms });
+    update((s) => ({ ...s, tasks: [...pruneTasks(s.tasks, Date.now()), { id: newId(), title: title.trim(), start: p.start, end: p.end, done: false }] }));
+    success();
+    onDone();
+  };
+  return (
+    <form className="th-taskform" onSubmit={(e) => { e.preventDefault(); save(); }}>
+      <label><span className="th-label">{t("taskName")}</span>
+        <input className="th-input" autoFocus value={title} maxLength={120} placeholder={t("taskPlaceholder")} onChange={(e) => { setTitle(e.target.value); setWarn(null); }} />
+      </label>
+      <label><span className="th-label">{t("howLong")}</span>
+        <input className="th-input th-task-dur" inputMode="numeric" value={dur} placeholder="30" onChange={(e) => { setDur(e.target.value.replace(/[^\d:]/g, "")); setWarn(null); }} />
+        <span className="th-hint">{dur ? (ms ? `${dur} → ${formatSpan(ms, lang)}` : t("durInvalidTask")) : t("durTaskHint")}</span>
+      </label>
+      {warn ? (
+        <div className="th-limit" role="alert">
+          <span>{t("taskTooLong", { len: formatSpan(warn.len, lang), free: formatSpan(warn.free, lang) })}</span>
+          <span className="th-item-actions">
+            <Btn small tone="gold" onClick={() => save(Math.floor(warn.free / 60000) * 60000)}>{t("shortenToFit")}</Btn>
+            <Btn small onClick={() => save(warn.len, true)}>{t("scheduleAnyway")}</Btn>
+            <Btn small onClick={onDone}>{t("cancel")}</Btn>
+          </span>
+        </div>
+      ) : (
+        <div className="th-item-actions">
+          <Btn small tone="gold" type="submit" disabled={!title.trim() || !ms}>{task ? t("save") : t("add")}</Btn>
+          <Btn small onClick={onDone}>{t("cancel")}</Btn>
+        </div>
+      )}
+    </form>
+  );
+}
+
+function GapRow({ gap }) {
+  const { t, lang } = useTimeHub();
+  const [adding, setAdding] = useState(false);
+  return (
+    <li className="th-gap">
+      <div className="th-gap-line">
+        <span className="th-gap-free">{t("freeTime", { time: formatSpan(gap.ms, lang) })}</span>
+        {!adding && <button type="button" className="th-gap-add" onClick={() => setAdding(true)}>＋ {t("addTask")}</button>}
+      </div>
+      {adding && <TaskForm gap={gap} onDone={() => setAdding(false)} />}
+    </li>
+  );
+}
+
+function TaskRow({ task }) {
+  const { t, tz, lang, update } = useTimeHub();
+  const [editing, setEditing] = useState(false);
+  const toggle = () => { update((s) => ({ ...s, tasks: s.tasks.map((x) => (x.id === task.id ? { ...x, done: !x.done } : x)) })); if (!task.done) success(); };
+  const remove = () => update((s) => ({ ...s, tasks: s.tasks.filter((x) => x.id !== task.id) }));
+  return (
+    <li className={`th-task ${task.done ? "done" : ""}`}>
+      <div className="th-task-line">
+        <button type="button" className="th-task-check" aria-pressed={task.done} aria-label={task.done ? t("markNotDone") : t("markDone")} onClick={toggle}>✓</button>
+        <button type="button" className="th-task-main" aria-expanded={editing} onClick={() => setEditing(!editing)}>
+          <span className="th-task-title">{task.title}</span>
+          <span className="th-task-when"><Ltr>{formatTime(task.start, tz, lang)}–{formatTime(task.end, tz, lang)}</Ltr> · {formatSpan(task.end - task.start, lang)}{task.done ? ` · ${t("completedWord")}` : ""}</span>
+        </button>
+      </div>
+      {editing && (
+        <div className="th-task-edit">
+          <TaskForm task={task} onDone={() => setEditing(false)} />
+          <Btn small tone="danger" onClick={remove}>{t("delete")}</Btn>
+        </div>
+      )}
     </li>
   );
 }
@@ -289,6 +377,9 @@ function Schedule({ offset, setOffset }) {
   const day = localDayRange(now, tz, offset);
   const items = useMemo(() => groupTraining(buildAgenda(state, day.start, day.end, accountIds, now)), [state, accountIds.join(), day.start, now]); // eslint-disable-line react-hooks/exhaustive-deps
   const { past, rest } = splitNow(items);
+  const dayTasks = useMemo(() => (state.tasks || []).filter((x) => x.start >= day.start && x.start < day.end), [state.tasks, day.start]); // eslint-disable-line react-hooks/exhaustive-deps
+  const pastTasks = dayTasks.filter((x) => x.end <= now);
+  const timeline = useMemo(() => buildTimeline(rest, dayTasks.filter((x) => x.end > now), day.start, day.end, now), [rest, dayTasks, day.start, day.end, now]);
   const rems = useMemo(() => computeReminders(state, now, accountIds), [state, accountIds.join(), now]); // eslint-disable-line react-hooks/exhaustive-deps
   const after = offset === 0 ? [
     ...stillRunning(state, accountIds, day.end).filter((r) => r.endAt < day.end + 12 * HOUR).map((r) => ({
@@ -309,16 +400,21 @@ function Schedule({ offset, setOffset }) {
       <div className="th-sched-head">
         <SectionIcon name="calendar" />
         <div className="th-sec-title">{heading}</div>
-        {past.length > 0 && (
+        {past.length + pastTasks.length > 0 && (
           <button type="button" className="th-past-toggle" aria-expanded={showPast} onClick={() => setShowPast(!showPast)}>
-            {t("pastN", { n: past.length })} · {showPast ? t("hideCompleted") : t("showCompleted")}
+            {t("pastN", { n: past.length + pastTasks.length })} · {showPast ? t("hideCompleted") : t("showCompleted")}
           </button>
         )}
       </div>
       <BrushUnderline />
       <p className="th-sec-sub">{t("scheduleSub")}</p>
       <WeekStrip offset={offset} setOffset={setOffset} />
-      {showPast && <ol className="th-slist muted">{past.map((i) => <Row key={i.id} {...rowProps(i)} />)}</ol>}
+      {showPast && (
+        <ol className="th-slist muted">
+          {[...past.map((i) => ({ at: i.start, el: <Row key={i.id} {...rowProps(i)} /> })), ...pastTasks.map((x) => ({ at: x.start, el: <TaskRow key={x.id} task={x} /> }))]
+            .sort((a, b) => a.at - b.at).map((x) => x.el)}
+        </ol>
+      )}
       {isToday && items.length + after.length > 0 && (
         <div className="th-now-mark" aria-label={`${t("now")} ${formatTime(now, tz, lang)}`}>
           <span className="line" />
@@ -326,9 +422,11 @@ function Schedule({ offset, setOffset }) {
           <span className="line short" />
         </div>
       )}
-      {rest.length > 0 && (
+      {timeline.length > 0 && (
         <ol className="th-slist">
-          {rest.map((i) => <Row key={i.id} {...rowProps(i)} />)}
+          {timeline.map((e) => (e.type === "item" ? <Row key={e.item.id} {...rowProps(e.item)} />
+            : e.type === "task" ? <TaskRow key={e.task.id} task={e.task} />
+            : <GapRow key={`gap-${e.start}`} gap={e} />))}
         </ol>
       )}
       {after.length > 0 && (
@@ -342,7 +440,7 @@ function Schedule({ offset, setOffset }) {
           ))}
         </div>
       )}
-      {isToday && rest.length === 0 && <SleepingBear text={t("everythingTonight")} />}
+      {isToday && rest.length === 0 && !timeline.some((e) => e.type === "task") && <SleepingBear text={t("everythingTonight")} />}
       {!isToday && items.length === 0 && <SleepingBear text={t("nothingToday")} />}
       {items.length > 0 && (
         <div className="th-item-actions th-sched-foot">

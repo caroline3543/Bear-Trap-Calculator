@@ -24,6 +24,8 @@ function reducer(state, action) {
       return action.fn(state);
     case "settings":
       return { ...state, settings: { ...state.settings, ...action.patch } };
+    case "setSection":
+      return { ...state, settings: { ...state.settings, collapsed: { ...state.settings.collapsed, [action.id]: !!action.closed } } };
     case "toggleSection":
       return { ...state, settings: { ...state.settings, collapsed: { ...state.settings.collapsed, [action.id]: !state.settings.collapsed[action.id] } } };
     case "upsert": {

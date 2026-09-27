@@ -5,7 +5,7 @@ import { useTimeHub } from "../TimeHubContext.jsx";
 import { success } from "../lib/feedback.js";
 import { useClockFor } from "../hooks/useNow.jsx";
 import { RESEARCH_LOCATIONS, sortTimers } from "../lib/timers.js";
-import { Section, Btn, Field, Seg, DurationFields, EMPTY_DUR, durFrom, durParse, FormActions, Icon, AccountSelect, AccountTag } from "../components/ui.jsx";
+import { Section, Btn, Field, Seg, DurationFields, EMPTY_DUR, durFrom, durParse, FormActions, Icon, AccountSelect, GroupName, Remaining } from "../components/ui.jsx";
 import { TimerRow } from "./TimerCard.jsx";
 
 function ResearchForm({ initial, onDone }) {
@@ -41,6 +41,27 @@ function ResearchForm({ initial, onDone }) {
   );
 }
 
+function ResearchSummary() {
+  const { t, accountIds, dataFor, accountById, multi } = useTimeHub();
+  const now = useClockFor(accountIds.flatMap((a) => dataFor(a).timers.filter((x) => x.kind === "research").map((x) => x.endAt)));
+  let next = null;
+  let ready = 0;
+  for (const acc of accountIds) {
+    for (const x of dataFor(acc).timers) {
+      if (x.kind !== "research") continue;
+      if (x.endAt <= now) ready++;
+      else if (!next || x.endAt < next.x.endAt) next = { acc, x };
+    }
+  }
+  if (!next && !ready) return <span>{t("noResearch")}</span>;
+  return (
+    <span>
+      {next && <>{t("nextWord")}: {t(next.x.category)}{multi ? ` · ${accountById(next.acc)?.name}` : ""} · <b><Remaining to={next.x.endAt} fmt="clock" /></b></>}
+      {ready > 0 && <span className="attn">{next ? " · " : ""}{t("nReadyResearch", { n: ready })}</span>}
+    </span>
+  );
+}
+
 export function ResearchWidget({ move }) {
   const { t, accountIds, dataFor, multi } = useTimeHub();
   const now = useClockFor(accountIds.flatMap((a) => dataFor(a).timers.filter((x) => x.kind === "research").map((x) => x.endAt)));
@@ -50,16 +71,16 @@ export function ResearchWidget({ move }) {
     .filter((g) => g.timers.length);
   const count = groups.reduce((n, g) => n + g.timers.length, 0);
   return (
-    <Section id="research" icon="research" title={t("secResearch")} count={count} move={move}
+    <Section id="research" icon="research" title={t("secResearch")} count={count} move={move} defaultClosed summary={<ResearchSummary />}
       action={editing !== "new" && <Btn tone="gold" small icon={<Icon.plus />} onClick={() => setEditing("new")}>{t("add")}</Btn>}>
       {editing === "new" && <ResearchForm onDone={() => setEditing(null)} />}
       {count === 0 && editing !== "new" && <div className="th-empty">{t("emptyResearch")}</div>}
       {groups.map(({ acc, timers }) => (
         <div key={acc} className="th-group">
-          {multi && <div className="th-group-head"><AccountTag accountId={acc} /></div>}
+          {multi && <GroupName accountId={acc} />}
           {timers.map((x) =>
             editing === x.id ? <ResearchForm key={x.id} initial={{ ...x, accountId: acc }} onDone={() => setEditing(null)} />
-              : <TimerRow key={x.id} timer={x} accountId={acc} onEdit={() => setEditing(x.id)} />
+              : <TimerRow key={x.id} timer={x} accountId={acc} onEdit={() => setEditing(x.id)} compact />
           )}
         </div>
       ))}

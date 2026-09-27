@@ -70,23 +70,29 @@ export function Ltr({ children }) {
 }
 
 /* ---------- collapsible section card (with rearrange controls) ---------- */
-export function Section({ id, title, count, action, children, move, icon, sub }) {
+export function Section({ id, title, count, action, children, move, icon, sub, summary, defaultClosed = false }) {
   const { state, dispatch, t, rearrange } = useTimeHub();
-  const closed = rearrange || !!state.settings.collapsed[id];
+  const stored = state.settings.collapsed[id];
+  const closed = rearrange || (stored === undefined ? defaultClosed : stored);
   const bodyId = useId();
   return (
-    <section className={`th-card ${rearrange ? "th-rearranging" : ""}`} aria-label={title} id={`th-sec-${id}`} data-section={id}>
+    <section className={`th-card ${rearrange ? "th-rearranging" : ""} ${closed ? "is-closed" : ""}`} aria-label={title} id={`th-sec-${id}`} data-section={id}>
       <div className="th-sec-head">
         {rearrange && move && <span className="th-drag" aria-hidden="true" onPointerDown={move.onDragStart}>⠿</span>}
         {icon && <SectionIcon name={icon} />}
         <button
           type="button" className="th-sec-toggle" aria-expanded={!closed} aria-controls={bodyId} disabled={rearrange}
           title={closed ? t("expand") : t("collapse")}
-          onClick={() => dispatch({ type: "toggleSection", id })}
+          onClick={() => dispatch({ type: "setSection", id, closed: !closed })}
         >
           {!rearrange && <Icon.chevron className={`th-chevron ${closed ? "closed" : ""}`} />}
-          <span className="th-sec-title">{title}</span>
-          {count > 0 && <span className="th-count">{count}</span>}
+          <span className="th-sec-titles">
+            <span className="th-sec-titleline">
+              <span className="th-sec-title">{title}</span>
+              {count > 0 && <span className="th-count">{count}</span>}
+            </span>
+            {closed && summary && <span className="th-sec-summary">{summary}</span>}
+          </span>
         </button>
         {rearrange && move ? (
           <span className="th-move">
@@ -95,7 +101,7 @@ export function Section({ id, title, count, action, children, move, icon, sub })
           </span>
         ) : (!closed && action)}
       </div>
-      {!rearrange && <BrushUnderline />}
+      {!rearrange && !closed && <BrushUnderline />}
       {sub && !closed && <p className="th-sec-sub">{sub}</p>}
       {!closed && <div className="th-sec-body" id={bodyId}>{children}</div>}
     </section>
@@ -122,6 +128,14 @@ export function AccountSelect({ value, onChange, allowShared }) {
       </select>
     </Field>
   );
+}
+
+/** The one account label at the top of a group (dot + name, ★ for the main account). */
+export function GroupName({ accountId }) {
+  const { accountById, multi } = useTimeHub();
+  const a = accountById(accountId);
+  if (!a) return null;
+  return <div className={`th-grp-name c${a.color}`}><i aria-hidden="true" />{a.name}{a.isPrimary && multi ? " ★" : ""}</div>;
 }
 
 /** Account accent on a card (colour is secondary; the tag carries the name). */

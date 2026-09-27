@@ -272,3 +272,21 @@ Saves go to localStorage on every change.
   to train per camp. Conversion is proportional (`troopsForDuration`, `durationForTroops`), capped
   at a full batch.
 - Today: the Local time / UTC / Next / To do strip sits inside the "Today" header card.
+
+## Timers: summaries first · Today: free time & personal tasks
+- `Section` takes `summary` (shown when folded) and `defaultClosed`; open/closed is remembered per
+  section (`settings.collapsed`, true/false). Timers sections start folded to their summaries:
+  Stamina, Trek, Training ("Next: All camps · Farm 2 · 02:08:59 · 3 idle"), Research, Contributions
+  ("3 full · Next +1 in 00:09:59"). Summaries tick via `<Remaining>` only.
+- One account label per group (`GroupName`). Training: one group per shown account with the
+  countdown first (ALL CAMPS when they finish together, otherwise NEXT + the rest in one line), idle
+  camps, overnight notes, then secondary actions (Set finish time, Restart all camps, Camp details,
+  Training times) that open in place. Research rows are one line (`TimerRow compact`). Contributions
+  are one row per account (count, FULL or next +1, −/+); tap for Spend all, Match the game, Rules.
+  The account filter is a single row on Timers.
+- Today (`lib/plan.js`): `buildTimeline` merges agenda items and personal tasks, merges overlapping
+  busy periods, treats finishes/claims as moments, claims no free time after events of unknown
+  length, and only shows gaps ≥ 10 min from now. "＋ Add task" places the task at the gap's start
+  (`placeTask`); too long → shorten / schedule anyway / cancel. Durations: 30 → 30m, 90 → 1h 30m,
+  130 → 1h 30m (`parseTaskDuration`). Tasks: `state.tasks` ({ id, title, start, end, done }), kept 7 days,
+  no account chip. Account chips per row come from `rowChips` so one account can't appear twice.

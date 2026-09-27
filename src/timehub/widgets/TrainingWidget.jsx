@@ -7,9 +7,8 @@ import { success } from "../lib/feedback.js";
 import { useMinute, useClockFor } from "../hooks/useNow.jsx";
 import { TRAINING_CAMPS, applyTraining, busyCamps, planFinish, finishTogether, sortTimers, campMaxFor, hasHelios, campTroopsFor, troopsForDuration, durationForTroops } from "../lib/timers.js";
 import { timingCheck, nextCycleCheck, finishAdvice, nextFinishTarget, inSleepWindow } from "../lib/sleep.js";
-import { ALL } from "../lib/accounts.js";
 import { parseCompactTime, zonedParts, zonedTimeToUtc, formatTime, formatDate, formatSpan, formatCountdown, formatCountdownClock, localDayRange, hhmmToMinutes } from "../lib/time.js";
-import { Section, Btn, Field, Seg, DurationFields, EMPTY_DUR, durFrom, durParse, FormActions, Icon, Ltr, Bidi, AccountSelect, AccountTag, Remaining } from "../components/ui.jsx";
+import { Section, Btn, Field, Seg, DurationFields, EMPTY_DUR, durFrom, durParse, FormActions, Icon, Ltr, Bidi, Remaining, GroupName } from "../components/ui.jsx";
 import { TimerRow, useWhenLocal } from "./TimerCard.jsx";
 
 /** Local "HH:MM" of an instant, as the digits typed into Finish At (e.g. "2145"). */
@@ -207,11 +206,12 @@ function TrainForm({ onDone, preset, accountId }) {
 
 /* Asked right in the widget (not a settings page) and always editable. Per account:
    a full-batch time for each camp, plus Helios classes with their own times. */
-function CampTimes({ accountId }) {
+function CampTimes({ accountId, forceOpen, onClose }) {
   const { t, lang, dataFor, updateAccount } = useTimeHub();
   const data = dataFor(accountId);
   const anySet = TRAINING_CAMPS.some((c) => data.campMax?.[c]);
-  const [open, setOpen] = useState(!anySet);
+  const [open, setOpenRaw] = useState(!anySet || !!forceOpen);
+  const setOpen = (v) => { setOpenRaw(v); if (!v && onClose) onClose(); };
   const sameNow = (d) => d.campSame ?? (new Set(TRAINING_CAMPS.map((c) => d.campMax?.[c] || 0)).size === 1);
   const load = (d) => ({
     same: sameNow(d),
@@ -225,7 +225,7 @@ function CampTimes({ accountId }) {
   });
   const [f, setF] = useState(() => load(data));
   const [saved, setSaved] = useState(false);
-  React.useEffect(() => { setF(load(dataFor(accountId))); setOpen(!TRAINING_CAMPS.some((c) => dataFor(accountId).campMax?.[c])); setSaved(false); }, [accountId]); // eslint-disable-line react-hooks/exhaustive-deps
+  React.useEffect(() => { setF(load(dataFor(accountId))); setOpenRaw(!TRAINING_CAMPS.some((c) => dataFor(accountId).campMax?.[c]) || !!forceOpen); setSaved(false); }, [accountId]); // eslint-disable-line react-hooks/exhaustive-deps
   const bad = (v) => (v.days || v.hhmm) && durParse(v).error;
   const val = (v) => { const r = durParse(v); return r.error ? null : r.ms; };
   const invalid = (f.same ? bad(f.all) : TRAINING_CAMPS.some((c) => bad(f.normal[c]))) || TRAINING_CAMPS.some((c) => f.heliosOn && f.classes.includes(c) && bad(f.helios[c]));
@@ -240,7 +240,7 @@ function CampTimes({ accountId }) {
       helios: { classes, max: Object.fromEntries(TRAINING_CAMPS.map((c) => [c, classes.includes(c) ? val(f.helios[c]) : d.helios?.max?.[c] ?? null])) },
     }));
     setSaved(true);
-    setOpen(false);
+    setOpenRaw(false);
   }
   const span = (ms) => (ms ? formatSpan(ms, lang) : "—");
   const summary = [
@@ -256,7 +256,10 @@ function CampTimes({ accountId }) {
           <span className="th-label">{t("fullBatchTimes")}</span>
           <div className="th-camptimes-sum">{summary}</div>
         </div>
-        <Btn small onClick={() => { setF(load(data)); setOpen(true); }}>{t("edit")}</Btn>
+        <span className="th-item-actions">
+          <Btn small onClick={() => { setF(load(data)); setOpenRaw(true); }}>{t("edit")}</Btn>
+          {onClose && <Btn small onClick={onClose}>{t("done")}</Btn>}
+        </span>
       </div>
     );
   }
@@ -301,7 +304,7 @@ function CampTimes({ accountId }) {
       )}
       <div className="th-form-actions">
         <Btn tone="gold" onClick={save} disabled={!!invalid}>{t("save")}</Btn>
-        {anySet && <Btn onClick={() => setOpen(false)}>{t("cancel")}</Btn>}
+        {anySet && <Btn onClick={() => setOpenRaw(false)}>{t("cancel")}</Btn>}
       </div>
     </div>
   );
@@ -448,25 +451,59 @@ function NextCycleNotes({ acc, timers }) {
   return notes;
 }
 
-function AccountTimers({ acc, timers, plans, setPanel }) {
-  const { t, tz, lang, updateAccount, multi, dataFor } = useTimeHub();
-  const now = useClockFor([...timers.map((x) => x.endAt), ...plans.map((p) => p.startAt)]);
-  const when = useWhenLocal();
-  const running = timers.filter((x) => x.endAt > now);
+/** What an account's camps are doing now: running (grouped when they finish together), ready, idle. */
+function campState(data, now) {
+  const timers = (data.timers || []).filter((x) => x.kind === "training");
+  const running = timers.filter((x) => x.endAt > now).sort((a, b) => a.endAt - b.endAt || TRAINING_CAMPS.indexOf(a.category) - TRAINING_CAMPS.indexOf(b.category));
   const groups = finishTogether(running);
-  const allTogether = groups.length === 1 && groups[0].timers.length === running.length && running.length > 1 ? groups[0] : null;
-  const edit = (x) => () => setPanel({ preset: { accountId: acc, camp: x.category, troop: x.troop, ms: x.endAt - Date.now() } });
-  const lab = (x) => (x.troop === "helios" ? t("heliosCamp", { camp: t(x.category) }) : undefined);
-  const [restarting, setRestarting] = useState(false);
-  const idleCount = restartable(dataFor(acc), now).length;
-  return (
-    <div className="th-group">
+  const together = groups.length === 1 && groups[0].timers.length === running.length && running.length > 1 ? groups[0] : null;
+  const idle = restartable(data, now);
+  return { timers, running, together, idle, next: running[0] || null };
+}
 
-      {idleCount > 0 && !restarting && (
-        <Btn tone="gold" block onClick={() => setRestarting(true)}>↻ {t("restartAll", { n: idleCount })}</Btn>
+function TrainGroup({ acc, showName, open, setOpen }) {
+  const { t, tz, lang, dataFor, updateAccount } = useTimeHub();
+  const data = dataFor(acc);
+  const trainTimes = data.timers.filter((x) => x.kind === "training").map((x) => x.endAt);
+  const plans = (data.plans || []).filter((p) => p.target > Date.now());
+  const now = useClockFor([...trainTimes, ...plans.map((p) => p.startAt)]);
+  const when = useWhenLocal();
+  const st = campState(data, now);
+  const campsSet = TRAINING_CAMPS.some((c) => data.campMax?.[c]);
+  const [details, setDetails] = useState(false);
+  const lab = (x) => (x.troop === "helios" ? t("heliosCamp", { camp: t(x.category) }) : t(x.category));
+  const shortLab = (x) => (x.troop === "helios" ? t("heliosCamp", { camp: t(`short_${x.category}`) }) : t(`short_${x.category}`));
+  const edit = (x) => () => setOpen({ acc, kind: "finish", preset: { accountId: acc, camp: x.category, troop: x.troop, ms: x.endAt - Date.now() }, key: Date.now() });
+  const kind = open?.kind;
+  const hero = st.together || st.next;
+  const others = st.together ? [] : st.running.slice(1);
+
+  return (
+    <div className="th-group th-train-group">
+      {showName && <GroupName accountId={acc} />}
+      {!campsSet && kind !== "times" && <CampTimes accountId={acc} />}
+
+      {/* primary: the countdown */}
+      {hero ? (
+        <div className="th-hero">
+          <div className="th-hero-label">
+            {st.together
+              ? (st.together.timers.length === TRAINING_CAMPS.length ? t("allCampsCaps") : st.together.timers.map(shortLab).join(" · "))
+              : <>{t("nextCaps")} · {lab(st.next)}</>}
+          </div>
+          <div className="th-hero-count" role="timer"><Remaining to={hero.endAt} fmt="clock" /></div>
+          <div className="th-hero-when">{t("finishWord")} <Ltr>{when(hero.endAt)}</Ltr> · <Ltr>{formatTime(hero.endAt, "UTC", lang)}</Ltr> UTC</div>
+          {st.together && st.together.timers.length === TRAINING_CAMPS.length && <div className="th-hero-sub">{st.together.timers.map(shortLab).join(" · ")}</div>}
+          {others.length > 0 && <div className="th-hero-sub">{others.map((x) => `${shortLab(x)} ${formatTime(x.endAt, tz, lang)}`).join(" · ")}</div>}
+        </div>
+      ) : (
+        !st.idle.length && <div className="th-empty">{t("emptyTraining")}</div>
       )}
-      {restarting && <RestartAll acc={acc} onDone={() => setRestarting(false)} />}
-      <NextCycleNotes acc={acc} timers={timers} />
+
+      {/* secondary: what's waiting */}
+      {st.idle.length > 0 && (
+        <div className="th-idle-line">{t("campsIdleNow", { camps: st.idle.map((c) => (c.troop === "helios" ? t("heliosCamp", { camp: t(`short_${c.camp}`) }) : t(`short_${c.camp}`))).join(", ") })}</div>
+      )}
       {plans.map((p) => (
         <div key={p.id} className="th-plan-row reminder">
           <span>{t("startTrainingAt", { camps: p.camps.map((c) => t(c)).join(", ") })} · <b><Ltr>{when(p.startAt)}</Ltr></b>
@@ -474,70 +511,67 @@ function AccountTimers({ acc, timers, plans, setPanel }) {
           <Btn small onClick={() => updateAccount(acc, (d) => ({ ...d, plans: d.plans.filter((x) => x.id !== p.id) }))}>{t("dismiss")}</Btn>
         </div>
       ))}
-      {allTogether ? (
-        <div className="th-together-block">
-          <div className="th-trow">
-            <div className="th-trow-main">
-              <div className="th-trow-name">{t("allCampsTogether")}</div>
-              <div className="th-trow-when"><Ltr>{when(allTogether.endAt)}</Ltr> · <Ltr>{formatTime(allTogether.endAt, "UTC", lang)}</Ltr> UTC</div>
-            </div>
-            <div className="th-trow-count" role="timer"><Remaining to={allTogether.endAt} fmt="clock" /></div>
-          </div>
-          <div className="th-together-camps">
-            {allTogether.timers.map((x) => <TimerRow key={x.id} timer={x} accountId={acc} onEdit={edit(x)} label={lab(x)} slim />)}
-          </div>
+      <NextCycleNotes acc={acc} timers={st.running} />
+
+      {/* per-camp details (each with its ⋯ menu) */}
+      {details && (
+        <div className="th-camp-details">
+          {st.timers.map((x) => <TimerRow key={x.id} timer={x} accountId={acc} onEdit={edit(x)} label={x.troop === "helios" ? lab(x) : undefined} />)}
         </div>
-      ) : (
-        timers.map((x) => <TimerRow key={x.id} timer={x} accountId={acc} onEdit={edit(x)} label={lab(x)} />)
       )}
-      {allTogether && timers.filter((x) => x.endAt <= now).map((x) => <TimerRow key={x.id} timer={x} accountId={acc} onEdit={edit(x)} label={lab(x)} />)}
+
+      {/* tertiary: editing */}
+      {kind === "finish" && <TrainForm key={open.key} accountId={acc} preset={open.preset} onDone={() => setOpen(null)} />}
+      {kind === "restart" && <RestartAll acc={acc} onDone={() => setOpen(null)} />}
+      {kind === "times" && <CampTimes accountId={acc} onClose={() => setOpen(null)} />}
+      {!kind && (
+        <div className="th-group-actions">
+          <Btn small onClick={() => setOpen({ acc, kind: "finish", key: Date.now() })}>{t("setFinishTime")}</Btn>
+          {st.idle.some((c) => c.fullMs) && <Btn small onClick={() => setOpen({ acc, kind: "restart" })}>↻ {t("restartAll", { n: st.idle.filter((c) => c.fullMs).length })}</Btn>}
+          {st.timers.length > 0 && <button type="button" className="th-link" aria-expanded={details} onClick={() => setDetails(!details)}>{details ? t("hideCamps") : t("campDetails")}</button>}
+          {campsSet && <button type="button" className="th-link" onClick={() => setOpen({ acc, kind: "times" })}>{t("trainingTimes")}</button>}
+        </div>
+      )}
     </div>
   );
 }
 
-export function TrainingWidget({ move }) {
-  const { t, accounts, filter, dataFor, defaultAccountId, trainDraft, setTrainDraft, multi } = useTimeHub();
-  // 1. Which account am I configuring? — one choice for the whole Training Camps page.
-  const [acc, setAcc] = useState(defaultAccountId);
-  React.useEffect(() => { if (filter !== ALL) setAcc(filter); }, [filter]);
-  const account = accounts.some((a) => a.id === acc) ? acc : defaultAccountId;
-  const data = dataFor(account);
-  const now = useClockFor(data.timers.filter((x) => x.kind === "training").map((x) => x.endAt));
-  const [panel, setPanel] = useState(null); // null | "new" | {preset}
-  React.useEffect(() => {
-    if (trainDraft) {
-      if (trainDraft.accountId) setAcc(trainDraft.accountId);
-      setPanel({ preset: trainDraft, key: trainDraft.nonce });
-      setTrainDraft(null);
-    }
-  }, [trainDraft]); // eslint-disable-line react-hooks/exhaustive-deps
-  const timers = sortTimers(data.timers.filter((x) => x.kind === "training"), now).sort((a, b) => (a.endAt > now) - (b.endAt > now) || Math.floor(a.endAt / 60000) - Math.floor(b.endAt / 60000) || TRAINING_CAMPS.indexOf(a.category) - TRAINING_CAMPS.indexOf(b.category));
-  const plans = (data.plans || []).filter((p) => p.target > now);
-  const campsSet = TRAINING_CAMPS.some((c) => data.campMax?.[c]);
-
+/** Folded view: what finishes next across the shown accounts, and whether anything is idle. */
+function TrainingSummary() {
+  const { t, accountIds, dataFor, accountById, multi } = useTimeHub();
+  const now = useClockFor(accountIds.flatMap((a) => dataFor(a).timers.filter((x) => x.kind === "training").map((x) => x.endAt)));
+  let best = null;
+  let idle = 0;
+  for (const acc of accountIds) {
+    const st = campState(dataFor(acc), now);
+    idle += st.idle.filter((c) => c.fullMs).length;
+    const h = st.together || st.next;
+    if (h && (!best || h.endAt < best.h.endAt)) best = { acc, h, together: !!st.together };
+  }
+  if (!best) return idle ? <span className="attn">{t("nIdleCamps", { n: idle })}</span> : <span>{t("noCampsTraining")}</span>;
   return (
-    <Section id="training" icon="training" title={t("secTraining")} count={timers.length} move={move}>
-      {multi && (
-        <div className="th-train-acc" role="group" aria-label={t("trainingFor")}>
-          <span className="th-label">{t("trainingFor")}</span>
-          <div className="th-train-acc-row">
-            {accounts.map((a) => (
-              <button key={a.id} type="button" className={`th-accpill c${a.color}`} aria-pressed={a.id === account} onClick={() => { setAcc(a.id); setPanel(null); }}>
-                <i aria-hidden="true" />{a.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      {!campsSet && <CampTimes accountId={account} />}
-      {!panel && <Btn tone="gold" block onClick={() => setPanel("new")}>{t("setFinishTime")}</Btn>}
-      {panel === "new" && <TrainForm key={account} accountId={account} onDone={() => setPanel(null)} />}
-      {panel?.preset && <TrainForm key={`${account}-${panel.key || "p"}`} accountId={account} preset={panel.preset} onDone={() => setPanel(null)} />}
-      {timers.length === 0 && !panel && <div className="th-empty">{t("emptyTraining")}</div>}
-      {(timers.length > 0 || plans.length > 0 || restartable(data, now).some((c) => c.fullMs)) && (
-        <AccountTimers key={account} acc={account} timers={timers} plans={plans} setPanel={setPanel} />
-      )}
-      {campsSet && <CampTimes accountId={account} />}
+    <span>
+      {t("nextWord")}: {best.together ? t("allCamps") : t(`short_${best.h.category}`)}{multi ? ` · ${accountById(best.acc)?.name}` : ""} · <b><Remaining to={best.h.endAt} fmt="clock" /></b>
+      {idle > 0 && <span className="attn"> · {t("nIdleCamps", { n: idle })}</span>}
+    </span>
+  );
+}
+
+export function TrainingWidget({ move }) {
+  const { t, accountIds, dataFor, trainDraft, setTrainDraft, multi, dispatch } = useTimeHub();
+  const [open, setOpen] = useState(null); // { acc, kind: "finish" | "restart" | "times", preset?, key? }
+  React.useEffect(() => {
+    if (!trainDraft) return;
+    dispatch({ type: "setSection", id: "training", closed: false });
+    setOpen({ acc: trainDraft.accountId, kind: "finish", preset: trainDraft, key: trainDraft.nonce });
+    setTrainDraft(null);
+  }, [trainDraft]); // eslint-disable-line react-hooks/exhaustive-deps
+  const count = accountIds.reduce((n, a) => n + dataFor(a).timers.filter((x) => x.kind === "training" && x.endAt > Date.now()).length, 0);
+  return (
+    <Section id="training" icon="training" title={t("secTraining")} count={count} move={move} defaultClosed summary={<TrainingSummary />}>
+      {accountIds.map((acc) => (
+        <TrainGroup key={acc} acc={acc} showName={multi} open={open?.acc === acc ? open : null} setOpen={setOpen} />
+      ))}
     </Section>
   );
 }
