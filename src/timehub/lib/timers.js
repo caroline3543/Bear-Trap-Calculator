@@ -20,7 +20,7 @@ export function hasHelios(data, camp) {
   return !!data?.helios?.classes?.includes(camp);
 }
 
-export const RESEARCH_LOCATIONS = ["war_academy", "research_center", "dawn_academy"];
+export const RESEARCH_LOCATIONS = ["research_center", "dawn_academy", "war_academy"];
 
 export function createTimerTimes({ mode = "duration", durationMs, endAt }, now) {
   if (mode === "duration") {
@@ -50,6 +50,12 @@ export function restartTimer(t, now) {
   return { ...t, startedAt: now, endAt: now + len, durationMs: len };
 }
 
+/** Research always lists in the configured type order (Research Center → Dawn Academy → War
+ *  Academy), never by which finishes first. Missing buildings are simply omitted. */
+export function sortResearch(timers) {
+  return [...timers].sort((a, b) => RESEARCH_LOCATIONS.indexOf(a.category) - RESEARCH_LOCATIONS.indexOf(b.category));
+}
+
 export function sortTimers(timers, now) {
   return [...timers].sort((a, b) => {
     const ra = timerStatus(a, now) === "ready" ? 0 : 1;
@@ -68,6 +74,7 @@ export function applyTraining(timers, entries, now, newId) {
   const kept = timers.filter((t) => !(t.kind === "training" && camps.has(t.category)));
   const added = entries.map((e) => ({
     id: newId(), kind: "training", category: e.camp, label: "", notes: "", ...(e.troop === "helios" ? { troop: "helios" } : {}),
+    ...(e.mode ? { mode: e.mode } : {}),
     startedAt: now, endAt: now + e.durationMs, durationMs: e.durationMs, createdAt: now,
   }));
   return [...kept, ...added];

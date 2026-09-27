@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { MINUTE, HOUR, DAY, parseTimerDigits, toTimerDigits, formatSpan, localDayRange, zonedTimeToUtc, formatTime } from "../lib/time.js";
 import { occurrencesBetween, eventOccurrence, overrideOccurrence, splitSeries, validateEvent, sortEvents } from "../lib/events.js";
 import { bookingWindow, daySlots, validateBooking, findConflicts, bookingStatus, isCustomTime, slotContaining, MINISTER_POSITIONS } from "../lib/bookings.js";
-import { planFinish, applyTraining, finishTogether, busyCamps, RESEARCH_LOCATIONS } from "../lib/timers.js";
+import { planFinish, applyTraining, finishTogether, busyCamps, RESEARCH_LOCATIONS, sortResearch } from "../lib/timers.js";
 import { computeReminders, reminderKey, needsAttention, suggestedBuff } from "../lib/reminders.js";
 import { buildAgenda, nextUp } from "../lib/agenda.js";
 import { buildICS, rruleFor, googleCalendarLink, foldLine, escapeText } from "../lib/ics.js";
@@ -178,7 +178,7 @@ test("shared vs individual camp durations, one timer per camp, finish-together g
   assert.deepEqual(busyCamps(existing, ["lancer_camp", "infantry_camp"], T0), ["lancer_camp"]);
   const long = applyTraining([], [{ camp: "infantry_camp", durationMs: parseTimerDigits("30000").ms }], T0, mkId)[0];
   assert.equal(long.endAt - T0, 3 * DAY);
-  assert.deepEqual(RESEARCH_LOCATIONS, ["war_academy", "research_center", "dawn_academy"]);
+  assert.deepEqual(RESEARCH_LOCATIONS, ["research_center", "dawn_academy", "war_academy"]);
 });
 
 test("finish-at planner: fits max, exceeds max, past target", () => {
@@ -861,4 +861,35 @@ test("tasks survive save/load; junk and old tasks are dropped", async () => {
   ];
   const r = sanitizeState(JSON.parse(JSON.stringify(s)), T0, mkId);
   assert.deepEqual(r.tasks, [{ id: "t1", title: "Make dinner", start: T0, end: T0 + 45 * MINUTE, done: true }]);
+});
+
+/* ---------- research: fixed display order, not by finish time ---------- */
+test("research always lists Research Center, Dawn Academy, War Academy — never reordered by finish time", () => {
+  const now = T0;
+  const timers = [
+    { id: "w", kind: "research", category: "war_academy", startedAt: now, endAt: now + MINUTE, durationMs: MINUTE, createdAt: now },
+    { id: "r", kind: "research", category: "research_center", startedAt: now, endAt: now + 10 * HOUR, durationMs: 10 * HOUR, createdAt: now },
+    { id: "d", kind: "research", category: "dawn_academy", startedAt: now, endAt: now + 5 * HOUR, durationMs: 5 * HOUR, createdAt: now },
+  ];
+  assert.deepEqual(sortResearch(timers).map((x) => x.category), ["research_center", "dawn_academy", "war_academy"]);
+  // a missing building is simply omitted, not reordered
+  assert.deepEqual(sortResearch(timers.filter((x) => x.category !== "dawn_academy")).map((x) => x.category), ["research_center", "war_academy"]);
+});
+
+/* ---------- training: three modes tag the resulting timer ---------- */
+test("applyTraining tags each timer with its mode (finish / max / custom) when given", () => {
+  const now = T0;
+  const list = applyTraining([], [
+    { camp: "infantry_camp", durationMs: HOUR, mode: "finish" },
+    { camp: "lancer_camp", durationMs: 2 * HOUR, mode: "max" },
+    { camp: "marksman_camp", durationMs: 30 * MINUTE, mode: "custom" },
+  ], now, mkId);
+  assert.deepEqual(list.map((x) => [x.category, x.mode]), [["infantry_camp", "finish"], ["lancer_camp", "max"], ["marksman_camp", "custom"]]);
+  // mode survives a save/load round trip
+  const s = emptyState(now, mkId);
+  s.accountData.A.timers = list;
+  return import("../lib/storage.js").then(({ sanitizeState }) => {
+    const r = sanitizeState(JSON.parse(JSON.stringify(s)), now, mkId);
+    assert.deepEqual(r.accountData.A.timers.map((x) => x.mode), ["finish", "max", "custom"]);
+  });
 });

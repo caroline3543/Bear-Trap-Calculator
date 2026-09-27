@@ -120,6 +120,7 @@ function cleanTimer(t) {
     id: id(t.id), kind: t.kind, category: cats.includes(t.category) ? t.category : cats[0],
     label: str(t.label, 120), notes: str(t.notes), startedAt, endAt: t.endAt,
     ...(t.kind === "training" && t.troop === "helios" ? { troop: "helios" } : {}),
+    ...(t.kind === "training" && ["finish", "max", "custom"].includes(t.mode) ? { mode: t.mode } : {}),
     durationMs: isNum(t.durationMs) && t.durationMs >= 0 ? t.durationMs : Math.max(0, t.endAt - startedAt),
     createdAt: isNum(t.createdAt) ? t.createdAt : 0,
   };

@@ -21,7 +21,7 @@ function TrainForm({ onDone, preset, accountId }) {
   const { t, lang, tz, newId, dataFor, updateAccount, state } = useTimeHub();
   const sleep = state.settings.sleep;
   const now = useMinute(); // the planner works in minutes
-  const [mode, setMode] = useState(preset?.ms ? "left" : "finish"); // finish (default) | left
+  const [mode, setMode] = useState(preset?.ms ? "custom" : "finish"); // finish (default) | max | custom
   const [share, setShare] = useState(preset?.camp ? "each" : "same");
   const [shared, setShared] = useState(preset?.camps && preset.ms ? durFrom(preset.ms) : EMPTY_DUR);
   const [each, setEach] = useState(() => Object.fromEntries(TRAINING_CAMPS.map((c) => [c, preset?.camp === c ? durFrom(preset.ms) : EMPTY_DUR])));
@@ -59,6 +59,16 @@ function TrainForm({ onDone, preset, accountId }) {
     ? TRAINING_CAMPS.filter((c) => ticked[c]).map((camp) => ({ camp, troop: troopOf(camp), r: durParse(shared) }))
     : TRAINING_CAMPS.filter((c) => each[c].days || each[c].hhmm).map((camp) => ({ camp, troop: troopOf(camp), r: durParse(each[camp]) }));
 
+  // --- Maximum training time (mode "max"): run each selected camp for ITS OWN configured maximum
+  const maxEntries = TRAINING_CAMPS.filter((c) => ticked[c]).map((camp) => ({ camp, troop: troopOf(camp), max: campMaxFor(data, camp, troopOf(camp)) }));
+  const maxKnown = maxEntries.filter((x) => x.max > 0);
+
+  function startMax() {
+    if (!maxKnown.length) return setError(t("errPickCamp"));
+    setError(null);
+    withConfirm(maxKnown.map(({ camp, troop, max }) => ({ camp, troop, durationMs: max, mode: "max" })));
+  }
+
   // --- Finish At (default mode): uses the account's existing maximum training times
   const planCamps = TRAINING_CAMPS.filter((c) => ticked[c]);
   const maxes = planCamps.map((c) => ({ camp: c, max: campMaxFor(data, c, troopOf(c)) }));
@@ -95,7 +105,7 @@ function TrainForm({ onDone, preset, accountId }) {
     if (!entries.length) return setError(t("errPickCamp"));
     if (entries.some((e) => e.r.error)) return setError(t("errDigitsFix"));
     setError(null);
-    withConfirm(entries.map((e) => ({ camp: e.camp, troop: e.troop, durationMs: e.r.ms })));
+    withConfirm(entries.map((e) => ({ camp: e.camp, troop: e.troop, durationMs: e.r.ms, mode: "custom" })));
   }
 
   function startPlanNow() {
@@ -104,7 +114,7 @@ function TrainForm({ onDone, preset, accountId }) {
     if (plans.some((x) => !x.plan.ok)) return setError(t("errPlanPast"));
     if (tooLong.length) return setError(t("errTooLong"));
     setError(null);
-    withConfirm(plans.map(({ camp, troop, plan }) => ({ camp, troop, durationMs: plan.trainFor })));
+    withConfirm(plans.map(({ camp, troop, plan }) => ({ camp, troop, durationMs: plan.trainFor, mode: "finish" })));
   }
 
   function remindLater() {
@@ -113,9 +123,48 @@ function TrainForm({ onDone, preset, accountId }) {
     onDone();
   }
 
-  if (mode === "left") {
+  const modeBar = (
+    <>
+      <Seg value={mode} onChange={setMode} label={t("trainingMode")} options={[
+        { value: "finish", label: t("modeFinish") },
+        { value: "max", label: t("modeMax") },
+        { value: "custom", label: t("modeCustom") },
+      ]} />
+      <p className="th-hint th-mode-note">{t("troopGuidance")}</p>
+    </>
+  );
+
+  if (mode === "max") {
     return (
       <div className="th-form">
+        {modeBar}
+        <p className="th-sec-sub">{t("maxModeHelp")}</p>
+        {campChecks}
+        {maxKnown.length > 0 && (
+          <ul className="th-max-list">
+            {maxKnown.map((x) => (
+              <li key={x.camp}>
+                <span>{x.troop === "helios" ? t("heliosCamp", { camp: t(x.camp) }) : t(x.camp)}</span>
+                <b>{t("maxLabel", { time: formatSpan(x.max, lang) })}</b>
+              </li>
+            ))}
+          </ul>
+        )}
+        {!maxKnown.length && <p className="th-note">{t("noMaxNote")}</p>}
+        {error && <span className="th-error" role="alert">{error}</span>}
+        {confirm && <div className="th-warn" role="alert">{t("replaceCamps", { camps: confirm.busy.map((c) => t(c)).join(", ") })}</div>}
+        <Btn tone="gold" block onClick={() => (confirm ? commit(confirm.list, confirm.extraPlan) : startMax())} disabled={!maxKnown.length}>
+          {confirm ? t("replace") : t("startMaxTraining")}
+        </Btn>
+        <p className="th-note">{t("restartAllNote")}</p>
+        <button type="button" className="th-link" onClick={onDone}>{t("cancel")}</button>
+      </div>
+    );
+  }
+  if (mode === "custom") {
+    return (
+      <div className="th-form">
+        {modeBar}
         <Field label={t("camps")} as="div">
           <Seg value={share} onChange={switchShare} label={t("camps")} options={[{ value: "same", label: t("sameForAll") }, { value: "each", label: t("setEachCamp") }]} />
         </Field>
@@ -134,13 +183,13 @@ function TrainForm({ onDone, preset, accountId }) {
         {error && <span className="th-error" role="alert">{error}</span>}
         {confirm && <div className="th-warn" role="alert">{t("replaceCamps", { camps: confirm.busy.map((c) => t(c)).join(", ") })}</div>}
         <FormActions onSave={() => (confirm ? commit(confirm.list, confirm.extraPlan) : saveLeft())} onCancel={onDone} saveLabel={confirm ? t("replace") : t("startTimers")} />
-        <button type="button" className="th-link" onClick={() => setMode("finish")}>{t("useFinishAtInstead")}</button>
       </div>
     );
   }
 
   return (
     <div className="th-form th-finishform">
+      {modeBar}
       {/* 2. What time will my camps finish? */}
       <label className="th-finish">
         <span className="th-finish-q">{t("finishAtQ")}</span>
@@ -196,10 +245,7 @@ function TrainForm({ onDone, preset, accountId }) {
         <summary>{t("whichCamps")}</summary>
         {campChecks}
       </details>
-      <div className="th-item-actions">
-        <button type="button" className="th-link" onClick={() => setMode("left")}>{t("useTimeLeftInstead")}</button>
-        <button type="button" className="th-link" onClick={onDone}>{t("cancel")}</button>
-      </div>
+      <button type="button" className="th-link" onClick={onDone}>{t("cancel")}</button>
     </div>
   );
 }
@@ -358,7 +404,7 @@ function RestartAll({ acc, onDone }) {
   };
   function go() {
     const at = Date.now();
-    const entries = valid.map(({ c, ms }) => ({ camp: c.camp, troop: c.troop, durationMs: ms }));
+    const entries = valid.map(({ c, ms }) => ({ camp: c.camp, troop: c.troop, durationMs: ms, mode: ms >= c.fullMs ? "max" : "custom" }));
     updateAccount(acc, (d) => ({ ...d, timers: applyTraining(d.timers, entries, at, newId) }));
     success();
     onDone();
@@ -490,6 +536,11 @@ function TrainGroup({ acc, showName, open, setOpen }) {
             {st.together
               ? (st.together.timers.length === TRAINING_CAMPS.length ? t("allCampsCaps") : st.together.timers.map(shortLab).join(" · "))
               : <>{t("nextCaps")} · {lab(st.next)}</>}
+            {(() => {
+              const grp = st.together ? st.together.timers : st.next ? [st.next] : [];
+              const modes = new Set(grp.map((x) => x.mode).filter(Boolean));
+              return modes.size === 1 ? <span className="th-mode-tag">{t(`modeTag_${[...modes][0]}`)}</span> : null;
+            })()}
           </div>
           <div className="th-hero-count" role="timer"><Remaining to={hero.endAt} fmt="clock" /></div>
           <div className="th-hero-when">{t("finishWord")} <Ltr>{when(hero.endAt)}</Ltr> · <Ltr>{formatTime(hero.endAt, "UTC", lang)}</Ltr> UTC</div>

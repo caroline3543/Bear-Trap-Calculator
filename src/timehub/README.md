@@ -290,3 +290,29 @@ Saves go to localStorage on every change.
   (`placeTask`); too long → shorten / schedule anyway / cancel. Durations: 30 → 30m, 90 → 1h 30m,
   130 → 1h 30m (`parseTaskDuration`). Tasks: `state.tasks` ({ id, title, start, end, done }), kept 7 days,
   no account chip. Account chips per row come from `rowChips` so one account can't appear twice.
+
+## Training modes · fixed research order · Today copy (Sep 2026)
+- **Training Camps now has three explicit modes**, chosen with a segmented control at the top of
+  the editor (`TrainForm` in `widgets/TrainingWidget.jsx`):
+  - **Finish at a time** (default) — unchanged Finish-At flow (compact digits, e.g. `2145`;
+    `lib/sleep.js → finishAdvice/nextFinishTarget`; respects each camp's configured maximum;
+    handles crossing midnight).
+  - **Maximum time** — runs each selected camp for its own configured maximum
+    (`campMaxFor`), simply and without troop-quantity claims. Explains that "Restart all camps"
+    does the same for idle camps.
+  - **Custom duration** — the old "time left" entry (same-for-all or per-camp; the existing
+    compact days+HH:MM duration input, 24h+ supported).
+  - The app never claims to set troop counts in-game; a one-line note says fewer troops finish
+    sooner, more troops take longer, and the player still sets the amount in Whiteout Survival.
+  - Every started timer is tagged with which mode created it (`timer.mode: "finish" | "max" |
+    "custom"`, added in `applyTraining`/`cleanTimer`, saved and restored). The Timers hero shows a
+    small pill (FINISH AT / MAXIMUM / CUSTOM) next to the countdown when every timer in the group
+    shares one mode, so the configuration is visible without opening the editor. Restart All tags
+    its entries "max" only when the full batch time was actually used, "custom" otherwise.
+- **Research always lists Research Center → Dawn Academy → War Academy**, never reordered by which
+  finishes first (`RESEARCH_LOCATIONS` order in `lib/timers.js`; `sortResearch()` — a stable sort by
+  that fixed order, used by `ResearchWidget`). A building with no timer is simply omitted; the
+  remaining buildings keep their relative order. The "Next" line in the folded summary can still
+  name whichever building finishes soonest — only the expanded list order is fixed.
+- **Today page description** ("Your day at a glance: upcoming events, free time, and personal
+  tasks.") replaces the old generic copy, in all 9 languages.

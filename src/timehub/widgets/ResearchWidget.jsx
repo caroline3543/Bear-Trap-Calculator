@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
 import { success } from "../lib/feedback.js";
 import { useClockFor } from "../hooks/useNow.jsx";
-import { RESEARCH_LOCATIONS, sortTimers } from "../lib/timers.js";
+import { RESEARCH_LOCATIONS, sortResearch } from "../lib/timers.js";
 import { Section, Btn, Field, Seg, DurationFields, EMPTY_DUR, durFrom, durParse, FormActions, Icon, AccountSelect, GroupName, Remaining } from "../components/ui.jsx";
 import { TimerRow } from "./TimerCard.jsx";
 
@@ -44,7 +44,7 @@ function ResearchForm({ initial, onDone }) {
 function ResearchSummary() {
   const { t, accountIds, dataFor, accountById, multi } = useTimeHub();
   const now = useClockFor(accountIds.flatMap((a) => dataFor(a).timers.filter((x) => x.kind === "research").map((x) => x.endAt)));
-  let next = null;
+  let next = null; // soonest to finish, shown as "Next" — the list itself stays in the fixed order
   let ready = 0;
   for (const acc of accountIds) {
     for (const x of dataFor(acc).timers) {
@@ -67,7 +67,7 @@ export function ResearchWidget({ move }) {
   const now = useClockFor(accountIds.flatMap((a) => dataFor(a).timers.filter((x) => x.kind === "research").map((x) => x.endAt)));
   const [editing, setEditing] = useState(null);
   const groups = accountIds
-    .map((acc) => ({ acc, timers: sortTimers(dataFor(acc).timers.filter((x) => x.kind === "research"), now) }))
+    .map((acc) => ({ acc, timers: sortResearch(dataFor(acc).timers.filter((x) => x.kind === "research")) }))
     .filter((g) => g.timers.length);
   const count = groups.reduce((n, g) => n + g.timers.length, 0);
   return (
