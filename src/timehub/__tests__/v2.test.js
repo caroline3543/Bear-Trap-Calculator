@@ -933,8 +933,8 @@ test("finding the next free gap for a quick reschedule", () => {
   assert.equal(findNextGap(tl, 50 * HOUR), null);
 });
 
-/* ---------- Ministry of Education × training planner ---------- */
-import { eduBooking, eduWindow, classifyAt, planCamp, buildEducationPlan, findEducationSlots, insideFinishTarget, finishMissesWindow, EDU_BUFFER_MS } from "../lib/education.js";
+/* ---------- Ministry of Education × training planner (action-first) ---------- */
+import { eduBooking, eduWindow, classifyAt, planCamp, buildEducationPlan, findEducationSlots, insideFinishTarget, finishMissesWindow, EDU_BUFFER_MS, eduGapHeight, eduDoneKey, prepMs } from "../lib/education.js";
 import { campMaxEduFor } from "../lib/timers.js";
 
 const ED = Date.UTC(2026, 8, 24); // Thu 24 Sep 00:00 UTC
@@ -942,135 +942,215 @@ const EH = (h, m = 0) => ED + h * HOUR + m * MINUTE;
 const eBook = (startAt, id = "e1") => ({ id, position: "minister_education", startAt, notes: "", createdAt: 0 });
 const eCamp = (camp, finishAt, normalMs = 6 * HOUR, eduMs = null, running = finishAt != null) => ({ camp, troop: "normal", running, finishAt, normalMs, eduMs });
 const eNames = (p) => p.camps.map((x) => `${x.camp.slice(0, 3)}:${x.cls}`).join(" ");
+const NOSLEEP = { start: "00:00", end: "00:00", target: "21:45" }; // disabled window (start === end)
 
 test("education: eduBooking picks the next unexpired Education booking (one record, others ignored)", () => {
   const bs = [{ id: "d", position: "minister_defense", startAt: EH(7) }, eBook(EH(9), "late"), eBook(EH(8), "soon"), eBook(EH(1), "gone")];
   assert.equal(eduBooking(bs, EH(7))?.id, "soon");
-  assert.equal(eduBooking(bs.filter((b) => b.id !== "soon" && b.id !== "late"), EH(7)), null); // cancelled → none
-  assert.equal(eduBooking([eBook(EH(8))], EH(8, 30)), null); // expired exactly at +30 min
+  assert.equal(eduBooking(bs.filter((b) => b.id !== "soon" && b.id !== "late"), EH(7)), null);
+  assert.equal(eduBooking([eBook(EH(8))], EH(8, 30)), null);
   const w = eduWindow(eBook(EH(8)));
-  assert.deepEqual([w.start, w.end, w.latest], [EH(8), EH(8, 30), EH(8, 25)]);
+  assert.deepEqual([w.start, w.end, w.latest, w.ready], [EH(8), EH(8, 30), EH(8, 25), EH(7, 57)]); // ready 3 min early
+  assert.equal(prepMs(0), 0);
+  assert.equal(eduDoneKey(eBook(EH(8), "x")), `x:${EH(8)}`);
 });
 
 test("education: A/B/C — camp finishes before / during / after the window", () => {
-  const win = eduWindow(eBook(EH(20)));
-  const now = EH(17);
+  const win = eduWindow(eBook(EH(20))); const now = EH(17);
   assert.equal(planCamp(eCamp("infantry_camp", EH(18)), win, now).cls, "before");
   const inside = planCamp(eCamp("infantry_camp", EH(20, 12)), win, now);
   assert.deepEqual([inside.cls, inside.restartAt], ["inside", EH(20, 12)]);
   assert.equal(planCamp(eCamp("infantry_camp", EH(21, 15)), win, now).cls, "after");
-  assert.equal(planCamp(eCamp("infantry_camp", EH(20, 27)), win, now).cls, "tight"); // inside the last 5 min
+  assert.equal(planCamp(eCamp("infantry_camp", EH(20, 27)), win, now).cls, "tight");
 });
 
-test("education: before the window → bridge cycle to the window start (2h gap example)", () => {
-  const win = eduWindow(eBook(EH(20)));
+test("education: the short training ends a few minutes BEFORE the window opens, not at the last second", () => {
+  const win = eduWindow(eBook(EH(20))); // ready by 19:57
   const p = planCamp(eCamp("infantry_camp", EH(18)), win, EH(16), { priority: "uptime" });
-  assert.deepEqual([p.cls, p.steps.length, p.steps[0].at, p.steps[0].durationMs, p.restartAt], ["before", 1, EH(18), 2 * HOUR, EH(20)]);
-  assert.equal(p.finalFinish, EH(20) + 6 * HOUR); // restart with the buff for a full batch
-});
-
-test("education: bridge chains full batches when the gap is longer than a full batch, never past the window", () => {
-  const win = eduWindow(eBook(EH(20)));
-  const p = planCamp(eCamp("infantry_camp", EH(6), 6 * HOUR), win, EH(5), { priority: "uptime" }); // 14h gap
-  assert.deepEqual(p.steps.map((s) => s.durationMs / HOUR), [6, 6, 2]);
   const end = p.steps.at(-1).at + p.steps.at(-1).durationMs;
-  assert.equal(end, EH(20));
+  assert.deepEqual([p.cls, p.steps.length, p.steps[0].at, p.steps[0].durationMs, end, p.restartAt], ["before", 1, EH(18), 117 * MINUTE, EH(19, 57), EH(20)]);
+  assert.ok(end < win.start);
+  // no safety buffer configured → it lines up with the start
+  const zero = planCamp(eCamp("infantry_camp", EH(18)), eduWindow(eBook(EH(20)), 0), EH(16), { priority: "uptime" });
+  assert.equal(zero.steps[0].durationMs, 2 * HOUR);
 });
 
-test("education: M — fewest check-ins waits out short gaps; uptime bridges them", () => {
+test("education: short trainings chain full batches when the gap is longer than a full batch, never past the window", () => {
   const win = eduWindow(eBook(EH(20)));
-  const short = eCamp("infantry_camp", EH(19, 25)); // 35 min gap
-  const fewest = planCamp(short, win, EH(17), { priority: "checkins" });
-  assert.deepEqual([fewest.steps.length, fewest.idleMs], [0, 35 * MINUTE]);
-  const uptime = planCamp(short, win, EH(17), { priority: "uptime" });
-  assert.equal(uptime.steps[0].durationMs, 35 * MINUTE);
-  const tiny = planCamp(eCamp("infantry_camp", EH(19, 50)), win, EH(17), { priority: "uptime" }); // 10 min: not worth a visit
-  assert.deepEqual([tiny.steps.length, tiny.idleMs], [0, 10 * MINUTE]);
+  const p = planCamp(eCamp("infantry_camp", EH(6), 6 * HOUR), win, EH(5), { priority: "uptime" });
+  const end = p.steps.at(-1).at + p.steps.at(-1).durationMs;
+  assert.ok(end <= win.ready);
+  assert.equal(p.steps[0].durationMs, 6 * HOUR);
+  assert.ok(win.ready - end < MINUTE * 2);
 });
 
-test("education: N — already inside the window (idle camp) → restart now; O — under the buffer left → tight", () => {
+test("education: fewest check-ins waits out short gaps; more uptime bridges them", () => {
+  const win = eduWindow(eBook(EH(20)));
+  const short = eCamp("infantry_camp", EH(19, 25)); // ~32 min to be ready
+  const fewest = planCamp(short, win, EH(17), { priority: "checkins" });
+  assert.equal(fewest.steps.length, 0);
+  const uptime = planCamp(short, win, EH(17), { priority: "uptime" });
+  assert.equal(uptime.steps.length, 1);
+  const tiny = planCamp(eCamp("infantry_camp", EH(19, 50)), win, EH(17), { priority: "uptime" });
+  assert.equal(tiny.steps.length, 0);
+});
+
+test("education: already inside the window → restart now; under the buffer left → tight; over → nothing", () => {
   const win = eduWindow(eBook(EH(20)));
   const idle = eCamp("infantry_camp", null, 6 * HOUR, null, false);
   const now = planCamp(idle, win, EH(20, 10));
   assert.deepEqual([now.cls, now.restartAt], ["now", EH(20, 10)]);
   assert.equal(planCamp(idle, win, EH(20, 26)).cls, "tight");
-  assert.equal(planCamp(idle, win, EH(20, 30)).cls, "over"); // window over
-  assert.equal(planCamp(idle, win, EH(20, 30)).restartAt, null);
+  const over = planCamp(idle, win, EH(20, 30));
+  assert.deepEqual([over.cls, over.restartAt], ["over", null]);
 });
 
-test("education: D/E/H — three camps together, or each different, with different maximums", () => {
+test("education: check-ins count only what the PLAYER does — passive milestones never count", () => {
+  const booking = eBook(EH(10, 30));
+  const p = buildEducationPlan({ now: EH(0), booking, camps: ["infantry_camp", "lancer_camp", "marksman_camp"].map((c) => eCamp(c, EH(6, 14), 6 * HOUR, 5 * HOUR)), priority: "uptime" });
+  assert.deepEqual(p.timeline.filter((e) => e.kind === "action").map((e) => e.type), ["bridge", "buff"]);
+  assert.equal(p.checkIns, 2); // 6:14 restart + Education restart
+  const passive = p.timeline.filter((e) => e.kind === "milestone").map((e) => e.type);
+  assert.ok(passive.includes("edu_end") && passive.includes("final")); // camps finishing / Education ending are info, not check-ins
+  assert.equal(p.actions.length, 2);
+  assert.equal(p.next.type, "bridge");
+  assert.equal(p.then.type, "buff");
+  assert.equal(p.mode, "wait"); // nothing to do yet
+  // the opening of the appointment merges into the action at that moment
+  assert.equal(p.actions[1].eduStart, true);
+  assert.equal(p.timeline.some((e) => e.type === "edu_start"), false);
+});
+
+test("education: wait vs do-now vs done vs missed vs over", () => {
   const booking = eBook(EH(20));
-  const together = buildEducationPlan({ now: EH(17), booking, camps: [eCamp("infantry_camp", EH(19)), eCamp("lancer_camp", EH(19)), eCamp("marksman_camp", EH(19))], priority: "uptime" });
-  assert.equal(together.camps.every((c) => c.cls === "before"), true);
-  assert.equal(together.headline.key, "bridge");
-  assert.equal(together.timeline.filter((e) => e.type === "bridge").length, 1); // same time → one merged step
-  assert.equal(together.timeline.find((e) => e.type === "bridge").camps.length, 3);
-  const mixed = buildEducationPlan({ now: EH(17), booking, camps: [eCamp("infantry_camp", EH(20, 4), 7 * HOUR), eCamp("lancer_camp", EH(20, 18), 7 * HOUR), eCamp("marksman_camp", EH(20, 42), 6 * HOUR + 16 * MINUTE)] });
-  assert.equal(eNames(mixed), "inf:inside lan:inside mar:after");
-  assert.deepEqual([mixed.headline.key, mixed.headline.vars.fit, mixed.headline.vars.total], ["mixed", 2, 3]);
-  assert.equal(mixed.camps[0].finalFinish, EH(20, 4) + 7 * HOUR); // each camp keeps its own maximum
-  assert.equal(mixed.camps[1].finalFinish, EH(20, 18) + 7 * HOUR);
+  const cs = [eCamp("infantry_camp", EH(18))];
+  assert.equal(buildEducationPlan({ now: EH(17), booking, camps: cs }).mode, "wait");
+  assert.equal(buildEducationPlan({ now: EH(18), booking, camps: [eCamp("infantry_camp", EH(18))], priority: "uptime" }).mode, "doNow");
+  assert.equal(buildEducationPlan({ now: EH(20, 5), booking, camps: [eCamp("infantry_camp", null, 6 * HOUR, null, false)] }).mode, "doNow");
+  assert.equal(buildEducationPlan({ now: EH(20, 5), booking, camps: [eCamp("infantry_camp", null, 6 * HOUR, null, false)], done: { buff: EH(20, 2) } }).mode, "done");
+  assert.equal(buildEducationPlan({ now: EH(17), booking, camps: [eCamp("infantry_camp", EH(21, 30))] }).mode, "missed");
+  assert.equal(buildEducationPlan({ now: EH(20, 40), booking, camps: cs }).mode, "over");
+  assert.equal(buildEducationPlan({ now: EH(20, 5), booking, camps: [eCamp("infantry_camp", null, 6 * HOUR, null, false)] }).active, true);
 });
 
-test("education: G — a full batch over 24 hours and a finish after midnight are handled with absolute times", () => {
-  const win = eduWindow(eBook(EH(23, 30)));
-  const p = planCamp(eCamp("infantry_camp", EH(23, 40), 26 * HOUR), win, EH(22));
-  assert.equal(p.cls, "inside");
-  assert.equal(p.finalFinish, EH(23, 40) + 26 * HOUR);
-  assert.equal(new Date(p.finalFinish).getUTCDate(), 26);
-});
-
-test("education: the player's own Education full-batch time is used; without it the plan still gives timing but no saving", () => {
+test("education: marking the short training done advances the plan to the Education restart", () => {
   const booking = eBook(EH(20));
-  const withEdu = buildEducationPlan({ now: EH(17), booking, camps: [eCamp("infantry_camp", EH(19, 50), 6 * HOUR, 4 * HOUR + 20 * MINUTE)] });
-  assert.equal(withEdu.camps[0].restartMs, 4 * HOUR + 20 * MINUTE);
-  assert.equal(withEdu.eduKnown, true);
+  const idle = [eCamp("infantry_camp", null, 6 * HOUR, 5 * HOUR, false)];
+  const before = buildEducationPlan({ now: EH(17), booking, camps: idle, priority: "uptime" });
+  assert.equal(before.next.type, "bridge");
+  const after = buildEducationPlan({ now: EH(17, 2), booking, camps: idle, priority: "uptime", done: { bridge: EH(17, 1) } });
+  assert.equal(after.next.type, "buff");
+  assert.equal(after.checkIns, 1);
+});
+
+test("education: without the player's Education full-batch time there is NO exact final finish", () => {
+  const booking = eBook(EH(20));
   const without = buildEducationPlan({ now: EH(17), booking, camps: [eCamp("infantry_camp", EH(19, 50), 6 * HOUR, null)] });
   assert.equal(without.eduKnown, false);
-  assert.equal(without.camps[0].restartAt, EH(20)); // still says WHEN
+  assert.equal(without.camps[0].finalFinish, null);
+  assert.equal(without.camps[0].restartMs, null);
+  assert.equal(without.timeline.some((e) => e.type === "final"), false);
+  assert.equal(without.camps[0].restartAt, EH(20)); // it still says WHEN
+  const withEdu = buildEducationPlan({ now: EH(17), booking, camps: [eCamp("infantry_camp", EH(19, 50), 6 * HOUR, 4 * HOUR + 20 * MINUTE)] });
+  assert.equal(withEdu.eduKnown, true);
+  assert.equal(withEdu.camps[0].finalFinish, EH(20) + 4 * HOUR + 20 * MINUTE);
   assert.equal(campMaxEduFor({ campMaxEdu: { infantry_camp: 3 * HOUR } }, "infantry_camp"), 3 * HOUR);
   assert.equal(campMaxEduFor({}, "infantry_camp"), null);
 });
 
-test("education: L — a chosen final finish time shortens the buffed restart (never past the maximum)", () => {
-  const tz = "UTC";
-  const win = eduWindow(eBook(EH(20)));
-  const p = planCamp(eCamp("infantry_camp", EH(20, 5), 7 * HOUR), win, EH(17), { priority: "finish", desired: { hhmm: "03:00", tz } });
-  assert.equal(p.restartMs, 6 * HOUR + 55 * MINUTE); // 20:05 → 03:00
-  assert.equal(p.finalFinish, ED + 27 * HOUR); // 03:00 the next day
-  const far = planCamp(eCamp("infantry_camp", EH(20, 5), 7 * HOUR), win, EH(17), { priority: "finish", desired: { hhmm: "20:00", tz } }); // next 20:00 is ~24h away → capped at the maximum
-  assert.equal(far.restartMs, 7 * HOUR);
-  const unreachable = planCamp(eCamp("infantry_camp", EH(20, 5), 7 * HOUR), win, EH(17), { priority: "finish", desired: { hhmm: "20:10", tz } }); // 5 min: not workable → full batch
-  assert.equal(unreachable.restartMs, 7 * HOUR);
+test("education: normal vs Education comparison only when every camp has both figures", () => {
+  const booking = eBook(EH(20));
+  const both = buildEducationPlan({ now: EH(17), booking, camps: [eCamp("infantry_camp", EH(19), 7 * HOUR + 16 * MINUTE, 5 * HOUR + 48 * MINUTE)] });
+  assert.equal(both.compare[0].diffMs, 88 * MINUTE); // 1h 28m shorter
+  const partial = buildEducationPlan({ now: EH(17), booking, camps: [eCamp("infantry_camp", EH(19), 7 * HOUR, 5 * HOUR), eCamp("lancer_camp", EH(19), 7 * HOUR, null)] });
+  assert.equal(partial.compare, null);
 });
 
-test("education: I/J/K — moving, cancelling, or having no booking changes the answer from the same record", () => {
+test("education: D/E/H — camps together or different, each keeps its own maximum", () => {
+  const booking = eBook(EH(20));
+  const together = buildEducationPlan({ now: EH(17), booking, camps: ["infantry_camp", "lancer_camp", "marksman_camp"].map((c) => eCamp(c, EH(19))), priority: "uptime" });
+  assert.equal(together.timeline.filter((e) => e.type === "bridge").length, 1);
+  assert.equal(together.timeline.find((e) => e.type === "bridge").camps.length, 3);
+  const mixed = buildEducationPlan({ now: EH(17), booking, camps: [eCamp("infantry_camp", EH(20, 4), 7 * HOUR, 6 * HOUR), eCamp("lancer_camp", EH(20, 18), 7 * HOUR, 6 * HOUR), eCamp("marksman_camp", EH(20, 42), 6 * HOUR + 16 * MINUTE, 5 * HOUR)] });
+  assert.equal(eNames(mixed), "inf:inside lan:inside mar:after");
+  assert.equal(mixed.camps[0].finalFinish, EH(20, 4) + 6 * HOUR);
+  assert.equal(mixed.camps[1].finalFinish, EH(20, 18) + 6 * HOUR);
+  assert.equal(mixed.checkIns, 2); // two different restart times
+});
+
+test("education: G/F — a full batch over 24 hours and absolute times across a date boundary", () => {
+  const win = eduWindow(eBook(EH(23, 30)));
+  const p = planCamp(eCamp("infantry_camp", EH(23, 40), 26 * HOUR, 26 * HOUR), win, EH(22));
+  assert.equal(p.cls, "inside");
+  assert.equal(new Date(p.finalFinish).getUTCDate(), 26);
+});
+
+test("education: L — a chosen final finish time shortens the buffed restart", () => {
+  const tz = "UTC"; const win = eduWindow(eBook(EH(20)));
+  const p = planCamp(eCamp("infantry_camp", EH(20, 5), 7 * HOUR, 7 * HOUR), win, EH(17), { priority: "finish", desired: { hhmm: "03:00", tz } });
+  assert.deepEqual([p.restartMs, p.finalFinish], [6 * HOUR + 55 * MINUTE, ED + 27 * HOUR]);
+  const far = planCamp(eCamp("infantry_camp", EH(20, 5), 7 * HOUR, 7 * HOUR), win, EH(17), { priority: "finish", desired: { hhmm: "20:00", tz } });
+  assert.equal(far.restartMs, 7 * HOUR);
+  const noData = planCamp(eCamp("infantry_camp", EH(20, 5), 7 * HOUR, null), win, EH(17), { priority: "finish", desired: { hhmm: "03:00", tz } });
+  assert.equal(noData.finalFinish, ED + 27 * HOUR); // the player's own target is a real number
+});
+
+test("education: sleep-aware — a check-in that would land while asleep moves to when the player wakes", () => {
+  const tz = "UTC"; const sleep = { start: "22:00", end: "07:00", target: "21:45" };
+  const booking = eBook(EH(10, 30));
+  const p = buildEducationPlan({ now: EH(22, 52) - DAY, booking, camps: [eCamp("infantry_camp", EH(6, 14), 6 * HOUR, 5 * HOUR)], priority: "uptime", sleep, tz });
+  assert.equal(p.next.at, EH(7)); // not 6:14 AM
+  assert.ok(p.notices.some((n) => n.key === "sleepShift" && n.from === EH(6, 14) && n.to === EH(7)));
+  const end = p.next.at + p.next.durationMs;
+  assert.ok(end <= p.win.ready);
+  // a wake time after the window closes → the window is unusable, plan says so calmly
+  const late = buildEducationPlan({ now: EH(22, 52) - DAY, booking: eBook(EH(3)), camps: [eCamp("infantry_camp", EH(1), 6 * HOUR, 5 * HOUR)], sleep, tz });
+  assert.ok(late.notices.some((n) => n.key === "asleepWindow"));
+  // awake now: doing something right now isn't shifted
+  const nowAwake = buildEducationPlan({ now: EH(23), booking: eBook(EH(23, 30)), camps: [eCamp("infantry_camp", null, 6 * HOUR, 5 * HOUR, false)], sleep, tz });
+  assert.equal(nowAwake.notices.some((n) => n.key === "sleepShift"), false);
+});
+
+test("education: missed action → the plan recalculates and says so kindly", () => {
+  const booking = eBook(EH(10, 30));
+  // camps finished at 6:14 and nothing was restarted; it is now 9:18
+  const idle = [{ ...eCamp("infantry_camp", null, 6 * HOUR, 5 * HOUR, false), lastEnd: EH(6, 14) }];
+  const p = buildEducationPlan({ now: EH(9, 18), booking, camps: idle, priority: "uptime" });
+  assert.ok(p.notices.some((n) => n.key === "changed" && n.since === EH(6, 14)));
+  assert.equal(p.mode, "doNow");
+  assert.equal(p.next.type, "bridge");
+  assert.ok(p.next.at + p.next.durationMs <= p.win.ready); // a fresh short training that still gets ready in time
+  // a camp that just finished a minute ago isn't a "changed plan"
+  const fresh = [{ ...eCamp("infantry_camp", null, 6 * HOUR, 5 * HOUR, false), lastEnd: EH(9, 17) }];
+  assert.equal(buildEducationPlan({ now: EH(9, 18), booking, camps: fresh }).notices.some((n) => n.key === "changed"), false);
+});
+
+test("education: I/J/K — moving, cancelling, or no booking changes the answer from the same record", () => {
   const camps = [eCamp("infantry_camp", EH(19))];
   const at8 = buildEducationPlan({ now: EH(17), booking: eBook(EH(20)), camps, priority: "uptime" });
   const at830 = buildEducationPlan({ now: EH(17), booking: eBook(EH(20, 30)), camps, priority: "uptime" });
-  assert.notEqual(at8.camps[0].restartAt, at830.camps[0].restartAt);
-  assert.equal(at830.camps[0].steps[0].durationMs, 90 * MINUTE);
-  assert.equal(eduBooking([], EH(17)), null); // cancelled/none → the UI shows "Find a time" instead
+  assert.notEqual(at8.actions.at(-1).at, at830.actions.at(-1).at);
+  assert.equal(eduBooking([], EH(17)), null);
+  assert.notEqual(eduDoneKey(eBook(EH(20), "a")), eduDoneKey(eBook(EH(20, 30), "a"))); // a moved booking starts with a clean slate
 });
 
-test("education: F — local date boundary doesn't matter, timestamps are absolute (booking just before UTC midnight)", () => {
-  const win = eduWindow(eBook(EH(23, 30)));
-  const p = planCamp(eCamp("infantry_camp", EH(22, 0)), win, EH(21), { priority: "uptime" });
-  assert.equal(p.restartAt, EH(23, 30));
-  assert.equal(p.steps[0].durationMs, 90 * MINUTE);
+test("education: waits are drawn in proportion, capped (7 hours feels longer than 30 minutes, without becoming huge)", () => {
+  const h = (m) => eduGapHeight(m * MINUTE);
+  assert.ok(h(30) < h(60) && h(60) < h(240) && h(240) < h(440));
+  assert.ok(h(440) > 2 * h(30));
+  assert.equal(h(600), h(9999)); // capped
+  assert.ok(h(1) >= 24 && h(9999) <= 96);
 });
 
 test("education: recommended slots are real bookable slots that line up with camp finishes", () => {
   const now = EH(17, 10);
   const camps = [eCamp("infantry_camp", EH(20, 5)), eCamp("lancer_camp", EH(20, 8)), eCamp("marksman_camp", EH(22, 0))];
   const best = findEducationSlots({ now, camps, bookings: [] });
-  assert.equal(best[0].start, EH(20)); // two camps finish inside 20:00–20:30
+  assert.equal(best[0].start, EH(20));
   assert.deepEqual([best[0].inside, best[0].total], [2, 3]);
-  assert.ok(best.every((s) => s.start > now && s.start % (30 * MINUTE) === 0)); // only open, valid slots
-  // a slot already booked as Education isn't offered again
+  assert.ok(best.every((s) => s.start > now && s.start % (30 * MINUTE) === 0));
   const again = findEducationSlots({ now, camps, bookings: [eBook(EH(20))] });
   assert.notEqual(again[0].start, EH(20));
-  // slots outside the booking window (today + tomorrow, UTC) are never offered
   const far = findEducationSlots({ now, camps: [eCamp("infantry_camp", ED + 3 * DAY)], bookings: [] });
   assert.equal(far.length, 0);
 });
@@ -1079,21 +1159,28 @@ test("education: a Finish-At that would miss the window is flagged, and a fix in
   const win = eduWindow(eBook(EH(20)));
   assert.equal(finishMissesWindow(EH(21, 45), win, EH(17)), true);
   assert.equal(finishMissesWindow(EH(20, 10), win, EH(17)), false);
-  assert.equal(finishMissesWindow(EH(19), win, EH(17)), false); // before the window → a bridge works
-  assert.equal(finishMissesWindow(EH(21, 45), win, EH(21)), false); // window already over
+  assert.equal(finishMissesWindow(EH(19), win, EH(17)), false);
+  assert.equal(finishMissesWindow(EH(21, 45), win, EH(21)), false);
   assert.equal(insideFinishTarget(win), EH(20, 3));
   assert.equal(EDU_BUFFER_MS, 5 * MINUTE);
 });
 
-test("education: settings round-trip (priority, buffer, final finish, dismissed hints)", async () => {
+test("education: settings and 'done' records round-trip through save/load", async () => {
   const { sanitizeState } = await import("../lib/storage.js");
   const s = emptyState(T0, mkId);
   s.settings.eduPri = "uptime"; s.settings.eduBufferMin = 8; s.settings.eduFinish = "04:45"; s.settings.eduDismiss = { A: true };
   s.accountData.A.campMaxEdu = { infantry_camp: 3 * HOUR, lancer_camp: -4 };
+  s.accountData.A.eduDone = { "b1:123": { bridge: T0, buff: T0 + 5, junk: "x" }, bad: 5 };
   const r = sanitizeState(JSON.parse(JSON.stringify(s)), T0, mkId);
   assert.deepEqual([r.settings.eduPri, r.settings.eduBufferMin, r.settings.eduFinish, r.settings.eduDismiss], ["uptime", 8, "04:45", { A: true }]);
   assert.equal(r.accountData.A.campMaxEdu.infantry_camp, 3 * HOUR);
   assert.equal(r.accountData.A.campMaxEdu.lancer_camp, null);
+  assert.deepEqual(r.accountData.A.eduDone, { "b1:123": { bridge: T0, buff: T0 + 5 } });
   const junk = sanitizeState({ ...JSON.parse(JSON.stringify(s)), settings: { ...s.settings, eduPri: "bogus", eduBufferMin: 999, eduFinish: "25:99" } }, T0, mkId);
   assert.deepEqual([junk.settings.eduPri, junk.settings.eduBufferMin, junk.settings.eduFinish], ["checkins", 5, null]);
+});
+
+test("education: actions are numbered in the timeline itself (Action 1, Action 2)", () => {
+  const p = buildEducationPlan({ now: EH(0), booking: eBook(EH(10, 30)), camps: [eCamp("infantry_camp", EH(6, 14), 6 * HOUR, 5 * HOUR)], priority: "uptime" });
+  assert.deepEqual(p.timeline.filter((e) => e.kind === "action").map((e) => e.n), [1, 2]);
 });

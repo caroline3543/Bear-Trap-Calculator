@@ -266,12 +266,20 @@ function TrainForm({ onDone, preset, accountId }) {
 
 /* Asked right in the widget (not a settings page) and always editable. Per account:
    a full-batch time for each camp, plus Helios classes with their own times. */
-function CampTimes({ accountId, forceOpen, onClose }) {
+function CampTimes({ accountId, forceOpen, focusEdu, onClose }) {
   const { t, lang, dataFor, updateAccount } = useTimeHub();
   const data = dataFor(accountId);
   const anySet = TRAINING_CAMPS.some((c) => data.campMax?.[c]);
-  const [open, setOpenRaw] = useState(!anySet || !!forceOpen);
+  const [open, setOpenRaw] = useState(!anySet || !!forceOpen || !!focusEdu);
   const setOpen = (v) => { setOpenRaw(v); if (!v && onClose) onClose(); };
+  React.useEffect(() => {
+    if (!focusEdu || !open) return undefined;
+    const id = requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-edu-batch="${accountId}"] input`);
+      if (el) { el.scrollIntoView({ block: "center" }); el.focus(); }
+    });
+    return () => cancelAnimationFrame(id);
+  }, [focusEdu, open, accountId]);
   const sameNow = (d) => d.campSame ?? (new Set(TRAINING_CAMPS.map((c) => d.campMax?.[c] || 0)).size === 1);
   const load = (d) => ({
     same: sameNow(d),
@@ -337,11 +345,13 @@ function CampTimes({ accountId, forceOpen, onClose }) {
         : TRAINING_CAMPS.map((c) => (
           <DurationFields key={c} value={f.normal[c]} onChange={(v) => setF({ ...f, normal: { ...f.normal, [c]: v } })} label={t(c)} optional />
         ))}
-      <span className="th-label">{t("eduBatchQ")}</span>
-      {f.same
-        ? <DurationFields value={f.eduAll} onChange={(v) => setF({ ...f, eduAll: v })} label={t("everyCamp")} optional />
-        : TRAINING_CAMPS.map((c) => <DurationFields key={c} value={f.edu[c]} onChange={(v) => setF({ ...f, edu: { ...f.edu, [c]: v } })} label={t(c)} optional />)}
-      <p className="th-note">{t("eduBatchHelp")}</p>
+      <div data-edu-batch={accountId} style={{ display: "grid", gap: 8 }}>
+        <span className="th-label">{t("eduBatchQ")}</span>
+        {f.same
+          ? <DurationFields value={f.eduAll} onChange={(v) => setF({ ...f, eduAll: v })} label={t("everyCamp")} optional />
+          : TRAINING_CAMPS.map((c) => <DurationFields key={c} value={f.edu[c]} onChange={(v) => setF({ ...f, edu: { ...f.edu, [c]: v } })} label={t(c)} optional />)}
+        <p className="th-note">{t("eduBatchHelp")}</p>
+      </div>
       <span className="th-label">{t("batchSizeQ")}</span>
       <div className="th-batch-row">
         {(f.same ? [["all", t("everyCamp")]] : TRAINING_CAMPS.map((c) => [c, t(`short_${c}`)])).map(([k, lab]) => (
@@ -587,7 +597,8 @@ function TrainGroup({ acc, showName, open, setOpen }) {
       <NextCycleNotes acc={acc} timers={st.running} />
 
       {/* Ministry of Education: the booking (or a quiet hint) with a way into the plan */}
-      {(!kind || kind === "edu" || kind === "edufind") && <EducationStrip acc={acc} open={open} setOpen={setOpen} hasCamps={campsSet} />}
+      {(!kind || kind === "edu" || kind === "edufind") && <EducationStrip acc={acc} open={open} setOpen={setOpen} hasCamps={campsSet}
+        onAddTime={() => setOpen({ acc, kind: "times", focusEdu: true })} onRestart={() => setOpen({ acc, kind: "restart" })} />}
 
       {/* per-camp details (each with its ⋯ menu) */}
       {details && (
@@ -599,7 +610,7 @@ function TrainGroup({ acc, showName, open, setOpen }) {
       {/* tertiary: editing */}
       {kind === "finish" && <TrainForm key={open.key} accountId={acc} preset={open.preset} onDone={() => setOpen(null)} />}
       {kind === "restart" && <RestartAll acc={acc} onDone={() => setOpen(null)} />}
-      {kind === "times" && <CampTimes accountId={acc} onClose={() => setOpen(null)} />}
+      {kind === "times" && <CampTimes accountId={acc} focusEdu={!!open.focusEdu} onClose={() => setOpen(null)} />}
       {!kind && (
         <div className="th-group-actions">
           <Btn small onClick={() => setOpen({ acc, kind: "finish", key: Date.now() })}>{t("setFinishTime")}</Btn>

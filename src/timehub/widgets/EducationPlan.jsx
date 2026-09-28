@@ -1,13 +1,18 @@
-/* Ministry of Education × Training. The plan reads the SAME booking record as the Bookings tab
-   (position "minister_education"); this file only displays what lib/education.js works out.
-   Recomputed with the minute clock and when its inputs change — never per second. */
+/* Ministry of Education × Training — action first.
+   The plan reads the SAME booking record as the Bookings tab (position "minister_education");
+   this file only displays what lib/education.js works out. Recomputed on the minute clock and when
+   its inputs change — never per second.
+   Compact card: status → next action → then → check-ins → [View full plan]. Everything else
+   (timeline, comparison, priority) lives behind the one toggle. */
 import React, { useMemo, useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
 import { useMinute } from "../hooks/useNow.jsx";
 import { TRAINING_CAMPS, campMaxFor, campMaxEduFor } from "../lib/timers.js";
-import { eduBooking, buildEducationPlan, findEducationSlots, EDU_POSITION } from "../lib/education.js";
-import { formatTime, formatDate, formatSpan, parseCompactTime, MINUTE } from "../lib/time.js";
+import { eduBooking, buildEducationPlan, findEducationSlots, eduDoneKey, eduGapHeight, EDU_POSITION } from "../lib/education.js";
+import { inSleepWindow } from "../lib/sleep.js";
+import { formatTime, formatDate, formatSpan, parseCompactTime, zonedParts, MINUTE, DAY } from "../lib/time.js";
 import { Btn, Seg, Ltr, Remaining } from "../components/ui.jsx";
+import { success } from "../lib/feedback.js";
 
 /** The account's camps as the planner needs them (running timer → its finish; otherwise idle). */
 export function eduCampsFor(data, now) {
@@ -15,7 +20,7 @@ export function eduCampsFor(data, now) {
     const last = (data.timers || []).filter((x) => x.kind === "training" && x.category === camp).sort((a, b) => b.endAt - a.endAt)[0];
     const running = !!last && last.endAt > now;
     const troop = last?.troop === "helios" ? "helios" : "normal";
-    return { camp, troop, running, finishAt: running ? last.endAt : null, normalMs: campMaxFor(data, camp, troop) || null, eduMs: campMaxEduFor(data, camp) };
+    return { camp, troop, running, finishAt: running ? last.endAt : null, lastEnd: last && !running ? last.endAt : null, normalMs: campMaxFor(data, camp, troop) || null, eduMs: campMaxEduFor(data, camp) };
   });
 }
 
@@ -25,101 +30,117 @@ export function useEduPlan(acc) {
   const now = useMinute();
   const data = dataFor(acc);
   const booking = eduBooking(data.bookings, now);
-  const { eduPri, eduFinish, eduBufferMin } = state.settings;
+  const key = booking ? eduDoneKey(booking) : null;
+  const done = (key && data.eduDone?.[key]) || {};
+  const { eduPri, eduFinish, eduBufferMin, sleep } = state.settings;
   const plan = useMemo(() => (booking ? buildEducationPlan({
     now, camps: eduCampsFor(data, now), booking, priority: eduPri,
-    desired: eduPri === "finish" && eduFinish ? { hhmm: eduFinish, tz } : null, bufferMs: eduBufferMin * MINUTE,
-  }) : null), [booking?.id, booking?.startAt, data.timers, data.campMax, data.campMaxEdu, data.helios, now, eduPri, eduFinish, eduBufferMin, tz]); // eslint-disable-line react-hooks/exhaustive-deps
-  return { booking, plan, now, data };
+    desired: eduPri === "finish" && eduFinish ? { hhmm: eduFinish, tz } : null, bufferMs: eduBufferMin * MINUTE, sleep, tz, done,
+  }) : null), [booking?.id, booking?.startAt, data.timers, data.campMax, data.campMaxEdu, data.helios, now, eduPri, eduFinish, eduBufferMin, tz, sleep, done.bridge, done.buff]); // eslint-disable-line react-hooks/exhaustive-deps
+  return { booking, plan, now, data, done, key };
 }
 
-function useNames() {
+/** "Tomorrow" / a date / "" (today) for a moment, in the player's local calendar. */
+function dayPrefix(at, now, tz, lang, t) {
+  const a = zonedParts(at, tz), b = zonedParts(now, tz);
+  const diff = Math.round((Date.UTC(a.year, a.month - 1, a.day) - Date.UTC(b.year, b.month - 1, b.day)) / DAY);
+  if (diff === 0) return "";
+  if (diff === 1) return t("tomorrow");
+  return formatDate(at, tz, lang);
+}
+
+function useLabels(now) {
+  const { t, tz, lang } = useTimeHub();
+  const time = (at) => formatTime(at, tz, lang);
+  const when = (at) => { const p = dayPrefix(at, now, tz, lang, t); return p ? `${p} · ${time(at)}` : time(at); };
+  const camps = (list) => (list.length >= TRAINING_CAMPS.length ? t("eduCampsAll") : list.map((c) => t(`short_${c}`)).join(", "));
+  const title = (a) => (a.type === "bridge" ? t("eduA_restart", { camps: camps(a.camps) }) : t("eduA_restartEdu", { camps: camps(a.camps) }));
+  const detail = (a) => (a.durationMs ? t("eduTrainFor", { dur: formatSpan(a.durationMs, lang) }) : null);
+  return { time, when, camps, title, detail };
+}
+
+function Action({ a, L, big }) {
   const { t } = useTimeHub();
-  return (camps) => (camps.length === TRAINING_CAMPS.length ? t("allCamps") : camps.map((c) => t(`short_${c}`)).join(" · "));
-}
-
-function useVars() {
-  const { tz, lang } = useTimeHub();
-  const timeKeys = new Set(["finish", "start", "latest", "end", "restart"]);
-  return (vars) => Object.fromEntries(Object.entries(vars).map(([k, v]) => [k, timeKeys.has(k) ? formatTime(v, tz, lang) : k === "dur" || k === "idle" ? formatSpan(v, lang) : v]));
-}
-
-const TL_ICON = { finish: "◔", bridge: "↻", edu_start: "🎓", restart: "↻", edu_end: "🎓", final: "●" };
-
-export function EducationPlan({ acc, onClose }) {
-  const { t, tz, lang, state, dispatch } = useTimeHub();
-  const { booking, plan, now } = useEduPlan(acc);
-  const names = useNames();
-  const fmt = useVars();
-  const [raw, setRaw] = useState(state.settings.eduFinish ? state.settings.eduFinish.replace(":", "") : "");
-  if (!booking || !plan) return null;
-  const { win } = plan;
-  const lineOf = (p, label) => {
-    const base = { camp: label };
-    if (p.cls === "before") {
-      return p.steps.length
-        ? t("eduC_bridge", { ...base, ...fmt({ finish: p.readyAt, dur: p.steps[0].durationMs, start: win.start }) })
-        : t("eduC_wait", { ...base, ...fmt({ finish: p.readyAt, start: win.start }) });
-    }
-    if (p.cls === "over") return null;
-    return t(`eduC_${p.cls}`, { ...base, ...fmt({ finish: p.readyAt, latest: win.latest, end: win.end, start: win.start }) });
-  };
-  // camps in the same situation share one line ("All camps: …") so identical text isn't repeated
-  const groups = [];
-  for (const p of plan.camps) {
-    const key = `${p.cls}|${p.readyAt}|${p.steps[0]?.durationMs || 0}`;
-    const g = groups.find((x) => x.key === key);
-    if (g) g.camps.push(p); else groups.push({ key, camps: [p] });
-  }
-  const active = now >= win.start;
-  const saveFinish = () => {
-    const hhmm = parseCompactTime(raw);
-    dispatch({ type: "settings", patch: { eduFinish: hhmm } });
-  };
-  const edu = plan.eduKnown;
+  const d = L.detail(a);
   return (
-    <div className="th-edu-plan">
-      <div className="th-edu-head">
-        <b>🎓 {t("eduPlanTitle")}</b>
-        <button type="button" className="th-link" onClick={onClose}>{t("close")}</button>
-      </div>
-      <div className="th-edu-when">
-        <Ltr>{formatTime(win.start, tz, lang)}–{formatTime(win.end, tz, lang)}</Ltr> · {formatDate(win.start, tz, lang)} · <Ltr>{formatTime(win.start, "UTC", lang)}</Ltr> UTC ·{" "}
-        {win.end <= now ? t("eduOver") : active ? <>{t("endsIn")} <Remaining to={win.end} /></> : <>{t("startsIn")} <Remaining to={win.start} /></>}
-      </div>
+    <div className={`th-edu-act ${big ? "big" : ""}`}>
+      <div className="th-edu-act-title">{L.title(a)}</div>
+      {d && <div className="th-edu-act-detail">{d}</div>}
+      {a.type === "bridge" && <div className="th-edu-act-tag">{t("eduShortTraining")}</div>}
+    </div>
+  );
+}
 
-      {/* 1. what to do — one sentence */}
-      <div className="th-edu-what">
-        <span className="th-label">{t("eduWhatToDo")}</span>
-        <p>{t(`eduH_${plan.headline.key}`, fmt(plan.headline.vars))}</p>
-      </div>
-
-      {/* 2. each camp on its own */}
-      <ul className="th-edu-camps">
-        {groups.map((g) => { const line = lineOf(g.camps[0], names(g.camps.map((c) => c.camp))); return line ? <li key={g.key} className={`c-${g.camps[0].cls}`}>{line}</li> : null; })}
-      </ul>
-
-      {/* 3. the timeline */}
-      <ol className="th-edu-tl" aria-label={t("eduTimeline")}>
-        <li className="now"><span className="ic">•</span><span className="tm"><Ltr>{formatTime(now, tz, lang)}</Ltr></span><span className="tx">{t("now")}</span></li>
-        {plan.timeline.map((e, i) => {
-          const label = e.type === "edu_start" ? t("eduT_edu_start") : e.type === "edu_end" ? t("eduT_edu_end")
-            : t(`eduT_${e.type}`, { camps: names(e.camps), dur: e.durationMs ? formatSpan(e.durationMs, lang) : "" });
+function EduFull({ acc, plan, now, done, onAddTime }) {
+  const { t, tz, lang, state, dispatch } = useTimeHub();
+  const L = useLabels(now);
+  const [raw, setRaw] = useState(state.settings.eduFinish ? state.settings.eduFinish.replace(":", "") : "");
+  const sleep = state.settings.sleep;
+  const anyRunning = plan.camps.some((p) => p.finishAt != null && p.finishAt > now);
+  const items = plan.timeline;
+  const rows = [];
+  let prev = { at: now, type: "now" };
+  const gapKind = (p, n) => {
+    if (p.type === "bridge" || (p.type === "buff" && n.type !== "edu_end")) return "train";
+    if (p.type === "buff" || p.type === "edu_start") return n.type === "edu_end" ? "active" : "train";
+    if (p.type === "edu_end") return "train";
+    return "none";
+  };
+  items.forEach((e, i) => {
+    const gapMs = e.at - prev.at;
+    if (gapMs >= 10 * MINUTE) {
+      let k = gapKind(prev, e);
+      if (k === "none" && sleep && inSleepWindow(prev.at + gapMs / 2, tz, sleep)) k = "sleep";
+      rows.push({ gap: true, ms: gapMs, k, id: `g${i}` });
+    }
+    rows.push({ e, id: `e${i}` });
+    prev = e;
+  });
+  const saveFinish = () => dispatch({ type: "settings", patch: { eduFinish: parseCompactTime(raw) } });
+  return (
+    <div className="th-edu-full">
+      <ol className="th-edu-flow" aria-label={t("eduTimeline")}>
+        <li className="now"><span className="dot" /><span className="tm"><Ltr>{L.time(now)}</Ltr></span><span className="tx"><b>{t("now")}</b> · {anyRunning ? t("eduTL_training") : t("eduTL_ready")}</span></li>
+        {done.bridge && <li className="checked"><span className="dot" /><span className="tm"><Ltr>{L.time(done.bridge)}</Ltr></span><span className="tx">✓ {t("eduBridgeDoneLine", { time: L.time(done.bridge) })}</span></li>}
+        {rows.map((r) => {
+          if (r.gap) {
+            return <li key={r.id} className="gap" style={{ minHeight: eduGapHeight(r.ms) }}><span className="rail" /><span className="tx">{t(`eduGap_${r.k}`, { dur: formatSpan(r.ms, lang) })}</span></li>;
+          }
+          const e = r.e;
+          if (e.kind === "action") {
+            return (
+              <li key={r.id} className="action">
+                <span className="dot" /><span className="tm"><Ltr>{L.when(e.at)}</Ltr></span>
+                <span className="tx">
+                  <span className="tag">{t("eduTag_action")}{plan.actions.length > 1 ? ` ${e.n}` : ""}</span>
+                  {e.eduStart && <span className="edu">🎓 {t("eduTL_edu_start")}</span>}
+                  <Action a={e} L={L} />
+                  {e.type === "bridge" && <span className="purpose">{L.time(e.at)}–{L.time(e.at + e.durationMs)} · {t("eduShortPurpose")}</span>}
+                  {e.sleepShifted && <span className="purpose">{t("eduSleepShift", { from: L.time(plan.camps.find((p) => p.sleepShift)?.sleepShift.from ?? e.at), to: L.time(e.at) })}</span>}
+                </span>
+              </li>
+            );
+          }
+          const label = e.type === "edu_start" ? `🎓 ${t("eduTL_edu_start")}` : e.type === "edu_end" ? t("eduTL_edu_end") : e.type === "final" ? t("eduTL_final") : t("eduTL_ready");
           return (
-            <li key={`${e.type}-${e.at}-${i}`} className={e.type}>
-              <span className="ic" aria-hidden="true">{TL_ICON[e.type]}</span>
-              <span className="tm"><Ltr>{formatTime(e.at, tz, lang)}</Ltr></span>
-              <span className="tx">{label}</span>
-            </li>
+            <li key={r.id} className="milestone"><span className="dot" /><span className="tm"><Ltr>{L.when(e.at)}</Ltr></span><span className="tx">{label}<span className="info">{t("eduTag_info")}</span></span></li>
           );
         })}
+        {!plan.eduKnown && plan.mode !== "over" && plan.mode !== "missed" && (
+          <li className="milestone unknown"><span className="dot" /><span className="tm">—</span><span className="tx">{t("eduFinishUnknown")}
+            <button type="button" className="th-link" onClick={onAddTime}>{t("eduNeedBtn")}</button></span></li>
+        )}
       </ol>
-      <div className="th-edu-foot">
-        <span>{t("eduCheckins", { n: plan.checkIns })}</span>
-        <span>{edu ? t("eduBatchUsed") : t("eduSetBatch")}</span>
-      </div>
 
-      {/* 4. how to plan */}
+      {plan.compare && (
+        <div className="th-edu-compare">
+          <b>{t("eduCompareTitle")}</b>
+          {plan.compare.every((c) => c.normalMs === plan.compare[0].normalMs && c.eduMs === plan.compare[0].eduMs)
+            ? (<div>{t("eduCompareNormal")} <b>{formatSpan(plan.compare[0].normalMs, lang)}</b> · {t("eduCompareEdu")} <b>{formatSpan(plan.compare[0].eduMs, lang)}</b>{plan.compare[0].diffMs > 0 && <> · {t("eduCompareDiff", { diff: formatSpan(plan.compare[0].diffMs, lang) })}</>}</div>)
+            : plan.compare.map((c) => <div key={c.camp}>{t(`short_${c.camp}`)}: {formatSpan(c.normalMs, lang)} → <b>{formatSpan(c.eduMs, lang)}</b></div>)}
+        </div>
+      )}
+
       <div className="th-edu-pri">
         <span className="th-label">{t("eduPlanFor")}</span>
         <Seg value={state.settings.eduPri} onChange={(v) => dispatch({ type: "settings", patch: { eduPri: v } })} label={t("eduPlanFor")} options={[
@@ -163,23 +184,86 @@ export function EducationFind({ acc, onClose }) {
   );
 }
 
-/** The one line that lives in a Training group: the booking (with a way in to the plan) or a quiet hint. */
-export function EducationStrip({ acc, open, setOpen, hasCamps }) {
-  const { t, tz, lang, state, dispatch } = useTimeHub();
-  const { booking, now, data } = useEduPlan(acc);
+/** The one card that lives in a Training group: the booking (compact, action-first) or a quiet hint. */
+export function EducationStrip({ acc, open, setOpen, hasCamps, onAddTime, onRestart }) {
+  const { t, tz, lang, state, dispatch, updateAccount } = useTimeHub();
+  const { booking, plan, now, data, done, key } = useEduPlan(acc);
+  const L = useLabels(now);
   const kind = open?.kind;
-  if (booking) {
-    const win = { start: booking.startAt, end: booking.startAt + 30 * MINUTE };
-    const live = now >= win.start;
+  if (booking && plan) {
+    const { win, next, then, mode, active } = plan;
+    const expanded = kind === "edu";
+    const dayP = dayPrefix(win.start, now, tz, lang, t);
+    const mark = (type) => { updateAccount(acc, (d) => ({ ...d, eduDone: { ...(d.eduDone || {}), [key]: { ...(d.eduDone?.[key] || {}), [type]: Date.now() } } })); success(); };
+    const needTime = !plan.eduKnown && mode !== "over" && mode !== "missed" && mode !== "done";
     return (
-      <div className="th-edu-strip">
-        <div className="th-edu-line">
-          <span>🎓 {t("eduStripLine", { time: `${formatTime(win.start, tz, lang)}–${formatTime(win.end, tz, lang)}` })} · {live ? <>{t("endsIn")} <Remaining to={win.end} /></> : <>{t("startsIn")} <Remaining to={win.start} /></>}</span>
-          <button type="button" className="th-link" aria-expanded={kind === "edu"} onClick={() => setOpen(kind === "edu" ? null : { acc, kind: "edu" })}>
-            {kind === "edu" ? t("eduHidePlan") : t("eduViewPlan")}
-          </button>
+      <div className={`th-edu-card mode-${mode} ${active ? "active" : ""}`}>
+        {/* 1. which appointment: local time first, UTC and countdown quieter */}
+        <div className="th-edu-top">
+          <span className="th-edu-name">🎓 {t("eduCardTitle")}</span>
+          <span className="th-edu-when">
+            {mode === "over" ? t("eduOver") : active ? <>{t("eduActiveTitle")} · <Remaining to={win.end} /> {t("eduLeftWord")}</> : <>{t("startsIn")} <Remaining to={win.start} /></>}
+          </span>
         </div>
-        {kind === "edu" && <EducationPlan acc={acc} onClose={() => setOpen(null)} />}
+        <div className="th-edu-window"><b><Ltr>{L.time(win.start)}–{L.time(win.end)}</Ltr></b><small>{dayP ? `${dayP} · ` : ""}<Ltr>{formatTime(win.start, "UTC", lang)}</Ltr> UTC</small></div>
+
+        {/* 2. what to do */}
+        {mode === "wait" && next && (
+          <>
+            <div className="th-edu-ok">✓ {t("eduSetForNow")}</div>
+            <div className="th-edu-next">
+              <div className="th-edu-kicker">{t("eduNextAction")} · {t("eduInWord")} <Remaining to={next.at} /></div>
+              <div className="th-edu-when-big"><Ltr>{L.when(next.at)}</Ltr></div>
+              <Action a={next} L={L} big />
+            </div>
+            {then && <div className="th-edu-then">{t("eduThen", { time: L.when(then.at), what: t("eduA_restartEdu", { camps: L.camps(then.camps) }) })}</div>}
+          </>
+        )}
+        {mode === "doNow" && next && (
+          <div className="th-edu-next now">
+            <div className="th-edu-kicker">{t("eduDoNow")}</div>
+            <Action a={next} L={L} big />
+            <div className="th-item-actions">
+              <Btn tone="gold" onClick={() => mark(next.type === "bridge" ? "bridge" : "buff")}>{t("eduDoneBtn")}</Btn>
+              {onRestart && <button type="button" className="th-link" onClick={onRestart}>{t("eduSetTimers")}</button>}
+            </div>
+            {then && <div className="th-edu-then">{t("eduThen", { time: L.when(then.at), what: t("eduA_restartEdu", { camps: L.camps(then.camps) }) })}</div>}
+          </div>
+        )}
+        {mode === "done" && (
+          <div className="th-edu-ok">✓ {t("eduDoneLine", { time: L.time(done.buff) })}{plan.camps.find((p) => p.finalFinish) && <small>{t("eduTL_final")} · <Ltr>{L.when(plan.camps.find((p) => p.finalFinish).finalFinish)}</Ltr></small>}</div>
+        )}
+        {mode === "missed" && (
+          <div className="th-edu-warn">{t("eduMissed")} <button type="button" className="th-link" onClick={() => setOpen({ acc, kind: "edufind" })}>{t("eduFind")}</button></div>
+        )}
+
+        {/* calm notes */}
+        {plan.notices.map((n) => (
+          <div key={n.key} className="th-edu-note">
+            {n.key === "changed" && t("eduChanged", { since: L.when(n.since) })}
+            {n.key === "sleepShift" && t("eduSleepShift", { from: L.time(n.from), to: L.time(n.to) })}
+            {n.key === "asleepWindow" && t("eduAsleepWindow")}
+          </div>
+        ))}
+
+        {/* 3. check-ins (only real player actions) */}
+        {(mode === "wait" || mode === "doNow") && plan.checkIns > 0 && <div className="th-edu-check">{t(plan.checkIns === 1 ? "eduCheckinsOne" : "eduCheckinsMany", { n: plan.checkIns })}</div>}
+
+        {/* 4. missing data, made actionable */}
+        {needTime && (
+          <div className="th-edu-need">
+            <div><b>{t("eduNeedTitle")}</b><small>{t("eduNeedWhy")}</small></div>
+            <Btn small onClick={onAddTime}>{t("eduNeedBtn")}</Btn>
+          </div>
+        )}
+
+        {mode !== "over" && (
+          <button type="button" className="th-edu-toggle" aria-expanded={expanded} onClick={() => setOpen(expanded ? null : { acc, kind: "edu" })}>
+            {expanded ? t("eduHideFull") : t("eduViewFull")}
+          </button>
+        )}
+        {expanded && <EduFull acc={acc} plan={plan} now={now} done={done} onAddTime={onAddTime} />}
+        {kind === "edufind" && <EducationFind acc={acc} onClose={() => setOpen(null)} />}
       </div>
     );
   }

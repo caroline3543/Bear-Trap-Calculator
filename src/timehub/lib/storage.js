@@ -162,6 +162,9 @@ function cleanAccountData(a) {
     campMax: cleanCampMax(a.campMax), helios: cleanHelios(a.helios), plans: list(a.plans, cleanPlan),
     lastEnded: Object.fromEntries(TRAINING_CAMPS.filter((c) => isNum(a.lastEnded?.[c])).map((c) => [c, a.lastEnded[c]])),
     campMaxEdu: cleanCampMax(a.campMaxEdu),
+    eduDone: Object.fromEntries(Object.entries(a.eduDone && typeof a.eduDone === "object" ? a.eduDone : {}).slice(-12)
+      .filter(([k, v]) => typeof k === "string" && k.length <= 80 && v && typeof v === "object")
+      .map(([k, v]) => [k, { ...(isNum(v.bridge) ? { bridge: v.bridge } : {}), ...(isNum(v.buff) ? { buff: v.buff } : {}) }])),
     campSame: typeof a.campSame === "boolean" ? a.campSame : null,
     campTroops: Object.fromEntries(TRAINING_CAMPS.filter((c) => isNum(a.campTroops?.[c]) && a.campTroops[c] > 0 && a.campTroops[c] < 1e7).map((c) => [c, Math.floor(a.campTroops[c])])),
     stamina: a.stamina && isNum(a.stamina.value) && isNum(a.stamina.at) && a.stamina.value >= 0 && a.stamina.value <= 9999 ? { value: Math.floor(a.stamina.value), at: a.stamina.at } : null,
