@@ -113,8 +113,8 @@ function ContribRow({ accountId, showName, open, onToggle }) {
           <span className="th-contrib-num"><Ltr>{live.count} / {live.max}</Ltr></span>
           <span className={`th-contrib-st ${live.full ? "full" : ""}`}>{live.full ? t("fullStatus") : <>+1 · <Remaining to={live.nextAt} fmt="clock" /></>}</span>
         </button>
-        <Btn className="icon" onClick={() => nudge(-1)} disabled={live.count < 1} aria-label={t("removeOne")} title={t("removeOne")}>−</Btn>
-        <Btn className="icon" onClick={() => nudge(+1)} disabled={live.full} aria-label={t("addOne")} title={t("addOne")}>+</Btn>
+        {/* the one common action: always right there, no need to expand anything */}
+        {live.count > 0 && <Btn small tone="gold" onClick={spendAll}>{t("spendAllShort")}</Btn>}
       </div>
       {open && (
         <div className="th-contrib-more">
@@ -128,11 +128,20 @@ function ContribRow({ accountId, showName, open, onToggle }) {
           {panel === "match" && <MatchForm contrib={contrib} accountId={accountId} onDone={() => setPanel(null)} />}
           {panel === "rules" && <RulesForm contrib={contrib} accountId={accountId} onDone={() => setPanel(null)} />}
           {!panel && (
-            <div className="th-item-actions">
-              <Btn small tone="gold" onClick={spendAll} disabled={live.count < 1}>{live.count < 1 ? t("noAttempts") : t("spendAll", { n: live.count })}</Btn>
-              <Btn small onClick={() => setPanel("match")}>{t("matchGame")}</Btn>
-              <Btn small onClick={() => setPanel("rules")}>{t("contribSettings")}</Btn>
-            </div>
+            <>
+              {/* manual correction: kept, but tucked away — the common case never needs it */}
+              <div className="th-contrib-adjust">
+                <span className="th-hint">{t("adjustManually")}</span>
+                <span className="th-item-actions">
+                  <Btn small className="icon" onClick={() => nudge(-1)} disabled={live.count < 1} aria-label={t("removeOne")} title={t("removeOne")}>−</Btn>
+                  <Btn small className="icon" onClick={() => nudge(+1)} disabled={live.full} aria-label={t("addOne")} title={t("addOne")}>+</Btn>
+                </span>
+              </div>
+              <div className="th-item-actions">
+                <Btn small onClick={() => setPanel("match")}>{t("matchGame")}</Btn>
+                <Btn small onClick={() => setPanel("rules")}>{t("contribSettings")}</Btn>
+              </div>
+            </>
           )}
         </div>
       )}

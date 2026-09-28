@@ -1,6 +1,6 @@
 /* Chief stamina (per account) and the free daily drops: Storehouse stamina and
    Tundra Trek supplies. Numbers live in lib/daily.js. */
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
 import { success } from "../lib/feedback.js";
 import { useMinute, useClockFor } from "../hooks/useNow.jsx";
@@ -27,15 +27,22 @@ function StaminaRow({ accountId }) {
   const now = useClockFor([nextStep]);
   const when = useWhenLocal();
   const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState("");
+  const inputRef = useRef(null);
   const cur = staminaNow(st, now);
-  const [val, setVal] = useState(cur ? String(cur.value) : "");
+
+  // Tap the value → an empty input opens right there, focused and ready to type (no backspacing, no select-all needed).
+  const startEdit = () => { setVal(""); setEditing(true); };
+  useEffect(() => { if (editing) inputRef.current?.focus(); }, [editing]);
   const save = () => {
     const n = Number(val);
-    if (!Number.isInteger(n) || n < 0 || n > 9999) return;
-    updateAccount(accountId, (d) => ({ ...d, stamina: { value: n, at: Date.now() } }));
+    if (val !== "" && Number.isInteger(n) && n >= 0 && n <= 9999) {
+      updateAccount(accountId, (d) => ({ ...d, stamina: { value: n, at: Date.now() } }));
+      success();
+    }
     setEditing(false);
-    success();
   };
+
   let line = t("staminaUnset");
   let tone = "sub";
   if (cur) {
@@ -49,19 +56,23 @@ function StaminaRow({ accountId }) {
     <div className="th-stam">
       <div className="th-stam-top">
         <AccountTag accountId={accountId} />
-        <b className="th-stam-val">{cur ? cur.value : "—"} <small>/ {STAMINA_CAP}</small></b>
+        {editing ? (
+          <input ref={inputRef} className="th-input th-stam-edit" inputMode="numeric" aria-label={t("staminaNowLabel")}
+            placeholder={cur ? String(cur.value) : "164"} value={val}
+            onChange={(e) => setVal(e.target.value.replace(/\D/g, ""))}
+            onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false); }}
+            onBlur={save} />
+        ) : (
+          <button type="button" className="th-stam-val" onClick={startEdit} aria-label={t("staminaNowLabel")}>
+            {cur ? cur.value : "—"} <small>/ {STAMINA_CAP}</small>
+          </button>
+        )}
       </div>
       <div className="th-bar"><span className={`t-${tone}`} style={{ width: `${pct}%` }} /></div>
       <div className="th-stam-foot">
         <span className={`th-tone t-${tone}`}>{line}</span>
-        <button type="button" className="th-link" onClick={() => { setVal(cur ? String(cur.value) : ""); setEditing(!editing); }}>{t("update")}</button>
+        {!editing && <button type="button" className="th-link" onClick={startEdit}>{t("update")}</button>}
       </div>
-      {editing && (
-        <div className="th-inline">
-          <input className="th-input" inputMode="numeric" aria-label={t("staminaNowLabel")} placeholder="164" value={val} onChange={(e) => setVal(e.target.value.replace(/\D/g, ""))} />
-          <Btn small tone="gold" onClick={save}>{t("save")}</Btn>
-        </div>
-      )}
     </div>
   );
 }

@@ -8,6 +8,25 @@ import { MINUTE, HOUR, parseDaysTime } from "./time.js";
 export const MIN_GAP_MS = 10 * MINUTE;
 export const TASK_KEEP_MS = 7 * 24 * HOUR;
 
+/* ---------- proportional sizing (time blindness): more elapsed time = more visual space,
+   clamped so an 8-hour gap doesn't produce an 800px empty page. Pure functions — one inline
+   style per render, no animation, no per-second work. ---------- */
+const sqrtScale = (ms, capMinutes, minPx, maxPx) => {
+  const minutes = Math.min(ms / MINUTE, capMinutes);
+  const t = Math.sqrt(Math.max(0, minutes) / capMinutes);
+  return Math.round(minPx + (maxPx - minPx) * t);
+};
+
+/** Free-time block height in px: noticeably taller for longer gaps, capped around 8h. */
+export function gapVisualHeight(ms) {
+  return sqrtScale(ms, 8 * 60, 40, 220);
+}
+
+/** Personal-task block height in px: a small nudge for longer tasks, capped around 3h. */
+export function taskVisualHeight(ms) {
+  return sqrtScale(ms, 3 * 60, 48, 96);
+}
+
 /**
  * How much time an agenda item takes up:
  *  "range"   — a known start and end (events with a duration, minister bookings, championship rounds)
@@ -92,6 +111,20 @@ export function resizeTask(task, durationMs) {
 /** Tasks worth keeping (last 7 days and later). */
 export function pruneTasks(tasks, now) {
   return (tasks || []).filter((t) => t.end > now - TASK_KEEP_MS);
+}
+
+/**
+ * A task whose planned time has passed but that hasn't been marked done or deleted.
+ * Time passing is never treated as completion — the task stays visible until the
+ * person says otherwise.
+ */
+export function overdueTasks(tasks, now) {
+  return (tasks || []).filter((t) => !t.done && t.end <= now);
+}
+
+/** The first free gap (already only from `now` onward) that fits `durationMs`, or null. */
+export function findNextGap(timeline, durationMs) {
+  return timeline.find((e) => e.type === "gap" && e.ms >= durationMs) || null;
 }
 
 /**

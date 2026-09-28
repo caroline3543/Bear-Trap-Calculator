@@ -15,12 +15,13 @@ import * as s10 from "./set10.js";
 import * as s11 from "./set11.js";
 import * as s12 from "./set12.js";
 import * as s13 from "./set13.js";
+import * as s14 from "./set14.js";
 
-const en = { ...en1, ...en2, ...s5.en, ...s6.en, ...s7.en, ...s8.en, ...s9.en, ...s10.en, ...s11.en, ...s12.en, ...s13.en };
+const en = { ...en1, ...en2, ...s5.en, ...s6.en, ...s7.en, ...s8.en, ...s9.en, ...s10.en, ...s11.en, ...s12.en, ...s13.en, ...s14.en };
 export const TIMEHUB_STRINGS = {
   en,
-  it: { ...s1.it, ...s3.it, ...s5.it, ...s6.it, ...s7.it, ...s8.it, ...s9.it, ...s10.it, ...s11.it, ...s12.it, ...s13.it }, es: { ...s1.es, ...s3.es, ...s5.es, ...s6.es, ...s7.es, ...s8.es, ...s9.es, ...s10.es, ...s11.es, ...s12.es, ...s13.es }, ko: { ...s1.ko, ...s3.ko, ...s5.ko, ...s6.ko, ...s7.ko, ...s8.ko, ...s9.ko, ...s10.ko, ...s11.ko, ...s12.ko, ...s13.ko }, de: { ...s1.de, ...s3.de, ...s5.de, ...s6.de, ...s7.de, ...s8.de, ...s9.de, ...s10.de, ...s11.de, ...s12.de, ...s13.de },
-  ru: { ...s2.ru, ...s4.ru, ...s5.ru, ...s6.ru, ...s7.ru, ...s8.ru, ...s9.ru, ...s10.ru, ...s11.ru, ...s12.ru, ...s13.ru }, pl: { ...s2.pl, ...s4.pl, ...s5.pl, ...s6.pl, ...s7.pl, ...s8.pl, ...s9.pl, ...s10.pl, ...s11.pl, ...s12.pl, ...s13.pl }, tr: { ...s2.tr, ...s4.tr, ...s5.tr, ...s6.tr, ...s7.tr, ...s8.tr, ...s9.tr, ...s10.tr, ...s11.tr, ...s12.tr, ...s13.tr }, ar: { ...s2.ar, ...s4.ar, ...s5.ar, ...s6.ar, ...s7.ar, ...s8.ar, ...s9.ar, ...s10.ar, ...s11.ar, ...s12.ar, ...s13.ar },
+  it: { ...s1.it, ...s3.it, ...s5.it, ...s6.it, ...s7.it, ...s8.it, ...s9.it, ...s10.it, ...s11.it, ...s12.it, ...s13.it, ...s14.it }, es: { ...s1.es, ...s3.es, ...s5.es, ...s6.es, ...s7.es, ...s8.es, ...s9.es, ...s10.es, ...s11.es, ...s12.es, ...s13.es, ...s14.es }, ko: { ...s1.ko, ...s3.ko, ...s5.ko, ...s6.ko, ...s7.ko, ...s8.ko, ...s9.ko, ...s10.ko, ...s11.ko, ...s12.ko, ...s13.ko, ...s14.ko }, de: { ...s1.de, ...s3.de, ...s5.de, ...s6.de, ...s7.de, ...s8.de, ...s9.de, ...s10.de, ...s11.de, ...s12.de, ...s13.de, ...s14.de },
+  ru: { ...s2.ru, ...s4.ru, ...s5.ru, ...s6.ru, ...s7.ru, ...s8.ru, ...s9.ru, ...s10.ru, ...s11.ru, ...s12.ru, ...s13.ru, ...s14.ru }, pl: { ...s2.pl, ...s4.pl, ...s5.pl, ...s6.pl, ...s7.pl, ...s8.pl, ...s9.pl, ...s10.pl, ...s11.pl, ...s12.pl, ...s13.pl, ...s14.pl }, tr: { ...s2.tr, ...s4.tr, ...s5.tr, ...s6.tr, ...s7.tr, ...s8.tr, ...s9.tr, ...s10.tr, ...s11.tr, ...s12.tr, ...s13.tr, ...s14.tr }, ar: { ...s2.ar, ...s4.ar, ...s5.ar, ...s6.ar, ...s7.ar, ...s8.ar, ...s9.ar, ...s10.ar, ...s11.ar, ...s12.ar, ...s13.ar, ...s14.ar },
 };
 export const RTL_LANGS = new Set(["ar"]);
 

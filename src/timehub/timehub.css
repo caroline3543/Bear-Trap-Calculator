@@ -730,8 +730,10 @@ button[aria-pressed="true"] .th-dots i { box-shadow: 0 0 0 1.5px var(--selectedT
 /* stamina + drops */
 .th-stam { padding: 10px 12px; border-radius: 14px; background: var(--inputBg); border: 1px solid var(--cardBorderT); display: grid; gap: 6px; margin-bottom: 8px; }
 .th-stam-top, .th-stam-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.th-stam-val { font-size: 18px; font-weight: 800; }
+.th-stam-val { font-size: 18px; font-weight: 800; background: none; border: none; padding: 4px 8px; margin: -4px -8px; border-radius: 8px; cursor: pointer; color: inherit; font-family: inherit; }
+.th-stam-val:hover, .th-stam-val:focus-visible { background: var(--goldBg); }
 .th-stam-val small { font-size: 12px; color: var(--sub); }
+.th-stam-edit { width: 90px; height: 34px; font-size: 18px; font-weight: 800; text-align: end; padding: 0 10px; }
 .th-bar { height: 6px; border-radius: 6px; background: var(--tierTrackBg); overflow: hidden; }
 .th-bar span { display: block; height: 100%; border-radius: inherit; background: var(--teal); }
 .th-bar span.t-amber { background: var(--amber); } .th-bar span.t-warn { background: var(--goldStrong); }
@@ -1032,35 +1034,47 @@ html.th-diag-nograin [style*="paperGrain"] { display: none !important; }
 .th-contrib-list { display: grid; }
 .th-contrib-row { border-top: 1px solid var(--cardBorderT); }
 .th-contrib-row:first-child { border-top: none; }
-.th-contrib-line { display: grid; grid-template-columns: minmax(0, 1fr) 44px 44px; align-items: center; gap: 6px; min-height: 52px; }
+.th-contrib-line { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; min-height: 52px; }
 .th-contrib-tap { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name num" "name st"; align-items: center; column-gap: 10px; background: none; border: none; padding: 6px 4px; text-align: start; cursor: pointer; color: inherit; font: inherit; }
 .th-contrib-tap .th-grp-name { grid-area: name; }
 .th-contrib-num { grid-area: num; justify-self: end; font-weight: 800; font-size: 16px; font-variant-numeric: tabular-nums; }
 .th-contrib-st { grid-area: st; justify-self: end; font-size: 12px; font-weight: 800; color: var(--sub); font-variant-numeric: tabular-nums; }
 .th-contrib-st.full { color: var(--statusT9Text); }
 .th-contrib-row.full .th-contrib-line { background: var(--statusT9Bg); border-radius: 12px; padding-inline: 6px; }
+.th-contrib-adjust { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 2px 4px; }
 .th-contrib-more { display: grid; gap: 8px; padding: 6px 4px 10px; }
 
-/* ================= Today: free time between items + personal tasks ================= */
-.th-gap { list-style: none; padding: 4px 16px; }
-.th-gap-line { display: flex; align-items: center; gap: 10px; min-height: 40px; }
-.th-gap-line::before, .th-gap-line::after { content: ""; flex: 1; height: 0; border-top: 1.5px dashed var(--cardBorderT); }
+/* ================= Today: free time between items + personal tasks =================
+   Gap and task blocks get a min-height set inline from gapVisualHeight()/taskVisualHeight()
+   (plan.js) — a plain style property, computed once per render, not an animation. */
+.th-gap { list-style: none; padding: 4px 16px; display: flex; flex-direction: column; align-items: center; min-height: var(--gh, 44px); box-sizing: border-box; }
+.th-gap-rule { flex: 1; width: 0; min-height: 4px; border-left: 1.5px dashed var(--cardBorderT); }
+.th-gap-mid { display: flex; align-items: center; gap: 10px; padding: 8px 0; flex-wrap: wrap; justify-content: center; }
 .th-gap-free { font-size: 12.5px; font-weight: 800; color: var(--teal); white-space: nowrap; }
 .th-gap-add { min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1.5px solid var(--goldBorder); background: var(--goldBg); color: var(--gold); font: 800 12.5px 'Nunito Sans', sans-serif; cursor: pointer; white-space: nowrap; }
 .th-taskform { display: grid; gap: 8px; padding: 8px 0 6px; }
 .th-taskform label { display: grid; gap: 4px; }
+.th-task-avail { margin: 0; font-size: 12.5px; font-weight: 800; color: var(--teal); }
 .th-task-dur { max-width: 140px; font-size: 18px; font-weight: 800; }
-.th-task { list-style: none; margin: 2px 16px; border-inline-start: 3px dashed var(--teal); border-radius: 4px; }
+.th-task { list-style: none; margin: 2px 16px; border-inline-start: 3px dashed var(--teal); border-radius: 4px; min-height: var(--th, 48px); box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; }
 .th-task-line { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; min-height: 48px; }
-.th-task-check { width: 30px; height: 30px; margin: 0 auto; border-radius: 50%; border: 2px solid var(--teal); background: transparent; color: transparent; font-weight: 900; cursor: pointer; }
+.th-task-check { width: 30px; height: 30px; margin: 0 auto; border-radius: 50%; border: 2px solid var(--teal); background: transparent; color: transparent; font-weight: 900; cursor: pointer; flex-shrink: 0; }
 .th-task-check[aria-pressed="true"] { background: var(--teal); color: #fff; }
-.th-task-main { display: grid; gap: 1px; background: none; border: none; padding: 6px 4px; text-align: start; cursor: pointer; color: inherit; font: inherit; }
+.th-task-main { display: grid; gap: 1px; background: none; border: none; padding: 6px 4px; text-align: start; cursor: pointer; color: inherit; font: inherit; min-width: 0; }
 .th-task-title { font-weight: 800; font-size: 14.5px; }
 .th-task-when { font-size: 12px; font-weight: 700; color: var(--sub); }
 .th-task.done { opacity: .55; }
 .th-task.done .th-task-title { text-decoration: line-through; }
 .th-task-edit { display: grid; gap: 6px; padding: 0 8px 10px 44px; justify-items: start; }
 @media (max-width: 400px) { .th-task-edit { padding-inline-start: 8px; } }
+
+/* overdue personal tasks: always visible, gentle language, no alarm colours */
+.th-overdue { margin: 4px 16px 8px; padding-top: 6px; }
+.th-overdue-title { font-size: 11px; font-weight: 800; letter-spacing: .7px; text-transform: uppercase; color: var(--sub); margin-bottom: 4px; }
+.th-overdue .th-task { margin-inline: 0; border-inline-start-color: var(--sub); }
+.th-task-still { color: var(--gold); font-weight: 800; }
+.th-task-move { margin: 0 0 6px 44px; min-height: 34px; padding: 0 12px; border-radius: 999px; border: 1.5px dashed var(--cardBorderT); background: none; color: var(--gold); font: 700 12px 'Nunito Sans', sans-serif; cursor: pointer; align-self: flex-start; }
+@media (max-width: 400px) { .th-task-move { margin-inline-start: 8px; } }
 
 /* training modes (Finish at / Maximum / Custom) */
 .th-mode-note { margin: 0; }

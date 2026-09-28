@@ -316,3 +316,25 @@ Saves go to localStorage on every change.
   name whichever building finishes soonest — only the expanded list order is fixed.
 - **Today page description** ("Your day at a glance: upcoming events, free time, and personal
   tasks.") replaces the old generic copy, in all 9 languages.
+
+## Executive function / time-blindness pass (Sep 2026)
+- **Alliance Contributions**: the closed row now has one primary action, "Spend all" (instant —
+  the reducer updates in-memory state synchronously, so the UI changes immediately; the debounced
+  save follows). Manual −/+ correction, "Match the game", and "Rules" moved behind the row's expand.
+- **Stamina**: tapping the value itself opens an empty, auto-focused numeric input in place
+  (`StaminaRow` in `widgets/DailyWidgets.jsx`) — no backspacing the old number. Saves on Enter or
+  on blur; Escape cancels. The old "Update" text link still works as an alternate way in.
+- **Personal tasks never disappear when their time passes.** `Schedule` in `widgets/TodayScreen.jsx`
+  now only folds a task into the "completed" toggle once the person marks it **done** — never just
+  because `now` has passed its end. Unfinished-and-overdue tasks (`lib/plan.js → overdueTasks`)
+  render in an always-visible **"Still to do"** block directly above the Now marker, with gentle
+  wording ("Still to do · Planned 6:00 PM", never "overdue"/"missed"), a one-tap complete circle,
+  and an optional **"Move to next free time"** button (`findNextGap`) that finds the next gap that
+  fits and moves the task there — only on explicit tap, never automatically.
+- **Proportional free-time gaps**: `gapVisualHeight()`/`taskVisualHeight()` in `lib/plan.js` use a
+  clamped square-root scale so a 4-hour gap is visibly taller than a 20-minute one, capped (~220px
+  for gaps, ~96px for tasks) so long stretches never blow out the page. Applied as one inline
+  `min-height` style per render (`--gh`/`--th` custom properties) — pure CSS layout, no animation,
+  no per-second recalculation. The exact duration is always still shown as text alongside the
+  visual size (never visual-only).
+- Adding a task now opens with an "{time} available" headline before the name/duration fields.

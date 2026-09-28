@@ -893,3 +893,42 @@ test("applyTraining tags each timer with its mode (finish / max / custom) when g
     assert.deepEqual(r.accountData.A.timers.map((x) => x.mode), ["finish", "max", "custom"]);
   });
 });
+
+/* ---------- time-blindness: proportional gaps, overdue tasks, reschedule ---------- */
+import { gapVisualHeight, taskVisualHeight, overdueTasks, findNextGap } from "../lib/plan.js";
+
+test("gap height grows with duration and is clamped (time blindness: more time looks bigger, never absurd)", () => {
+  const h10 = gapVisualHeight(10 * MINUTE), h30 = gapVisualHeight(30 * MINUTE), h60 = gapVisualHeight(HOUR);
+  const h120 = gapVisualHeight(2 * HOUR), h240 = gapVisualHeight(4 * HOUR), h480 = gapVisualHeight(8 * HOUR), h1000 = gapVisualHeight(20 * HOUR);
+  assert.ok(h10 < h30 && h30 < h60 && h60 < h120 && h120 < h240 && h240 < h480, `${h10},${h30},${h60},${h120},${h240},${h480}`);
+  assert.equal(h480, h1000); // capped — an 8h gap and a 20h gap don't blow out the page
+  assert.ok(h10 >= 40 && h480 <= 220); // sane min/max for a phone screen
+});
+
+test("task block height also scales, gently, and stays a comfortable tap size", () => {
+  const short = taskVisualHeight(10 * MINUTE), long = taskVisualHeight(3 * HOUR), veryLong = taskVisualHeight(10 * HOUR);
+  assert.ok(short < long);
+  assert.equal(long, veryLong); // capped at 3h
+  assert.ok(short >= 44); // comfortable touch target even for a tiny task
+});
+
+test("an unfinished task stays put when its time passes — never auto-completed, auto-archived, or hidden", () => {
+  const now = T0;
+  const tasks = [
+    { id: "a", title: "Laundry", start: now - 2 * HOUR, end: now - 90 * MINUTE, done: false }, // planned time passed, not done
+    { id: "b", title: "Shower", start: now - HOUR, end: now - 40 * MINUTE, done: true }, // done → not overdue
+    { id: "c", title: "Later", start: now + HOUR, end: now + 90 * MINUTE, done: false }, // still upcoming, not overdue
+  ];
+  const over = overdueTasks(tasks, now);
+  assert.deepEqual(over.map((t) => t.id), ["a"]);
+});
+
+test("finding the next free gap for a quick reschedule", () => {
+  const D = Date.UTC(2026, 8, 24), H = (h, m = 0) => D + h * HOUR + m * MINUTE;
+  const items = [pev("a", H(10), H(11), "A"), pev("b", H(13), H(14), "A")];
+  const tl = buildTimeline(items, [], D, D + DAY, H(9));
+  const g = findNextGap(tl, 90 * MINUTE);
+  assert.equal(g.start, H(11)); // the 9–10 gap (1h) is too short; the next one that fits is 11–13 (2h)
+  assert.ok(g.ms >= 90 * MINUTE);
+  assert.equal(findNextGap(tl, 50 * HOUR), null);
+});

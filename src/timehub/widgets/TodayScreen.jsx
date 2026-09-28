@@ -12,7 +12,7 @@ import { computeReminders, needsAttention } from "../lib/reminders.js";
 import { contribState, spendAttempt } from "../lib/contributions.js";
 import { idleCamps, splitNow, stillRunning, weekStrip } from "../lib/today.js";
 import { dropsNeedingAction, dropsBetween, staminaNow, intelNeedingAction, INTEL_MISSIONS_PER_REFRESH } from "../lib/daily.js";
-import { buildTimeline, parseTaskDuration, placeTask, resizeTask, pruneTasks, rowChips } from "../lib/plan.js";
+import { buildTimeline, parseTaskDuration, placeTask, resizeTask, pruneTasks, rowChips, gapVisualHeight, taskVisualHeight, overdueTasks, findNextGap } from "../lib/plan.js";
 import { champRounds } from "../lib/championship.js";
 import { ChampQuestion } from "./ChampIntel.jsx";
 import { localDayRange, formatTime, formatDate, formatSpan, zonedParts, formatWeekdayShort, formatDayNumber, HOUR, MINUTE } from "../lib/time.js";
@@ -291,6 +291,7 @@ function TaskForm({ gap, task, onDone }) {
   };
   return (
     <form className="th-taskform" onSubmit={(e) => { e.preventDefault(); save(); }}>
+      {!task && <p className="th-task-avail">{t("availableTime", { time: formatSpan(gap.ms, lang) })}</p>}
       <label><span className="th-label">{t("taskName")}</span>
         <input className="th-input" autoFocus value={title} maxLength={120} placeholder={t("taskPlaceholder")} onChange={(e) => { setTitle(e.target.value); setWarn(null); }} />
       </label>
@@ -320,31 +321,52 @@ function TaskForm({ gap, task, onDone }) {
 function GapRow({ gap }) {
   const { t, lang } = useTimeHub();
   const [adding, setAdding] = useState(false);
+  // time blindness: the block's own height gives a visual sense of "how much time", the
+  // text gives the exact number — neither replaces the other.
+  const h = gapVisualHeight(gap.ms);
   return (
-    <li className="th-gap">
-      <div className="th-gap-line">
+    <li className="th-gap" style={{ "--gh": `${h}px` }}>
+      <span className="th-gap-rule" aria-hidden="true" />
+      <div className="th-gap-mid">
         <span className="th-gap-free">{t("freeTime", { time: formatSpan(gap.ms, lang) })}</span>
         {!adding && <button type="button" className="th-gap-add" onClick={() => setAdding(true)}>＋ {t("addTask")}</button>}
       </div>
+      <span className="th-gap-rule" aria-hidden="true" />
       {adding && <TaskForm gap={gap} onDone={() => setAdding(false)} />}
     </li>
   );
 }
 
-function TaskRow({ task }) {
+function TaskRow({ task, overdue, moveTarget }) {
   const { t, tz, lang, update } = useTimeHub();
   const [editing, setEditing] = useState(false);
   const toggle = () => { update((s) => ({ ...s, tasks: s.tasks.map((x) => (x.id === task.id ? { ...x, done: !x.done } : x)) })); if (!task.done) success(); };
   const remove = () => update((s) => ({ ...s, tasks: s.tasks.filter((x) => x.id !== task.id) }));
+  const move = () => {
+    if (!moveTarget) return;
+    const len = task.end - task.start;
+    update((s) => ({ ...s, tasks: s.tasks.map((x) => (x.id === task.id ? { ...x, start: moveTarget.start, end: moveTarget.start + len } : x)) }));
+    success();
+  };
+  const h = Math.max(48, taskVisualHeight(task.end - task.start));
   return (
-    <li className={`th-task ${task.done ? "done" : ""}`}>
+    <li className={`th-task ${task.done ? "done" : ""} ${overdue ? "overdue" : ""}`} style={{ "--th": `${h}px` }}>
       <div className="th-task-line">
         <button type="button" className="th-task-check" aria-pressed={task.done} aria-label={task.done ? t("markNotDone") : t("markDone")} onClick={toggle}>✓</button>
         <button type="button" className="th-task-main" aria-expanded={editing} onClick={() => setEditing(!editing)}>
           <span className="th-task-title">{task.title}</span>
-          <span className="th-task-when"><Ltr>{formatTime(task.start, tz, lang)}–{formatTime(task.end, tz, lang)}</Ltr> · {formatSpan(task.end - task.start, lang)}{task.done ? ` · ${t("completedWord")}` : ""}</span>
+          {overdue ? (
+            <span className="th-task-when"><span className="th-task-still">{t("stillToDo")}</span> · {t("plannedAt", { time: formatTime(task.start, tz, lang) })}</span>
+          ) : (
+            <span className="th-task-when"><Ltr>{formatTime(task.start, tz, lang)}–{formatTime(task.end, tz, lang)}</Ltr> · {formatSpan(task.end - task.start, lang)}{task.done ? ` · ${t("completedWord")}` : ""}</span>
+          )}
         </button>
       </div>
+      {overdue && moveTarget && !editing && (
+        <button type="button" className="th-task-move" onClick={move}>
+          {t("moveToGap", { time: formatTime(moveTarget.start, tz, lang) })}
+        </button>
+      )}
       {editing && (
         <div className="th-task-edit">
           <TaskForm task={task} onDone={() => setEditing(false)} />
@@ -377,9 +399,13 @@ function Schedule({ offset, setOffset }) {
   const day = localDayRange(now, tz, offset);
   const items = useMemo(() => groupTraining(buildAgenda(state, day.start, day.end, accountIds, now)), [state, accountIds.join(), day.start, now]); // eslint-disable-line react-hooks/exhaustive-deps
   const { past, rest } = splitNow(items);
+  const isToday = offset === 0;
   const dayTasks = useMemo(() => (state.tasks || []).filter((x) => x.start >= day.start && x.start < day.end), [state.tasks, day.start]); // eslint-disable-line react-hooks/exhaustive-deps
-  const pastTasks = dayTasks.filter((x) => x.end <= now);
-  const timeline = useMemo(() => buildTimeline(rest, dayTasks.filter((x) => x.end > now), day.start, day.end, now), [rest, dayTasks, day.start, day.end, now]);
+  // A task's planned time passing is not completion: only tasks the person actually ticked off
+  // fold away into "completed". Everything else stays visible until they say otherwise.
+  const pastTasks = dayTasks.filter((x) => x.done);
+  const overdue = isToday ? overdueTasks(dayTasks, now) : [];
+  const timeline = useMemo(() => buildTimeline(rest, dayTasks.filter((x) => !x.done && x.end > now), day.start, day.end, now), [rest, dayTasks, day.start, day.end, now]);
   const rems = useMemo(() => computeReminders(state, now, accountIds), [state, accountIds.join(), now]); // eslint-disable-line react-hooks/exhaustive-deps
   const after = offset === 0 ? [
     ...stillRunning(state, accountIds, day.end).filter((r) => r.endAt < day.end + 12 * HOUR).map((r) => ({
@@ -390,7 +416,6 @@ function Schedule({ offset, setOffset }) {
       id: d.key, at: d.at, acc: null, name: d.kind === "store" ? t("dropStore", { n: d.amount }) : t("dropTrek", { n: d.amount }),
     })),
   ].sort((a, b) => a.at - b.at) : [];
-  const isToday = offset === 0;
   const heading = offset === 0 ? t("todaysSchedule") : offset === 1 ? t("tomorrowsSchedule") : formatDate(day.start + 1, tz, lang);
   const nextId = rest.find((x) => x.status === "upcoming")?.id;
   const rowProps = (i) => ({ i, day, rems, open: openId === i.id, setOpen: (v) => setOpenId(v ? i.id : null), isNext: i.id === nextId });
@@ -414,6 +439,14 @@ function Schedule({ offset, setOffset }) {
           {[...past.map((i) => ({ at: i.start, el: <Row key={i.id} {...rowProps(i)} /> })), ...pastTasks.map((x) => ({ at: x.start, el: <TaskRow key={x.id} task={x} /> }))]
             .sort((a, b) => a.at - b.at).map((x) => x.el)}
         </ol>
+      )}
+      {isToday && overdue.length > 0 && (
+        <div className="th-overdue">
+          <div className="th-overdue-title">{t("stillToDo")} · {overdue.length}</div>
+          <ol className="th-slist">
+            {overdue.map((x) => <TaskRow key={x.id} task={x} overdue moveTarget={findNextGap(timeline, x.end - x.start)} />)}
+          </ol>
+        </div>
       )}
       {isToday && items.length + after.length > 0 && (
         <div className="th-now-mark" aria-label={`${t("now")} ${formatTime(now, tz, lang)}`}>
@@ -440,7 +473,7 @@ function Schedule({ offset, setOffset }) {
           ))}
         </div>
       )}
-      {isToday && rest.length === 0 && !timeline.some((e) => e.type === "task") && <SleepingBear text={t("everythingTonight")} />}
+      {isToday && rest.length === 0 && overdue.length === 0 && !timeline.some((e) => e.type === "task") && <SleepingBear text={t("everythingTonight")} />}
       {!isToday && items.length === 0 && <SleepingBear text={t("nothingToday")} />}
       {items.length > 0 && (
         <div className="th-item-actions th-sched-foot">
