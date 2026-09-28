@@ -6,6 +6,7 @@
 import React, { useEffect, useLayoutEffect } from "react";
 import { useTimeHub, useTab } from "../TimeHubContext.jsx";
 import { Btn } from "../components/ui.jsx";
+import peek from "../assets/scene-peeking-bear.webp";
 
 export const TOUR_STEPS = [
   { id: "intro" },
@@ -48,6 +49,7 @@ export function Tour({ step, setStep, setSettings }) {
   const last = step === TOUR_STEPS.length - 1;
   return (
     <div className="th-tour" role="dialog" aria-live="polite" aria-label={t("tourTitle")}>
+      {step === 0 && <img className="th-tour-art" src={peek} alt="" aria-hidden="true" decoding="async" />}
       <div className="th-tour-top">
         <b>{t(`tour_${s.id}_title`)}</b>
         <span className="th-tour-count">{step + 1} / {TOUR_STEPS.length}</span>

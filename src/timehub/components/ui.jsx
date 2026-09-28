@@ -1,3 +1,4 @@
+import distantBear from "../assets/scene-distant-bear.webp";
 import React, { useId, useMemo, useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
 import {
@@ -221,11 +222,11 @@ export function Snowflakes() {
   );
 }
 export function SleepingBear({ text }) {
+  const { t } = useTimeHub();
   return (
     <div className="th-bear">
-      <svg width="72" height="44" viewBox="0 0 64 40" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M6 34c3-11 12-17 26-17s23 6 26 17z" /><circle cx="21" cy="16" r="4.5" /><circle cx="43" cy="16" r="4.5" /><path d="M26 26q6 4 12 0" /><path d="M50 6h6l-6 6h6" />
-      </svg>
+      <img className="th-scene" src={distantBear} alt="" aria-hidden="true" decoding="async" />
+      <b className="th-bear-title">{t("quietTitle")}</b>
       <span>{text}</span>
     </div>
   );

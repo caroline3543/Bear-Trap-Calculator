@@ -7,7 +7,7 @@ import { planFinish, applyTraining, finishTogether, busyCamps, RESEARCH_LOCATION
 import { computeReminders, reminderKey, needsAttention, suggestedBuff } from "../lib/reminders.js";
 import { buildAgenda, nextUp } from "../lib/agenda.js";
 import { buildICS, rruleFor, googleCalendarLink, foldLine, escapeText } from "../lib/ics.js";
-import { makeAccount, normalizeAccounts, updateAccountData, deleteAccount, visibleAccountIds, matchesFilter, emptyAccountData } from "../lib/accounts.js";
+import { makeAccount, normalizeAccounts, updateAccountData, deleteAccount, visibleAccountIds, matchesFilter, emptyAccountData, MAX_ACCOUNTS, ACCOUNT_COLORS } from "../lib/accounts.js";
 import { sanitizeLayout, moveSection, placeSection, splitColumns, DEFAULT_LAYOUT } from "../lib/layout.js";
 import { spendAttempt, contribState, setAttempts, DEFAULT_CONTRIB } from "../lib/contributions.js";
 import { emptyState } from "../lib/storage.js";
@@ -902,7 +902,8 @@ test("gap height grows with duration and is clamped (time blindness: more time l
   const h120 = gapVisualHeight(2 * HOUR), h240 = gapVisualHeight(4 * HOUR), h480 = gapVisualHeight(8 * HOUR), h1000 = gapVisualHeight(20 * HOUR);
   assert.ok(h10 < h30 && h30 < h60 && h60 < h120 && h120 < h240 && h240 < h480, `${h10},${h30},${h60},${h120},${h240},${h480}`);
   assert.equal(h480, h1000); // capped — an 8h gap and a 20h gap don't blow out the page
-  assert.ok(h10 >= 40 && h480 <= 220); // sane min/max for a phone screen
+  assert.ok(h10 >= 12 && h480 <= 96); // the journal scale: 12–96px
+  assert.deepEqual([gapVisualHeight(30 * MINUTE), gapVisualHeight(HOUR), gapVisualHeight(2 * HOUR), gapVisualHeight(4 * HOUR), gapVisualHeight(6 * HOUR)], [16, 24, 40, 64, 96]);
 });
 
 test("task block height also scales, gently, and stays a comfortable tap size", () => {
@@ -1183,4 +1184,22 @@ test("education: settings and 'done' records round-trip through save/load", asyn
 test("education: actions are numbered in the timeline itself (Action 1, Action 2)", () => {
   const p = buildEducationPlan({ now: EH(0), booking: eBook(EH(10, 30)), camps: [eCamp("infantry_camp", EH(6, 14), 6 * HOUR, 5 * HOUR)], priority: "uptime" });
   assert.deepEqual(p.timeline.filter((e) => e.kind === "action").map((e) => e.n), [1, 2]);
+});
+
+/* ---------- up to 6 accounts ---------- */
+test("accounts: up to 6 are supported, each with its own colour, and a 7th is dropped on save", async () => {
+  const { sanitizeState } = await import("../lib/storage.js");
+  assert.equal(MAX_ACCOUNTS, 6);
+  assert.deepEqual(ACCOUNT_COLORS, [1, 2, 3, 4, 5, 6]);
+  let accs = [];
+  for (let i = 0; i < 7; i++) accs.push(makeAccount({ id: `A${i}`, name: `Acct ${i}` }, accs));
+  assert.equal(accs.length, 7);
+  assert.deepEqual(accs.slice(0, 6).map((a) => a.color), [1, 2, 3, 4, 5, 6]); // each of the 6 colours used once
+  assert.equal(accs[6].color, 1); // the 7th cycles back rather than erroring
+  const s = emptyState(T0, mkId);
+  s.accounts = normalizeAccounts(accs);
+  s.accountData = Object.fromEntries(accs.map((a) => [a.id, emptyAccountData()]));
+  const r = sanitizeState(s, T0, mkId);
+  assert.equal(r.accounts.length, 6); // capped at save time
+  assert.deepEqual(r.accounts.map((a) => a.id), accs.slice(0, 6).map((a) => a.id));
 });

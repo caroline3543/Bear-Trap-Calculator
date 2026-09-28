@@ -377,3 +377,49 @@ Saves go to localStorage on every change.
   then advances. If camps have been ready for a while the plan recalculates with a calm "Plan updated"
   note. When Education is active the card simplifies to DO NOW.
 - Waits in the full plan are drawn in proportion, capped (`eduGapHeight`, 24–96px).
+
+## Arctic expedition journal skin (Sep 2026)
+The approved journal mockup is the app's look. It is a skin: no logic, data or navigation changed.
+- **Tokens:** one block at the end of `timehub.css` re-maps the variables every widget already uses
+  (`--gold` → deep arctic, `--goldStrong` → furnace amber, `--inputBg` → ice, …) under
+  `.th-root:not(.is-calc)` (light) and `.dark .th-root:not(.is-calc)` (dark). The Calculator tab keeps
+  its own theme. Amber is only for training/boosts; selected states are deep arctic.
+- **Type:** Inter (interface), Nunito (display: titles, times, section headings), Kalam (handwritten
+  notes, 1–3 per screen, never on times/buttons/warnings). Fonts load from Google Fonts in
+  `timehub.css`; self-host them for store builds.
+- **Painted layer = pre-rendered WebP** in `assets/` (header landscape, distant-bear empty state,
+  peeking bear for the walkthrough, sleeping bear for long gaps, snow edge). Never live SVG filters:
+  they made the old paper-grain overlay take ~1 s to redraw on iPhone.
+- **Header:** painted horizon fades into the page; eyebrow ("Today's log · date · city"), Nunito title.
+- **Schedule:** a softly wandering trail with small custom markers (`components/Trail.jsx`): paw = Bear
+  Trap, flame = training, spark = Education, circle = the rest, dashed = personal task. Free time is
+  drawn 12–96px (`gapVisualHeight`: 30m 16, 1h 24, 2h 40, 4h 64, 6h+ 96); gaps of 2h+ get a faint
+  sleeping bear and the first one a handwritten note.
+- **Tab bar:** the sliding indicator is an irregular ice floe (CSS background, no filter).
+- **Page background:** while a Time Hub tab is showing, `<html>` gets `th-skin`; CSS then paints the
+  host root flat (light `#F4F8F8`, dark `#0F1B20`) and hides the host's grain/corner art. This relies on
+  the host root being `#root > div`; on the Calculator tab the class is removed.
+- **Buttons/targets:** ≥44px, primary block 52px; secondary text is `#5B7075` (not `#71868B`) for contrast.
+
+## Today, from the approved prototype (Sep 2026)
+- **Header:** painted horizon behind "Today's log · date · city" and the title; the four-cell stat strip is now one quiet line ("5:30 PM local · 05:30 UTC · 8 to do").
+- **Bear Trap hero** (`BearHero`, `useBearHero` in `widgets/TodayScreen.jsx`): the next Bear Trap event with a live countdown, every account's minister status, and one **Book ministers** button (opens the existing booking form pre-filled). "Already booked in the game?" opens the existing minister-reminder rows. Those reminders no longer repeat in Needs you.
+- **Field notes → Needs you:** one white card with hairline rows and small custom icons instead of coloured boxes.
+- **Coming up → Schedule:** a tinted band under the painted snow edge; the week strip and one timeline card with a NOW pill. "Add task" only appears on gaps of 45 minutes or more.
+- **Quiet day** (`QuietHero`): when nothing needs doing and nothing is due for 3 hours, the illustrated "Quiet out here." state replaces the hero and Needs you.
+- Timers, Events and the Calculator tab keep their existing layouts; they only wear the skin (tokens, fonts, header, tab bar).
+- New painted asset: `assets/hero-pool-corner.webp` (pre-rendered; no live SVG filters).
+
+## 6 accounts + "What's up next" (Sep 2026)
+- `lib/accounts.js → MAX_ACCOUNTS` raised from 4 to 6. The 6 account colours
+  (`--acct-1`…`--acct-6`) were already fully themed in `timehub.css`, and the account grid
+  (2-column in settings, horizontal-scroll pills on Today/Timers) needed no layout change —
+  both already handle any count. `storage.js` still caps saved accounts at `MAX_ACCOUNTS`.
+- **"What's up next"** (`widgets/TodayScreen.jsx → useWhatsNext/WhatsNextWidget`): a compact strip
+  at the top of Today showing the single soonest item across every visible account and any kind
+  (event, booking, training/research finish, personal task, stamina, contribution, drop, intel) —
+  not just Bear Trap (that stays the hero's job) and not just something needing action (that's
+  Needs You). It reuses `buildAgenda`/`groupTraining`/`itemTitle`/`markerFor` so it always matches
+  what the schedule itself would show first. Suppressed when the day is quiet (the illustrated
+  empty-day card already leads with the next item) or when the next item is the same one already
+  shown in the Bear Trap hero, so it never duplicates. Tapping it jumps to the schedule.

@@ -10,6 +10,7 @@ import { useNow, useMinute, ActiveTab } from "./hooks/useNow.jsx";
 import { onPress } from "./lib/feedback.js";
 import { flushSync } from "react-dom";
 import { SpeedTest, diag } from "./widgets/SpeedTest.jsx";
+import horizon from "./assets/header-landscape.webp";
 import { Tour } from "./widgets/Tour.jsx";
 import { zoneCity, deviceTimeZone, formatLongDay } from "./lib/time.js";
 import { splitColumns } from "./lib/layout.js";
@@ -49,17 +50,17 @@ function BearClock() {
 }
 
 /** Compact header for Time Hub tabs: bear, tab title, local date · city, settings. */
-function Header({ title, headerExtra, onSettings, settingsOpen, children }) {
+function Header({ title, tab, headerExtra, onSettings, settingsOpen, children }) {
   const { tz, lang, t } = useTimeHub();
   const now = useMinute();
   const long = formatLongDay(now, tz, lang);
+  const lead = tab === "today" ? `${t("journalToday")} · ` : tab === "timers" ? `${t("journalTimers")} · ` : tab === "events" ? `${t("journalEvents")} · ` : "";
   return (
     <header className="th-mhdr">
-      <span className="th-drift" aria-hidden="true"><i>❄</i><i>❄</i><i>✦</i></span>
-      <BearClock />
+      <img className="th-horizon" src={horizon} alt="" aria-hidden="true" decoding="async" />
       <div className="th-mhdr-main">
+        <div className="th-mhdr-eyebrow">{lead}{long} · {zoneCity(tz)}</div>
         <h1 className="th-mhdr-title">{title}</h1>
-        <div className="th-mhdr-sub">{long} · {zoneCity(tz)}</div>
       </div>
       <div className="th-mhdr-tools">
         <button type="button" className="th-iconbtn" aria-expanded={settingsOpen} aria-label={t("settingsTitle")} title={t("settingsTitle")} onClick={onSettings}><TabIcon name="gear" size={19} /></button>
@@ -68,7 +69,6 @@ function Header({ title, headerExtra, onSettings, settingsOpen, children }) {
     </header>
   );
 }
-
 /** Same big account buttons as the calculator (up to 4) plus All. */
 function AccountGrid({ onAdd, compact }) {
   const { t, accounts, filter, setFilter } = useTimeHub();
@@ -94,6 +94,7 @@ const TABS = [
   { id: "events", icon: "foundry" },
   { id: "calc", icon: "trap" },
 ];
+
 
 function TabBar({ hasCalc, active }) {
   const { t } = useTimeHub();
@@ -267,6 +268,11 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
   const pressed = tab === "calc" && !calculator ? "today" : tab;
   // One synchronous swap: the tab and its screen appear in the same frame (no in-between state).
   const active = pressed;
+  useEffect(() => {
+    const on = active !== "calc";
+    document.documentElement.classList.toggle("th-skin", on);
+    return () => document.documentElement.classList.remove("th-skin");
+  }, [active]);
   // Panels stay mounted once visited (switching back is instant); hidden ones stop ticking.
   const [visited, setVisited] = useState(() => new Set([active]));
   if (!visited.has(active)) setVisited(new Set([...visited, active]));
@@ -306,11 +312,11 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
     <div className={`th-root th-app ${active === "calc" ? "is-calc" : ""} ${compact ? "th-compact" : ""} ${tour != null ? "th-touring" : ""}`} dir={dir}
       onPointerDownCapture={(e) => onPress(e.target)}>
       {active !== "calc" && showHeader && (
-        <Header title={t(`tab_${active}`)} headerExtra={headerExtra} settingsOpen={settings} onSettings={() => setSettings(!settings)}>
+        <Header title={t(`tab_${active}`)} tab={active} headerExtra={headerExtra} settingsOpen={settings} onSettings={() => setSettings(!settings)}>
           {active === "today" && !settings && <StatStrip />}
         </Header>
       )}
-      {active !== "calc" && (settings ? <SettingsPanel headerExtra={headerExtra} hasCalc={!!calculator} closeSettings={() => flushSync(() => setSettings(false))} reopenSettings={() => setSettings(true)} startTour={() => setTour(0)} /> : <AccountGrid compact={active === "timers"} onAdd={() => setSettings(true)} />)}
+      {active !== "calc" && (settings ? <SettingsPanel headerExtra={headerExtra} hasCalc={!!calculator} closeSettings={() => flushSync(() => setSettings(false))} reopenSettings={() => setSettings(true)} startTour={() => setTour(0)} /> : <AccountGrid compact={active === "timers" || active === "today"} onAdd={() => setSettings(true)} />)}
       <main className={settings && active !== "calc" ? "th-hidden" : ""}>
         {panel("today", TODAY_EL)}
         {panel("timers", TIMERS_EL)}

@@ -5,8 +5,8 @@
    The 6 colours are CSS variables (--acct-1 … --acct-6) in timehub.css.
    ============================================================ */
 export const ACCOUNT_COLORS = [1, 2, 3, 4, 5, 6];
-/** Players can have up to 4 accounts. */
-export const MAX_ACCOUNTS = 4;
+/** Players can have up to 6 accounts. */
+export const MAX_ACCOUNTS = 6;
 export const ACCOUNT_TYPES = ["main", "farm", "other"];
 export const ALL = "all";
 

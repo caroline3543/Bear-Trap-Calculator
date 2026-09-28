@@ -12,10 +12,17 @@ import { computeReminders, needsAttention } from "../lib/reminders.js";
 import { contribState, spendAttempt } from "../lib/contributions.js";
 import { idleCamps, splitNow, stillRunning, weekStrip } from "../lib/today.js";
 import { dropsNeedingAction, dropsBetween, staminaNow, intelNeedingAction, INTEL_MISSIONS_PER_REFRESH } from "../lib/daily.js";
+import { Rail, Marker, hashV, markerFor } from "../components/Trail.jsx";
+import sleepingBear from "../assets/bear-sleeping-mini.webp";
+import snowEdge from "../assets/snow-edge.webp";
+import pool from "../assets/hero-pool-corner.webp";
+import quietScene from "../assets/scene-distant-bear.webp";
+import { slotContaining } from "../lib/bookings.js";
+import { eventName } from "../lib/events.js";
 import { buildTimeline, parseTaskDuration, placeTask, resizeTask, pruneTasks, rowChips, gapVisualHeight, taskVisualHeight, overdueTasks, findNextGap } from "../lib/plan.js";
 import { champRounds } from "../lib/championship.js";
 import { ChampQuestion } from "./ChampIntel.jsx";
-import { localDayRange, formatTime, formatDate, formatSpan, zonedParts, formatWeekdayShort, formatDayNumber, HOUR, MINUTE } from "../lib/time.js";
+import { localDayRange, formatTime, formatDate, formatSpan, zonedParts, formatWeekdayShort, formatDayNumber, HOUR, MINUTE, DAY } from "../lib/time.js";
 import { Ltr, Bidi, AccountTag, Btn, SleepingBear, DurationFields, durFrom, durParse, CalendarButtons, BrushUnderline, SectionIcon, Remaining } from "../components/ui.jsx";
 import { itemTitle, toCalendarItem } from "../components/labels.js";
 import { ReminderRow } from "./ReminderRow.jsx";
@@ -42,16 +49,32 @@ export function useNeeds() {
   }, [state, accountIds.join(), now]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
-function NeedRow({ tone = "warm", title, sub, children, leaving }) {
+
+const NEED_ICON = {
+  store: "M4 9l1.5-5h13L20 9M5 9v11h14V9M9 20v-6h6v6",
+  boot: "M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17zM15 9l-2 6-4 0 2-6z",
+  bolt: "M13 3L5 13.5h6L10 21l8-10.5h-6z",
+  flame: "M12 3c1 3.2 4.5 4.8 4.5 9a4.5 4.5 0 0 1-9 0c0-1.8.8-3 1.8-4 .2 1.4 1 2 1.8 2C11.4 7.6 11 5.4 12 3z",
+  bell: "M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0",
+  flask: "M9 3h6M10 3v6L5 18a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-9V3",
+};
+const NeedIcon = ({ name, warm }) => (
+  <span className={`th-need-ic ${warm ? "warm" : ""}`} aria-hidden="true">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d={NEED_ICON[name] || NEED_ICON.bell} /></svg>
+  </span>
+);
+
+function NeedRow({ tone = "warm", title, sub, children, leaving, icon = "bell" }) {
   return (
     <div className={`th-need ${tone} ${leaving ? "leaving" : ""}`}>
+      <NeedIcon name={icon} warm={tone === "amber" || tone === "warm"} />
       <div className="th-need-main"><div className="th-need-title">{title}</div><div className="th-need-sub">{sub}</div></div>
       {children}
     </div>
   );
 }
 
-function NeedsYou() {
+function NeedsYou({ hiddenKeys }) {
   const { t, tz, lang, accountById, startTraining, setTab, updateAccount } = useTimeHub();
   const now = useMinute();
   const when = useWhenLocal();
@@ -60,7 +83,9 @@ function NeedsYou() {
   const [leaving, setLeaving] = useState([]);
   // let the row slide away first, then update (feels like it was dealt with, not just vanished)
   const later = (key, fn) => { setLeaving((l) => [...l, key]); setTimeout(fn, 230); };
-  const n = useNeeds();
+  const n0 = useNeeds();
+  const minister = n0.minister.filter((r) => !hiddenKeys?.has(r.key));
+  const n = { ...n0, minister, count: n0.count - (n0.minister.length - minister.length) };
   if (!n.count) {
     return (
       <section className="th-card th-caught-up" aria-label={t("allCaughtUp")}>
@@ -72,37 +97,36 @@ function NeedsYou() {
     );
   }
   return (
-    <section className="th-card" aria-label={t("needsYou")}>
-      <div className="th-sec-head"><SectionIcon name="bell" /><span className="th-sec-title">{t("needsYou")}</span></div>
-      <BrushUnderline />
-      <p className="th-sec-sub">{t("needsYouSub")}</p>
+    <section className="th-needs-sec" aria-label={t("needsYou")}>
+      <div className="th-needs-head"><span className="th-eyebrow">{t("fieldNotes")}</span><h2 className="th-needs-title">{t("needsYou")}<span className="th-needs-count">{n.count}</span></h2></div>
+      <div className="th-card th-needs-card">
       <div className="th-needs">
         {n.drops.map(({ drop: d, status, accounts }) => (
-          <NeedRow key={d.key} tone="gold" leaving={leaving.includes(d.key)}
+          <NeedRow key={d.key} tone="gold" icon={d.kind === "store" ? "store" : "boot"} leaving={leaving.includes(d.key)}
             title={`${d.kind === "store" ? t("dropStore", { n: d.amount }) : t("dropTrek", { n: d.amount })} · ${formatTime(d.at, tz, lang)}`}
             sub={<>{status === "ready" ? t("readyToClaim") : t("inTime", { time: formatSpan(d.at - now, lang) })} · {accounts.length > 1 ? t("nAccounts", { n: accounts.length }) : accountById(accounts[0])?.name}</>}>
             {status === "ready" && <Btn small onClick={() => later(d.key, () => claim(d))}>{t("claimed")}</Btn>}
           </NeedRow>
         ))}
         {n.round && (
-          <NeedRow tone="gold" title={t("champRoundOpen", { n: n.round.round })} sub={t("champRoundUntil", { time: formatTime(n.round.end, tz, lang) })} />
+          <NeedRow tone="gold" icon="bell" title={t("champRoundOpen", { n: n.round.round })} sub={t("champRoundUntil", { time: formatTime(n.round.end, tz, lang) })} />
         )}
         {n.intel && (
-          <NeedRow key={n.intel.key} tone="gold" leaving={leaving.includes(n.intel.key)}
+          <NeedRow key={n.intel.key} tone="gold" icon="flask" leaving={leaving.includes(n.intel.key)}
             title={t("intelSoon", { time: formatTime(n.intel.next, tz, lang) })}
             sub={<>{t("intelSoonSub", { in: formatSpan(n.intel.next - now, lang) })} · {n.intel.accounts.length > 1 ? t("nAccounts", { n: n.intel.accounts.length }) : accountById(n.intel.accounts[0])?.name}</>}>
             <Btn small onClick={() => later(n.intel.key, () => { const at = Date.now(); n.intel.accounts.forEach((a) => updateAccount(a, (d) => ({ ...d, claims: { ...d.claims, [n.intel.key]: at } }))); success(); })}>{t("cleared")}</Btn>
           </NeedRow>
         )}
         {n.stamina.map(({ a, s }) => (
-          <NeedRow key={`st${a}`} tone="amber"
+          <NeedRow key={`st${a}`} tone="amber" icon="bolt"
             title={s.over || s.atCap ? t("staminaAtCapShort") : t("staminaSoon", { time: formatSpan(s.fullAt - now, lang) })}
             sub={<><AccountTag accountId={a} /> {t("regenStops")}</>}>
             <Btn small onClick={() => setTab("timers")}>{t("update")}</Btn>
           </NeedRow>
         ))}
         {n.idle.map(({ acc, idle }) => (
-          <NeedRow key={`id${acc}`} tone="amber"
+          <NeedRow key={`id${acc}`} tone="amber" icon="flame"
             title={t("idleFor", { time: formatSpan(now - idle.since, lang) })}
             sub={<><AccountTag accountId={acc} /> {idle.fullBatchMs ? t("fullBatchNowFinishes", { time: when(now + idle.fullBatchMs) }) : t("setFullBatchHint")}</>}>
             <Btn tone="gold" small onClick={() => startTraining({ accountId: acc, camps: idle.camps.map((c) => c.camp), troops: Object.fromEntries(idle.camps.map((c) => [c.camp, c.troop])), ms: idle.fullBatchMs })}>{t("start")}</Btn>
@@ -117,23 +141,136 @@ function NeedsYou() {
           </div>
         )}
       </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- the Bear Trap hero: what's next, how long, who still needs a minister ---------- */
+export function useBearHero() {
+  const { state, accountIds } = useTimeHub();
+  const now = useMinute();
+  return useMemo(() => {
+    const item = buildAgenda(state, now, now + 7 * DAY, accountIds, now).find((i) => i.kind === "event" && i.start > now && String(i.ref?.ev?.templateId || "").startsWith("bear_trap"));
+    if (!item) return null;
+    const rems = computeReminders(state, now, accountIds).filter((r) => r.ev.id === item.ref.ev.id && r.occ.key === item.ref.occ.key);
+    return { item, rems };
+  }, [state, accountIds.join(), now]); // eslint-disable-line react-hooks/exhaustive-deps
+}
+
+function BearHero({ hero }) {
+  const { t, tz, lang, templates, accountById, openBooking } = useTimeHub();
+  const [panel, setPanel] = useState(false);
+  const [asking, setAsking] = useState([]);
+  const { item, rems } = hero;
+  const needs = rems.filter((r) => r.status === "open" || r.status === "unsure");
+  const name = eventName(item.ref.ev, t, templates);
+  const book = () => { const r = needs[0]; openBooking({ accountId: r.accountId, startAt: slotContaining(r.occ.start), position: "minister_strategy", eventKey: r.key }); };
+  return (
+    <>
+      <section className="th-bthero" aria-label={name}>
+        <img className="th-bthero-pool" src={pool} alt="" aria-hidden="true" decoding="async" />
+        <div className="th-bthero-top">
+          <span className="th-bthero-eyebrow">{name}</span>
+          <div className="th-bthero-count">{t("heroIn")} <Remaining to={item.start} /> {t("heroInAfter")}</div>
+          <div className="th-bthero-when"><Ltr>{formatTime(item.start, tz, lang)}</Ltr> · <Ltr>{formatTime(item.start, "UTC", lang)}</Ltr> UTC</div>
+        </div>
+        <ul className="th-bthero-accts">
+          {rems.map((r) => {
+            const a = accountById(r.accountId);
+            const ok = r.status === "covered" || r.status === "booked";
+            return (
+              <li key={r.key}><i className={`th-bthero-dot c${a?.color}`} aria-hidden="true" /><span>{a?.name}</span>
+                <span className={`r ${ok || r.status === "dismissed" ? "" : "warn"}`}>{ok ? t("ministerSet") : r.status === "dismissed" ? t("reminderDismissed") : t("ministerNeededShort")}</span></li>
+            );
+          })}
+        </ul>
+        {needs.length > 0 ? (
+          <>
+            <Btn block onClick={book}>{needs.length === 1 ? t("bookMinistersOne") : t("bookMinistersMany", { n: needs.length })}</Btn>
+            <button type="button" className="th-bthero-link" aria-expanded={panel} onClick={() => setPanel(!panel)}>{t("alreadyBookedQ")}</button>
+          </>
+        ) : rems.length > 0 && <p className="th-bthero-ok">{t("allMinistersBooked")}</p>}
+      </section>
+      {panel && needs.length > 0 && (
+        <section className="th-card th-bthero-panel">
+          {needs.map((r) => <ReminderRow key={r.key + (asking.includes(r.key) ? "f" : "s")} r={r} slim={!asking.includes(r.key)} onAsk={() => setAsking([...asking, r.key])} />)}
+        </section>
+      )}
+    </>
+  );
+}
+
+/** The single soonest thing on the schedule, across every visible account — of ANY kind, not just
+ *  Bear Trap (that's BearHero's job) and not just something that needs an action (that's NeedsYou's
+ *  job). This is what actually answers "what's up next?" when it isn't the Bear Trap. */
+export function useWhatsNext() {
+  const { state, accountIds } = useTimeHub();
+  const now = useMinute();
+  return useMemo(() => {
+    const items = groupTraining(buildAgenda(state, now, now + 7 * DAY, accountIds, now));
+    return items.find((i) => i.status === "upcoming" || i.status === "now") || null;
+  }, [state, accountIds.join(), now]); // eslint-disable-line react-hooks/exhaustive-deps
+}
+
+function WhatsNextWidget({ item }) {
+  const { t, tz, lang, templates, accountById } = useTimeHub();
+  const groupN = item.group ? item.group.length : 0;
+  const title = groupN ? (groupN === 3 ? t("allCampsFinish") : t("nCampsFinish", { n: groupN })) : itemTitle(item, t, templates);
+  const acct = item.accountId ? accountById(item.accountId) : null;
+  const marker = markerFor(item);
+  return (
+    <a href="#th-sec-today" className="th-whatsnext" aria-label={`${t("whatsNext")}: ${title}`}>
+      <span className={`th-whatsnext-ic m-${marker}`} aria-hidden="true"><Marker kind={marker} /></span>
+      <span className="th-whatsnext-body">
+        <span className="th-whatsnext-eyebrow">{t("whatsNext")}</span>
+        <span className="th-whatsnext-title">{title}</span>
+        {acct && <AccountTag accountId={acct.id} />}
+      </span>
+      <span className="th-whatsnext-time">
+        {item.status === "now" ? t("happeningNow") : <><Remaining to={item.start} /></>}
+        <small><Ltr>{formatTime(item.start, tz, lang)}</Ltr></small>
+      </span>
+    </a>
+  );
+}
+
+/** Nothing needs doing and nothing is due for a while → the calm illustrated day. */
+function useQuiet(needsCount) {
+  const { state, accountIds } = useTimeHub();
+  const now = useMinute();
+  return useMemo(() => {
+    if (needsCount) return null;
+    const list = buildAgenda(state, now, now + 7 * DAY, accountIds, now).filter((i) => i.start > now && !["drop", "contrib", "intel"].includes(i.kind) && !(i.kind === "event" && i.ref?.ev?.templateId === "daily_reset"));
+    const first = list[0];
+    return first && first.start >= now + 3 * HOUR ? first : null;
+  }, [state, accountIds.join(), now, needsCount]); // eslint-disable-line react-hooks/exhaustive-deps
+}
+
+function QuietHero({ first }) {
+  const { t, tz, lang } = useTimeHub();
+  const now = useMinute();
+  const time = formatTime(first.start, tz, lang);
+  return (
+    <section className="th-quiet" aria-label={t("quietTitle")}>
+      <img className="th-quiet-scene" src={quietScene} alt="" aria-hidden="true" decoding="async" />
+      <h2 className="th-quiet-title">{t("quietTitle")}</h2>
+      <p>{t("nothingUntil", { time, utc: formatTime(first.start, "UTC", lang), in: formatSpan(first.start - now, lang) })}</p>
+      <span className="th-hand">{t("handQuietUntil", { time })}</span>
     </section>
   );
 }
 
 /** Like the calculator's AVAILABLE / ALLOCATED strip. */
 export function StatStrip() {
-  const { t, tz, lang, state, accountIds } = useTimeHub();
+  const { t, tz, lang } = useTimeHub();
   const now = useMinute();
-  const next = useMemo(() => buildAgenda(state, now, now + 7 * 24 * HOUR, accountIds, now).find((i) => i.start > now && i.kind !== "contrib"),
-    [state, accountIds.join(), now]); // eslint-disable-line react-hooks/exhaustive-deps
   const n = useNeeds();
   return (
-    <div className="th-stats in-header" role="group" aria-label={t("atAGlance")}>
-      <div><span>{t("localTime")}</span><b><Ltr>{formatTime(now, tz, lang)}</Ltr></b></div>
-      <div className="muted"><span>UTC</span><b><Ltr>{formatTime(now, "UTC", lang)}</Ltr></b></div>
-      <div><span>{t("nextLabel")}</span><b>{next ? <Bidi>{formatSpan(next.start - now, lang)}</Bidi> : "—"}</b></div>
-      <div className={n.count ? "todo" : "clear"}><span>{t("toDo")}</span><b key={n.count} className="th-bump">{n.count || "✓"}</b></div>
+    <div className="th-stats in-header th-statline" role="group" aria-label={t("atAGlance")}>
+      <span><b><Ltr>{formatTime(now, tz, lang)}</Ltr></b> {t("statLocalWord")}</span>
+      <span><b><Ltr>{formatTime(now, "UTC", lang)}</Ltr></b> UTC</span>
+      <span className={n.count ? "todo" : "clear"}><b key={n.count} className="th-bump">{n.count || "✓"}</b> {t("statToDoWord")}</span>
     </div>
   );
 }
@@ -189,7 +326,7 @@ function UpdateTime({ item, onDone }) {
   );
 }
 
-function Row({ i, day, rems, open, setOpen, isNext }) {
+function Row({ i, day, rems, open, setOpen, isNext, hand }) {
   const { t, tz, lang, dir, templates, updateAccount, openBooking, setTab, accountById, update, accountIds: accountIdsAll, startTraining } = useTimeHub();
   const claim = useClaim();
   const now = useClockFor([i.start - 5 * 60000, i.start]); // only for the "under 5 minutes" styling
@@ -237,6 +374,7 @@ function Row({ i, day, rems, open, setOpen, isNext }) {
           <b><Ltr>{crossesIn ? "…" : formatTime(i.start, tz, lang)}</Ltr></b>
           <small><Ltr>{formatTime(i.start, "UTC", lang)}</Ltr> UTC</small>
         </span>
+        <Rail kind={markerFor(i)} v={hashV(i.id)} />
         <span className="th-srow-body">
           <span className="th-srow-title">{title}</span>
           <span className="th-srow-tags">
@@ -261,6 +399,7 @@ function Row({ i, day, rems, open, setOpen, isNext }) {
             const txt = r.status === "covered" ? t(r.booking.position) : r.status === "booked" || r.status === "unsure" ? t(BUFF_NAME[r.buff] || "bookingUnknown") : r.status === "dismissed" ? t("reminderDismissed") : t("ministerNeededShort");
             return <span key={r.key} className={`th-min ${ok ? "ok" : "todo"}`}>{r.chip && <><AccountTag accountId={r.accountId} /> </>}{ok ? "✓ " : ""}{txt}</span>;
           })}
+          {hand && <span className="th-hand th-hand-note">{t("handEdu")}</span>}
         </span>
       </div>
       {open && <div className="th-srow-actions">{actions}</div>}
@@ -319,20 +458,20 @@ function TaskForm({ gap, task, onDone }) {
   );
 }
 
-function GapRow({ gap }) {
+function GapRow({ gap, note }) {
   const { t, lang } = useTimeHub();
   const [adding, setAdding] = useState(false);
-  // time blindness: the block's own height gives a visual sense of "how much time", the
-  // text gives the exact number — neither replaces the other.
+  // time blindness: the block's own height gives a visual sense of "how much time" (12–96px),
+  // the text gives the exact number — neither replaces the other.
   const h = gapVisualHeight(gap.ms);
   return (
-    <li className="th-gap" style={{ "--gh": `${h}px` }}>
-      <span className="th-gap-rule" aria-hidden="true" />
+    <li className={`th-gap ${adding ? "adding" : ""}`} style={{ "--gh": `${h}px` }}>
       <div className="th-gap-mid">
         <span className="th-gap-free">{t("freeTime", { time: formatSpan(gap.ms, lang) })}</span>
-        {!adding && <button type="button" className="th-gap-add" onClick={() => setAdding(true)}>＋ {t("addTask")}</button>}
+        {!adding && gap.ms >= 45 * MINUTE && <button type="button" className="th-gap-add" onClick={() => setAdding(true)}>＋ {t("addTask")}</button>}
       </div>
-      <span className="th-gap-rule" aria-hidden="true" />
+      {gap.ms >= 2 * HOUR && !adding && <img className="th-gap-deco" src={sleepingBear} alt="" aria-hidden="true" decoding="async" />}
+      {note && !adding && <span className="th-hand th-gap-hand">{t("handGap")}</span>}
       {adding && <TaskForm gap={gap} onDone={() => setAdding(false)} />}
     </li>
   );
@@ -419,22 +558,25 @@ function Schedule({ offset, setOffset }) {
   ].sort((a, b) => a.at - b.at) : [];
   const heading = offset === 0 ? t("todaysSchedule") : offset === 1 ? t("tomorrowsSchedule") : formatDate(day.start + 1, tz, lang);
   const nextId = rest.find((x) => x.status === "upcoming")?.id;
-  const rowProps = (i) => ({ i, day, rems, open: openId === i.id, setOpen: (v) => setOpenId(v ? i.id : null), isNext: i.id === nextId });
+  const bigGapStart = (timeline.find((e) => e.type === "gap" && e.ms >= 2 * HOUR) || {}).start;
+  const eduHandId = (timeline.find((e) => e.type === "item" && e.item.kind === "booking" && e.item.ref?.position === "minister_education" && e.item.status === "upcoming") || {}).item?.id;
+  const rowProps = (i) => ({ i, day, rems, open: openId === i.id, setOpen: (v) => setOpenId(v ? i.id : null), isNext: i.id === nextId, hand: i.id === eduHandId });
 
   return (
-    <section className="th-card th-sched" aria-label={heading} id="th-sec-today">
-      <div className="th-sched-head">
-        <SectionIcon name="calendar" />
-        <div className="th-sec-title">{heading}</div>
-        {past.length + pastTasks.length > 0 && (
+    <section className="th-sband" aria-label={heading} id="th-sec-today">
+      <img className="th-snowedge" src={snowEdge} alt="" aria-hidden="true" decoding="async" />
+      <div className="th-sband-body">
+      <div className="th-sband-head"><span className="th-eyebrow">{t("comingUp")}</span><h2 className="th-sband-title">{isToday ? t("scheduleTitle") : heading}</h2><p className="th-sec-sub">{t("scheduleSub")}</p></div>
+      <WeekStrip offset={offset} setOffset={setOffset} />
+      <div className="th-card th-sched">
+      {past.length + pastTasks.length > 0 && (
+        <div className="th-sched-head">
           <button type="button" className="th-past-toggle" aria-expanded={showPast} onClick={() => setShowPast(!showPast)}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true" style={{ opacity: .5, marginInlineEnd: 8 }}><path d="M12 2v20M4 7l16 10M20 7L4 17" /></svg>
             {t("pastN", { n: past.length + pastTasks.length })} · {showPast ? t("hideCompleted") : t("showCompleted")}
           </button>
-        )}
-      </div>
-      <BrushUnderline />
-      <p className="th-sec-sub">{t("scheduleSub")}</p>
-      <WeekStrip offset={offset} setOffset={setOffset} />
+        </div>
+      )}
       {showPast && (
         <ol className="th-slist muted">
           {[...past.map((i) => ({ at: i.start, el: <Row key={i.id} {...rowProps(i)} /> })), ...pastTasks.map((x) => ({ at: x.start, el: <TaskRow key={x.id} task={x} /> }))]
@@ -451,21 +593,20 @@ function Schedule({ offset, setOffset }) {
       )}
       {isToday && items.length + after.length > 0 && (
         <div className="th-now-mark" aria-label={`${t("now")} ${formatTime(now, tz, lang)}`}>
+          <span className="label">{t("now")} · <Ltr>{formatTime(now, tz, lang)}</Ltr></span>
           <span className="line" />
-          <span className="label"><span className="th-now-dot" aria-hidden="true" /><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M12 2v20M4 7l16 10M20 7L4 17" /></svg>{t("now")} <Ltr>{formatTime(now, tz, lang)}</Ltr></span>
-          <span className="line short" />
         </div>
       )}
       {timeline.length > 0 && (
         <ol className="th-slist">
           {timeline.map((e) => (e.type === "item" ? <Row key={e.item.id} {...rowProps(e.item)} />
             : e.type === "task" ? <TaskRow key={e.task.id} task={e.task} />
-            : <GapRow key={`gap-${e.start}`} gap={e} />))}
+            : <GapRow key={`gap-${e.start}`} gap={e} note={e.start === bigGapStart} />))}
         </ol>
       )}
       {after.length > 0 && (
         <div className="th-running">
-          <div className="th-running-title">{t("afterMidnight")}</div>
+          <div className="th-running-title">{t("afterMidnight")} <span className="th-hand">{t("handNight")}</span></div>
           {after.map((r) => (
             <div key={r.id} className="th-running-row">
               <span className="th-running-name">{r.name}{r.acc && <AccountTag accountId={r.acc} />}</span>
@@ -481,16 +622,34 @@ function Schedule({ offset, setOffset }) {
           <CalendarButtons items={items.map((i) => toCalendarItem(i, t, templates, accountById(i.accountId)?.name))} filename={`time-hub-${formatDate(day.start + 1, "UTC", "en").replace(/\W+/g, "-")}`} label={t("addDayToCalendar")} />
         </div>
       )}
+      </div>
+      </div>
     </section>
   );
 }
 
 export function TodayScreen() {
   const [offset, setOffset] = useState(0);
+  const needs = useNeeds();
+  const hero = useBearHero();
+  const heroKeys = useMemo(() => new Set((hero?.rems || []).map((r) => r.key)), [hero]);
+  const remaining = needs.count - needs.minister.filter((r) => heroKeys.has(r.key)).length;
+  const quiet = useQuiet(remaining);
+  const next = useWhatsNext();
+  // The Bear Trap hero already answers "what's up next" when that IS the next thing; the quiet
+  // illustrated day already leads with it too. Only show this separate strip when the true next
+  // item is something else the player could otherwise miss (a sooner booking, a camp, a task…).
+  const showNext = next && !quiet && !(hero && next.id === hero.item.id);
   return (
     <div className="th-screen">
+      {showNext && <WhatsNextWidget item={next} />}
       <ChampQuestion />
-      <NeedsYou />
+      {quiet ? <QuietHero first={quiet} /> : (
+        <>
+          {hero && <BearHero hero={hero} />}
+          <NeedsYou hiddenKeys={heroKeys} />
+        </>
+      )}
       <Schedule offset={offset} setOffset={setOffset} />
       <FriendsWidget />
     </div>

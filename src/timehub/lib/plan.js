@@ -17,9 +17,17 @@ const sqrtScale = (ms, capMinutes, minPx, maxPx) => {
   return Math.round(minPx + (maxPx - minPx) * t);
 };
 
-/** Free-time block height in px: noticeably taller for longer gaps, capped around 8h. */
+/** Free-time block height in px: a perceptual, clamped scale (12–96): 30m → 16, 1h → 24, 2h → 40,
+ *  4h → 64, 6h+ → 96. More elapsed time reads as more distance, without producing huge gaps. */
+const GAP_STOPS = [[0, 12], [30, 16], [60, 24], [120, 40], [240, 64], [360, 96]];
 export function gapVisualHeight(ms) {
-  return sqrtScale(ms, 8 * 60, 40, 220);
+  const m = Math.max(0, ms / MINUTE);
+  if (m >= GAP_STOPS[GAP_STOPS.length - 1][0]) return GAP_STOPS[GAP_STOPS.length - 1][1];
+  for (let i = 1; i < GAP_STOPS.length; i++) {
+    const [m1, h1] = GAP_STOPS[i];
+    if (m <= m1) { const [m0, h0] = GAP_STOPS[i - 1]; return Math.round(h0 + ((h1 - h0) * (m - m0)) / (m1 - m0)); }
+  }
+  return 96;
 }
 
 /** Personal-task block height in px: a small nudge for longer tasks, capped around 3h. */
