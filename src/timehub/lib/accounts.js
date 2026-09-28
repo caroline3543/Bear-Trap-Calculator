@@ -21,6 +21,7 @@ export function emptyAccountData() {
     stamina: null,
     campSame: null,
     campTroops: {},
+    campMaxEdu: { infantry_camp: null, lancer_camp: null, marksman_camp: null },
     claims: {},
     helios: { classes: [], max: { infantry_camp: null, lancer_camp: null, marksman_camp: null } },
   };

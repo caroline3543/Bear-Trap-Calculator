@@ -17,6 +17,7 @@ export const MINISTER_POSITIONS = ["vice_president", "minister_education", "mini
 export const POSITION_EFFECT = {
   minister_defense: "effectDefense", // "Appointment-based Troop's Lethality +15.00%" (screenshot)
   minister_strategy: "effectStrategy", // attack; percentage not verified, so none shown
+  minister_education: "effectEducation", // "+50% Training Speed, +200 Training Capacity" (30-minute window) — drives the training planner
 };
 
 /** Bookable days: the current UTC date and the next one (day boundary = 00:00 UTC). One place to change it. */

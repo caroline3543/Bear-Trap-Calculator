@@ -16,6 +16,13 @@ export function campMaxFor(data, camp, troop = "normal") {
   return data?.campMax?.[camp] ?? null;
 }
 
+/** Optional: this camp's full-batch time WHILE Education is active, as the player measured it.
+ *  The app never derives it from "+50% speed / +200 capacity" — it has no speed/capacity formula. */
+export function campMaxEduFor(data, camp) {
+  const v = data?.campMaxEdu?.[camp];
+  return Number.isFinite(v) && v > 0 ? v : null;
+}
+
 export function hasHelios(data, camp) {
   return !!data?.helios?.classes?.includes(camp);
 }

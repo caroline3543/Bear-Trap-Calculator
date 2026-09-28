@@ -193,6 +193,16 @@ function SettingsPanel({ headerExtra, closeSettings, reopenSettings, hasCalc, st
           ))}
         </div>
       </section>
+      <section className="th-card" aria-label={t("eduSettings")}>
+        <div className="th-sec-head"><SectionIcon name="booking" /><span className="th-sec-title">{t("eduSettings")}</span></div>
+        <BrushUnderline />
+        <label className="th-edu-finish">
+          <span className="th-label">{t("eduBufferLabel")}</span>
+          <input className="th-input th-task-dur" type="number" inputMode="numeric" min="0" max="15" value={state.settings.eduBufferMin}
+            onChange={(e) => { const n = Math.round(Number(e.target.value)); if (Number.isFinite(n) && n >= 0 && n <= 15) dispatch({ type: "settings", patch: { eduBufferMin: n } }); }} />
+          <span className="th-hint">{t("eduBufferHelp")}</span>
+        </label>
+      </section>
       <ChampSettings />
       <section className="th-card" id="th-set-sleep" aria-label={t("sleepHours")}>
         <div className="th-sec-head"><SectionIcon name="plan" /><span className="th-sec-title">{t("sleepHours")}</span></div>

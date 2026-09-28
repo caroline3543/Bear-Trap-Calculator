@@ -338,3 +338,22 @@ Saves go to localStorage on every change.
   no per-second recalculation. The exact duration is always still shown as text alongside the
   visual size (never visual-only).
 - Adding a task now opens with an "{time} available" headline before the name/duration fields.
+
+## Ministry of Education × training planner (Sep 2026)
+- `lib/education.js` (pure, tested): reads the SAME booking record as the Bookings tab
+  (`minister_education`, 30-min UTC slot). Each camp is classified against the window
+  (`before` → bridge/wait, `inside`, `now`, `tight`, `after`, `over`), with a safety buffer
+  (⚙ → Ministry of Education, default 5 min, 0–15). Bridge cycles chain full batches, never past
+  the window; "fewest check-ins" waits out gaps < 45 min, "most training" bridges from 15 min,
+  "finish at a time" shortens the buffed restart to end at the player's chosen time.
+- **No invented numbers:** the app has no speed/capacity formula, so "+50% / +200" is shown as the
+  effect text only. The optional per-camp **Full batch with Education** (`accountData.campMaxEdu`,
+  Training times) is what the plan uses; without it the plan still says WHEN to restart.
+- Never suggests cancelling a running order. A running camp that finishes after the window is told
+  Education won't help that cycle, and "Find a time" offers real bookable slots
+  (`findEducationSlots`: only open slots in today+tomorrow UTC, not already an Education booking).
+- UI (`widgets/EducationPlan.jsx`): a strip inside each Training group (booking + "View
+  recommended plan", or a dismissible "Find a time" hint), the plan panel (what to do → per-camp
+  lines → timeline → priority), Finish-At warns if the typed time would miss the window with a
+  one-tap fix, and "Training plan" links from the booking row and Today's schedule row.
+  Recomputed on the minute clock and input changes only.

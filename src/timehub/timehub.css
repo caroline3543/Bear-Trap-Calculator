@@ -1082,3 +1082,29 @@ html.th-diag-nograin [style*="paperGrain"] { display: none !important; }
 .th-max-list li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 10px; border-radius: 10px; background: var(--inputBg); border: 1px solid var(--cardBorderT); font-size: 13.5px; }
 .th-max-list b { font-variant-numeric: tabular-nums; color: var(--gold); }
 .th-mode-tag { display: inline-block; margin-inline-start: 6px; padding: 1px 7px; border-radius: 999px; background: var(--goldBg); color: var(--gold); font-size: 10px; font-weight: 800; letter-spacing: .3px; text-transform: uppercase; vertical-align: middle; }
+
+/* Ministry of Education × training */
+.th-ev-effect { font-size: 12px; font-weight: 800; color: var(--teal); }
+.th-edu-strip { display: grid; gap: 8px; padding: 10px 12px; border-radius: 14px; background: var(--goldBg); border: 1px solid var(--goldBorder); }
+.th-edu-strip.hint { background: transparent; border-style: dashed; font-size: 13px; font-weight: 700; color: var(--sub); }
+.th-edu-line { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13.5px; font-weight: 800; }
+.th-edu-plan { display: grid; gap: 10px; }
+.th-edu-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.th-edu-when { font-size: 12.5px; font-weight: 700; color: var(--sub); }
+.th-edu-what { display: grid; gap: 2px; padding: 10px 12px; border-radius: 12px; background: var(--cardBgT); border: 1.5px solid var(--goldStrong); }
+.th-edu-what p { margin: 0; font-size: 14px; font-weight: 800; line-height: 1.45; color: var(--ink); }
+.th-edu-camps { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13px; font-weight: 700; color: var(--ink); }
+.th-edu-camps li.c-after, .th-edu-camps li.c-tight { color: var(--statusT9Text); }
+.th-edu-tl { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; position: relative; }
+.th-edu-tl li { display: grid; grid-template-columns: 22px 70px minmax(0, 1fr); align-items: start; gap: 6px; padding: 6px 0; position: relative; }
+.th-edu-tl li::before { content: ""; position: absolute; inset-inline-start: 10px; top: 0; bottom: 0; border-inline-start: 1.5px dashed var(--cardBorderT); }
+.th-edu-tl li:first-child::before { top: 50%; } .th-edu-tl li:last-child::before { bottom: 50%; }
+.th-edu-tl .ic { position: relative; z-index: 1; text-align: center; background: var(--cardBgT); font-size: 13px; color: var(--gold); line-height: 20px; }
+.th-edu-tl .tm { font: 600 15px 'Fredoka', 'Nunito Sans', sans-serif; white-space: nowrap; }
+.th-edu-tl .tx { font-size: 13.5px; font-weight: 700; }
+.th-edu-tl li.now .tx { color: var(--amber); font-weight: 800; }
+.th-edu-tl li.edu_start .tx, .th-edu-tl li.edu_end .tx { color: var(--gold); font-weight: 800; }
+.th-edu-foot { display: grid; gap: 2px; font-size: 12px; font-weight: 700; color: var(--sub); }
+.th-edu-pri, .th-edu-finish { display: grid; gap: 6px; }
+.th-edu-slot { display: grid; gap: 2px; padding: 10px 12px; border-radius: 12px; background: var(--cardBgT); border: 1px solid var(--cardBorderT); justify-items: start; }
+.th-edu-slot p { margin: 4px 0; font-size: 13px; font-weight: 700; color: var(--sub); }

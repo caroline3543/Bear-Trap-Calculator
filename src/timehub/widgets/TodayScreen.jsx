@@ -190,7 +190,7 @@ function UpdateTime({ item, onDone }) {
 }
 
 function Row({ i, day, rems, open, setOpen, isNext }) {
-  const { t, tz, lang, dir, templates, updateAccount, openBooking, setTab, accountById, update, accountIds: accountIdsAll } = useTimeHub();
+  const { t, tz, lang, dir, templates, updateAccount, openBooking, setTab, accountById, update, accountIds: accountIdsAll, startTraining } = useTimeHub();
   const claim = useClaim();
   const now = useClockFor([i.start - 5 * 60000, i.start]); // only for the "under 5 minutes" styling
   const [editing, setEditing] = useState(false);
@@ -219,6 +219,7 @@ function Row({ i, day, rems, open, setOpen, isNext }) {
   if (need) actions.push(<Btn key="book" small tone="gold" onClick={() => openBooking({ accountId: need.accountId, startAt: Math.floor(need.occ.start / 1800000) * 1800000, position: "minister_strategy", eventKey: need.key })}>{t("bookShort")} · {accountById(need.accountId)?.name}</Btn>);
   if (timer) actions.push(<Btn key="upd" small onClick={() => { setEditing(true); setOpen(false); }}>{t("updateTimeLeft")}</Btn>);
   if (i.kind === "booking") actions.push(<Btn key="bk" small onClick={() => setTab("events")}>{t("secBookings")}</Btn>);
+  if (i.kind === "booking" && i.ref?.position === "minister_education") actions.push(<Btn key="edu" small tone="gold" onClick={() => startTraining({ accountId: i.accountId, edu: true })}>{t("trainingPlan")}</Btn>);
   if (i.kind === "drop" && i.status !== "upcoming" && i.ref.drop.manual && i.ref.statuses.includes("ready")) actions.push(<Btn key="cl" small onClick={() => claim(i.ref.drop)}>{t("claimed")}</Btn>);
   if (i.kind === "stamina") actions.push(<Btn key="stu" small onClick={() => setTab("timers")}>{t("update")}</Btn>);
   // things some players don't care about can be switched off right here

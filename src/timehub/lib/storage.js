@@ -40,7 +40,7 @@ function defaultSettings() {
   return {
     displayTz: null, compact: false, collapsed: {}, showArchived: false,
     layout: sanitizeLayout([]), accountFilter: ALL, calendarAlarmMin: 10, setupDismissed: false,
-    knownTemplates: Object.keys(TEMPLATES), timeOptionsRev: TIME_OPTIONS_REV, tab: "today", haptics: true, showSpeed: false, tour: null,
+    knownTemplates: Object.keys(TEMPLATES), timeOptionsRev: TIME_OPTIONS_REV, tab: "today", haptics: true, showSpeed: false, tour: null, eduPri: "checkins", eduFinish: null, eduBufferMin: 5, eduDismiss: {},
     track: { reset: true, store: true, trek: true, stamina: true, contrib: true, intel: true }, sleep: { ...DEFAULT_SLEEP },
     champ: { leader: null, anchor: null },
   };
@@ -161,6 +161,7 @@ function cleanAccountData(a) {
     bookings: list(a.bookings, cleanBooking), timers: list(a.timers, cleanTimer), contrib: cleanContrib(a.contrib),
     campMax: cleanCampMax(a.campMax), helios: cleanHelios(a.helios), plans: list(a.plans, cleanPlan),
     lastEnded: Object.fromEntries(TRAINING_CAMPS.filter((c) => isNum(a.lastEnded?.[c])).map((c) => [c, a.lastEnded[c]])),
+    campMaxEdu: cleanCampMax(a.campMaxEdu),
     campSame: typeof a.campSame === "boolean" ? a.campSame : null,
     campTroops: Object.fromEntries(TRAINING_CAMPS.filter((c) => isNum(a.campTroops?.[c]) && a.campTroops[c] > 0 && a.campTroops[c] < 1e7).map((c) => [c, Math.floor(a.campTroops[c])])),
     stamina: a.stamina && isNum(a.stamina.value) && isNum(a.stamina.at) && a.stamina.value >= 0 && a.stamina.value <= 9999 ? { value: Math.floor(a.stamina.value), at: a.stamina.at } : null,
@@ -273,6 +274,10 @@ export function sanitizeState(raw, now = Date.now(), makeId = newId) {
       haptics: s.haptics !== false,
       showSpeed: s.showSpeed === true,
       tour: s.tour === "done" || s.tour === "skipped" ? s.tour : null,
+      eduPri: ["checkins", "uptime", "finish"].includes(s.eduPri) ? s.eduPri : "checkins",
+      eduFinish: hhmmToMinutes(s.eduFinish) != null ? s.eduFinish : null,
+      eduBufferMin: isNum(s.eduBufferMin) && s.eduBufferMin >= 0 && s.eduBufferMin <= 15 ? Math.round(s.eduBufferMin) : 5,
+      eduDismiss: Object.fromEntries(Object.entries(s.eduDismiss && typeof s.eduDismiss === "object" ? s.eduDismiss : {}).filter(([k, v]) => v === true && typeof k === "string").slice(0, 20)),
       track: Object.fromEntries(["reset", "store", "trek", "stamina", "contrib", "intel"].map((k) => [k, s.track?.[k] !== false])),
       champ: { leader: s.champ?.leader === true ? true : s.champ?.leader === false ? false : null, anchor: isThursdayStart(s.champ?.anchor) ? s.champ.anchor : null },
       sleep: ["start", "end", "target"].every((k) => hhmmToMinutes(s.sleep?.[k]) != null) ? { start: s.sleep.start, end: s.sleep.end, target: s.sleep.target } : { ...DEFAULT_SLEEP },

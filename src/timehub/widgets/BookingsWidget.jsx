@@ -106,7 +106,7 @@ function BookingForm({ initial, prefill, onDone }) {
 }
 
 export function BookingsWidget({ move }) {
-  const { t, tz, lang, accountIds, dataFor, updateAccount, bookingDraft, setBookingDraft, accountById } = useTimeHub();
+  const { t, tz, lang, accountIds, dataFor, updateAccount, bookingDraft, setBookingDraft, accountById, startTraining } = useTimeHub();
   const now = useClockFor(accountIds.flatMap((a) => dataFor(a).bookings.flatMap((b) => [b.startAt, b.startAt + 30 * 60000])));
   const [editing, setEditing] = useState(null); // null | "new" | id
   const [openId, setOpenId] = useState(null);
@@ -131,6 +131,7 @@ export function BookingsWidget({ move }) {
             <div className="th-ev-top">
               <div className="th-ev-main">
                 <div className="th-ev-name">{t(b.position)}</div>
+                {POSITION_EFFECT[b.position] && <div className="th-ev-effect">{t(POSITION_EFFECT[b.position])}</div>}
                 <div className="th-ev-when">
                   <Ltr>{formatTime(b.startAt, tz, lang)}–{formatTime(end, tz, lang)}</Ltr> {formatDate(b.startAt, tz, lang)} · <Ltr>{slotLabel(b.startAt, lang)}</Ltr> UTC
                 </div>
@@ -138,6 +139,7 @@ export function BookingsWidget({ move }) {
                   {status === "active" && <Pill tone="solid">{t("stActive")}</Pill>}
                   {isCustomTime(b) && <Pill tone="amber">{t("customTime")}</Pill>}
                   <AccountTag accountId={b.accountId} />
+                  {b.position === "minister_education" && <button type="button" className="th-link" onClick={() => startTraining({ accountId: b.accountId, edu: true })}>{t("trainingPlan")}</button>}
                 </div>
               </div>
               {status === "active" ? <Countdown to={end} label={t("endsIn")} /> : <Countdown to={b.startAt} label={t("startsIn")} />}

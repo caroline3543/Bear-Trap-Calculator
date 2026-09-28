@@ -7,6 +7,8 @@ import { success } from "../lib/feedback.js";
 import { useMinute, useClockFor } from "../hooks/useNow.jsx";
 import { TRAINING_CAMPS, applyTraining, busyCamps, planFinish, finishTogether, sortTimers, campMaxFor, hasHelios, campTroopsFor, troopsForDuration, durationForTroops } from "../lib/timers.js";
 import { timingCheck, nextCycleCheck, finishAdvice, nextFinishTarget, inSleepWindow } from "../lib/sleep.js";
+import { EducationStrip, useEduPlan } from "./EducationPlan.jsx";
+import { eduWindow, finishMissesWindow, insideFinishTarget } from "../lib/education.js";
 import { parseCompactTime, zonedParts, zonedTimeToUtc, formatTime, formatDate, formatSpan, formatCountdown, formatCountdownClock, localDayRange, hhmmToMinutes } from "../lib/time.js";
 import { Section, Btn, Field, Seg, DurationFields, EMPTY_DUR, durFrom, durParse, FormActions, Icon, Ltr, Bidi, Remaining, GroupName } from "../components/ui.jsx";
 import { TimerRow, useWhenLocal } from "./TimerCard.jsx";
@@ -76,6 +78,7 @@ function TrainForm({ onDone, preset, accountId }) {
   const limit = known.length ? known.reduce((a, b) => (b.max < a.max ? b : a)) : null; // the camp that runs out first
   const advice = limit ? finishAdvice(now, limit.max, tz, sleep) : null;
   const [raw, setRaw] = useState(() => (advice ? digitsAt(advice.finishAt, tz) : ""));
+  const { booking: eduB } = useEduPlan(accountId);
   const hhmm = parseCompactTime(raw);
   const target = hhmm ? nextFinishTarget(now, hhmm, tz) : NaN;
   const plans = planCamps.map((camp) => ({ camp, troop: troopOf(camp), plan: planFinish(target, now, campMaxFor(data, camp, troopOf(camp))) }));
@@ -201,6 +204,17 @@ function TrainForm({ onDone, preset, accountId }) {
       </label>
 
       {/* 3. Suggested finish (only when it differs from what's typed) */}
+      {/* Education booked: a finish time that lands after the window would miss the buff */}
+      {eduB && Number.isFinite(target) && finishMissesWindow(target, eduWindow(eduB, state.settings.eduBufferMin * 60000), now) && (() => {
+        const w = eduWindow(eduB, state.settings.eduBufferMin * 60000);
+        const fix = insideFinishTarget(w);
+        return (
+          <div className="th-limit" role="alert">
+            <span>{t("eduConflict", { start: formatTime(w.start, tz, lang), end: formatTime(w.end, tz, lang), finish: formatTime(target, tz, lang) })}</span>
+            {fix > now && <span className="th-item-actions"><Btn small tone="gold" onClick={() => setRaw(digitsAt(fix, tz))}>{t("eduFinishInside", { time: formatTime(fix, tz, lang) })}</Btn></span>}
+          </div>
+        );
+      })()}
       {advice && !isAdvice && (
         <button type="button" className="th-suggest-btn" onClick={() => setRaw(digitsAt(advice.finishAt, tz))}>
           {t(advice.kind === "bed" ? "suggestBed" : "suggestFull", { time: formatTime(advice.finishAt, tz, lang) })}
@@ -263,6 +277,8 @@ function CampTimes({ accountId, forceOpen, onClose }) {
     same: sameNow(d),
     all: durFrom(TRAINING_CAMPS.map((c) => d.campMax?.[c]).find((x) => x > 0)),
     troopsAll: String(TRAINING_CAMPS.map((c) => d.campTroops?.[c]).find((x) => x > 0) || ""),
+    eduAll: durFrom(TRAINING_CAMPS.map((c) => d.campMaxEdu?.[c]).find((x) => x > 0)),
+    edu: Object.fromEntries(TRAINING_CAMPS.map((c) => [c, durFrom(d.campMaxEdu?.[c])])),
     troops: Object.fromEntries(TRAINING_CAMPS.map((c) => [c, d.campTroops?.[c] ? String(d.campTroops[c]) : ""])),
     normal: Object.fromEntries(TRAINING_CAMPS.map((c) => [c, durFrom(d.campMax?.[c])])),
     heliosOn: (d.helios?.classes || []).length > 0,
@@ -274,12 +290,13 @@ function CampTimes({ accountId, forceOpen, onClose }) {
   React.useEffect(() => { setF(load(dataFor(accountId))); setOpenRaw(!TRAINING_CAMPS.some((c) => dataFor(accountId).campMax?.[c]) || !!forceOpen); setSaved(false); }, [accountId]); // eslint-disable-line react-hooks/exhaustive-deps
   const bad = (v) => (v.days || v.hhmm) && durParse(v).error;
   const val = (v) => { const r = durParse(v); return r.error ? null : r.ms; };
-  const invalid = (f.same ? bad(f.all) : TRAINING_CAMPS.some((c) => bad(f.normal[c]))) || TRAINING_CAMPS.some((c) => f.heliosOn && f.classes.includes(c) && bad(f.helios[c]));
+  const invalid = (f.same ? bad(f.all) || bad(f.eduAll) : TRAINING_CAMPS.some((c) => bad(f.normal[c]) || bad(f.edu[c]))) || TRAINING_CAMPS.some((c) => f.heliosOn && f.classes.includes(c) && bad(f.helios[c]));
   function save() {
     if (invalid) return;
     const classes = f.heliosOn ? TRAINING_CAMPS.filter((c) => f.classes.includes(c)) : [];
     updateAccount(accountId, (d) => ({
       ...d,
+      campMaxEdu: Object.fromEntries(TRAINING_CAMPS.map((c) => [c, f.same ? val(f.eduAll) : val(f.edu[c])])),
       campSame: f.same,
       campTroops: Object.fromEntries(TRAINING_CAMPS.map((c) => [c, Number(f.same ? f.troopsAll : f.troops[c]) || 0]).filter(([, n]) => n > 0)),
       campMax: Object.fromEntries(TRAINING_CAMPS.map((c) => [c, f.same ? val(f.all) : val(f.normal[c])])),
@@ -320,6 +337,11 @@ function CampTimes({ accountId, forceOpen, onClose }) {
         : TRAINING_CAMPS.map((c) => (
           <DurationFields key={c} value={f.normal[c]} onChange={(v) => setF({ ...f, normal: { ...f.normal, [c]: v } })} label={t(c)} optional />
         ))}
+      <span className="th-label">{t("eduBatchQ")}</span>
+      {f.same
+        ? <DurationFields value={f.eduAll} onChange={(v) => setF({ ...f, eduAll: v })} label={t("everyCamp")} optional />
+        : TRAINING_CAMPS.map((c) => <DurationFields key={c} value={f.edu[c]} onChange={(v) => setF({ ...f, edu: { ...f.edu, [c]: v } })} label={t(c)} optional />)}
+      <p className="th-note">{t("eduBatchHelp")}</p>
       <span className="th-label">{t("batchSizeQ")}</span>
       <div className="th-batch-row">
         {(f.same ? [["all", t("everyCamp")]] : TRAINING_CAMPS.map((c) => [c, t(`short_${c}`)])).map(([k, lab]) => (
@@ -564,6 +586,9 @@ function TrainGroup({ acc, showName, open, setOpen }) {
       ))}
       <NextCycleNotes acc={acc} timers={st.running} />
 
+      {/* Ministry of Education: the booking (or a quiet hint) with a way into the plan */}
+      {(!kind || kind === "edu" || kind === "edufind") && <EducationStrip acc={acc} open={open} setOpen={setOpen} hasCamps={campsSet} />}
+
       {/* per-camp details (each with its ⋯ menu) */}
       {details && (
         <div className="th-camp-details">
@@ -614,7 +639,7 @@ export function TrainingWidget({ move }) {
   React.useEffect(() => {
     if (!trainDraft) return;
     dispatch({ type: "setSection", id: "training", closed: false });
-    setOpen({ acc: trainDraft.accountId, kind: "finish", preset: trainDraft, key: trainDraft.nonce });
+    setOpen({ acc: trainDraft.accountId, kind: trainDraft.edu ? "edu" : "finish", preset: trainDraft, key: trainDraft.nonce });
     setTrainDraft(null);
   }, [trainDraft]); // eslint-disable-line react-hooks/exhaustive-deps
   const count = accountIds.reduce((n, a) => n + dataFor(a).timers.filter((x) => x.kind === "training" && x.endAt > Date.now()).length, 0);
