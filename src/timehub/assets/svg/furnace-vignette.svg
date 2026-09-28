@@ -1,0 +1,22 @@
+<svg viewBox="0 0 130 100" width="130" height="100" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+<filter id="gouache" x="-8%" y="-8%" width="116%" height="116%" color-interpolation-filters="sRGB">
+<feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="7" result="w"/>
+<feDisplacementMap in="SourceGraphic" in2="w" scale="3.4" xChannelSelector="R" yChannelSelector="G" result="r"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="11" result="n"/>
+<feColorMatrix in="n" type="matrix" values="0 0 0 0 0.34  0 0 0 0 0.46  0 0 0 0 0.54  0 0 0 -0.6 0.33" result="ng"/>
+<feComposite in="ng" in2="r" operator="in" result="gr"/>
+<feMerge><feMergeNode in="r"/><feMergeNode in="gr"/></feMerge>
+</filter>
+<filter id="brush" x="-5%" y="-10%" width="110%" height="120%" color-interpolation-filters="sRGB">
+<feTurbulence type="fractalNoise" baseFrequency="0.006 0.16" numOctaves="2" seed="4" result="w"/>
+<feDisplacementMap in="SourceGraphic" in2="w" scale="7" xChannelSelector="R" yChannelSelector="G" result="r"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.02 0.9" numOctaves="2" seed="9" result="n"/>
+<feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 -1.4 0.75" result="ng"/>
+<feComposite in="ng" in2="r" operator="in" result="gr"/>
+<feMerge><feMergeNode in="r"/><feMergeNode in="gr"/></feMerge>
+</filter>
+<filter id="grain" x="0" y="0" width="100%" height="100%">
+<feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="3" result="n"/>
+<feColorMatrix in="n" type="matrix" values="0 0 0 0 0.3  0 0 0 0 0.4  0 0 0 0 0.45  0 0 0 -1.6 0.9"/>
+</filter>
+</defs><defs><clipPath id="fv"><path d="M0 0H130V96C96 100 40 84 0 50Z"/></clipPath><radialGradient id="fg"><stop offset="0" stop-color="#F2A65A" stop-opacity=".45"/><stop offset="1" stop-color="#F2A65A" stop-opacity="0"/></radialGradient></defs><g clip-path="url(#fv)"><rect width="130" height="100" fill="#FBEBD3"/><circle cx="76" cy="52" r="52" fill="url(#fg)"/><g filter="url(#gouache)"><path d="M46 84V50Q46 30 76 30T106 50V84Z" fill="#4E6F7C"/><rect x="88" y="14" width="10" height="22" rx="2" fill="#4E6F7C"/><path d="M60 84V62Q60 52 76 52T92 62V84Z" fill="#F2A65A"/><path d="M68 84V68Q68 60 76 60T84 68V84Z" fill="#F8C98F"/></g><g filter="url(#gouache)"><path d="M0 84C40 76 90 80 130 76V100H0Z" fill="#F6FAFA"/></g></g></svg>

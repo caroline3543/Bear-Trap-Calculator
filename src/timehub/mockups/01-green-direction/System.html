@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Time Hub design system</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F5F6F1;font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",sans-serif;color:#18201C;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+h1,h2,h3,p{margin:0;padding:0}
+button,input{font-family:inherit}
+button{cursor:pointer;border:0}
+.eyebrow{font-size:13px;line-height:18px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:#68736D}
+.num{font-variant-numeric:tabular-nums}
+.card{background:#fff;border:1px solid #DDE2DB;border-radius:24px;padding:24px}
+.sw{display:flex;align-items:center;gap:12px;height:48px}
+.sw i{width:40px;height:40px;border-radius:12px;border:1px solid #DDE2DB;flex-shrink:0;display:block}
+.sw b{display:block;font-size:15px;line-height:21px;font-weight:600}
+.sw span{display:block;font-size:14px;line-height:20px;font-weight:500;color:#68736D}
+.spec{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-top:1px solid #DDE2DB}
+.spec:first-of-type{border-top:0}
+.spec small{font-size:13px;line-height:18px;font-weight:500;color:#68736D;white-space:nowrap}
+.btn{height:52px;border-radius:14px;font-size:16px;font-weight:600;padding:0 20px;display:inline-flex;align-items:center;justify-content:center}
+.chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border-radius:999px;font-size:14px;font-weight:500;background:#EEF1EB;color:#18201C}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.label{font-size:14px;line-height:20px;font-weight:600;color:#68736D;margin-bottom:8px;display:block}
+</style>
+
+</head>
+<body>
+
+
+<div style="width:1240px;height:1560px;background:#F5F6F1;padding:48px;display:flex;flex-direction:column;gap:40px">
+
+  <div>
+    <div class="eyebrow">Time Hub</div>
+    <h1 style="font-size:36px;line-height:42px;font-weight:700;margin-top:4px">Visual system</h1>
+    <p style="margin-top:8px;font-size:16px;line-height:23px;font-weight:500;color:#68736D;max-width:640px">Calm, warm, structured. One thing shouts per screen. Colour means state, never decoration. Time is drawn, not just written.</p>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:48px;align-items:start">
+
+    <!-- colour -->
+    <div class="card" style="display:flex;flex-direction:column;gap:12px">
+      <h2 style="font-size:24px;line-height:30px;font-weight:700">Colour</h2>
+      <div class="sw"><i style="background:#F5F6F1"></i><div><b>Page</b><span class="num">#F5F6F1</span></div></div>
+      <div class="sw"><i style="background:#FFFFFF"></i><div><b>Card</b><span class="num">#FFFFFF</span></div></div>
+      <div class="sw"><i style="background:#EEF1EB"></i><div><b>Surface</b><span class="num">#EEF1EB</span></div></div>
+      <div class="sw"><i style="background:#DDE2DB"></i><div><b>Border</b><span class="num">#DDE2DB · strong #CBD3CB</span></div></div>
+      <div class="sw"><i style="background:#18201C"></i><div><b>Text</b><span class="num">#18201C</span></div></div>
+      <div class="sw"><i style="background:#68736D"></i><div><b>Secondary text</b><span class="num">#68736D</span></div></div>
+      <div class="sw"><i style="background:#929C96"></i><div><b>Tertiary</b><span class="num">#929C96 · icons and decoration only</span></div></div>
+      <div class="sw"><i style="background:#29483A"></i><div><b>Green</b><span class="num">#29483A · emphasis surface</span></div></div>
+      <div class="sw"><i style="background:#DDF56F"></i><div><b>Lime</b><span class="num">#DDF56F · attention, one per view</span></div></div>
+      <div class="sw"><i style="background:#EFF9C8"></i><div><b>Soft lime</b><span class="num">#EFF9C8 · recommendation</span></div></div>
+      <div style="border-top:1px solid #DDE2DB;padding-top:12px;margin-top:4px">
+        <span class="label">Accounts</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="chip"><span class="dot" style="background:#29483A"></span>Caroline</span>
+          <span class="chip"><span class="dot" style="background:#B7791F"></span>Farm 1</span>
+          <span class="chip"><span class="dot" style="background:#3E5FA8"></span>Farm 2</span>
+          <span class="chip"><span class="dot" style="background:#E58FB0"></span>Farm 3</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- type -->
+    <div class="card">
+      <h2 style="font-size:24px;line-height:30px;font-weight:700;margin-bottom:8px">Type · Inter</h2>
+      <div class="spec"><span style="font-size:36px;line-height:42px;font-weight:700">Hero</span><small>36 / 42 · 700</small></div>
+      <div class="spec"><span style="font-size:30px;line-height:36px;font-weight:700">Page heading</span><small>30 / 36 · 700</small></div>
+      <div class="spec"><span style="font-size:24px;line-height:30px;font-weight:700">Section</span><small>24 / 30 · 700</small></div>
+      <div class="spec"><span style="font-size:18px;line-height:24px;font-weight:650">Card heading</span><small>18 / 24 · 650</small></div>
+      <div class="spec"><span style="font-size:16px;line-height:23px;font-weight:500">Body</span><small>16 / 23 · 500</small></div>
+      <div class="spec"><span style="font-size:15px;line-height:21px;font-weight:500;color:#68736D">Secondary</span><small>15 / 21 · 500</small></div>
+      <div class="spec"><span style="font-size:14px;line-height:20px;font-weight:500;color:#68736D">Metadata</span><small>14 / 20 · 500</small></div>
+      <div class="spec"><span class="eyebrow">Eyebrow</span><small>13 / 18 · 700 · 1.4</small></div>
+      <div class="spec"><span class="num" style="font-size:22px;line-height:28px;font-weight:700">02:08:59</span><small>22 / 28 · 700 · tabular</small></div>
+    </div>
+
+    <!-- space, radius, targets -->
+    <div class="card" style="display:flex;flex-direction:column;gap:24px">
+      <div>
+        <h2 style="font-size:24px;line-height:30px;font-weight:700;margin-bottom:12px">Space · 8px base</h2>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:20px;font-weight:500;color:#68736D">
+          <div style="display:flex;align-items:center;gap:12px"><i style="width:4px;height:12px;background:#29483A;display:block"></i>4</div>
+          <div style="display:flex;align-items:center;gap:12px"><i style="width:8px;height:12px;background:#29483A;display:block"></i>8</div>
+          <div style="display:flex;align-items:center;gap:12px"><i style="width:16px;height:12px;background:#29483A;display:block"></i>16 · card gap 12–16</div>
+          <div style="display:flex;align-items:center;gap:12px"><i style="width:24px;height:12px;background:#29483A;display:block"></i>24 · page margin, card padding</div>
+          <div style="display:flex;align-items:center;gap:12px"><i style="width:32px;height:12px;background:#29483A;display:block"></i>32 · section gap</div>
+          <div style="display:flex;align-items:center;gap:12px"><i style="width:48px;height:12px;background:#29483A;display:block"></i>48 · major break</div>
+        </div>
+      </div>
+      <div>
+        <h2 style="font-size:18px;line-height:24px;font-weight:650;margin-bottom:12px">Radius</h2>
+        <div style="display:flex;gap:12px;align-items:flex-end;font-size:13px;line-height:18px;font-weight:600;color:#68736D">
+          <div style="text-align:center"><i style="display:block;width:56px;height:56px;border-radius:24px;background:#EEF1EB;border:1px solid #CBD3CB;margin-bottom:6px"></i>24</div>
+          <div style="text-align:center"><i style="display:block;width:56px;height:56px;border-radius:20px;background:#EEF1EB;border:1px solid #CBD3CB;margin-bottom:6px"></i>20</div>
+          <div style="text-align:center"><i style="display:block;width:56px;height:56px;border-radius:14px;background:#EEF1EB;border:1px solid #CBD3CB;margin-bottom:6px"></i>14</div>
+          <div style="text-align:center"><i style="display:block;width:56px;height:28px;border-radius:999px;background:#EEF1EB;border:1px solid #CBD3CB;margin-bottom:6px"></i>pill</div>
+        </div>
+      </div>
+      <div style="font-size:15px;line-height:21px;font-weight:500;color:#68736D">
+        <b style="color:#18201C;font-weight:600">Targets</b><br>Tap ≥ 44 · primary button 52 · input 52
+      </div>
+    </div>
+  </div>
+
+  <!-- components -->
+  <div class="card" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:48px">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <h2 style="font-size:24px;line-height:30px;font-weight:700">Buttons</h2>
+      <button class="btn" style="background:#29483A;color:#fff">Primary · 52</button>
+      <button class="btn" style="background:#DDF56F;color:#18201C">Attention · lime</button>
+      <button class="btn" style="background:#EEF1EB;color:#18201C;height:44px;font-size:15px">Secondary · 44</button>
+      <button class="btn" style="background:transparent;border:1px solid #CBD3CB;color:#18201C;height:44px;font-size:15px">Outline · 44</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <h2 style="font-size:24px;line-height:30px;font-weight:700">Inputs &amp; controls</h2>
+      <div>
+        <label for="ex" class="label">Final finish</label>
+        <input id="ex" value="0445" inputmode="numeric" style="height:52px;width:100%;border-radius:16px;border:1px solid #CBD3CB;background:#fff;padding:0 16px;font-size:22px;font-weight:700;font-variant-numeric:tabular-nums">
+      </div>
+      <div style="display:flex;background:#EEF1EB;border-radius:16px;padding:4px;gap:4px">
+        <button style="flex:1;height:44px;border-radius:12px;background:#29483A;color:#fff;font-size:14px;font-weight:600">Selected</button>
+        <button style="flex:1;height:44px;border-radius:12px;background:transparent;color:#18201C;font-size:14px;font-weight:600">Option</button>
+        <button style="flex:1;height:44px;border-radius:12px;background:transparent;color:#18201C;font-size:14px;font-weight:600">Option</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span class="chip">Neutral</span>
+        <span class="chip" style="background:#DDF56F;font-weight:600">3 full</span>
+        <span class="chip" style="background:#EFF9C8;color:#29483A;font-weight:600">Recommended</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <h2 style="font-size:24px;line-height:30px;font-weight:700">Time, drawn</h2>
+      <p style="font-size:15px;line-height:21px;font-weight:500;color:#68736D">Gap height rises with elapsed time. Perceptual, not linear; clamped 12–96.</p>
+      <div style="display:flex;gap:20px;align-items:flex-start;margin-top:4px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13px;line-height:18px;font-weight:600;color:#68736D"><i style="display:block;width:0;height:16px;border-left:2px dashed #CBD3CB"></i>30m</div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13px;line-height:18px;font-weight:600;color:#68736D"><i style="display:block;width:0;height:24px;border-left:2px dashed #CBD3CB"></i>1h</div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13px;line-height:18px;font-weight:600;color:#68736D"><i style="display:block;width:0;height:40px;border-left:2px dashed #CBD3CB"></i>2h</div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13px;line-height:18px;font-weight:600;color:#68736D"><i style="display:block;width:0;height:64px;border-left:2px dashed #CBD3CB"></i>4h</div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13px;line-height:18px;font-weight:600;color:#68736D"><i style="display:block;width:0;height:96px;border-left:2px dashed #CBD3CB"></i>6h+</div>
+      </div>
+      <p style="font-size:14px;line-height:20px;font-weight:500;color:#68736D">The number always sits beside the space: "4h free".</p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Today · Arctic</title>
+
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F4F8F8;font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",sans-serif;color:#17272B;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+h1,h2,h3,p,ul{margin:0;padding:0}
+button,input{font-family:inherit}
+button{cursor:pointer;border:0}
+.eyebrow{font-size:13px;line-height:18px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:#5B7075}
+.num{font-variant-numeric:tabular-nums}
+.card{background:#fff;border:1px solid #DCE9EC;border-radius:24px;padding:20px}
+.iconbtn{width:44px;height:44px;border-radius:14px;background:#fff;border:1px solid #DCE9EC;display:inline-flex;align-items:center;justify-content:center;color:#244F5C}
+.btn{height:52px;border-radius:14px;font-size:16px;font-weight:600;padding:0 20px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn-sec{height:44px;border-radius:14px;background:#E8F3F5;color:#244F5C;font-size:15px;font-weight:600;padding:0 16px;display:inline-flex;align-items:center}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+.chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border-radius:999px;font-size:14px;font-weight:500;background:#E8F3F5;color:#17272B}
+.seg{height:44px;padding:0 16px;border-radius:999px;font-size:15px;font-weight:600;background:#fff;border:1px solid #DCE9EC;color:#17272B;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;flex-shrink:0}
+.seg.on{background:#244F5C;border-color:#244F5C;color:#fff}
+.rowline{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid #DCE9EC}
+.rowline:first-of-type{border-top:0}
+.ic{width:44px;height:44px;border-radius:50%;background:#E8F3F5;color:#397F91;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ic.warm{background:#FDF1E3;color:#8A5210}
+.t16{font-size:16px;line-height:23px;font-weight:600}
+.t14{font-size:14px;line-height:20px;font-weight:500;color:#5B7075}
+.tl-row{display:grid;grid-template-columns:76px 20px 1fr;column-gap:8px;position:relative}
+.tl-time{padding:14px 0;font-size:16px;line-height:23px;font-weight:600}
+.tl-utc{font-size:14px;line-height:20px;font-weight:500;color:#5B7075}
+.tl-rail{position:relative;align-self:stretch}
+.tl-rail::before{content:"";position:absolute;top:0;bottom:0;left:9px;width:2px;background:#DCE9EC}
+.tl-dot{position:absolute;left:4px;top:20px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #397F91;z-index:1}
+.tl-dot.warm{border-color:#F2A65A;background:#F2A65A}
+.tl-body{padding:14px 0}
+.tl-title{font-size:16px;line-height:23px;font-weight:600}
+.tl-meta{font-size:14px;line-height:20px;font-weight:500;color:#5B7075;margin-top:2px}
+.gap .tl-rail::before{background:none;width:0;border-left:2px dashed #BFD7DD}
+.gap-body{position:relative}
+.gap-inner{position:absolute;left:0;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:12px;height:44px;white-space:nowrap}
+.gap-free{font-size:14px;line-height:20px;font-weight:600;color:#244F5C}
+.addtask{height:44px;padding:0 14px;border-radius:14px;background:#E8F3F5;color:#244F5C;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.now{display:flex;align-items:center;gap:12px;padding:8px 0 4px}
+.now span.p{height:28px;padding:0 12px;border-radius:999px;background:#CDE7EC;color:#244F5C;font-size:13px;line-height:28px;font-weight:700;letter-spacing:1.4px}
+.now span.l{flex:1;height:2px;background:#78C7D5}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;color:#5B7075;font-size:13px;font-weight:600;padding:8px 0;height:64px;justify-content:center}
+.tab .pill{width:56px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center}
+.tab.on{color:#244F5C}
+.tab.on .pill{background:#CDE7EC}
+</style>
+
+
+</head>
+<body>
+
+
+<div style="position:relative;width:390px;height:2060px;background:#F4F8F8;padding:24px 24px 0;display:flex;flex-direction:column;gap:32px">
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+  <div><div class="eyebrow">Thursday 24 Sep · Auckland</div><h1 style="font-size:30px;line-height:36px;font-weight:700;margin-top:4px">Today</h1></div>
+  <button class="iconbtn" aria-label="Settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/></svg></button></div>
+    <div class="num" style="display:flex;gap:20px;font-size:14px;line-height:20px;font-weight:500;color:#5B7075">
+      <span><b style="color:#17272B;font-weight:600">5:30 PM</b> local</span><span><b style="color:#17272B;font-weight:600">05:30</b> UTC</span><span><b style="color:#17272B;font-weight:600">8</b> to do</span></div>
+  </div>
+
+  <!-- LEVEL 1: Bear Trap. the single flourish = water ripples, kept away from the text -->
+  <div style="position:relative;overflow:hidden;background:#244F5C;border-radius:24px;padding:24px;color:#fff;display:flex;flex-direction:column;gap:20px">
+    <div style="position:absolute;right:-70px;top:-90px;width:342px;height:300px;pointer-events:none"><svg viewBox="0 0 342 300" width="342" height="300" role="img" aria-label="" xmlns="http://www.w3.org/2000/svg"><circle cx="300" cy="40" r="30" fill="none" stroke="#78C7D5" stroke-width="1" opacity="0.1"/><circle cx="300" cy="40" r="54" fill="none" stroke="#78C7D5" stroke-width="1" opacity="0.1"/><circle cx="300" cy="40" r="78" fill="none" stroke="#78C7D5" stroke-width="1" opacity="0.1"/><circle cx="300" cy="40" r="102" fill="none" stroke="#78C7D5" stroke-width="1" opacity="0.1"/><circle cx="300" cy="40" r="126" fill="none" stroke="#78C7D5" stroke-width="1" opacity="0.1"/><circle cx="300" cy="40" r="150" fill="none" stroke="#78C7D5" stroke-width="1" opacity="0.1"/></svg></div>
+    <div style="position:relative;display:flex;justify-content:space-between;align-items:center">
+      <span class="eyebrow" style="color:#78C7D5;display:inline-flex;align-items:center;gap:8px"><svg viewBox="0 0 40 44" width="18" role="img" aria-label="" xmlns="http://www.w3.org/2000/svg"><g fill="#78C7D5" opacity="1" transform="rotate(0 20 22)"><ellipse cx="20" cy="30" rx="10" ry="8.5"/><ellipse cx="7" cy="19" rx="4.2" ry="5.4" transform="rotate(-20 7 19)"/><ellipse cx="15" cy="10.5" rx="4.4" ry="5.6"/><ellipse cx="25" cy="10.5" rx="4.4" ry="5.6"/><ellipse cx="33" cy="19" rx="4.2" ry="5.4" transform="rotate(20 33 19)"/></g></svg>Bear Trap 1</span>
+      <span class="num" style="font-size:14px;line-height:20px;font-weight:500;color:#CDE7EC">7:30 PM · 07:30 UTC</span>
+    </div>
+    <div style="position:relative">
+      <div class="num" style="font-size:36px;line-height:42px;font-weight:700">in 1h 29m</div>
+      <div style="margin-top:4px;font-size:15px;line-height:21px;font-weight:500;color:#CDE7EC">2 accounts still need a minister</div>
+    </div>
+    <div style="position:relative;display:flex;flex-direction:column;gap:8px;font-size:15px;line-height:21px;font-weight:500">
+      <div style="display:flex;align-items:center;gap:10px"><span class="dot" style="background:#397F91"></span><span>Caroline</span><span style="margin-left:auto;color:#CDE7EC;font-weight:500">Minister set</span></div><div style="display:flex;align-items:center;gap:10px"><span class="dot" style="background:#5D73C9"></span><span>Farm 1</span><span style="margin-left:auto;color:#F8C98F;font-weight:600">Needs a minister</span></div><div style="display:flex;align-items:center;gap:10px"><span class="dot" style="background:#7A5FB0"></span><span>Farm 2</span><span style="margin-left:auto;color:#F8C98F;font-weight:600">Needs a minister</span></div>
+    </div>
+    <button class="btn" style="position:relative;width:100%;background:#78C7D5;color:#17272B">Book ministers · 2 accounts</button>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:8px"><h2 style="font-size:24px;line-height:30px;font-weight:700">Needs you</h2><span class="chip num" style="background:#CDE7EC;font-weight:700">3</span></div>
+    <div class="card" style="padding:4px 20px">
+      <div class="rowline"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9l1.5-5h13L20 9M5 9v11h14V9M9 20v-6h6v6"/></svg></span><div style="flex:1;min-width:0"><div class="t16">Storehouse stamina +120</div><div class="t14">Ready to claim · 4 accounts</div></div><button class="btn-sec">Claimed</button></div>
+      <div class="rowline"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/></svg></span><div style="flex:1;min-width:0"><div class="t16">Farm 1 hits 200 in 30m</div><div class="t14">Spend some before it stops</div></div><button class="btn-sec">Update</button></div>
+      <div class="rowline"><span class="ic warm"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c1 3.2 4.5 4.8 4.5 9a4.5 4.5 0 0 1-9 0c0-1.8.8-3 1.8-4 .2 1.4 1 2 1.8 2C11.4 7.6 11 5.4 12 3z"/></svg></span><div style="flex:1;min-width:0"><div class="t16">Camps idle · Farm 3</div><div class="t14">A full batch ends 11:50 PM</div></div><button class="btn-sec" style="background:#FDF1E3;color:#6B3F0C">Start</button></div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div><h2 style="font-size:24px;line-height:30px;font-weight:700">Schedule</h2><p style="margin-top:4px;font-size:15px;line-height:21px;font-weight:500;color:#5B7075">Your day at a glance: upcoming events, free time, and personal tasks.</p></div>
+    <div class="card" style="padding:12px 20px 20px">
+      <div style="padding:8px 0 16px">
+        <div class="eyebrow" style="margin-bottom:8px">Still to do</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button aria-label="Mark Laundry done" style="width:44px;height:44px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="width:26px;height:26px;border-radius:50%;border:2px solid #397F91;display:block"></span></button>
+          <div style="flex:1;min-width:0"><div class="t16">Laundry · 30m</div><div class="t14">Planned 2:00 PM</div></div>
+          <button class="btn-sec" style="font-size:14px;padding:0 14px">Move to 8:00 PM</button></div>
+      </div>
+      <div class="now"><span class="p num">NOW · 5:30 PM</span><span class="l"></span></div>
+      <div class="tl-row gap" style="height:12px"><div></div><div class="tl-rail"></div><div class="gap-body"><div class="gap-inner"><span class="gap-free num">20m free</span></div></div></div>
+      <div class="tl-row"><div class="tl-time num">5:50 PM<div class="tl-utc">05:50 UTC</div></div><div class="tl-rail"><i class="tl-dot "></i></div><div class="tl-body"><div class="tl-title">Stamina reaches 200</div><div class="tl-meta"><span style="display:inline-flex;align-items:center;gap:6px"><span class="dot" style="background:#5D73C9"></span>Farm 1 · spend some first</span></div></div></div>
+      <div class="tl-row gap" style="height:26px"><div></div><div class="tl-rail"></div><div class="gap-body"><div class="gap-inner"><span class="gap-free num">1h 10m free</span><button class="addtask"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add task</button></div></div></div>
+      <div class="tl-row"><div class="tl-time num">7:00 PM<div class="tl-utc">07:00 UTC</div></div><div class="tl-rail"><i class="tl-dot warm"></i></div><div class="tl-body"><div class="tl-title">Minister of Education</div><div class="tl-meta"><span style="display:inline-flex;align-items:center;gap:6px"><span class="dot" style="background:#397F91"></span>Caroline · 30 min</span></div><div style="margin-top:8px;font-size:14px;line-height:20px;font-weight:600;color:#8A5210">+50% speed · +200 capacity</div></div></div>
+      <div class="tl-row gap" style="height:16px"><div></div><div class="tl-rail"></div><div class="gap-body"><div class="gap-inner"><span class="gap-free num">30m free</span></div></div></div>
+      <div class="tl-row"><div class="tl-time num">7:30 PM<div class="tl-utc">07:30 UTC</div></div><div class="tl-rail"><i class="tl-dot "></i></div><div class="tl-body"><div class="tl-title">Bear Trap 1 begins</div><div class="tl-meta">2 accounts still need a minister</div></div></div>
+      <div class="tl-row"><div class="tl-time num" style="padding-top:10px">8:00 PM</div><div class="tl-rail"><i class="tl-dot" style="border-style:dashed"></i></div>
+        <div style="padding:8px 0"><div style="min-height:56px;border-radius:14px;background:#E8F3F5;padding:8px 12px;display:flex;align-items:center;gap:8px">
+          <button aria-label="Mark Make dinner done" style="width:44px;height:44px;margin:-8px 0 -8px -12px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="width:26px;height:26px;border-radius:50%;border:2px solid #397F91;display:block"></span></button>
+          <div><div class="t16">Make dinner</div><div class="t14">8:00–8:30 PM · 30m</div></div></div></div></div>
+      <div class="tl-row gap" style="height:52px"><div></div><div class="tl-rail"></div><div class="gap-body"><div class="gap-inner"><span class="gap-free num">2h 50m free</span><button class="addtask"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add task</button></div></div></div>
+      <div class="tl-row"><div class="tl-time num">11:20 PM<div class="tl-utc">11:20 UTC</div></div><div class="tl-rail"><i class="tl-dot warm"></i></div><div class="tl-body"><div class="tl-title">All camps finish</div><div class="tl-meta"><span style="display:inline-flex;align-items:center;gap:6px"><span class="dot" style="background:#5D73C9"></span>Farm 1 · Infantry, Lancer, Marksman</span></div></div></div>
+      <div style="border-top:1px solid #DCE9EC;margin-top:8px;padding-top:16px"><div class="eyebrow" style="margin-bottom:8px">After midnight</div>
+        <div style="display:flex;justify-content:space-between;font-size:15px;line-height:21px;font-weight:500"><span>Storehouse stamina +120</span><span class="num" style="color:#5B7075">12:00 AM</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:15px;line-height:21px;font-weight:500;margin-top:8px"><span>Trek supplies +10</span><span class="num" style="color:#5B7075">4:00 AM</span></div></div>
+    </div>
+  </div>
+  <div style="position:absolute;left:0;right:0;bottom:0;height:80px;background:#fff;border-top:1px solid #DCE9EC;display:flex;padding:8px 12px"><button class="tab on"><span class="pill"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg></span>Today</button><button class="tab"><span class="pill"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 1.5M9.5 3h5"/></svg></span>Timers</button><button class="tab"><span class="pill"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V9l8-5 8 5v11M9 20v-6h6v6"/></svg></span>Events</button><button class="tab"><span class="pill"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="3"/><path d="M9 8h6M9 12h.01M12 12h.01M15 12h.01M9 16h.01M12 16h.01M15 16h.01"/></svg></span>Calculator</button></div>
+</div>
+
+</body>
+</html>

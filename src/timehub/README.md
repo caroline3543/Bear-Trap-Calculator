@@ -1,359 +1,75 @@
-# Time Hub — add-in for Caroline's Bear Trap Squad Calculator
+# Time Hub · Arctic expedition journal — design handoff
 
-One dashboard for all your accounts: events (with Bear Trap / Foundry / Canyon templates),
-minister bookings, training and research timers, alliance contributions, a Today schedule,
-calendar export and friends' clocks. Everything is stored in
-this browser only (localStorage key `timehub:v1`) and never touches the calculator's
-own saved data.
+This is the approved direction (mockup row 4). The interface stays crisp; a painted "field journal"
+world sits beside and behind it, never under text or on a control.
 
-## Add it to the calculator (GitHub web editor)
+## What's in the folder
+| Folder | What it is |
+|---|---|
+| `mockups/04-expedition-journal/` | The approved boards as standalone HTML (open `mockups/index.html`). Needs internet for Google Fonts. |
+| `mockups/01…03/` | The earlier green, Arctic-layer and identity-pass directions, for reference. |
+| `assets/raster/*.webp` | **What the app should ship.** Pre-rendered at 2× (252 KB total). |
+| `assets/raster/*.png` | Same images as PNG, for Figma or other tools. |
+| `assets/svg/*.svg` | Sources. The painted ones use SVG filters for the texture: view in a browser; **Figma will not import the filters**, so use the PNGs there. Markers, crystal, ice floe, paw, night mark and ripple rings are plain SVG and safe everywhere. |
+| `tokens/journal.tokens.css` / `.json` | Colours, radii, spacing, type, tap sizes, gap scale, motion. |
+| `source/` | The Python generators for every board and asset, if you want to change or regenerate anything. |
 
-1. Upload this whole `timehub` folder into the repo as `src/timehub/`
-   (on GitHub: **Add file → Upload files**, drag the folder in, commit to `main`).
-2. In `src/App.jsx`, add the import at the top:
+## The two layers
+1. **Functional UI**: crisp. Buttons, inputs, timeline, data, cards, navigation, status. No texture.
+2. **Field journal world**: painterly. Bears, landscapes, water, snow, section flourishes, empty states.
+   Texture lives only here.
 
-   ```jsx
-   import TimeHub from "./timehub/TimeHub.jsx";
-   ```
+Working screens are about 75–80% UI. Immersive moments (onboarding, empty day, overnight, recap) may reach 40–60% painting.
 
-3. Add a page switch next to the other `useState` lines in `App()`:
+## Type: three voices
+- **UI:** Inter. Body 16/23/450, metadata 14/20/500, buttons 16/600, tabular numerals for times.
+- **Display:** Nunito. Page title 32/36/700 (-0.4px), section 24/30/700, countdown 36/42/800.
+  (Figtree and Bricolage Grotesque were tested and rejected; see `JnType.html`.)
+- **Handwriting:** Kalam, 15–18px, colour `--th-hand`. One to three notes per screen, never on
+  buttons, navigation, times, warnings or instructions.
 
-   ```jsx
-   const [view, setView] = useState(saved?.view ?? "calculator");
-   ```
+## Illustrations (`assets/raster`)
+Seven bear scenes: floating, peeking, distant, sleeping, walking, looking, night. Plus
+`header-landscape` (behind the Today/Timers title, fades into the page), `onboarding-scene`,
+`hero-pool-corner` (Bear Trap card corner), `furnace-vignette` (training card corner), `snow-edge`
+(the one painted section transition per screen), and bear heads (calm, curious, sleepy) and a side view.
 
-   and add `view` to the object saved in the existing `localStorage.setItem(...)`
-   effect (and its dependency list) so the last page is remembered.
+The bears and scenes are drawn in code with rough edges and grain. They read as painted, but a real
+illustrator should repaint them using these as the brief. The baked grain is slightly softer than the
+live mockups.
 
-4. Just under the header card, add the two buttons (they reuse the calculator's `Btn`):
+## Component list (to build as small reusable pieces)
+`<PolarBear variant>`, `<ArcticRipple>`, `<SnowDrift>` (snow edge), `<PawTrail>`, `<FireCrystal>`,
+`<FurnaceGlow>`, `<ArcticHorizon>`, `<IceFloe>` (active tab), `<ArcticNight>`. The timeline markers
+are plain SVG: paw = Bear Trap, flame = training running, spark = minister boost, crystal = fire
+crystal event, circle = everything else, dashed circle = personal task.
 
-   ```jsx
-   <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-     <Btn tone={view === "calculator" ? "primary" : "ghost"} onClick={() => setView("calculator")}>Squad Calculator</Btn>
-     <Btn tone={view === "timehub" ? "primary" : "ghost"} onClick={() => setView("timehub")}>Time Hub</Btn>
-   </div>
-   ```
+## Mapping onto the current code (`src/timehub/timehub.css`)
+| Existing variable | Token |
+|---|---|
+| `--cardBgT` | `--th-surface` |
+| `--inputBg` | `--th-ice` |
+| `--cardBorderT` | `--th-border` |
+| `--ink` / `--sub` | `--th-text` / `--th-text-2` |
+| `--gold` (most buttons) | `--th-deep` (primary), lime is gone; warm is only for training/boosts |
+| `--amber` / `--statusT9Bg` | `--th-warm` / `--th-warm-surface` |
+| `--teal` | `--th-arctic` |
 
-5. Wrap the existing calculator content in `{view === "calculator" && ( ... )}` and add:
+Scope the new values to the Time Hub tabs only (for example `.th-root:not(.is-calc)`) so the
+Calculator tab keeps its own theme until you decide to move it. Dark mode has no design yet.
 
-   ```jsx
-   {view === "timehub" && (
-     <TimeHub
-       lang={lang}
-       accountId={ACTIVE_ACCOUNT_ID}      /* the id your account switcher uses, e.g. "A" / "B" */
-       accountName={ACTIVE_ACCOUNT_NAME}  /* e.g. "Main Account" (the renamed label) */
-       showHeader={true}
-     />
-   )}
-   ```
+## Rules that must not be broken
+- **Performance:** ship WebP/PNG, never live SVG filters. Live filters made the earlier paper-grain
+  overlay take about a second to redraw on iPhone. No CSS `filter`, `backdrop-filter` or blur.
+- **Motion** (ripple once, furnace breathe, all under 5s) must stop under `prefers-reduced-motion`.
+- **Contrast:** secondary text is `#5B7075`, not the brief's `#71868B` (about 3.9:1). Warm amber
+  `#F2A65A` is never used as text; use `#8A5210`. `--th-text-3` is for icons only.
+- **Timeline gaps:** 12–96px, perceptual (30m 16, 1h 24, 2h 40, 4h 64, 6h+ 96). This replaces the
+  current 40–220px in `lib/plan.js`. Gaps under about 40px show the label only; the Add task
+  button appears from about an hour.
+- **Fonts for store builds:** self-host Inter, Nunito and Kalam (the tokens file loads them from Google Fonts).
+- Nothing here changes calculations, schedule logic, training logic, data or navigation.
 
-   Render it **inside** the calculator's root `<div className={darkMode ? "dark" : ""}>`
-   so it picks up the same light/dark colours. Replace `ACTIVE_ACCOUNT_ID` /
-   `ACTIVE_ACCOUNT_NAME` with the variable names your account switcher uses in App.jsx.
-
-Nothing else in the calculator changes. No new npm packages are needed.
-
-### Per-account vs shared
-
-- **Per account (Main / Farm):** minister bookings, training, research, contribution attempts.
-- **Shared:** events and friends' clocks (they are the same people and the same game schedule).
-
-## Put one widget somewhere else
-
-```jsx
-import { TimeHubWidgetFrame, BookingsWidget } from "./timehub/index.js";
-
-<TimeHubWidgetFrame lang={lang} accountId={ACTIVE_ACCOUNT_ID}>
-  <BookingsWidget />
-</TimeHubWidgetFrame>
-```
-
-Available: `NextUpWidget`, `BookingsWidget`, `EventsWidget`, `TimerWidget` (with
-`TIMER_CONFIGS.training` or `TIMER_CONFIGS.research`), `ContributionWidget`,
-`FriendsWidget`, `HistoryWidget`.
-
-## Tests
-
-```
-node --test src/timehub/__tests__/*.test.js
-```
-
-(Or add `"test:timehub": "node --test src/timehub/__tests__/*.test.js"` to package.json.)
-Uses Node's built-in test runner, so there's nothing to install.
-
-## Folder map
-
-```
-timehub/
-  TimeHub.jsx            page + TimeHubWidgetFrame
-  TimeHubContext.jsx     store (reducer) + provider, saves to localStorage
-  timehub.css            styles, built only from the calculator's CSS variables
-  index.js               public exports
-  lib/                   pure logic (no React): time, events, bookings, timers,
-                         contributions, dayNight, cities, storage
-  hooks/useNow.jsx       one shared clock (useNow / useMinute / useClockFor)
-  components/ui.jsx      Section, buttons, pills, UTC/local pair, pickers, inputs
-  widgets/               one file per widget
-  i18n/                  en + it, es, ko, de (set1) + ru, pl, tr, ar (set2)
-  __tests__/             node:test suites
-```
-
-## Things to check in-game
-
-- **Contribution refresh rule.** Defaults: 20 max, 1 attempt per 10 minutes, and the
-  refresh clock *pauses* at 20 (spending restarts a full 10 minutes). If the game
-  keeps ticking while full, change **Rules → When full → Refresh clock keeps running**.
-- **Minister names** in each language — the in-game wording may differ from the
-  translations here (especially ko, ru, pl, tr, ar).
-
-
-## v2 (September 2026)
-
-**Use:** `<TimeHub lang={lang} />`. Accounts now live *inside* the Time Hub (chips at the top,
-⚙︎ Accounts to add/rename/colour/delete), so the host app no longer passes `accountId`.
-
-**Storage:** same key `timehub:v1`, `version: 2`. Older data is migrated on first load
-(A → "Main Account", B → "Farm Account", `repeat` → `recurrence`, nothing deleted). Shape is
-documented at the top of `lib/storage.js`.
-
-**Timer input:** two fields — Days, and Hours:minutes in 24-hour form (00:00–23:59). The game's
-`2d 09:28:09` is entered as `2` and `09:28` (typing `0928` fills in the colon). No seconds.
-
-**Times:** local times are shown 12-hour (e.g. 9:09 PM); UTC — the game's clock — stays 24-hour.
-
-**Layout:** a slim header (title, language/dark slot via `headerExtra`, one-line clocks) and one
-sideways-scrolling toolbar. The Schedule comes first: minister bookings still needed today, then the
-timeline with completed items folded away. There is no separate Next up widget.
-
-**Camp times:** the Training widget asks for each camp's full-batch time (Days + Hours:minutes) per
-account, plus "I have Helios troops" and which classes, each with its own time. Starting a timer or
-"Finish at" offers Normal / Helios for those camps and uses the matching time.
-
-**Events:** Add → one form whose first field is an Event dropdown (custom or a built-in template).
-Nothing is added without a time; old unset placeholders are removed on load.
-
-**Minister bookings:** the same screen for every position, like the game — position ◀ ▶, today or
-tomorrow in UTC, fixed 30-minute UTC slots. Past slots are hidden; a slot you already booked for that
-position is blocked; another position at the same time warns but can be saved.
-
-**Events:** alliance-chosen times start empty ("Set your time"). Foundry and Canyon use a dropdown
-of the registration battle times (editable from the form). Defaults: Foundry and Canyon 02:00, 12:00,
-14:00, 19:00, 21:00 UTC; Frostfire Mine (every 2 weeks, 30 min) 02:00, 05:00, 11:00, 14:00, 16:00,
-18:00, 21:00 UTC. Repeats are exact UTC (every N days, weekdays, every N weeks). Repeating events can be
-changed for one occurrence, this-and-future, or the whole schedule.
-
-**Change a default in one place:**
-- booking window → `BOOKABLE_DAYS` in `lib/bookings.js`
-- reminder lead time → `REMINDER_LEAD_MS` in `lib/eventTemplates.js`
-- templates and time options → `TEMPLATES`, `DEFAULT_TIME_OPTIONS` in `lib/eventTemplates.js`
-- research buildings → `RESEARCH_LOCATIONS` in `lib/timers.js`
-- section order → `SECTION_IDS` in `lib/layout.js`
-
-**Tests:** `node --test src/timehub/__tests__/*.test.js`
-
-
-## Redesign (tabs + Today)
-
-- **Tabs:** Today · Timers · Events · More (bottom bar; the selected tab is saved in `settings.tab`).
-  Today = idle-camp and minister cards, the week strip (tap a day to switch the schedule) and the schedule.
-  Timers = training, research, contributions. Events = events, minister bookings, Share with alliance.
-  More = accounts (up to 4, `MAX_ACCOUNTS`), time zone, compact view, friends, history.
-- **Look:** the Bear Trap Calculator's CSS variables and fonts; cute touches are the snowflakes by the
-  clock, the round kind icons (`KindIcon`), the sleeping bear (`SleepingBear`) and tinted time-of-day bands.
-  Motion (tab fade, card rise, theme cross-fade) switches off under `prefers-reduced-motion`.
-- **Schedule rows:** tap or swipe toward the start edge for quick actions; tap a countdown to update the time left.
-- **Idle camps** (`lib/today.js → idleCamps`): a camp with no running timer, idle since its last timer
-  ended (a finished timer still listed, or `lastEnded` saved when one is dismissed); shown after 15 minutes.
-
-### Adding a new event type
-1. Add a template to `TEMPLATES` in `lib/eventTemplates.js` (name key, duration, recurrence, `combat`,
-   `timeOptions`/`legion` if registration uses fixed times) and its name in every language file.
-2. Pick its icon in `kindOf()` / `KIND_PATHS` (`components/ui.jsx`) and its week-strip colour in
-   `dotKind()` (`lib/today.js`) plus a `.d-<kind>` rule in `timehub.css`.
-
-### Live updates
-`useNow()` ticks every second; every screen derives its data from state + now on each tick
-(`buildAgenda`, `computeReminders`, `idleCamps`, `weekStrip`), so nothing needs refreshing by hand.
-Saves go to localStorage on every change.
-
-
-## Tabs with the calculator, stamina and Tundra Trek (Sep 2026)
-- `<TimeHub lang calculator={<YourCalculator/>} headerExtra={…} />` — the calculator becomes the
-  4th tab (**Today · Timers · Events · BT Calculator**). Without `calculator` the tab is hidden.
-- Time Hub tabs share one compact header (bear + clock, tab name, local date · city, ⚙ settings)
-  and the calculator-style account buttons (up to 4, plus All). Language/theme controls passed in
-  `headerExtra` appear under ⚙.
-- **Today:** at-a-glance strip (local time, UTC, next, to do), **Needs you** (hand-claim drops,
-  stamina near 200, idle camps, minister bookings), the schedule (no icons; week strip inside;
-  "After midnight" list) and **Friends' clocks** at the bottom.
-- **Timers:** Chief stamina (per account; +1 / 5 min, regen stops at 200), Storehouse
-  (+120 at 00:00 and 12:00 UTC), Tundra Trek (+20 at 00:00 UTC automatic, +10 at 08:00 and 16:00
-  UTC by hand), then training, research and contributions. Numbers live in `lib/daily.js`.
-- **Events:** events, minister bookings, share with alliance, history.
-
-
-## Feel: speed, haptics, sound, animation
-- Tabs switch on touch-down (not finger-lift) in one frame. Hidden tabs keep their layout cached
-  (`content-visibility: hidden`) so showing them again is cheap; background preparation runs in a transition. Each tab's content is memoised; the calculator stays mounted once visited;
-  each tab keeps its scroll position. The open tab is stored under `timehub:tab`, outside app state.
-- Heavy screens use `useMinute()` (once a minute) and `useMemo`; only countdowns tick every second,
-  and tabs you're not looking at stop ticking (`<ActiveTab>`). Saves are batched (400 ms) and
-  flushed when the app is hidden or closed.
-- `lib/feedback.js` (no sounds): light haptic on every press (Android vibration; iPhone system tick via
-  a hidden `<input switch>`), a chime + snowflake burst on useful actions (claim, spend all, start
-  training, save booking/event/research, answer a minister reminder, update stamina or time left).
-  Haptics can be turned off under ⚙; animations respect reduced-motion.
-- Little animations: sliding amber tab pill with an icon hop, button press, pop on success,
-  counters that bump, a bear that wiggles when tapped, and an "All caught up" bear when nothing
-  needs you.
-- More motion (never delays content): drifting snow and a blinking bear in the header, a ticking
-  clock hand, hopping account dot, TO DO nudge, Needs-you rows slide away when done, breathing Now
-  dot, glowing next item, pulsing countdowns under 5 min, sheen on running progress bars, popping
-  week day and drop tiles.
-
-
-## Performance model (Sep 2026 profiling)
-- **One clock.** `hooks/useNow.jsx` runs a single timeout per second for the whole app.
-  - `<Remaining to={ts}>` / `<Countdown to={ts}>` are the only things that re-render every second.
-  - Widgets use `useClockFor([timestamps])` (re-render when a timer finishes, an event starts, a
-    booking ends, the next contribution arrives…) or `useMinute()` for lists and "in 3h 42m" text.
-  - Progress bars are one long CSS animation each (`<ProgressFill>`), not re-renders.
-- **Hidden tabs** are frozen (`FreezeWhenHidden`): account switches and edits don't re-render them;
-  their clocks pause (`<ActiveTab>`), their layout is cached (`content-visibility: hidden`) and their
-  animation loops pause.
-- **Time maths**: formatters are cached with cheap keys; `zonedParts`, `formatTime`, `formatDate`
-  results are memoised (pure functions of instant + zone + language, so they never go stale).
-- **Storage**: one debounced write after changes (flushed on hide/close); nothing is written by the clock.
-- No network or database calls in the Time Hub.
-
-## What to track · Restart All Camps
-- ⚙ → **What to track**: daily reset, Storehouse stamina, Tundra Trek, Chief stamina, contributions.
-  Turning one off removes it from Today, Timers, Needs you and calendar exports
-  (`settings.track`, read via `tracking()` in `lib/agenda.js`). Schedule rows also offer "Don't track this".
-- **Restart all camps** (Training): restarts every idle/finished camp with its last length (or its
-  full-batch time); camps already training are never touched. If a finish would land in the sleep
-  window (default 22:00–07:00, ⚙ → Sleep hours) it suggests a shorter run ending around 21:45
-  (`lib/sleep.js`). Only times are calculated — never troop numbers. Running camps that end
-  overnight get a gentle note about the next cycle.
-
-## Alliance Championship (leaders) · Lighthouse intel
-- **Championship prep** (`lib/championship.js`): asked once on Today — "Are you a leader in charge of
-  the Alliance Championship?" — then which Thursday the next one starts (the app doesn't guess the
-  fortnight). Every 14 days, prep rounds in UTC: R1 Thu 00:00–11:00, R2 Thu 12:00–Fri 00:00,
-  R3 Fri 01:00–12:00, R4 Fri 13:00–Sat 00:00, R5 Sat 01:00–12:00. Shown on the schedule and week
-  strip (purple dot), and in Needs you while a round is open. Change under ⚙ → Alliance Championship
-  (`settings.champ = { leader, anchor }`).
-- **Lighthouse intel** (`lib/daily.js`): refreshes 00:00, 08:00, 16:00 UTC (~8 missions; they last
-  roughly 12–16 h; the Lighthouse holds two refreshes). Timers tab card with "Cleared" per account;
-  Needs you nudges in the hour before the next refresh until the batch is cleared; schedule rows for
-  each refresh. Can be switched off under ⚙ → What to track.
-
-## Training Camps: Finish At first (Sep 2026)
-- One account per Training Camps page (pills at the top; follows the global account filter). Camp
-  times, the form, running camps, Restart All and notes all use that account.
-- The form opens on **Finish At**: type 2200 / 0130 / 928 (`parseCompactTime`). It's prefilled with
-  a suggestion from `finishAdvice` (lib/sleep.js): finish at the "before bed" time if a batch can
-  reach it within the account's maximum (`campMaxFor`, the camp that runs out first), so a full
-  batch can run overnight; otherwise a full batch. `planFinish` checks every camp — a time beyond the
-  maximum shows the latest possible finish with "Use …" and "Remind me to start at …".
-  "Enter time left instead" keeps the old mode.
-- Full-batch times: "Same for all camps" or "Different per camp" (`accountData.campSame`).
-- Lighthouse intel is no longer on Timers (still in Today's Needs you + schedule).
-- Today's schedule has no time-of-day bands.
-- First-use walkthrough (`widgets/Tour.jsx`): 8 short steps, highlights one setting at a time,
-  skippable, stored in `settings.tour`; replay from ⚙.
-
-## Language detection · troops ⇄ time · Today header
-- `lib/language.js → detectLanguage()`: first visit only — phone language list first, then the
-  country implied by the time zone, else English. A saved choice always wins. Used by App.jsx/main.jsx.
-- Camp times take an optional **full batch size (troops)** (`accountData.campTroops`, follows the
-  same/different choice). Restart All then lets the player type **troops** (or time) per camp and
-  shows the resulting time and finish; suggestions appear as troop counts. Finish At lists the troops
-  to train per camp. Conversion is proportional (`troopsForDuration`, `durationForTroops`), capped
-  at a full batch.
-- Today: the Local time / UTC / Next / To do strip sits inside the "Today" header card.
-
-## Timers: summaries first · Today: free time & personal tasks
-- `Section` takes `summary` (shown when folded) and `defaultClosed`; open/closed is remembered per
-  section (`settings.collapsed`, true/false). Timers sections start folded to their summaries:
-  Stamina, Trek, Training ("Next: All camps · Farm 2 · 02:08:59 · 3 idle"), Research, Contributions
-  ("3 full · Next +1 in 00:09:59"). Summaries tick via `<Remaining>` only.
-- One account label per group (`GroupName`). Training: one group per shown account with the
-  countdown first (ALL CAMPS when they finish together, otherwise NEXT + the rest in one line), idle
-  camps, overnight notes, then secondary actions (Set finish time, Restart all camps, Camp details,
-  Training times) that open in place. Research rows are one line (`TimerRow compact`). Contributions
-  are one row per account (count, FULL or next +1, −/+); tap for Spend all, Match the game, Rules.
-  The account filter is a single row on Timers.
-- Today (`lib/plan.js`): `buildTimeline` merges agenda items and personal tasks, merges overlapping
-  busy periods, treats finishes/claims as moments, claims no free time after events of unknown
-  length, and only shows gaps ≥ 10 min from now. "＋ Add task" places the task at the gap's start
-  (`placeTask`); too long → shorten / schedule anyway / cancel. Durations: 30 → 30m, 90 → 1h 30m,
-  130 → 1h 30m (`parseTaskDuration`). Tasks: `state.tasks` ({ id, title, start, end, done }), kept 7 days,
-  no account chip. Account chips per row come from `rowChips` so one account can't appear twice.
-
-## Training modes · fixed research order · Today copy (Sep 2026)
-- **Training Camps now has three explicit modes**, chosen with a segmented control at the top of
-  the editor (`TrainForm` in `widgets/TrainingWidget.jsx`):
-  - **Finish at a time** (default) — unchanged Finish-At flow (compact digits, e.g. `2145`;
-    `lib/sleep.js → finishAdvice/nextFinishTarget`; respects each camp's configured maximum;
-    handles crossing midnight).
-  - **Maximum time** — runs each selected camp for its own configured maximum
-    (`campMaxFor`), simply and without troop-quantity claims. Explains that "Restart all camps"
-    does the same for idle camps.
-  - **Custom duration** — the old "time left" entry (same-for-all or per-camp; the existing
-    compact days+HH:MM duration input, 24h+ supported).
-  - The app never claims to set troop counts in-game; a one-line note says fewer troops finish
-    sooner, more troops take longer, and the player still sets the amount in Whiteout Survival.
-  - Every started timer is tagged with which mode created it (`timer.mode: "finish" | "max" |
-    "custom"`, added in `applyTraining`/`cleanTimer`, saved and restored). The Timers hero shows a
-    small pill (FINISH AT / MAXIMUM / CUSTOM) next to the countdown when every timer in the group
-    shares one mode, so the configuration is visible without opening the editor. Restart All tags
-    its entries "max" only when the full batch time was actually used, "custom" otherwise.
-- **Research always lists Research Center → Dawn Academy → War Academy**, never reordered by which
-  finishes first (`RESEARCH_LOCATIONS` order in `lib/timers.js`; `sortResearch()` — a stable sort by
-  that fixed order, used by `ResearchWidget`). A building with no timer is simply omitted; the
-  remaining buildings keep their relative order. The "Next" line in the folded summary can still
-  name whichever building finishes soonest — only the expanded list order is fixed.
-- **Today page description** ("Your day at a glance: upcoming events, free time, and personal
-  tasks.") replaces the old generic copy, in all 9 languages.
-
-## Executive function / time-blindness pass (Sep 2026)
-- **Alliance Contributions**: the closed row now has one primary action, "Spend all" (instant —
-  the reducer updates in-memory state synchronously, so the UI changes immediately; the debounced
-  save follows). Manual −/+ correction, "Match the game", and "Rules" moved behind the row's expand.
-- **Stamina**: tapping the value itself opens an empty, auto-focused numeric input in place
-  (`StaminaRow` in `widgets/DailyWidgets.jsx`) — no backspacing the old number. Saves on Enter or
-  on blur; Escape cancels. The old "Update" text link still works as an alternate way in.
-- **Personal tasks never disappear when their time passes.** `Schedule` in `widgets/TodayScreen.jsx`
-  now only folds a task into the "completed" toggle once the person marks it **done** — never just
-  because `now` has passed its end. Unfinished-and-overdue tasks (`lib/plan.js → overdueTasks`)
-  render in an always-visible **"Still to do"** block directly above the Now marker, with gentle
-  wording ("Still to do · Planned 6:00 PM", never "overdue"/"missed"), a one-tap complete circle,
-  and an optional **"Move to next free time"** button (`findNextGap`) that finds the next gap that
-  fits and moves the task there — only on explicit tap, never automatically.
-- **Proportional free-time gaps**: `gapVisualHeight()`/`taskVisualHeight()` in `lib/plan.js` use a
-  clamped square-root scale so a 4-hour gap is visibly taller than a 20-minute one, capped (~220px
-  for gaps, ~96px for tasks) so long stretches never blow out the page. Applied as one inline
-  `min-height` style per render (`--gh`/`--th` custom properties) — pure CSS layout, no animation,
-  no per-second recalculation. The exact duration is always still shown as text alongside the
-  visual size (never visual-only).
-- Adding a task now opens with an "{time} available" headline before the name/duration fields.
-
-## Ministry of Education × training planner (Sep 2026)
-- `lib/education.js` (pure, tested): reads the SAME booking record as the Bookings tab
-  (`minister_education`, 30-min UTC slot). Each camp is classified against the window
-  (`before` → bridge/wait, `inside`, `now`, `tight`, `after`, `over`), with a safety buffer
-  (⚙ → Ministry of Education, default 5 min, 0–15). Bridge cycles chain full batches, never past
-  the window; "fewest check-ins" waits out gaps < 45 min, "most training" bridges from 15 min,
-  "finish at a time" shortens the buffed restart to end at the player's chosen time.
-- **No invented numbers:** the app has no speed/capacity formula, so "+50% / +200" is shown as the
-  effect text only. The optional per-camp **Full batch with Education** (`accountData.campMaxEdu`,
-  Training times) is what the plan uses; without it the plan still says WHEN to restart.
-- Never suggests cancelling a running order. A running camp that finishes after the window is told
-  Education won't help that cycle, and "Find a time" offers real bookable slots
-  (`findEducationSlots`: only open slots in today+tomorrow UTC, not already an Education booking).
-- UI (`widgets/EducationPlan.jsx`): a strip inside each Training group (booking + "View
-  recommended plan", or a dismissible "Find a time" hint), the plan panel (what to do → per-camp
-  lines → timeline → priority), Finish-At warns if the typed time would miss the window with a
-  one-tap fix, and "Training plan" links from the booking row and Today's schedule row.
-  Recomputed on the minute clock and input changes only.
+## Not included yet
+The app code itself. These are design files. The next step is the visual audit against the current
+components, then swapping the shared variables, then the new components.
