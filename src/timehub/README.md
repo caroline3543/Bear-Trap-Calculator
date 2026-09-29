@@ -590,3 +590,50 @@ time instead of assuming a formula).
 - Fixed two test-harness scripts (`perf/soak.mjs`) that picked a tab by its numeric position rather
   than name, which broke once the order changed — now targets tabs by their visible text instead,
   so a future reorder won't silently break performance testing again.
+
+## Continuous vertical timeline + tiered countdowns + smart "Add task" (Sep 2026)
+Substantial progress on the Timeline redesign brief. Scoped to what could be built and verified
+solidly this round — see "Not done this round" below for what's left.
+
+- **Continuous vertical spine**: `.th-srow`/`.th-gap` each draw one segment of a thin (1.5px)
+  line at a fixed offset (solid through events, dashed through free time) via a plain CSS
+  `::before` — no SVG paths, no JS measurement, no absolute-position guessing. Consecutive rows'
+  segments join into what reads as one continuous line. Each event row gained a small circular
+  node (`.th-rail-dot`, a real grid cell — not absolutely positioned) that sits precisely on the
+  line; the very next upcoming item's dot is highlighted gold. This replaces the wavy
+  multi-coloured rail from an earlier, since-reverted round with something calmer and far
+  simpler, deliberately reusing the same restrained visual language as the Education plan's
+  timeline, which was already validated warm and readable this session.
+- **Tiered countdown precision** (`lib/time.js → formatCountdown`, doc's exact examples): 2d 4h →
+  4h 53m → 37m (no seconds once minutes alone are precise enough, from 10 minutes out) → 8m 42s
+  under that. This is also a real performance win, not just cosmetic: `Remaining` (`components/ui.jsx`)
+  now only subscribes to a per-second tick once a countdown is actually within that 10-minute
+  window (`RemainingFine`); everything further out re-renders once a minute (`RemainingCoarse`),
+  which on a busy Timeline with many distant timers is the difference between each of them
+  re-rendering every second versus every minute. Timers-tab hero countdowns and anything using the
+  `"clock"` format (HH:MM:SS displays someone is actively watching) are untouched — always precise.
+- **Large gaps say "open" instead of "free"** (`openTime` string, 4h+) so a 10-hour stretch doesn't
+  read as "10h free" the way a 20-minute one does.
+- **"+ Add task" now suggests before it asks** (`widgets/TodayScreen.jsx → GapTaskSheet`, reusing
+  `lib/tasks.js → bestFits`): tapping it in a gap shows unfinished, unscheduled to-dos that
+  actually fit the available time, each one tap away from being scheduled into that exact gap (no
+  duplicate task created — the same object gets a `start`/`end`). Tasks that don't fit are named
+  under a collapsed "Needs more time" rather than hidden outright. A blank "New task" form is
+  still one tap away, and if there's nothing unscheduled at all, "+ Add task" skips the sheet and
+  opens the form directly — no empty list shown for no reason. This is the same connective tissue
+  the brief asked for between Timeline and the To-do system.
+
+## Not done this round (from the same brief)
+Flagging honestly rather than skipping quietly:
+- Colour/weight hierarchy distinguishing **action-required** vs **scheduled event** vs
+  **completion** vs **passive info** rows (doc section 8) — dots are currently uniform teal
+  (gold only for "next"), not yet split by this taxonomy.
+- **Action-oriented completions** — "↻ Start next research" under a research finish, "↻ Restart
+  camps" under a training finish (doc section 9). Contributions already got this treatment
+  earlier this session ("Spend all"); research/training didn't yet.
+- **"Nothing needs you for 2h 14m"** phrasing inside gaps, and **sleep-aware gap messaging**
+  ("while you're sleeping, no action needed") — the Education planner already has sleep-awareness
+  (`lib/sleep.js`, `state.settings.sleep`) this could reuse, just not wired into the main Timeline
+  yet.
+- **Auto-scroll to NOW + collapse earlier items** ("✓ 8 earlier items · Show") on opening Timeline.
+- A distinct **"Needs you soon"** (next ~2h) grouping separate from the existing Needs You card.

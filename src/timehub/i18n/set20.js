@@ -1,5 +1,9 @@
 /* To-do lists (Game/Personal/Work) and the ADHD-friendly Priority view. */
 export const en = {
+  thingsThatFit: "Things that fit",
+  needsMoreTime: "Needs more time · {n}",
+  newTask: "New task",
+  openTime: "{time} open",
   ministerBooked: "Minister booked",
   bookMinisterFor: "Book a minister for",
   slotTight: "Cutting it close",
@@ -32,6 +36,10 @@ export const en = {
   prioLaterHint: "Can wait.",
 };
 export const it = {
+  thingsThatFit: "Cose che ci stanno",
+  needsMoreTime: "Serve più tempo · {n}",
+  newTask: "Nuova attività",
+  openTime: "{time} liberi",
   ministerBooked: "Ministro prenotato",
   bookMinisterFor: "Prenota un ministro per le",
   slotTight: "Ai limiti del margine",
@@ -64,6 +72,10 @@ export const it = {
   prioLaterHint: "Può aspettare.",
 };
 export const es = {
+  thingsThatFit: "Cosas que encajan",
+  needsMoreTime: "Necesita más tiempo · {n}",
+  newTask: "Nueva tarea",
+  openTime: "{time} libres",
   ministerBooked: "Ministro reservado",
   bookMinisterFor: "Reserva un ministro para las",
   slotTight: "Justo al límite",
@@ -96,6 +108,10 @@ export const es = {
   prioLaterHint: "Puede esperar.",
 };
 export const ko = {
+  thingsThatFit: "맞는 일들",
+  needsMoreTime: "시간이 더 필요함 · {n}",
+  newTask: "새 할 일",
+  openTime: "{time} 비어 있음",
   ministerBooked: "장관 예약됨",
   bookMinisterFor: "다음 시간에 장관 예약",
   slotTight: "여유가 거의 없어요",
@@ -128,6 +144,10 @@ export const ko = {
   prioLaterHint: "나중에 해도 됨.",
 };
 export const de = {
+  thingsThatFit: "Das passt rein",
+  needsMoreTime: "Braucht mehr Zeit · {n}",
+  newTask: "Neue Aufgabe",
+  openTime: "{time} frei",
   ministerBooked: "Minister gebucht",
   bookMinisterFor: "Minister buchen für",
   slotTight: "Knapp bemessen",
@@ -160,6 +180,10 @@ export const de = {
   prioLaterHint: "Kann warten.",
 };
 export const ru = {
+  thingsThatFit: "Что поместится",
+  needsMoreTime: "Нужно больше времени · {n}",
+  newTask: "Новая задача",
+  openTime: "{time} свободно",
   ministerBooked: "Министр забронирован",
   bookMinisterFor: "Забронировать министра на",
   slotTight: "Впритык",
@@ -192,6 +216,10 @@ export const ru = {
   prioLaterHint: "Может подождать.",
 };
 export const pl = {
+  thingsThatFit: "To się zmieści",
+  needsMoreTime: "Potrzeba więcej czasu · {n}",
+  newTask: "Nowe zadanie",
+  openTime: "{time} wolnego",
   ministerBooked: "Minister zarezerwowany",
   bookMinisterFor: "Zarezerwuj ministra na",
   slotTight: "Bardzo mało czasu",
@@ -224,6 +252,10 @@ export const pl = {
   prioLaterHint: "Może poczekać.",
 };
 export const tr = {
+  thingsThatFit: "Sığabilecekler",
+  needsMoreTime: "Daha fazla zaman gerekiyor · {n}",
+  newTask: "Yeni görev",
+  openTime: "{time} boş",
   ministerBooked: "Bakan ayrıldı",
   bookMinisterFor: "Şunun için bakan ayır:",
   slotTight: "Süre çok dar",
@@ -256,6 +288,10 @@ export const tr = {
   prioLaterHint: "Bekleyebilir.",
 };
 export const ar = {
+  thingsThatFit: "أشياء تناسب الوقت",
+  needsMoreTime: "يحتاج وقتًا أطول · {n}",
+  newTask: "مهمة جديدة",
+  openTime: "{time} متاح",
   ministerBooked: "تم حجز الوزير",
   bookMinisterFor: "احجز وزيرًا لوقت",
   slotTight: "الوقت ضيق جدًا",

@@ -9,6 +9,14 @@ import { success } from "../lib/feedback.js";
 import { EventForm } from "./EventsWidget.jsx";
 import { useMinute, useClockFor } from "../hooks/useNow.jsx";
 import { buildAgenda, groupContrib, groupTraining } from "../lib/agenda.js";
+import { bestFits } from "../lib/tasks.js";
+
+/** Whether ANY unfinished, unscheduled to-do exists — decides whether "+ Add task" opens the
+ *  suggestion sheet first or goes straight to a blank form (no point suggesting from nothing). */
+function useHasUnscheduledTasks() {
+  const { state } = useTimeHub();
+  return (state.tasks || []).some((x) => !x.done && x.start == null);
+}
 import { computeReminders, needsAttention } from "../lib/reminders.js";
 import { contribState, spendAttempt } from "../lib/contributions.js";
 import { idleCamps, splitNow, stillRunning, weekStrip } from "../lib/today.js";
@@ -389,6 +397,7 @@ function Row({ i, day, rems, open, setOpen, isNext }) {
           <b><Ltr>{crossesIn ? "…" : formatTime(i.start, tz, lang)}</Ltr></b>
           <small><Ltr>{formatTime(i.start, "UTC", lang)}</Ltr> UTC</small>
         </span>
+        <span className={`th-rail-dot ${isNext ? "now" : ""}`} aria-hidden="true" />
         <span className="th-srow-body">
           <span className="th-srow-title">{title}</span>
           <span className="th-srow-tags">
@@ -506,20 +515,71 @@ function GapNotice({ item }) {
   );
 }
 
+/** Tapping "+ Add task" in a gap shouldn't open a blank form first — Time Hub already knows what's
+ *  unfinished and how long things take, so it suggests what actually fits before asking for
+ *  something new. Picking a suggestion schedules that exact task (no duplicate created). */
+function GapTaskSheet({ gap, onNew, onDone }) {
+  const { t, lang, state, update } = useTimeHub();
+  const unscheduled = (state.tasks || []).filter((x) => !x.done && x.start == null);
+  const fits = bestFits(unscheduled, gap.ms);
+  const tooLong = unscheduled.filter((x) => x.durationMs && x.durationMs > gap.ms);
+  const [showLong, setShowLong] = useState(false);
+  const place = (task) => {
+    const p = placeTask(gap, task.durationMs);
+    update((s) => ({ ...s, tasks: s.tasks.map((x) => (x.id === task.id ? { ...x, start: p.start, end: p.end } : x)) }));
+    success();
+    onDone();
+  };
+  return (
+    <div className="th-gap-sheet">
+      <p className="th-task-avail">{t("availableTime", { time: formatSpan(gap.ms, lang) })}</p>
+      {fits.length > 0 && (
+        <>
+          <span className="th-label">{t("thingsThatFit")}</span>
+          <ul className="th-slist">
+            {fits.map((task) => (
+              <li key={task.id} className="th-todo-row">
+                <button type="button" className="th-gap-fit" onClick={() => place(task)}>
+                  <span className="th-todo-check-dot" aria-hidden="true" />
+                  <span className="th-todo-main"><span className="th-todo-title">{task.title}</span><span className="th-todo-meta">{formatSpan(task.durationMs, lang)}</span></span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {tooLong.length > 0 && (
+        <div className="th-gap-toolong">
+          <button type="button" className="th-link" onClick={() => setShowLong(!showLong)}>{t("needsMoreTime", { n: tooLong.length })}</button>
+          {showLong && <ul className="th-slist">{tooLong.map((task) => <li key={task.id} className="th-todo-meta">{task.title} · {formatSpan(task.durationMs, lang)}</li>)}</ul>}
+        </div>
+      )}
+      <div className="th-item-actions">
+        <Btn small tone="gold" onClick={onNew}>{t("newTask")}</Btn>
+        <Btn small onClick={onDone}>{t("cancel")}</Btn>
+      </div>
+    </div>
+  );
+}
+
 function GapRow({ gap }) {
   const { t, lang } = useTimeHub();
-  const [adding, setAdding] = useState(false);
+  const [mode, setMode] = useState(null); // null | "sheet" | "form"
+  const hasUnscheduled = useHasUnscheduledTasks();
+  const openTap = () => setMode(hasUnscheduled ? "sheet" : "form");
   // time blindness: the block's own height gives a visual sense of "how much time" (12–96px),
   // the text gives the exact number — neither replaces the other.
   const h = gapVisualHeight(gap.ms);
+  const big = gap.ms >= 4 * HOUR;
   return (
-    <li className={`th-gap ${adding ? "adding" : ""}`} style={{ "--gh": `${h}px` }}>
+    <li className={`th-gap ${mode ? "adding" : ""}`} style={{ "--gh": `${h}px` }}>
       <div className="th-gap-mid">
-        <span className="th-gap-free">{t("freeTime", { time: formatSpan(gap.ms, lang) })}</span>
-        {!adding && gap.ms >= 30 * MINUTE && <button type="button" className="th-gap-add" onClick={() => setAdding(true)}>＋ {t("addTask")}</button>}
+        <span className="th-gap-free">{t(big ? "openTime" : "freeTime", { time: formatSpan(gap.ms, lang) })}</span>
+        {!mode && gap.ms >= 30 * MINUTE && <button type="button" className="th-gap-add" onClick={openTap}>＋ {t("addTask")}</button>}
       </div>
       {gap.notices?.map((n) => <GapNotice key={n.id} item={n} />)}
-      {adding && <TaskForm gap={gap} onDone={() => setAdding(false)} />}
+      {mode === "sheet" && <GapTaskSheet gap={gap} onNew={() => setMode("form")} onDone={() => setMode(null)} />}
+      {mode === "form" && <TaskForm gap={gap} onDone={() => setMode(null)} />}
     </li>
   );
 }

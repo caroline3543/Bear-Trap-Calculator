@@ -2,12 +2,12 @@ import distantBear from "../assets/scene-distant-bear.webp";
 import React, { useId, useMemo, useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
 import {
-  formatTime, formatDate, formatCountdown, offsetLabel, zoneCity, isValidTimeZone,
+  formatTime, formatDate, formatCountdown, offsetLabel, zoneCity, isValidTimeZone, MINUTE,
   parseUtcInput, toUtcFields, parseDuration, formatDurationInput,
 } from "../lib/time.js";
 import { searchZones } from "../lib/cities.js";
 import { parseTimerDigits, formatSpan, parseDaysTime, splitDaysTime, tidyHHMM, formatCountdownClock } from "../lib/time.js";
-import { useNow } from "../hooks/useNow.jsx";
+import { useNow, useMinute } from "../hooks/useNow.jsx";
 import { buildICS, googleCalendarLink, downloadICS } from "../lib/ics.js";
 
 /* ---------- icons (simple strokes, colour from CSS) ---------- */
@@ -313,13 +313,32 @@ export function Countdown({ to, ms, label }) {
 }
 
 const FORMATS = { countdown: formatCountdown, clock: formatCountdownClock, span: formatSpan };
-/** Time left until `to` (or since, with `since`), re-rendering only itself each second. */
+/** Below this, a "countdown"-format Remaining switches to a per-second tick so the last stretch
+ *  still feels alive; above it, formatCountdown never shows seconds anyway, so a per-minute tick
+ *  is all a distant timer needs — this is most of a busy Timeline's Remaining instances, so it's
+ *  the difference between one re-render a second and one a minute for each of them. */
+const REMAINING_SECOND_THRESHOLD_MS = 10 * MINUTE;
+
+/** Time left until `to` (or since, with `since`). Ticks per-second only once close enough for
+ *  that precision to matter (fixed/clock/span always tick per-second, since those callers show
+ *  seconds throughout, e.g. a Timers-tab hero countdown someone is actively watching). */
 export const Remaining = React.memo(function Remaining({ to, since, fixed, fmt = "countdown" }) {
+  const fine = fmt !== "countdown" || fixed != null;
+  return fine ? <RemainingFine to={to} since={since} fixed={fixed} fmt={fmt} /> : <RemainingCoarse to={to} since={since} fmt={fmt} />;
+});
+function RemainingFine({ to, since, fixed, fmt }) {
   const { lang } = useTimeHub();
   const now = useNow();
   const ms = fixed != null ? fixed : since != null ? now - since : to - now;
   return <Bidi>{FORMATS[fmt](Math.max(0, ms), lang)}</Bidi>;
-});
+}
+function RemainingCoarse({ to, since, fmt }) {
+  const { lang } = useTimeHub();
+  const minuteNow = useMinute();
+  const coarseMs = since != null ? minuteNow - since : to - minuteNow;
+  if (Math.abs(coarseMs) < REMAINING_SECOND_THRESHOLD_MS) return <RemainingFine to={to} since={since} fmt={fmt} />;
+  return <Bidi>{FORMATS[fmt](Math.max(0, coarseMs), lang)}</Bidi>;
+}
 
 /** Progress bar filled by the browser (a CSS animation), not by re-rendering every second. */
 export function ProgressFill({ start, end, className = "" }) {

@@ -81,7 +81,8 @@ test("countdown formatting handles zero, negatives and rounding", () => {
   assert.equal(formatCountdown(-5000, "en"), "0s");
   assert.equal(formatCountdown(400, "en"), "1s");
   assert.equal(formatCountdown(45 * SECOND, "en"), "45s");
-  assert.equal(formatCountdown(13 * MINUTE + 5 * SECOND, "en"), "13m 5s");
+  assert.equal(formatCountdown(13 * MINUTE + 5 * SECOND, "en"), "13m"); // 10m+: minutes alone, no noisy seconds
+  assert.equal(formatCountdown(9 * MINUTE + 5 * SECOND, "en"), "9m 5s"); // under 10m: seconds still matter
   assert.equal(formatCountdown(4 * HOUR + 13 * MINUTE, "en"), "4h 13m");
   assert.equal(formatCountdown(2 * DAY + 4 * HOUR, "en"), "2d 4h");
   assert.equal(formatCountdown(2 * DAY, "en"), "2d");
@@ -92,6 +93,13 @@ test("countdown formatting handles zero, negatives and rounding", () => {
   assert.equal(formatDurationInput(DAY + 3 * HOUR + 4 * SECOND), "1d 03:00:04");
   console.log("ru:", formatCountdown(2 * HOUR + 5 * MINUTE, "ru"), "| pl:", formatCountdown(DAY * 2 + HOUR, "pl"),
     "| ar:", formatCountdown(2 * HOUR + 5 * MINUTE, "ar"), "| ko:", formatCountdownClock(DAY + HOUR, "ko"));
+});
+
+test("countdown formatting: tiered precision by distance — no seconds once minutes alone are precise enough", () => {
+  assert.equal(formatCountdown(2 * DAY + 4 * HOUR, "en"), "2d 4h");
+  assert.equal(formatCountdown(4 * HOUR + 53 * MINUTE, "en"), "4h 53m");
+  assert.equal(formatCountdown(37 * MINUTE + 41 * SECOND, "en"), "37m"); // 10-60m: minutes only
+  assert.equal(formatCountdown(8 * MINUTE + 42 * SECOND, "en"), "8m 42s"); // under 10m: seconds shown
 });
 
 test("zone helpers + bundled cities are all valid IANA zones", () => {

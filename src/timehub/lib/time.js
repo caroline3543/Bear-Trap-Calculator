@@ -246,6 +246,8 @@ export function formatCountdown(ms, lang = "en") {
   const u = (n, unit) => unitFmt(lang, unit).format(n);
   if (days > 0) return hours ? `${u(days, "day")} ${u(hours, "hour")}` : u(days, "day");
   if (hours > 0) return `${u(hours, "hour")} ${u(minutes, "minute")}`;
+  // 10 minutes or more: minutes alone are precise enough — seconds would just be noise
+  if (minutes >= 10) return u(minutes, "minute");
   if (minutes > 0) return `${u(minutes, "minute")} ${u(seconds, "second")}`;
   return u(seconds, "second");
 }

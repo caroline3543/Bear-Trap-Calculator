@@ -595,7 +595,8 @@ button[aria-pressed="true"] .th-dots i { box-shadow: 0 0 0 1.5px var(--selectedT
 .th-band.b-afternoon { background: var(--neutralChipBg); color: var(--cocoa); }
 .th-band.b-evening { background: var(--statusT9Bg); color: var(--statusT9Text); }
 .th-band.b-lateNight, .th-band.b-night { background: var(--tierTrackBg); color: var(--gold); }
-.th-srow { border-top: 1px solid var(--cardBorderT); }
+.th-srow { position: relative; border-top: 1px solid var(--cardBorderT); }
+.th-srow::before { content: ""; position: absolute; inset-inline-start: 121px; top: 0; bottom: 0; width: 1.5px; background: var(--cardBorderT); }
 .th-band + .th-srow { border-top: none; }
 .th-srow.now { background: var(--goldBg); }
 .th-srow-main { position: relative; display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 11px 16px; touch-action: pan-y; }
@@ -655,7 +656,7 @@ button[aria-pressed="true"] .th-dots i { box-shadow: 0 0 0 1.5px var(--selectedT
 .th-srow-time b { font-size: 19px; }
 .th-srow-tags button { pointer-events: auto; }
 .th-countbtn { min-height: 32px; display: inline-flex; align-items: center; gap: 5px; }
-.th-srow-actions { padding-inline-start: 112px; }
+.th-srow-actions { padding-inline-start: 140px; }
 @media (max-width: 400px) { .th-srow-actions { padding-inline-start: 16px; } }
 .th-min .th-acct { flex-shrink: 0; }
 @media (max-width: 420px) { .th-share-rows { grid-template-columns: minmax(0, 1fr); } }
@@ -715,7 +716,7 @@ button[aria-pressed="true"] .th-dots i { box-shadow: 0 0 0 1.5px var(--selectedT
 .th-sched .th-sched-head .th-sec-title { flex: 1; font-weight: 800; font-size: 17px; }
 .th-sched .th-sec-sub, .th-sched .th-week { margin-inline: 16px; }
 .th-sched .th-week { margin-bottom: 8px; }
-.th-srow-main { grid-template-columns: 86px minmax(0, 1fr); }
+.th-srow-main { grid-template-columns: 86px 18px minmax(0, 1fr); }
 .th-srow.hl { box-shadow: inset 3px 0 0 var(--goldStrong); }
 [dir="rtl"] .th-srow.hl { box-shadow: inset -3px 0 0 var(--goldStrong); }
 .th-srow-note.warn { color: var(--statusT9Text); font-weight: 800; }
@@ -1048,7 +1049,8 @@ html.th-diag-nograin [style*="paperGrain"] { display: none !important; }
 /* ================= Today: free time between items + personal tasks =================
    Gap and task blocks get a min-height set inline from gapVisualHeight()/taskVisualHeight()
    (plan.js) — a plain style property, computed once per render, not an animation. */
-.th-gap { list-style: none; padding: 4px 16px; display: flex; flex-direction: column; align-items: center; min-height: var(--gh, 44px); box-sizing: border-box; }
+.th-gap { position: relative; list-style: none; padding: 4px 16px; display: flex; flex-direction: column; align-items: center; min-height: var(--gh, 44px); box-sizing: border-box; }
+.th-gap::before { content: ""; position: absolute; inset-inline-start: 121px; top: 0; bottom: 0; border-inline-start: 1.5px dashed var(--cardBorderT); }
 .th-gap-rule { flex: 1; width: 0; min-height: 4px; border-left: 1.5px dashed var(--cardBorderT); }
 .th-gap-mid { display: flex; align-items: center; gap: 10px; padding: 8px 0; flex-wrap: wrap; justify-content: center; }
 .th-gap-free { font-size: 12.5px; font-weight: 800; color: var(--teal); white-space: nowrap; }
@@ -1395,6 +1397,14 @@ html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
 /* the To do tab: same widget, no card boundary needed when it's the whole page */
 .th-todos:not(.th-card) { padding: 4px 2px 24px; }
 
-.th-srow-editform { padding: 0 16px 14px 102px; }
-[dir="rtl"] .th-srow-editform { padding: 0 102px 14px 16px; }
+.th-srow-editform { padding-inline: 16px 16px; padding-inline-start: 140px; padding-block-end: 14px; }
 @media (max-width: 380px) { .th-srow-editform { padding-inline: 16px; } }
+
+/* "+ Add task" opens suggestions from the To-do list before a blank form */
+.th-gap-sheet { align-self: stretch; margin: 6px 0; padding: 12px 14px; border-radius: 14px; background: var(--inputBg); display: grid; gap: 8px; }
+.th-gap-fit { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 4px 0; background: none; border: none; text-align: start; cursor: pointer; color: inherit; }
+.th-todo-check-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--teal); flex-shrink: 0; }
+.th-gap-toolong { font-size: 12.5px; }
+
+.th-rail-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--cardBgT); border: 1.5px solid var(--teal); justify-self: center; position: relative; z-index: 1; }
+.th-rail-dot.now { border-color: var(--gold); background: var(--gold); }
