@@ -25,6 +25,7 @@ import { EventsWidget } from "./widgets/EventsWidget.jsx";
 import { TrainingWidget } from "./widgets/TrainingWidget.jsx";
 import { ResearchWidget } from "./widgets/ResearchWidget.jsx";
 import { ContributionWidget } from "./widgets/ContributionWidget.jsx";
+import { TodoWidget } from "./widgets/TodoWidget.jsx";
 import { HistoryWidget } from "./widgets/HistoryWidget.jsx";
 import { ShareCard } from "./widgets/ShareCard.jsx";
 import { AccountsPanel } from "./widgets/AccountsPanel.jsx";
@@ -89,6 +90,7 @@ function AccountGrid({ onAdd, compact }) {
 
 const TABS = [
   { id: "today", icon: "calendar" },
+  { id: "todos", icon: "checklist" },
   { id: "timers", icon: "plan" },
   { id: "events", icon: "foundry" },
   { id: "calc", icon: "trap" },
@@ -223,6 +225,7 @@ function SettingsPanel({ headerExtra, closeSettings, reopenSettings, hasCalc, st
 
 /* Each tab's content is memoised: switching tabs doesn't re-render the other tabs. */
 const TodayPanel = React.memo(function TodayPanel() { return <TodayScreen />; });
+const TodosPanel = React.memo(function TodosPanel() { return <Stack><TodoWidget standalone /></Stack>; });
 const TimersPanel = React.memo(function TimersPanel() {
   const { state } = useTimeHub();
   const tr = tracking(state);
@@ -253,6 +256,7 @@ const Panel = React.memo(function Panel({ on, children }) {
 const TODAY_EL = <TodayPanel />;
 const TIMERS_EL = <TimersPanel />;
 const EVENTS_EL = <EventsPanel />;
+const TODOS_EL = <TodosPanel />;
 
 function TimeHubBody({ showHeader, headerExtra, calculator }) {
   const { t, dir, compact } = useTimeHub();
@@ -277,7 +281,7 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
   if (!visited.has(active)) setVisited(new Set([...visited, active]));
   // After the first screen is up, quietly prepare the other tabs so their first open is instant too.
   useEffect(() => {
-    const all = ["today", "timers", "events", ...(calculator ? ["calc"] : [])];
+    const all = ["today", "todos", "timers", "events", ...(calculator ? ["calc"] : [])];
     const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1200));
     // in a transition, so a tap during this background work always wins
     const id = idle(() => startTransition(() => setVisited((v) => (all.every((x) => v.has(x)) ? v : new Set([...v, ...all])))));
@@ -315,9 +319,10 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
           {active === "today" && !settings && <StatStrip />}
         </Header>
       )}
-      {active !== "calc" && (settings ? <SettingsPanel headerExtra={headerExtra} hasCalc={!!calculator} closeSettings={() => flushSync(() => setSettings(false))} reopenSettings={() => setSettings(true)} startTour={() => setTour(0)} /> : <AccountGrid compact={active === "timers" || active === "today"} onAdd={() => setSettings(true)} />)}
+      {active !== "calc" && (settings ? <SettingsPanel headerExtra={headerExtra} hasCalc={!!calculator} closeSettings={() => flushSync(() => setSettings(false))} reopenSettings={() => setSettings(true)} startTour={() => setTour(0)} /> : <AccountGrid compact={active === "timers" || active === "today" || active === "todos"} onAdd={() => setSettings(true)} />)}
       <main className={settings && active !== "calc" ? "th-hidden" : ""}>
         {panel("today", TODAY_EL)}
+        {panel("todos", TODOS_EL)}
         {panel("timers", TIMERS_EL)}
         {panel("events", EVENTS_EL)}
         {calculator && panel("calc", <CalcPanel calculator={calculator} />)}

@@ -62,10 +62,12 @@ function TimeOptionsEditor({ group, onClose }) {
 }
 
 /* ---------- event form ---------- */
-function EventForm({ initial, occKey, onDone, templateId, picker }) {
+export function EventForm({ initial, occKey, onDone, templateId, picker }) {
   const { t, lang, tz, state, dispatch, update, newId, templates, defaultAccountId } = useTimeHub();
   const now = useMinute();
-  const base = initial || (templateId ? eventFromTemplate(templateId, { id: newId(), now, accountId: TEMPLATES[templateId].legion ? defaultAccountId : null }) : null);
+  const base = initial || (templateId
+    ? eventFromTemplate(templateId, { id: newId(), now, accountId: TEMPLATES[templateId].legion ? defaultAccountId : null })
+    : { id: newId(), createdAt: now, archived: false, overrides: {}, category: "", reminderHidden: false }); // a brand-new custom (non-template) event still needs its own id
   const tpl = base?.templateId ? templates[base.templateId] : null;
   const recurring = !!initial && isRecurring(initial) && occKey != null;
   const [scope, setScope] = useState(recurring ? "one" : "all");
@@ -238,8 +240,8 @@ function EventCard({ ev, occ, reminders, onEdit }) {
   return (
     <article className={`th-ev ${live ? "live" : ""} ${occ.status === "disabled" ? "muted" : ""} ${acctClass(acct)}`}>
       <div className="th-ev-top">
-        <div className="th-ev-main">
-          <div className="th-ev-name">{name}</div>
+        <button type="button" className="th-ev-main th-ev-hit" aria-expanded={open} aria-label={open ? t("lessDetails") : t("moreDetails")} onClick={() => setOpen(!open)}>
+          <div className="th-ev-name">{name}<span className="th-ev-chevron" aria-hidden="true">{open ? "▾" : "▸"}</span></div>
           <div className="th-ev-when">
             {occ.start != null && occ.status !== "unset" ? (
               <><Ltr>{formatTime(occ.start, tz, lang)}</Ltr> {formatDate(occ.start, tz, lang)} · <Ltr>{formatTime(occ.start, "UTC", lang)}</Ltr> UTC</>
@@ -250,13 +252,12 @@ function EventCard({ ev, occ, reminders, onEdit }) {
             {ev.legion && <Pill tone="gold">{t("legionN", { n: ev.legion })}</Pill>}
             {ev.accountId ? <AccountTag accountId={ev.accountId} /> : null}
           </div>
-        </div>
+        </button>
         {occ.status === "upcoming" && <Countdown to={occ.start} label={t("startsIn")} />}
         {occ.status === "in_progress" && <Countdown to={occ.end} label={t("endsIn")} />}
         {occ.status === "unset" && <Btn small tone="gold" onClick={onEdit}>{t("setTime")}</Btn>}
       </div>
       {reminders.map((r) => <ReminderRow key={r.key} r={r} showName={false} />)}
-      <button type="button" className="th-link th-ev-more" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? t("lessDetails") : t("moreDetails")}</button>
       {open && (
         <div className="th-ev-details">
           <div className="th-item-sub">

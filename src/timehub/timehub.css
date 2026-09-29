@@ -399,10 +399,11 @@ a.th-btn { text-decoration: none; }
 .th-ev.muted { opacity: .6; }
 .th-ev-top { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
 .th-ev-main { min-width: 0; }
-.th-ev-name { font-weight: 800; font-size: 15px; overflow-wrap: anywhere; }
+.th-ev-hit { display: block; flex: 1 1 auto; min-width: 0; min-height: 44px; background: none; border: none; padding: 0; margin: 0; text-align: start; cursor: pointer; color: inherit; font: inherit; }
+.th-ev-name { font-weight: 800; font-size: 15px; overflow-wrap: anywhere; display: flex; align-items: baseline; gap: 6px; }
+.th-ev-chevron { color: var(--sub); font-size: 12px; flex-shrink: 0; }
 .th-ev-when { font-size: 12.5px; color: var(--sub); font-weight: 700; margin-top: 2px; }
 .th-ev .th-tags:empty { display: none; }
-.th-ev-more { font-size: 12.5px; margin-top: 6px; }
 .th-ev-details { margin-top: 6px; }
 .th-ev .th-countdown-value, .th-ev .th-count-value { font-size: 18px; }
 .th-repeat-summary { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
@@ -446,7 +447,7 @@ a.th-btn { text-decoration: none; }
 /* compact view: reflow, not just shrink */
 .th-compact .th-next { padding: 14px 16px; }
 .th-compact .th-next-count { font-size: 34px; }
-.th-compact .th-note, .th-compact .th-hint, .th-compact .th-ev-more, .th-compact .th-trow-bar, .th-compact .th-agenda-meta { display: none; }
+.th-compact .th-note, .th-compact .th-hint, .th-compact .th-ev-chevron, .th-compact .th-trow-bar, .th-compact .th-agenda-meta { display: none; }
 .th-compact .th-ev { padding: 8px 10px; margin-top: 6px; }
 .th-compact .th-ev-top { align-items: center; }
 .th-compact .th-ev .th-tags { margin-top: 3px; }
@@ -527,7 +528,7 @@ a.th-btn { text-decoration: none; }
 .th-app > .th-acct-chips::-webkit-scrollbar { display: none; }
 
 /* tab bar */
-.th-tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px)); background: var(--cardBgT); border-top: 1px solid var(--cardBorderT);  }
+.th-tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px)); background: var(--cardBgT); border-top: 1px solid var(--cardBorderT);  }
 .th-tabbar button { display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 52px; background: none; border: none; color: var(--sub); font: 700 11.5px 'Nunito Sans', sans-serif; cursor: pointer; }
 .th-tabbar .pill { display: flex; align-items: center; justify-content: center; width: 48px; height: 28px; border-radius: 999px; transition: background-color .15s ease; }
 .th-tabbar button.on { color: var(--gold); font-weight: 800; }
@@ -1355,3 +1356,45 @@ html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
 .th-whatsnext-body .th-acct { justify-self: start; }
 .th-whatsnext-time { flex-shrink: 0; text-align: end; display: grid; gap: 0; font-size: 13px; font-weight: 800; color: var(--gold); white-space: nowrap; margin-top: 3px; }
 .th-whatsnext-time small { font-size: 11px; font-weight: 600; color: var(--sub); }
+
+/* ===== To-dos: Game/Personal/Work lists + the ADHD Priority view (same shared task model) ===== */
+.th-todos-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+.th-todos-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 10px 0 4px; }
+.th-todos-filter { display: flex; gap: 6px; flex-wrap: wrap; }
+.th-chip-btn.small { min-height: 36px; padding: 0 12px; font-size: 12.5px; }
+.th-todo-lists { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.th-todo-cat { border-top: 1px solid var(--cardBorderT); }
+.th-todo-cat:first-child { border-top: none; }
+.th-todo-cat-head { width: 100%; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 10px 2px; background: none; border: none; text-align: start; cursor: pointer; color: var(--ink); }
+.th-todo-cat-chevron { width: 14px; flex-shrink: 0; color: var(--sub); font-size: 12px; }
+.th-todo-cat-name { flex: 1; font-weight: 800; font-size: 15px; }
+.th-todo-cat-body { padding: 0 2px 10px 22px; display: flex; flex-direction: column; gap: 6px; }
+.th-todo-row { list-style: none; }
+.th-todo-line { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.th-todo-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.th-todo-title { font-weight: 700; font-size: 14.5px; }
+.th-todo-meta { font-size: 12px; font-weight: 600; color: var(--sub); }
+.th-todo-row.done .th-todo-title { text-decoration: line-through; opacity: .6; }
+.th-todo-row.done .th-todo-meta { opacity: .6; }
+.th-todo-star { flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; background: none; border: none; font-size: 18px; color: var(--cardBorderT); cursor: pointer; }
+.th-todo-star.on { color: var(--goldStrong); }
+.th-todo-add { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 4px 0; }
+.th-todo-add .th-input { flex: 1; min-width: 140px; }
+.th-todo-add-more { flex-basis: 100%; }
+.th-todo-schedule { display: grid; gap: 6px; padding: 8px 0 4px 44px; }
+.th-todo-gap-opt { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-height: 44px; padding: 6px 12px; border-radius: 12px; border: 1px solid var(--cardBorder); background: var(--inputBg); color: var(--ink); cursor: pointer; }
+.th-todo-gap-opt span { font-size: 12px; font-weight: 600; color: var(--sub); }
+.th-prio-next .th-todo-cat-name { color: var(--th-warm, var(--amber)); }
+.th-prio-next { border-radius: 14px; background: var(--th-warm-surface, var(--amberBg)); border-top: none; padding: 0 4px; margin-bottom: 4px; }
+
+/* Research → Minister booking reminder (quiet, one line, never asserts a specific position) */
+.th-research-note { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 4px 12px 8px; font-size: 12px; font-weight: 600; color: var(--sub); }
+.th-research-note.soon { color: var(--gold); }
+.th-research-note .warn { color: var(--statusT9Text); font-weight: 700; }
+
+/* the To do tab: same widget, no card boundary needed when it's the whole page */
+.th-todos:not(.th-card) { padding: 4px 2px 24px; }
+
+.th-srow-editform { padding: 0 16px 14px 102px; }
+[dir="rtl"] .th-srow-editform { padding: 0 102px 14px 16px; }
+@media (max-width: 380px) { .th-srow-editform { padding-inline: 16px; } }

@@ -851,16 +851,23 @@ test("an account chip can't appear twice on one row", () => {
   assert.equal(new Set(chipsShown).size, chipsShown.length);
 });
 
-test("tasks survive save/load; junk and old tasks are dropped", async () => {
+test("tasks survive save/load; junk and old tasks are dropped; category/duration/account/importance default sensibly", async () => {
   const { sanitizeState } = await import("../lib/storage.js");
   const s = emptyState(T0, mkId);
   s.tasks = [
     { id: "t1", title: " Make dinner ", start: T0, end: T0 + 45 * MINUTE, done: true },
     { id: "t2", title: "", start: T0, end: T0 + MINUTE },
     { id: "t3", title: "Old", start: T0 - 9 * DAY, end: T0 - 9 * DAY + HOUR },
+    { id: "t4", title: "Wash sheets" }, // no time at all — a plain to-do
+    { id: "t5", title: "Bad cat", category: "space-pirate" },
+    { id: "t6", title: "Restart camps", category: "game", accountId: "A", important: true, durationMs: 5 * MINUTE },
   ];
   const r = sanitizeState(JSON.parse(JSON.stringify(s)), T0, mkId);
-  assert.deepEqual(r.tasks, [{ id: "t1", title: "Make dinner", start: T0, end: T0 + 45 * MINUTE, done: true }]);
+  assert.deepEqual(r.tasks.map((t) => t.id), ["t1", "t4", "t5", "t6"]);
+  assert.deepEqual(r.tasks[0], { id: "t1", title: "Make dinner", category: "personal", durationMs: 45 * MINUTE, start: T0, end: T0 + 45 * MINUTE, accountId: null, important: null, done: true, createdAt: T0 });
+  assert.deepEqual(r.tasks[1], { id: "t4", title: "Wash sheets", category: "personal", durationMs: null, start: null, end: null, accountId: null, important: null, done: false, createdAt: T0 });
+  assert.equal(r.tasks[2].category, "personal"); // an unrecognised category falls back, doesn't crash
+  assert.deepEqual(r.tasks[3], { id: "t6", title: "Restart camps", category: "game", durationMs: 5 * MINUTE, start: null, end: null, accountId: "A", important: true, done: false, createdAt: T0 });
 });
 
 /* ---------- research: fixed display order, not by finish time ---------- */
@@ -1283,4 +1290,141 @@ test("nextUp never surfaces a contribution group as the next thing to do", () =>
   const bearTrap = evItem("bt", CH(11), CH(11, 30));
   const r = nextUp([group, bearTrap], CH(8));
   assert.equal(r.primary.item.id, "bt");
+});
+
+/* ---------- to-dos: Game/Personal/Work lists + ADHD priority buckets, one shared task model ---------- */
+import { urgencyOf, priorityBucket, groupByPriority, bestFits, TASK_CATEGORIES, taskMoment } from "../lib/tasks.js";
+
+const TD = Date.UTC(2026, 8, 24, 12); // Thu 24 Sep, noon UTC
+const mkTask = (over = {}) => ({ id: "x", title: "Task", category: "personal", durationMs: null, start: null, end: null, accountId: null, important: null, done: false, createdAt: TD, ...over });
+
+test("urgencyOf: stable steps from a scheduled time or a due time, never guessed from nothing", () => {
+  assert.equal(urgencyOf(mkTask(), TD), "none"); // no time at all
+  assert.equal(urgencyOf(mkTask({ start: TD + 10 * MINUTE }), TD), "now");
+  assert.equal(urgencyOf(mkTask({ start: TD + 15 * MINUTE }), TD), "now"); // boundary
+  assert.equal(urgencyOf(mkTask({ start: TD + 16 * MINUTE }), TD), "soon");
+  assert.equal(urgencyOf(mkTask({ start: TD + 3 * HOUR }), TD), "soon"); // boundary
+  assert.equal(urgencyOf(mkTask({ start: TD + 3 * HOUR + MINUTE }), TD, TD + DAY), "today");
+  assert.equal(urgencyOf(mkTask({ dueAt: TD + HOUR }), TD), "soon"); // a due time works the same as a scheduled slot
+  assert.equal(urgencyOf(mkTask({ start: TD - HOUR }), TD), "now"); // already past its slot → do it now
+});
+
+test("priorityBucket: urgency comes from time the app knows; importance is ONLY ever what the person set", () => {
+  const soon = { start: TD + HOUR };
+  const later = { start: TD + DAY };
+  assert.equal(priorityBucket(mkTask({ ...soon, important: true }), TD), "next");
+  assert.equal(priorityBucket(mkTask({ ...later, important: true }), TD), "plan");
+  assert.equal(priorityBucket(mkTask({ ...soon, important: null }), TD), "quick"); // unrated + urgent — NOT promoted to "next"
+  assert.equal(priorityBucket(mkTask({ ...soon, important: false }), TD), "quick");
+  assert.equal(priorityBucket(mkTask({ ...later, important: null }), TD), "later");
+  assert.equal(priorityBucket(mkTask({ important: null }), TD), "later"); // no time, unrated
+});
+
+test("priorityBucket: a game timer never automatically outranks an unrated personal task — importance is what decides", () => {
+  const gameUrgent = mkTask({ category: "game", start: TD + 5 * MINUTE, important: null }); // Bear Trap prep, unrated
+  const personalImportant = mkTask({ category: "personal", important: true }); // "Take medication", no timer at all
+  assert.equal(priorityBucket(gameUrgent, TD), "quick"); // urgent, but the app never assumed it matters more
+  assert.equal(priorityBucket(personalImportant, TD), "plan"); // the person said this matters — it outranks the timer
+});
+
+test("groupByPriority: buckets open tasks only, each ordered by moment, unscheduled last within a bucket", () => {
+  const tasks = [
+    mkTask({ id: "a", important: true, start: TD + 5 * HOUR }),
+    mkTask({ id: "b", important: true }), // no time — sorts after "a" within plan
+    mkTask({ id: "c", done: true, important: true, start: TD + MINUTE }), // done — excluded entirely
+    mkTask({ id: "d", start: TD + 5 * MINUTE }), // unrated + urgent → quick
+  ];
+  const g = groupByPriority(tasks, TD, TD + DAY);
+  assert.deepEqual(g.plan.map((t) => t.id), ["a", "b"]);
+  assert.deepEqual(g.quick.map((t) => t.id), ["d"]);
+  assert.deepEqual(g.next, []);
+  assert.equal(g.later.length, 0);
+});
+
+test("bestFits: only tasks with a stated duration that actually fits, shortest first, never a pressure to fill the gap", () => {
+  const tasks = [mkTask({ id: "shower", durationMs: 20 * MINUTE }), mkTask({ id: "clean", durationMs: 2 * HOUR }), mkTask({ id: "vague" }), mkTask({ id: "done", durationMs: 5 * MINUTE, done: true })];
+  const fits = bestFits(tasks, HOUR);
+  assert.deepEqual(fits.map((t) => t.id), ["shower"]);
+  assert.deepEqual(TASK_CATEGORIES, ["game", "personal", "work"]);
+  assert.equal(taskMoment(mkTask({ start: TD, dueAt: TD + HOUR })), TD); // scheduled wins over a due time
+});
+
+/* ---------- training camps: a conservative grouping window, same account only ---------- */
+import { groupTraining, TRAINING_GROUP_WINDOW_MS } from "../lib/agenda.js";
+
+const trItem = (id, acc, start, category) => ({ id, kind: "training", start, end: null, accountId: acc, ref: { category }, status: "upcoming" });
+
+test("groupTraining: exact same moment merges into one entry, as before", () => {
+  const out = groupTraining([trItem("i", "A", CH(9, 50), "infantry_camp"), trItem("l", "A", CH(9, 50), "lancer_camp"), trItem("m", "A", CH(9, 50), "marksman_camp")]);
+  assert.equal(out.length, 1);
+  assert.equal(out[0].group.length, 3);
+  assert.equal(out[0].groupEnd, CH(9, 50)); // same as start — the UI only shows "all ready by X" when it differs
+});
+
+test("groupTraining: a conservative few-minutes window merges nearby finishes for the SAME account", () => {
+  const out = groupTraining([trItem("i", "A", CH(9, 50), "infantry_camp"), trItem("l", "A", CH(9, 52), "lancer_camp"), trItem("m", "A", CH(9, 55), "marksman_camp")]);
+  assert.equal(out.length, 1);
+  assert.equal(out[0].start, CH(9, 50)); // positioned at the first
+  assert.equal(out[0].groupEnd, CH(9, 55)); // "all ready by 9:55"
+  assert.equal(TRAINING_GROUP_WINDOW_MS, 5 * MINUTE);
+});
+
+test("groupTraining: a camp outside the window stays its own entry; different accounts never merge", () => {
+  const out = groupTraining([
+    trItem("i", "A", CH(9, 50), "infantry_camp"), trItem("l", "A", CH(9, 52), "lancer_camp"),
+    trItem("m", "A", CH(11, 15), "marksman_camp"), // 85 minutes later — a genuinely separate schedule
+    trItem("x", "B", CH(9, 50), "infantry_camp"), // same moment, different account
+  ]);
+  assert.equal(out.length, 3);
+  assert.equal(out[0].group.length, 2);
+  assert.equal(out[1].accountId, "A"); assert.equal(out[1].group, undefined);
+  assert.equal(out[2].accountId, "B"); assert.equal(out[2].group, undefined);
+});
+
+test("groupTraining: the window is measured from the FIRST item, not a chain of small steps", () => {
+  // three camps each 4 minutes after the previous — the last is 8 minutes after the first,
+  // outside the conservative window, so it must NOT be folded into the same group as a drifting chain
+  const out = groupTraining([trItem("i", "A", CH(9, 0), "infantry_camp"), trItem("l", "A", CH(9, 4), "lancer_camp"), trItem("m", "A", CH(9, 8), "marksman_camp")]);
+  assert.equal(out.length, 2);
+  assert.deepEqual(out[0].group.map((g) => g.category), ["infantry_camp", "lancer_camp"]);
+  assert.equal(out[1].ref.category, "marksman_camp");
+});
+
+/* ---------- research: recommended minister slot + booked-state ---------- */
+import { researchSlotFor, researchReminderTier, researchReminder, RESEARCH_SLOT_TIGHT_MS } from "../lib/research.js";
+
+const RD = Date.UTC(2026, 8, 22); // a Tuesday, so the acceptance test's "next day" lands cleanly
+const RH = (h, m = 0) => RD + h * HOUR + m * MINUTE;
+
+test("researchSlotFor: the 30-minute slot containing the finish, and a disclosed tight-margin flag", () => {
+  const mid = researchSlotFor(RH(7, 42));
+  assert.deepEqual([mid.start, mid.end, mid.tight], [RH(7, 30), RH(8), false]);
+  const tight = researchSlotFor(RH(7, 59));
+  assert.deepEqual([tight.start, tight.tight], [RH(7, 30), true]);
+  assert.equal(RESEARCH_SLOT_TIGHT_MS, 3 * MINUTE);
+});
+
+test("researchReminderTier: stable steps — none beyond 24h, 'day' from 24h, 'soon' from 3h, none once finished", () => {
+  assert.equal(researchReminderTier(RH(30), RH(0)), null); // 30h out
+  assert.equal(researchReminderTier(RH(24), RH(0)), "day"); // exactly 24h out
+  assert.equal(researchReminderTier(RH(3), RH(0)), "soon"); // exactly 3h out
+  assert.equal(researchReminderTier(RH(0, 1), RH(0)), "soon");
+  assert.equal(researchReminderTier(RH(0), RH(1)), null); // already finished
+});
+
+test("researchReminder: the acceptance test — Tue 07:42 UTC finish, reminder at Mon 07:42, slot + booked state", () => {
+  const finishAt = RD + 24 * HOUR + 7 * HOUR + 42 * MINUTE; // Wed 07:42 UTC (RD is Tue 00:00)
+  const t = { endAt: finishAt };
+  const nowAtReminder = finishAt - 24 * HOUR; // exactly 24h before
+  const r = researchReminder(t, [], nowAtReminder);
+  assert.equal(r.tier, "day");
+  assert.deepEqual([r.slot.start, r.slot.end], [finishAt - 12 * MINUTE, finishAt + 18 * MINUTE]);
+  assert.equal(r.booked, false);
+  // once something is booked covering that slot, it flips
+  const booked = researchReminder(t, [{ id: "b1", position: "minister_defense", startAt: r.slot.start }], nowAtReminder);
+  assert.equal(booked.booked, true);
+  // far in the future (outside the app's bookable window) → no reminder at all, not a false promise
+  assert.equal(researchReminder({ endAt: finishAt + 20 * 24 * HOUR }, [], nowAtReminder), null);
+  // already finished → no reminder
+  assert.equal(researchReminder(t, [], finishAt + MINUTE), null);
 });

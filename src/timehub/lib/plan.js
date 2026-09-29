@@ -144,9 +144,9 @@ export function resizeTask(task, durationMs) {
   return { ...task, end: task.start + durationMs };
 }
 
-/** Tasks worth keeping (last 7 days and later). */
+/** Tasks worth keeping (last 7 days and later; unscheduled tasks are judged by when they were made). */
 export function pruneTasks(tasks, now) {
-  return (tasks || []).filter((t) => t.end > now - TASK_KEEP_MS);
+  return (tasks || []).filter((t) => (t.end ?? t.createdAt ?? now) > now - TASK_KEEP_MS);
 }
 
 /**
@@ -161,6 +161,12 @@ export function overdueTasks(tasks, now) {
 /** The first free gap (already only from `now` onward) that fits `durationMs`, or null. */
 export function findNextGap(timeline, durationMs) {
   return timeline.find((e) => e.type === "gap" && e.ms >= durationMs) || null;
+}
+
+/** Up to `limit` candidate free gaps that fit `durationMs`, earliest first — lets the person
+ *  choose where a to-do goes rather than only ever offering the very next one. */
+export function findGaps(timeline, durationMs, limit = 3) {
+  return timeline.filter((e) => e.type === "gap" && e.ms >= durationMs).slice(0, limit);
 }
 
 /**

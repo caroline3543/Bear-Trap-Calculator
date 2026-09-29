@@ -41,6 +41,7 @@ function defaultSettings() {
     displayTz: null, compact: false, collapsed: {}, showArchived: false,
     layout: sanitizeLayout([]), accountFilter: ALL, calendarAlarmMin: 10, setupDismissed: false,
     knownTemplates: Object.keys(TEMPLATES), timeOptionsRev: TIME_OPTIONS_REV, tab: "today", haptics: true, showSpeed: false, tour: null, eduPri: "checkins", eduFinish: null, eduBufferMin: 5, eduDismiss: {},
+    todoView: "list", todoFilter: "all", todoOpen: { game: true, personal: true, work: true }, prioOpen: { next: true, plan: true, quick: true, later: true },
     track: { reset: true, store: true, trek: true, stamina: true, contrib: true, intel: true }, sleep: { ...DEFAULT_SLEEP },
     champ: { leader: null, anchor: null },
   };
@@ -273,7 +274,7 @@ export function sanitizeState(raw, now = Date.now(), makeId = newId) {
       accountFilter: s.accountFilter === ALL || accountIds.includes(s.accountFilter) ? s.accountFilter : ALL,
       calendarAlarmMin: isNum(s.calendarAlarmMin) && s.calendarAlarmMin >= 0 && s.calendarAlarmMin <= 1440 ? s.calendarAlarmMin : 10,
       setupDismissed: s.setupDismissed === true,
-      tab: ["today", "timers", "events", "calc"].includes(s.tab) ? s.tab : "today",
+      tab: ["today", "timers", "events", "todos", "calc"].includes(s.tab) ? s.tab : "today",
       haptics: s.haptics !== false,
       showSpeed: s.showSpeed === true,
       tour: s.tour === "done" || s.tour === "skipped" ? s.tour : null,
@@ -284,6 +285,10 @@ export function sanitizeState(raw, now = Date.now(), makeId = newId) {
       track: Object.fromEntries(["reset", "store", "trek", "stamina", "contrib", "intel"].map((k) => [k, s.track?.[k] !== false])),
       champ: { leader: s.champ?.leader === true ? true : s.champ?.leader === false ? false : null, anchor: isThursdayStart(s.champ?.anchor) ? s.champ.anchor : null },
       sleep: ["start", "end", "target"].every((k) => hhmmToMinutes(s.sleep?.[k]) != null) ? { start: s.sleep.start, end: s.sleep.end, target: s.sleep.target } : { ...DEFAULT_SLEEP },
+      todoView: s.todoView === "priority" ? "priority" : "list",
+      todoFilter: ["all", "game", "personal", "work"].includes(s.todoFilter) ? s.todoFilter : "all",
+      todoOpen: Object.fromEntries(["game", "personal", "work"].map((k) => [k, s.todoOpen?.[k] !== false])),
+      prioOpen: Object.fromEntries(["next", "plan", "quick", "later"].map((k) => [k, s.prioOpen?.[k] !== false])),
     },
     accounts, accountData,
     events,
@@ -294,14 +299,31 @@ export function sanitizeState(raw, now = Date.now(), makeId = newId) {
   };
 }
 
-/** Personal tasks: { id, title, start, end, done } — kept for 7 days. */
+/** Personal/Game/Work tasks: { id, title, category, durationMs|null, start|null, end|null,
+ *  accountId|null, important|null, done, createdAt }. A task with no `start` is unscheduled — it
+ *  lives in the To-do lists only, never on the timeline. Kept for 7 days past its last-relevant
+ *  moment (scheduled end, or creation time if it was never scheduled). */
 function cleanTasks(list, now) {
   if (!Array.isArray(list)) return [];
+  const cats = new Set(["game", "personal", "work"]);
   return list
-    .filter((t) => t && typeof t.id === "string" && typeof t.title === "string" && t.title.trim() && isNum(t.start) && isNum(t.end) && t.end > t.start && t.end - t.start <= 24 * 3600000)
-    .filter((t) => t.end > now - 7 * 24 * 3600000)
+    .filter((t) => t && typeof t.id === "string" && typeof t.title === "string" && t.title.trim())
+    .filter((t) => {
+      // scheduled tasks must have a sane, bounded range; unscheduled ones just need a title
+      if (t.start == null && t.end == null) return true;
+      return isNum(t.start) && isNum(t.end) && t.end > t.start && t.end - t.start <= 24 * 3600000;
+    })
+    .filter((t) => (t.end ?? t.createdAt ?? now) > now - 7 * 24 * 3600000)
     .slice(0, 300)
-    .map((t) => ({ id: t.id, title: t.title.trim().slice(0, 120), start: t.start, end: t.end, done: t.done === true }));
+    .map((t) => ({
+      id: t.id, title: t.title.trim().slice(0, 120),
+      category: cats.has(t.category) ? t.category : "personal",
+      durationMs: isNum(t.durationMs) && t.durationMs > 0 && t.durationMs <= 24 * 3600000 ? Math.round(t.durationMs) : (isNum(t.start) && isNum(t.end) ? t.end - t.start : null),
+      start: isNum(t.start) ? t.start : null, end: isNum(t.end) ? t.end : null,
+      accountId: typeof t.accountId === "string" ? t.accountId : null,
+      important: t.important === true ? true : t.important === false ? false : null,
+      done: t.done === true, createdAt: isNum(t.createdAt) ? t.createdAt : now,
+    }));
 }
 
 export function loadState(storage = globalThis.localStorage, now = Date.now()) {

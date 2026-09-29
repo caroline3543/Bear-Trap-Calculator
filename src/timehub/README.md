@@ -480,3 +480,113 @@ to feel clinical and dense. This round reverts the **visual** layer only — all
 - Checked the fixed bottom-tab-bar overlap: the existing `.th-app` bottom padding
   (`calc(92px + env(safe-area-inset-bottom))`) already keeps the last schedule row and the
   "add day to calendar" button clear of the tab bar; no change needed there.
+
+## quietTitle fix + Game/Personal/Work to-dos + ADHD Priority view (Sep 2026)
+- Fixed a real bug: `t("quietTitle")` had no translation, so the empty-day card's heading
+  literally rendered the word "quietTitle". Added the real string in all 9 languages, then swept
+  every `t("...")` call in the codebase against the merged string set — nothing else was exposed.
+- **One shared task model, extended, not replaced** (`lib/storage.js → cleanTasks`,
+  `lib/tasks.js` new): a task now optionally carries `category` ("game"/"personal"/"work"),
+  `durationMs`, `accountId` (game only), and `important` (`true`/`false`/`null` — never inferred).
+  A task with no `start` is a plain to-do; `lib/plan.js`'s timeline only ever receives the
+  scheduled subset, so unscheduled to-dos never enter the visual timeline or its free-time maths.
+  Completing, editing, or scheduling a task from any view is the same object everywhere.
+- **`lib/tasks.js`**: `urgencyOf` (stable steps — now/soon/today/none — from a scheduled time or a
+  user due time, never guessed), `priorityBucket` (the four ADHD groups), `groupByPriority`,
+  `bestFits`. The important guarantee, directly tested: **importance is only ever what the person
+  set** — an urgent, unrated game timer lands in "Quick", not "Do next"; a personal task marked
+  important with no timer at all outranks it. Game deadlines can't systematically dominate.
+- **`widgets/TodoWidget.jsx`** (new): sits on Today between Needs You and the full timeline.
+  - **List view**: collapsible Game/Personal/Work sections (expand state remembered), each with a
+    quick-add (title only required; duration optional, plain minutes like the existing gap
+    add-task flow — not the multi-day duration picker, which would have parsed "30" as 30 days),
+    one-tap complete with strikethrough + muted styling, and a small "N of M done" line.
+  - **Priority view**: Do next / Plan / Quick / Later, plain-language, each with a one-line hint;
+    Do next gets the strongest (warm) treatment. A category filter (All/Game/Personal/Work) works
+    in this view too. A star toggles "important" on any open task.
+  - **Connected to the timeline**: an unscheduled task with a duration shows "Add to timeline",
+    which offers up to 3 real open gaps today to choose from (`lib/plan.js → findGaps`) — picking
+    one schedules that same task object, nothing is duplicated.
+- Descoped for this round (flagged, not silently dropped): the literal drag-and-drop 2×2 matrix,
+  effort levels, waiting/someday statuses, a "What should I do now?" contextual suggestion, an
+  auto-computed Top-3 focus list, "why this?" explainability, and auto-generating tasks from game
+  events. The two-view system itself, and the importance/urgency split, are real and tested.
+
+## Training camp grouping + research/minister reminders (Sep 2026)
+- `lib/agenda.js`: `groupTraining` (moved here from the widget, now exported/tested) widened from
+  "exact same minute" to a conservative rolling window (`TRAINING_GROUP_WINDOW_MS`, 5 minutes,
+  anchored to the first camp in the run) — camps finishing a few minutes apart for the SAME
+  account merge into one "All camps finish" / "N camps finish" entry with an "All ready by {time}"
+  note when the times actually differ. Different accounts are never merged; a camp outside the
+  window stays its own entry. Same-moment groups (the common case) are unchanged.
+- `lib/research.js` (new): a research timer nearing completion gets a stable-tiered reminder
+  ("day" from 24h out, "soon" from 3h out) recommending the 30-minute booking slot its finish
+  falls in (`researchSlotFor`, reusing the app's existing slot grid), flags when the finish cuts
+  it close to the slot's edge, and reports whether ANYTHING is already booked there
+  (`bookingCovering`) — it deliberately never asserts *which* minister position affects research,
+  since that isn't reliably known; "booked" just means something already covers that moment.
+  Shown as a quiet line under each research timer in the Timers tab, with a "Book this slot" link
+  that opens the booking form pre-filled with that time (position left for the player to choose).
+- 8 new tests cover the exact acceptance scenarios: nearby-but-not-identical camp finishes merging
+  (and a camp outside the window *not* merging), the doc's Tue-07:42-UTC research example end to
+  end, and the tight-margin flag.
+
+## Not implemented this round: Journey of Light
+Parts 1–2 of this update are complete and verified above. **Part 3 (a full Journey of Light
+expedition planner) was not built.** It's a substantial standalone feature — settings, per-account
+state, sleep-aware check-in planning, a Pocket Watch optimiser, multi-account consolidation, a
+Timers dashboard, and Today integration — and several of the numbers it depends on (event length,
+gem costs per slot, exact Pocket Watch mechanics) aren't things I can verify are accurate, the same
+concern that came up earlier with the Ministry of Education mechanics. Rather than build a planner
+on unconfirmed numbers, I'm flagging this as outstanding. Happy to take it on next with those
+specifics confirmed, or built more conservatively (letting the player enter their own known values
+throughout, similar to how the Education planner asks for the player's own measured full-batch
+time instead of assuming a formula).
+
+## New "To do" tab, "Today" → "Timeline", editable/deletable events (Sep 2026)
+- **New tab**: `TimeHub.jsx` gained a 5th tab, "To do" (`TABS`, a new `checklist` icon in
+  `components/ui.jsx`), and the To-do widget (`widgets/TodoWidget.jsx`) moved off the Today page
+  entirely into its own standalone panel (`standalone` prop drops the widget's own card border,
+  since the panel already provides the page chrome). `lib/storage.js`'s tab whitelist and the
+  background tab-prewarm list both include `"todos"`.
+- **"Today" renamed to "Timeline"**: `tab_today` now reads "Timeline" (and its equivalents) in all
+  9 languages — this one string drives both the tab-bar caption and the page's header title, so
+  both changed together. The internal tab id stays `"today"` to avoid touching every reference to
+  it; only the user-facing label changed. A new `tab_todos` ("To do") string was added alongside.
+- **Fixed a real, previously-undiscovered crash**: adding a brand-new *custom* (non-template) event
+  for the first time crashed the app (`Cannot read properties of null (reading 'occKey')`) — found
+  while testing this round's changes, but present in the app before them too. Root cause:
+  `EventForm`'s draft object never got an `id` for the custom-event path (`base` was `null` there,
+  unlike the template path which always calls `eventFromTemplate` with a fresh id), so the newly
+  saved event ended up with `id: undefined` — which then spuriously matched `editing?.id` once
+  `editing` was reset to `null`, taking a code path that read `.occKey` off `null`. Fixed by giving
+  a new custom event the same minimal fields (`id`, `createdAt`, `archived`, `overrides`,
+  `category`) the template path already provides.
+- **Events are now directly editable and deletable from the Timeline row**: `Row` (in
+  `widgets/TodayScreen.jsx`) gained `Edit`/`Delete` actions for `kind === "event"` items. `Edit`
+  reuses the exact same form the Events tab uses (`EventForm`, now exported from
+  `EventsWidget.jsx`) inline under the row — including its plain typed date (`type="date"`) and
+  time (`type="time"`) fields with a live local-time preview, no picker. `Delete` mirrors the
+  Events tab's own delete (confirms, removes the event and any of its reminders).
+- **Fixed a tab-bar layout bug this round's own 5th tab exposed**: `.th-tabbar`'s column count was
+  hardcoded to `repeat(4, ...)`, so a 5th tab wrapped onto a second row and threw off the sliding
+  selected-tab highlight (which already correctly used the `--n`/`--i` variables). Changed to
+  `repeat(var(--n, 4), ...)` to match.
+
+## Events expand on tap (Sep 2026)
+- `widgets/EventsWidget.jsx → EventCard`: the whole header (name, date/time, status/account tags)
+  is now a single tappable button (`.th-ev-hit`) that expands the card to its full detail panel
+  (recurrence, notes, Edit/Skip/Duplicate/Disable/Restore/Delete, calendar buttons) — replacing the
+  small separate "More details" text link that used to be the only way in. A chevron (▸/▾) next to
+  the event name shows the current state. The countdown and the "Set time" button for an unset
+  event sit outside the tappable area, unaffected. Same behaviour, keyboard-accessible
+  (`aria-expanded`, a real `<button>`), in both LTR and RTL.
+
+## To do moved to the second tab (Sep 2026)
+- `TimeHub.jsx`: reordered `TABS` (and the matching panel/prewarm order) to
+  Timeline · To do · Timers · Events · BT Calculator. No id, icon, or panel content changed — only
+  position. Confirmed in the browser, in Arabic RTL (mirrors correctly, reading right to left as
+  Timeline · To do · Timers · Events · BT Calculator), and in dark mode.
+- Fixed two test-harness scripts (`perf/soak.mjs`) that picked a tab by its numeric position rather
+  than name, which broke once the order changed — now targets tabs by their visible text instead,
+  so a future reorder won't silently break performance testing again.

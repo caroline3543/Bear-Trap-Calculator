@@ -5,8 +5,28 @@ import { useTimeHub } from "../TimeHubContext.jsx";
 import { success } from "../lib/feedback.js";
 import { useClockFor } from "../hooks/useNow.jsx";
 import { RESEARCH_LOCATIONS, sortResearch } from "../lib/timers.js";
-import { Section, Btn, Field, Seg, DurationFields, EMPTY_DUR, durFrom, durParse, FormActions, Icon, AccountSelect, GroupName, Remaining } from "../components/ui.jsx";
+import { researchReminder } from "../lib/research.js";
+import { Section, Btn, Field, Seg, DurationFields, EMPTY_DUR, durFrom, durParse, FormActions, Icon, AccountSelect, GroupName, Remaining, Ltr } from "../components/ui.jsx";
+import { formatTime } from "../lib/time.js";
 import { TimerRow } from "./TimerCard.jsx";
+
+/** A quiet line under a research timer once it's worth planning a minister appointment around —
+ *  never a position guessed for the player, just the 30-minute slot the timer already lines up
+ *  with, and whether anything is already booked there. */
+function MinisterNote({ timer, accountId }) {
+  const { t, tz, lang, dataFor, openBooking } = useTimeHub();
+  const now = useClockFor([timer.endAt]);
+  const r = researchReminder(timer, dataFor(accountId).bookings, now);
+  if (!r) return null;
+  if (r.booked) return <div className="th-srow-note ok">✓ {t("ministerBooked")}</div>;
+  return (
+    <div className={`th-research-note ${r.tier === "soon" ? "soon" : ""}`}>
+      <span>{t("bookMinisterFor")} <Ltr>{formatTime(r.slot.start, tz, lang)}–{formatTime(r.slot.end, tz, lang)}</Ltr> ({<Ltr>{formatTime(r.slot.start, "UTC", lang)}</Ltr>} UTC)</span>
+      {r.slot.tight && <span className="warn">{t("slotTight")}</span>}
+      <button type="button" className="th-link" onClick={() => openBooking({ accountId, startAt: r.slot.start })}>{t("bookThisSlot")}</button>
+    </div>
+  );
+}
 
 function ResearchForm({ initial, onDone }) {
   const { t, newId, defaultAccountId, updateAccount } = useTimeHub();
@@ -80,7 +100,7 @@ export function ResearchWidget({ move }) {
           {multi && <GroupName accountId={acc} />}
           {timers.map((x) =>
             editing === x.id ? <ResearchForm key={x.id} initial={{ ...x, accountId: acc }} onDone={() => setEditing(null)} />
-              : <TimerRow key={x.id} timer={x} accountId={acc} onEdit={() => setEditing(x.id)} compact />
+              : <React.Fragment key={x.id}><TimerRow timer={x} accountId={acc} onEdit={() => setEditing(x.id)} compact /><MinisterNote timer={x} accountId={acc} /></React.Fragment>
           )}
         </div>
       ))}

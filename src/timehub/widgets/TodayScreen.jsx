@@ -6,8 +6,9 @@
 import React, { useMemo, useRef, useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
 import { success } from "../lib/feedback.js";
+import { EventForm } from "./EventsWidget.jsx";
 import { useMinute, useClockFor } from "../hooks/useNow.jsx";
-import { buildAgenda, groupContrib } from "../lib/agenda.js";
+import { buildAgenda, groupContrib, groupTraining } from "../lib/agenda.js";
 import { computeReminders, needsAttention } from "../lib/reminders.js";
 import { contribState, spendAttempt } from "../lib/contributions.js";
 import { idleCamps, splitNow, stillRunning, weekStrip } from "../lib/today.js";
@@ -329,6 +330,15 @@ function Row({ i, day, rems, open, setOpen, isNext }) {
   const claim = useClaim();
   const now = useClockFor([i.start - 5 * 60000, i.start]); // only for the "under 5 minutes" styling
   const [editing, setEditing] = useState(false);
+  const [eventEditing, setEventEditing] = useState(false);
+  const deleteEvent = () => {
+    if (!window.confirm(t("confirmDeleteSchedule"))) return;
+    update((s) => ({
+      ...s, events: s.events.filter((e) => e.id !== i.ref.ev.id),
+      reminders: Object.fromEntries(Object.entries(s.reminders).filter(([k]) => !k.startsWith(i.ref.ev.id + "|"))),
+    }));
+    success();
+  };
   const x0 = useRef(null);
   const swiped = useRef(false);
   const crossesIn = i.start < day.start;
@@ -360,6 +370,10 @@ function Row({ i, day, rems, open, setOpen, isNext }) {
   if (i.kind === "booking" && i.ref?.position === "minister_education") actions.push(<Btn key="edu" small tone="gold" onClick={() => startTraining({ accountId: i.accountId, edu: true })}>{t("trainingPlan")}</Btn>);
   if (i.kind === "drop" && i.status !== "upcoming" && i.ref.drop.manual && i.ref.statuses.includes("ready")) actions.push(<Btn key="cl" small onClick={() => claim(i.ref.drop)}>{t("claimed")}</Btn>);
   if (i.kind === "stamina") actions.push(<Btn key="stu" small onClick={() => setTab("timers")}>{t("update")}</Btn>);
+  if (i.kind === "event") {
+    actions.push(<Btn key="ed" small onClick={() => { setEventEditing(true); setOpen(false); }}>{t("edit")}</Btn>);
+    actions.push(<Btn key="del" small tone="danger" onClick={deleteEvent}>{t("delete")}</Btn>);
+  }
   // things some players don't care about can be switched off right here
   const trackKey = i.kind === "drop" ? i.ref.drop.kind : i.kind === "stamina" ? "stamina" : i.kind === "contrib" ? "contrib" : i.kind === "intel" ? "intel" : i.kind === "event" && i.ref.ev.templateId === "daily_reset" ? "reset" : null;
   if (i.kind === "intel" && i.status === "now") actions.push(<Btn key="ic" small onClick={() => { const at = Date.now(); accountIdsAll.forEach((a) => updateAccount(a, (d) => ({ ...d, claims: { ...d.claims, [i.ref.key]: at } }))); success(); }}>{t("cleared")}</Btn>);
@@ -391,6 +405,7 @@ function Row({ i, day, rems, open, setOpen, isNext }) {
             {i.kind === "intel" && <span className="th-srow-note">{t("intelRowNote", { n: INTEL_MISSIONS_PER_REFRESH })}</span>}
             {i.kind === "champ" && <span className="th-srow-note warn">{t("champRowNote", { time: formatTime(i.end, tz, lang) })}</span>}
             {i.group && <span className="th-srow-note">{i.group.map((g) => (g.troop === "helios" ? t("heliosCamp", { camp: t(`short_${g.category}`) }) : t(`short_${g.category}`))).join(" · ")}</span>}
+            {i.group && i.groupEnd > i.start && <span className="th-srow-note">{t("allReadyBy", { time: formatTime(i.groupEnd, tz, lang) })}</span>}
             {crossesIn && <span className="th-srow-note">{t("fromYesterday")}</span>}
             {i.end && i.end > day.end && <span className="th-srow-note">{t("continuesTomorrow")}</span>}
           </span>
@@ -403,6 +418,7 @@ function Row({ i, day, rems, open, setOpen, isNext }) {
       </div>
       {open && <div className="th-srow-actions">{actions}</div>}
       {editing && <UpdateTime item={i} onDone={() => setEditing(false)} />}
+      {eventEditing && <div className="th-srow-editform"><EventForm initial={i.ref.ev} occKey={i.ref.occ.key} onDone={() => setEventEditing(false)} /></div>}
     </li>
   );
 }
@@ -424,7 +440,7 @@ function TaskForm({ gap, task, onDone }) {
     }
     const p = placeTask(gap, len);
     if (!p.fits && !force) return setWarn({ len, free: gap.ms });
-    update((s) => ({ ...s, tasks: [...pruneTasks(s.tasks, Date.now()), { id: newId(), title: title.trim(), start: p.start, end: p.end, done: false }] }));
+    update((s) => ({ ...s, tasks: [...pruneTasks(s.tasks, Date.now()), { id: newId(), title: title.trim(), category: "personal", durationMs: len, start: p.start, end: p.end, accountId: null, important: null, done: false, createdAt: Date.now() }] }));
     success();
     onDone();
   };
@@ -549,17 +565,6 @@ function TaskRow({ task, overdue, moveTarget }) {
 }
 
 /** Camps of one account finishing in the same minute become one row. */
-function groupTraining(items) {
-  const out = [];
-  for (const i of items) {
-    const prev = out[out.length - 1];
-    if (i.kind === "training" && prev?.kind === "training" && prev.accountId === i.accountId && Math.floor(prev.start / 60000) === Math.floor(i.start / 60000)) {
-      prev.group = [...(prev.group || [prev.ref]), i.ref];
-    } else out.push({ ...i });
-  }
-  return out;
-}
-
 /* ---------- schedule ---------- */
 function Schedule({ offset, setOffset }) {
   const { t, tz, lang, state, accountIds, templates, accountById } = useTimeHub();

@@ -185,6 +185,7 @@ const KIND_PATHS = {
   share: '<path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/>',
   trap: '<path d="M3 16h18"/><path d="M5 16l2-6 2 6M9 16l2-6 2 6M13 16l2-6 2 6"/><path d="M4 16a8 5 0 0 0 16 0"/>',
   reset: '<path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v4h4"/>',
+  checklist: '<rect x="4" y="4" width="6" height="6" rx="1.3"/><path d="M5.4 7l1 1 2.2-2.2"/><path d="M13 7h7"/><rect x="4" y="14" width="6" height="6" rx="1.3"/><path d="M5.4 17l1 1 2.2-2.2"/><path d="M13 17h7"/>',
 };
 export function kindOf(item) {
   if (item.kind !== "event") return item.kind;

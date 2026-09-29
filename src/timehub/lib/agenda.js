@@ -21,6 +21,27 @@ export const CONTRIB_GROUP_WINDOW_MS = 60 * MINUTE;
  *  first one in a run into a single "contribGroup" item, positioned at that first account's full
  *  time. Everything else passes through unchanged. Bear Trap, Foundry, and other real events are
  *  never affected — only repeats of this one passive status get merged. */
+/** Camps finishing within this many minutes of the FIRST one in a run merge into one training
+ *  entry ("all ready by 9:55 AM") — a deliberately conservative window (the doc's own words) so
+ *  genuinely separate training schedules never get falsely merged. Exact-same-moment is the
+ *  overwhelmingly common case and is naturally covered too. */
+export const TRAINING_GROUP_WINDOW_MS = 5 * MINUTE;
+
+/** Merges consecutive same-account training-finish items within TRAINING_GROUP_WINDOW_MS of the
+ *  first one into one entry, `.group` holding every merged ref (including the first). Different
+ *  accounts are never merged — logging into a different account is still a separate thing to do. */
+export function groupTraining(items) {
+  const out = [];
+  for (const i of items) {
+    const prev = out[out.length - 1];
+    if (i.kind === "training" && prev?.kind === "training" && prev.accountId === i.accountId && i.start - prev.start <= TRAINING_GROUP_WINDOW_MS) {
+      prev.group = [...(prev.group || [prev.ref]), i.ref];
+      prev.groupEnd = i.start;
+    } else out.push({ ...i });
+  }
+  return out;
+}
+
 export function groupContrib(items) {
   const contribs = items.filter((i) => i.kind === "contrib").sort((a, b) => a.start - b.start || a.id.localeCompare(b.id));
   if (contribs.length < 2) return items;
