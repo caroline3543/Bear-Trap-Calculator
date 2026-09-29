@@ -902,8 +902,8 @@ test("gap height grows with duration and is clamped (time blindness: more time l
   const h120 = gapVisualHeight(2 * HOUR), h240 = gapVisualHeight(4 * HOUR), h480 = gapVisualHeight(8 * HOUR), h1000 = gapVisualHeight(20 * HOUR);
   assert.ok(h10 < h30 && h30 < h60 && h60 < h120 && h120 < h240 && h240 < h480, `${h10},${h30},${h60},${h120},${h240},${h480}`);
   assert.equal(h480, h1000); // capped — an 8h gap and a 20h gap don't blow out the page
-  assert.ok(h10 >= 12 && h480 <= 96); // the journal scale: 12–96px
-  assert.deepEqual([gapVisualHeight(30 * MINUTE), gapVisualHeight(HOUR), gapVisualHeight(2 * HOUR), gapVisualHeight(4 * HOUR), gapVisualHeight(6 * HOUR)], [16, 24, 40, 64, 96]);
+  assert.ok(h10 >= 16 && h480 <= 260); // generous, old-design scale: 16–260px — a long gap should visibly read as a substantial block of the day
+  assert.deepEqual([gapVisualHeight(30 * MINUTE), gapVisualHeight(HOUR), gapVisualHeight(2 * HOUR), gapVisualHeight(4 * HOUR), gapVisualHeight(6 * HOUR)], [40, 72, 130, 200, 260]);
 });
 
 test("task block height also scales, gently, and stays a comfortable tap size", () => {

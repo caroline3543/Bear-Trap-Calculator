@@ -423,3 +423,33 @@ The approved journal mockup is the app's look. It is a skin: no logic, data or n
   what the schedule itself would show first. Suppressed when the day is quiet (the illustrated
   empty-day card already leads with the next item) or when the next item is the same one already
   shown in the Bear Trap hero, so it never duplicates. Tapping it jumps to the schedule.
+
+## Visual rollback: restored the warm design (Sep 2026)
+A later round had reskinned the Time Hub tabs with a cold "Arctic" palette (icy blues, a
+persistent wavy timeline rail with marker glyphs, forced Inter/Nunito typography) that turned out
+to feel clinical and dense. This round reverts the **visual** layer only — all underlying logic
+(Education planner, 6 accounts, What's up next, task persistence, etc.) is unchanged.
+- `timehub.css → .th-root:not(.is-calc)`: the colour-variable overrides were removed so Time Hub
+  inherits the host calculator's original warm cream/gold/amber/teal palette and its own account
+  colours (pine/cocoa/slate/rose/olive/purple) instead of redefining them. Only Time-Hub-specific
+  tokens remain, recoloured warm (`--th-page`, `--th-band`, `--th-hero-bg`, `--th-warm*` — the
+  last now aliased to the host's `--goldStrong`/`--amber` so every action surface — Book
+  ministers, Restart/Done, the ACTION 1/2 pills, the selected tab — reads as the same one orange).
+  Forced Inter/Nunito typography was dropped; Fredoka/Nunito Sans (the host's own fonts) apply
+  again.
+- **Today's schedule** (`widgets/TodayScreen.jsx`): removed the persistent wavy rail and marker
+  glyphs from `Row` (was `<Rail kind={markerFor(i)} .../>` between the time and the body) — rows
+  are plain, divided by a hairline, as they were before. Removed the handwritten-note feature
+  (`th-hand`, `handEdu`/`handGap`/`handQuietUntil`/`handNight`) entirely — it also fixes a real
+  bug where a missing translation for `journalToday` was rendering literally as "JOURNALTODAY" in
+  the header (`TimeHub.jsx → Header`); the header eyebrow is just the date and city again.
+- **Free time** (`lib/plan.js → gapVisualHeight`): the perceptual scale was widened from a cramped
+  12–96px back to a generous 16–260px, so a multi-hour gap visibly reads as a substantial block of
+  the day again — this is the main "does the space communicate time" fix. The Add Task button
+  threshold moved from 45 to 30 minutes.
+- The tab bar's selected "ice floe" shape is kept (subtle, harmless) but its fill recoloured from
+  icy blue to warm amber-gold, matching the rest of the action colour.
+- The animated bear-clock header mascot, previously hidden by the reskin (`.th-bear-clock,
+  .th-drift { display: none }`), is visible again.
+- Nothing here touches calculations, the Education planner's logic, account behaviour, or data —
+  only how it's presented. 114 tests pass unchanged (two updated to the new gap-height numbers).

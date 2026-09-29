@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400..700&family=Nunito:wght@600..800&family=Kalam:wght@400;700&display=swap');
 /* ============================================================
    TIME HUB — styles built entirely on the Bear Trap Calculator's
    theme variables (--gold, --surface, --cardBgT, --teal, ...), so it
@@ -1171,48 +1170,21 @@ html.th-diag-nograin [style*="paperGrain"] { display: none !important; }
    Scoped to `.th-root:not(.is-calc)` so the Calculator tab keeps its own theme.
    ===================================================================== */
 .th-root:not(.is-calc) {
-  --th-tcol: 86px; --th-hero-bg: #244F5C;
-  --bgPage: #F4F8F8; --surface: #FFFFFF; --headerBg: #FFFFFF; --headerBorder: #DCE9EC;
-  --cardBgT: #FFFFFF; --cardBorderT: #DCE9EC; --cardBorder: #DCE9EC; --inputBg: #E8F3F5; --inputBorder: #BFD7DD;
-  --gold: #244F5C; --goldStrong: #F2A65A; --goldBg: #E8F3F5; --goldBorder: #BFD7DD;
-  --green: #2F7A5B; --greenBg: #DCEFE5; --amber: #B4532F; --amberBg: #FBE3D8; --red: #9A4938; --redBg: #F1D5CB;
-  --ink: #17272B; --sub: #5B7075; --cocoa: #5B7075; --cocoaDark: #2E1B05; --white: #FFFFFF; --teal: #397F91; --t9Amber: #F2A65A;
-  --statusT9Bg: #FFF4E6; --statusT9Text: #8A5210;
-  --selectedBg: #244F5C; --selectedBorder: #244F5C; --selectedText: #FFFFFF; --selectedTextMuted: rgba(255,255,255,.82);
-  --neutralChipBg: #E8F3F5; --progressTrackBg: #DCE9EC; --tierTrackBg: #DCE9EC; --btnSecondaryBg: #E8F3F5; --btnSecondaryBorder: #CDE7EC;
-  --btnPrimaryShadow: transparent; --btnGoldShadow: transparent; --squadFullBorder: #CDE7EC; --squadPartialBorder: #F3DDBF;
-  --acct-1: #397F91; --acct-1-bg: #E1F0F3; --acct-2: #5D73C9; --acct-2-bg: #E6EAF8; --acct-3: #7A5FB0; --acct-3-bg: #ECE6F5;
-  --acct-4: #4E9F7B; --acct-4-bg: #E0F1E9; --acct-5: #B7791F; --acct-5-bg: #F8EBD3; --acct-6: #C0587A; --acct-6-bg: #F7E1E8;
-  --th-page: #F4F8F8; --th-band: #EDF5F6; --th-trail: #BFD7DD; --th-hand: #2F6577; --th-btn-text: #FFFFFF;
-  --th-warm: #F2A65A; --th-warm-surface: #FFF4E6; --th-warm-border: #F3DDBF; --th-warm-text: #8A5210;
-  --th-crystal: #E46C83; --th-crystal-pale: #FBECEF;
-  --th-display: Nunito, 'Nunito Sans', system-ui, sans-serif; --th-hand-font: Kalam, Caveat, cursive;
-  font-family: Inter, -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif; font-weight: 450;
+  /* Restored warm design: inherit the host's cream/gold/amber/teal palette (undoes the cold
+     "Arctic" recolour) — only Time-Hub-specific tokens are kept, and recoloured warm too. */
+  --th-hero-bg: #24443C;
+  --th-page: #F7F3E8; --th-band: #F1E9D6; --th-btn-text: #FFFFFF;
+  --th-warm: var(--goldStrong); --th-warm-surface: var(--amberBg); --th-warm-border: #EAC5B2; --th-warm-text: var(--amber);
 }
 .dark .th-root:not(.is-calc) {
-  --th-hero-bg: #173540;
-  --bgPage: #0F1B20; --surface: #16262C; --headerBg: #16262C; --headerBorder: #26404A;
-  --cardBgT: #16262C; --cardBorderT: #26404A; --cardBorder: #26404A; --inputBg: #1D3138; --inputBorder: #35545E;
-  --gold: #8FD0DB; --goldStrong: #F2A65A; --goldBg: #1D3138; --goldBorder: #35545E;
-  --green: #7FCB9C; --greenBg: #1F3126; --amber: #E2896E; --amberBg: #3A241D; --red: #E2937F; --redBg: #3A231D;
-  --ink: #E7F1F3; --sub: #9DB4BA; --cocoa: #9DB4BA; --cocoaDark: #2E1B05; --white: #FFFFFF; --teal: #78C7D5; --t9Amber: #F0B563;
-  --statusT9Bg: #3D2C16; --statusT9Text: #E7BE7C;
-  --selectedBg: #3A7A8C; --selectedBorder: #2F6577; --selectedText: #FFFFFF; --selectedTextMuted: rgba(255,255,255,.8);
-  --neutralChipBg: #1D3138; --progressTrackBg: #26404A; --tierTrackBg: #26404A; --btnSecondaryBg: #1D3138; --btnSecondaryBorder: #35545E;
-  --acct-1: #78C7D5; --acct-1-bg: #17343B; --acct-2: #93A5E8; --acct-2-bg: #1D2745; --acct-3: #B69DE0; --acct-3-bg: #2A2142;
-  --acct-4: #7FCB9C; --acct-4-bg: #1F3126; --acct-5: #E0B060; --acct-5-bg: #3A2C12; --acct-6: #E792AC; --acct-6-bg: #3D2230;
-  --th-page: #0F1B20; --th-band: #13242A; --th-trail: #35545E; --th-hand: #9ED5DF; --th-btn-text: #0F1B20;
-  --th-warm-surface: #2B2114; --th-warm-border: #5A4222; --th-warm-text: #F0C98C;
+  --th-hero-bg: #16241D;
+  --th-page: #14181A; --th-band: #1D231C;
+  --th-warm-border: #4A2E22;
 }
 /* the page behind the Time Hub tabs (the host paints its own gradient, grain and corner art) */
-html.th-skin #root > div { background: #F4F8F8 !important; }
-html.th-skin #root > div.dark { background: #0F1B20 !important; }
+html.th-skin #root > div { background: #F7F3E8 !important; }
+html.th-skin #root > div.dark { background: #14181A !important; }
 html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
-
-/* ---- type: Inter for the interface, Nunito for display, Kalam for handwriting ---- */
-.th-root:not(.is-calc) button, .th-root:not(.is-calc) input, .th-root:not(.is-calc) select, .th-root:not(.is-calc) textarea { font-family: inherit; }
-.th-root:not(.is-calc) :is(.th-mhdr-title, .th-title, .th-next-name, .th-pos-name b, .th-week-days b, .th-srow-time b, .th-clock-value, .th-hero-count, .th-edu-when-big, .th-stats b, .th-sec-toggle, .th-count) { font-family: var(--th-display); letter-spacing: -.2px; }
-.th-root:not(.is-calc) .th-hand { font-family: var(--th-hand-font); font-size: 17px; line-height: 22px; font-weight: 400; color: var(--th-hand); letter-spacing: 0; }
 
 /* ---- surfaces: crisp white cards, hairline border, no shadows ---- */
 .th-root:not(.is-calc) .th-card { border-radius: 24px; padding: 20px; box-shadow: none; }
@@ -1240,14 +1212,13 @@ html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
 .th-root:not(.is-calc) .th-mhdr-eyebrow { font-size: 13px; line-height: 18px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: var(--sub); }
 .th-root:not(.is-calc) .th-mhdr-title { margin: 4px 0 0; font-size: 32px; line-height: 36px; font-weight: 700; letter-spacing: -.4px; color: var(--ink); }
 .th-root:not(.is-calc) .th-stats.in-header { position: relative; z-index: 1; flex-basis: 100%; margin: 4px 0 0; padding: 0; border: none; background: none; box-shadow: none; }
-.th-root:not(.is-calc) .th-bear-clock, .th-root:not(.is-calc) .th-drift { display: none; }
 
 /* ---- tab bar: the active tab is a slightly irregular ice floe ---- */
 .th-root:not(.is-calc) .th-tabbar { background: var(--cardBgT); border-top: 1px solid var(--cardBorderT); box-shadow: none; }
 .th-root:not(.is-calc) .th-tabbar button { font-family: inherit; }
 .th-root:not(.is-calc) .th-tabpill, .th-root:not(.is-calc) .th-tabbar .pill { border-radius: 0; background-color: transparent; background-repeat: no-repeat; background-position: center; background-size: 100% 100%; }
-.th-root:not(.is-calc) .th-tabbar button.on .pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 32'%3E%3Cpath d='M7 3.5Q16 1 27 2.2T49 3.6Q54.6 6 54.2 16Q54.8 26.5 49 28.4Q27 31.4 8 29Q1.6 26.6 2 16Q1.4 6.2 7 3.5Z' fill='%23CDE7EC'/%3E%3C/svg%3E"); background-color: transparent; }
-.dark .th-root:not(.is-calc) .th-tabbar button.on .pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 32'%3E%3Cpath d='M7 3.5Q16 1 27 2.2T49 3.6Q54.6 6 54.2 16Q54.8 26.5 49 28.4Q27 31.4 8 29Q1.6 26.6 2 16Q1.4 6.2 7 3.5Z' fill='%232A4A55'/%3E%3C/svg%3E"); }
+.th-root:not(.is-calc) .th-tabbar button.on .pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 32'%3E%3Cpath d='M7 3.5Q16 1 27 2.2T49 3.6Q54.6 6 54.2 16Q54.8 26.5 49 28.4Q27 31.4 8 29Q1.6 26.6 2 16Q1.4 6.2 7 3.5Z' fill='%23F2CB93'/%3E%3C/svg%3E"); background-color: transparent; }
+.dark .th-root:not(.is-calc) .th-tabbar button.on .pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 32'%3E%3Cpath d='M7 3.5Q16 1 27 2.2T49 3.6Q54.6 6 54.2 16Q54.8 26.5 49 28.4Q27 31.4 8 29Q1.6 26.6 2 16Q1.4 6.2 7 3.5Z' fill='%235A4222'/%3E%3C/svg%3E"); }
 .th-root:not(.is-calc) .th-tabbar button.on { color: var(--gold); }
 
 /* ---- the schedule: a trail with small custom markers ---- */
@@ -1312,15 +1283,14 @@ html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
 .th-root:not(.is-calc) .th-need { border-radius: 16px; }
 /* the tab bar's sliding indicator becomes the ice floe */
 .th-root:not(.is-calc) .th-tabbar .th-tabpill { border-radius: 0; background-color: transparent; background-repeat: no-repeat; background-size: 100% 100%; box-shadow: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 32' preserveAspectRatio='none'%3E%3Cpath d='M7 3.5Q16 1 27 2.2T49 3.6Q54.6 6 54.2 16Q54.8 26.5 49 28.4Q27 31.4 8 29Q1.6 26.6 2 16Q1.4 6.2 7 3.5Z' fill='%23CDE7EC'/%3E%3C/svg%3E"); }
-.dark .th-root:not(.is-calc) .th-tabbar .th-tabpill { background-color: transparent; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 32' preserveAspectRatio='none'%3E%3Cpath d='M7 3.5Q16 1 27 2.2T49 3.6Q54.6 6 54.2 16Q54.8 26.5 49 28.4Q27 31.4 8 29Q1.6 26.6 2 16Q1.4 6.2 7 3.5Z' fill='%232A4A55'/%3E%3C/svg%3E"); }
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 32' preserveAspectRatio='none'%3E%3Cpath d='M7 3.5Q16 1 27 2.2T49 3.6Q54.6 6 54.2 16Q54.8 26.5 49 28.4Q27 31.4 8 29Q1.6 26.6 2 16Q1.4 6.2 7 3.5Z' fill='%23F2CB93'/%3E%3C/svg%3E"); }
+.dark .th-root:not(.is-calc) .th-tabbar .th-tabpill { background-color: transparent; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 32' preserveAspectRatio='none'%3E%3Cpath d='M7 3.5Q16 1 27 2.2T49 3.6Q54.6 6 54.2 16Q54.8 26.5 49 28.4Q27 31.4 8 29Q1.6 26.6 2 16Q1.4 6.2 7 3.5Z' fill='%235A4222'/%3E%3C/svg%3E"); }
 .th-root:not(.is-calc) .th-running-title .th-hand { text-transform: none; letter-spacing: 0; margin-inline-start: 8px; }
 /* section icon circles: ice by default, warm only for training/furnace sections */
 .th-root:not(.is-calc) .th-num { background: var(--inputBg); color: var(--teal); box-shadow: none; width: 44px; height: 44px; }
 .th-root:not(.is-calc) .th-num svg { width: 20px; height: 20px; }
 .th-root:not(.is-calc) :is(#th-sec-training, #th-sec-stamina) .th-num { background: var(--th-warm-surface); color: var(--th-warm-text); }
 .dark .th-root:not(.is-calc) :is(#th-sec-training, #th-sec-stamina) .th-num { background: var(--th-warm-surface); }
-.th-root:not(.is-calc) .th-gap-deco { opacity: .55; width: 64px; }
 .th-root:not(.is-calc) .th-srow.hl { box-shadow: none; border-inline-start: 3px solid var(--teal); }
 .th-root:not(.is-calc) .th-srow.hl .th-srow-main { background: var(--inputBg); }
 
@@ -1331,30 +1301,30 @@ html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
 .th-root:not(.is-calc) .th-eyebrow { display: block; font-size: 13px; line-height: 18px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: var(--sub); }
 /* header: one quiet line instead of a four-cell strip */
 .th-root:not(.is-calc) .th-statline { display: flex; flex-wrap: wrap; gap: 4px 20px; font-size: 14px; line-height: 20px; font-weight: 500; color: var(--sub); padding: 0; }
-.th-root:not(.is-calc) .th-statline b { font: 600 14px/20px Inter, -apple-system, system-ui, sans-serif; letter-spacing: 0; color: var(--ink); }
+.th-root:not(.is-calc) .th-statline b { font: 600 14px/20px 'Nunito Sans', -apple-system, system-ui, sans-serif; letter-spacing: 0; color: var(--ink); }
 .th-root:not(.is-calc) .th-statline .todo b { color: var(--ink); }
 /* Bear Trap hero: crisp UI, one painted pool in the corner */
 .th-root:not(.is-calc) .th-bthero { position: relative; overflow: hidden; background: var(--th-hero-bg); color: #fff; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
 .th-root:not(.is-calc) .th-bthero-pool { position: absolute; inset-inline-end: 0; top: 0; width: 160px; height: 150px; pointer-events: none; }
 [dir="rtl"] .th-bthero-pool { transform: scaleX(-1); }
 .th-root:not(.is-calc) .th-bthero-top { position: relative; padding-inline-end: 120px; }
-.th-root:not(.is-calc) .th-bthero-eyebrow { font-size: 13px; line-height: 18px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: #9ED5DF; }
+.th-root:not(.is-calc) .th-bthero-eyebrow { font-size: 13px; line-height: 18px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: #E3D3A3; }
 .th-root:not(.is-calc) .th-bthero-count { margin-top: 8px; font: 800 36px/42px var(--th-display); letter-spacing: -.6px; font-variant-numeric: tabular-nums; }
-.th-root:not(.is-calc) .th-bthero-when { margin-top: 4px; font-size: 14px; line-height: 20px; font-weight: 500; color: #CDE7EC; }
+.th-root:not(.is-calc) .th-bthero-when { margin-top: 4px; font-size: 14px; line-height: 20px; font-weight: 500; color: #E3DBC4; }
 .th-root:not(.is-calc) .th-bthero-accts { position: relative; list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .th-root:not(.is-calc) .th-bthero-accts li { display: flex; align-items: center; gap: 10px; font-size: 15px; line-height: 21px; font-weight: 500; }
-.th-root:not(.is-calc) .th-bthero-accts .r { margin-inline-start: auto; color: #CDE7EC; text-align: end; }
-.th-root:not(.is-calc) .th-bthero-accts .r.warn { color: #F8C98F; font-weight: 600; }
+.th-root:not(.is-calc) .th-bthero-accts .r { margin-inline-start: auto; color: #E3DBC4; text-align: end; }
+.th-root:not(.is-calc) .th-bthero-accts .r.warn { color: #F2C48A; font-weight: 600; }
 .th-root:not(.is-calc) .th-bthero-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ac); flex-shrink: 0; }
 .dark .th-root:not(.is-calc) .th-bthero-dot { box-shadow: 0 0 0 1px rgba(255,255,255,.2); }
-.th-root:not(.is-calc) .th-bthero .th-btn { position: relative; background: #78C7D5; color: #17272B; border: none; }
-.th-root:not(.is-calc) .th-bthero-link { position: relative; align-self: flex-start; min-height: 44px; background: none; border: none; color: #CDE7EC; font: 600 14px Inter, -apple-system, system-ui, sans-serif; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 0; }
-.th-root:not(.is-calc) .th-bthero-ok { position: relative; margin: 0; font-size: 14px; line-height: 20px; color: #CDE7EC; }
+.th-root:not(.is-calc) .th-bthero .th-btn { position: relative; background: var(--goldStrong); color: var(--cocoaDark); border: none; }
+.th-root:not(.is-calc) .th-bthero-link { position: relative; align-self: flex-start; min-height: 44px; background: none; border: none; color: #E3DBC4; font: 600 14px 'Nunito Sans', sans-serif; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 0; }
+.th-root:not(.is-calc) .th-bthero-ok { position: relative; margin: 0; font-size: 14px; line-height: 20px; color: #E3DBC4; }
 .th-root:not(.is-calc) .th-bthero-panel { padding: 8px 16px; }
 /* Needs you: one white card, hairline rows, no coloured boxes */
 .th-root:not(.is-calc) .th-needs-sec { display: flex; flex-direction: column; gap: 12px; }
 .th-root:not(.is-calc) .th-needs-title { margin: 2px 0 0; display: flex; align-items: center; gap: 8px; font: 700 24px/30px var(--th-display); letter-spacing: -.2px; color: var(--ink); }
-.th-root:not(.is-calc) .th-needs-count { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px; background: var(--btnSecondaryBorder); font: 700 14px Inter, -apple-system, system-ui, sans-serif; letter-spacing: 0; color: var(--ink); }
+.th-root:not(.is-calc) .th-needs-count { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px; background: var(--btnSecondaryBorder); font: 700 14px 'Nunito Sans', -apple-system, system-ui, sans-serif; letter-spacing: 0; color: var(--ink); }
 .th-root:not(.is-calc) .th-needs-card { padding: 4px 20px; }
 .th-root:not(.is-calc) .th-needs { gap: 0; }
 .th-root:not(.is-calc) .th-needs .th-need { background: none !important; border-radius: 0; padding: 12px 0; gap: 12px; border-top: 1px solid var(--cardBorderT); }
@@ -1374,10 +1344,10 @@ html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
 .th-root:not(.is-calc) .th-sband-head .th-sec-sub { margin: 4px 0 0; }
 .th-root:not(.is-calc) .th-sched { padding-block: 12px 20px; }
 .th-root:not(.is-calc) .th-sched-head { margin-bottom: 4px; }
-.th-root:not(.is-calc) .th-past-toggle { display: inline-flex; align-items: center; min-height: 44px; color: var(--sub); font: 600 14px Inter, -apple-system, system-ui, sans-serif; }
+.th-root:not(.is-calc) .th-past-toggle { display: inline-flex; align-items: center; min-height: 44px; color: var(--sub); font: 600 14px 'Nunito Sans', -apple-system, system-ui, sans-serif; }
 /* NOW: a pill and a line */
 .th-root:not(.is-calc) .th-now-mark { display: flex; align-items: center; gap: 12px; padding: 8px 16px 4px; }
-.th-root:not(.is-calc) .th-now-mark .label { order: 0; display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px; background: var(--btnSecondaryBorder); color: var(--gold); font: 700 13px/28px Inter, -apple-system, system-ui, sans-serif; letter-spacing: 1.4px; text-transform: uppercase; }
+.th-root:not(.is-calc) .th-now-mark .label { order: 0; display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px; background: var(--btnSecondaryBorder); color: var(--gold); font: 700 13px/28px 'Nunito Sans', -apple-system, system-ui, sans-serif; letter-spacing: 1.4px; text-transform: uppercase; }
 .th-root:not(.is-calc) .th-now-mark .line { order: 1; flex: 1; }
 .th-root:not(.is-calc) .th-now-mark .th-now-dot { display: none; }
 /* rows: no boxes; emphasis comes from the text, not a frame */
@@ -1394,7 +1364,7 @@ html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
 /* the header stat line must win over the old four-cell strip rules */
 .th-root:not(.is-calc) .th-stats.th-statline { display: flex; grid-template-columns: none; flex-wrap: wrap; gap: 2px 20px; padding: 0; border: none; border-radius: 0; background: none; box-shadow: none; font-size: 14px; line-height: 20px; }
 .th-root:not(.is-calc) .th-stats.th-statline > span { display: inline; padding: 0; border: none; font-size: 14px; line-height: 20px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--sub); }
-.th-root:not(.is-calc) .th-stats.th-statline b { display: inline; font: 600 14px/20px Inter, -apple-system, system-ui, sans-serif; letter-spacing: 0; color: var(--ink); animation: none; }
+.th-root:not(.is-calc) .th-stats.th-statline b { display: inline; font: 600 14px/20px 'Nunito Sans', -apple-system, system-ui, sans-serif; letter-spacing: 0; color: var(--ink); animation: none; }
 .th-root:not(.is-calc) .th-sched { padding-inline: 0; }
 .th-root:not(.is-calc) .th-sband-body { padding-inline: 12px; }
 .th-root:not(.is-calc) .th-sched .th-sched-head { margin-inline: 16px; }

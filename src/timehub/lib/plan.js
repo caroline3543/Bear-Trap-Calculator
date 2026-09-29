@@ -17,9 +17,10 @@ const sqrtScale = (ms, capMinutes, minPx, maxPx) => {
   return Math.round(minPx + (maxPx - minPx) * t);
 };
 
-/** Free-time block height in px: a perceptual, clamped scale (12–96): 30m → 16, 1h → 24, 2h → 40,
- *  4h → 64, 6h+ → 96. More elapsed time reads as more distance, without producing huge gaps. */
-const GAP_STOPS = [[0, 12], [30, 16], [60, 24], [120, 40], [240, 64], [360, 96]];
+/** Free-time block height in px: a perceptual, clamped scale (16–260): 14m → tiny, 30m → 40,
+ *  1h → 72, 2h → 130, 3h37m → ~215, 6h+ → 260 (capped). A long stretch should visibly read as a
+ *  substantial block of the day — the space itself communicates the time, not just the label. */
+const GAP_STOPS = [[0, 16], [15, 28], [30, 40], [60, 72], [120, 130], [240, 200], [360, 260]];
 export function gapVisualHeight(ms) {
   const m = Math.max(0, ms / MINUTE);
   if (m >= GAP_STOPS[GAP_STOPS.length - 1][0]) return GAP_STOPS[GAP_STOPS.length - 1][1];

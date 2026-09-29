@@ -12,8 +12,7 @@ import { computeReminders, needsAttention } from "../lib/reminders.js";
 import { contribState, spendAttempt } from "../lib/contributions.js";
 import { idleCamps, splitNow, stillRunning, weekStrip } from "../lib/today.js";
 import { dropsNeedingAction, dropsBetween, staminaNow, intelNeedingAction, INTEL_MISSIONS_PER_REFRESH } from "../lib/daily.js";
-import { Rail, Marker, hashV, markerFor } from "../components/Trail.jsx";
-import sleepingBear from "../assets/bear-sleeping-mini.webp";
+import { Marker, markerFor } from "../components/Trail.jsx";
 import snowEdge from "../assets/snow-edge.webp";
 import pool from "../assets/hero-pool-corner.webp";
 import quietScene from "../assets/scene-distant-bear.webp";
@@ -256,7 +255,6 @@ function QuietHero({ first }) {
       <img className="th-quiet-scene" src={quietScene} alt="" aria-hidden="true" decoding="async" />
       <h2 className="th-quiet-title">{t("quietTitle")}</h2>
       <p>{t("nothingUntil", { time, utc: formatTime(first.start, "UTC", lang), in: formatSpan(first.start - now, lang) })}</p>
-      <span className="th-hand">{t("handQuietUntil", { time })}</span>
     </section>
   );
 }
@@ -326,7 +324,7 @@ function UpdateTime({ item, onDone }) {
   );
 }
 
-function Row({ i, day, rems, open, setOpen, isNext, hand }) {
+function Row({ i, day, rems, open, setOpen, isNext }) {
   const { t, tz, lang, dir, templates, updateAccount, openBooking, setTab, accountById, update, accountIds: accountIdsAll, startTraining } = useTimeHub();
   const claim = useClaim();
   const now = useClockFor([i.start - 5 * 60000, i.start]); // only for the "under 5 minutes" styling
@@ -374,7 +372,6 @@ function Row({ i, day, rems, open, setOpen, isNext, hand }) {
           <b><Ltr>{crossesIn ? "…" : formatTime(i.start, tz, lang)}</Ltr></b>
           <small><Ltr>{formatTime(i.start, "UTC", lang)}</Ltr> UTC</small>
         </span>
-        <Rail kind={markerFor(i)} v={hashV(i.id)} />
         <span className="th-srow-body">
           <span className="th-srow-title">{title}</span>
           <span className="th-srow-tags">
@@ -399,7 +396,6 @@ function Row({ i, day, rems, open, setOpen, isNext, hand }) {
             const txt = r.status === "covered" ? t(r.booking.position) : r.status === "booked" || r.status === "unsure" ? t(BUFF_NAME[r.buff] || "bookingUnknown") : r.status === "dismissed" ? t("reminderDismissed") : t("ministerNeededShort");
             return <span key={r.key} className={`th-min ${ok ? "ok" : "todo"}`}>{r.chip && <><AccountTag accountId={r.accountId} /> </>}{ok ? "✓ " : ""}{txt}</span>;
           })}
-          {hand && <span className="th-hand th-hand-note">{t("handEdu")}</span>}
         </span>
       </div>
       {open && <div className="th-srow-actions">{actions}</div>}
@@ -458,7 +454,7 @@ function TaskForm({ gap, task, onDone }) {
   );
 }
 
-function GapRow({ gap, note }) {
+function GapRow({ gap }) {
   const { t, lang } = useTimeHub();
   const [adding, setAdding] = useState(false);
   // time blindness: the block's own height gives a visual sense of "how much time" (12–96px),
@@ -468,10 +464,8 @@ function GapRow({ gap, note }) {
     <li className={`th-gap ${adding ? "adding" : ""}`} style={{ "--gh": `${h}px` }}>
       <div className="th-gap-mid">
         <span className="th-gap-free">{t("freeTime", { time: formatSpan(gap.ms, lang) })}</span>
-        {!adding && gap.ms >= 45 * MINUTE && <button type="button" className="th-gap-add" onClick={() => setAdding(true)}>＋ {t("addTask")}</button>}
+        {!adding && gap.ms >= 30 * MINUTE && <button type="button" className="th-gap-add" onClick={() => setAdding(true)}>＋ {t("addTask")}</button>}
       </div>
-      {gap.ms >= 2 * HOUR && !adding && <img className="th-gap-deco" src={sleepingBear} alt="" aria-hidden="true" decoding="async" />}
-      {note && !adding && <span className="th-hand th-gap-hand">{t("handGap")}</span>}
       {adding && <TaskForm gap={gap} onDone={() => setAdding(false)} />}
     </li>
   );
@@ -558,9 +552,7 @@ function Schedule({ offset, setOffset }) {
   ].sort((a, b) => a.at - b.at) : [];
   const heading = offset === 0 ? t("todaysSchedule") : offset === 1 ? t("tomorrowsSchedule") : formatDate(day.start + 1, tz, lang);
   const nextId = rest.find((x) => x.status === "upcoming")?.id;
-  const bigGapStart = (timeline.find((e) => e.type === "gap" && e.ms >= 2 * HOUR) || {}).start;
-  const eduHandId = (timeline.find((e) => e.type === "item" && e.item.kind === "booking" && e.item.ref?.position === "minister_education" && e.item.status === "upcoming") || {}).item?.id;
-  const rowProps = (i) => ({ i, day, rems, open: openId === i.id, setOpen: (v) => setOpenId(v ? i.id : null), isNext: i.id === nextId, hand: i.id === eduHandId });
+  const rowProps = (i) => ({ i, day, rems, open: openId === i.id, setOpen: (v) => setOpenId(v ? i.id : null), isNext: i.id === nextId });
 
   return (
     <section className="th-sband" aria-label={heading} id="th-sec-today">
@@ -601,12 +593,12 @@ function Schedule({ offset, setOffset }) {
         <ol className="th-slist">
           {timeline.map((e) => (e.type === "item" ? <Row key={e.item.id} {...rowProps(e.item)} />
             : e.type === "task" ? <TaskRow key={e.task.id} task={e.task} />
-            : <GapRow key={`gap-${e.start}`} gap={e} note={e.start === bigGapStart} />))}
+            : <GapRow key={`gap-${e.start}`} gap={e} />))}
         </ol>
       )}
       {after.length > 0 && (
         <div className="th-running">
-          <div className="th-running-title">{t("afterMidnight")} <span className="th-hand">{t("handNight")}</span></div>
+          <div className="th-running-title">{t("afterMidnight")}</div>
           {after.map((r) => (
             <div key={r.id} className="th-running-row">
               <span className="th-running-name">{r.name}{r.acc && <AccountTag accountId={r.acc} />}</span>

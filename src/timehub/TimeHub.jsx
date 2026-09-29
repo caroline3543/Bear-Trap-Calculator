@@ -54,12 +54,11 @@ function Header({ title, tab, headerExtra, onSettings, settingsOpen, children })
   const { tz, lang, t } = useTimeHub();
   const now = useMinute();
   const long = formatLongDay(now, tz, lang);
-  const lead = tab === "today" ? `${t("journalToday")} · ` : tab === "timers" ? `${t("journalTimers")} · ` : tab === "events" ? `${t("journalEvents")} · ` : "";
   return (
     <header className="th-mhdr">
       <img className="th-horizon" src={horizon} alt="" aria-hidden="true" decoding="async" />
       <div className="th-mhdr-main">
-        <div className="th-mhdr-eyebrow">{lead}{long} · {zoneCity(tz)}</div>
+        <div className="th-mhdr-eyebrow">{long} · {zoneCity(tz)}</div>
         <h1 className="th-mhdr-title">{title}</h1>
       </div>
       <div className="th-mhdr-tools">
