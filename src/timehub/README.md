@@ -453,3 +453,30 @@ to feel clinical and dense. This round reverts the **visual** layer only — all
   .th-drift { display: none }`), is visible again.
 - Nothing here touches calculations, the Education planner's logic, account behaviour, or data —
   only how it's presented. 114 tests pass unchanged (two updated to the new gap-height numbers).
+
+## Contributions grouping + free-time preservation (Sep 2026)
+- **`lib/agenda.js → groupContrib`**: repeated Alliance Contributions-full moments within a
+  rolling 60-minute window (`CONTRIB_GROUP_WINDOW_MS`) of the first one merge into one
+  `contribGroup` item, positioned at the first account's time. A lone account stays a normal
+  single `contrib` item. Bear Trap, Foundry, and every other event are untouched — only repeats
+  of this one passive status get merged. `nextUp()` excludes `contribGroup` the same way it
+  already excluded `contrib`.
+- **`lib/plan.js`**: a new `"passive"` occupancy (contrib/contribGroup) never fragments a
+  free-time block into pieces around it. `buildTimeline` pulls passive items out before computing
+  gaps, then attaches each one as a `.notices` entry on whichever gap it falls inside — so a
+  multi-hour free stretch stays one visual block with a small note inside it, rather than several
+  small blocks around repeated status updates. If a passive item lands nowhere (no gap contains
+  it), it still shows, as its own row — nothing is silently dropped.
+- **`widgets/TodayScreen.jsx`**: `GapNotice` renders the note inside `GapRow` — a quiet card with
+  up to 3 accounts and their times, "+N more" progressive disclosure, and one "Spend all" button
+  that spends for every member at once. `Row` keeps a fallback action for the rare case a group
+  ends up as its own row.
+- Fixed a real bug found along the way: a previous CSS edit believed to remove the old
+  rail/marker/absolute-gap-positioning styles had silently failed (a crashed script never wrote
+  the file), so ~35 lines of dead rules survived and were only "working" by accident through
+  undefined-CSS-variable fallback. Properly removed now, along with fixing several heading
+  font-size rules that were quietly invalid for the same reason (`var(--th-display)` was gone but
+  still referenced).
+- Checked the fixed bottom-tab-bar overlap: the existing `.th-app` bottom padding
+  (`calc(92px + env(safe-area-inset-bottom))`) already keeps the last schedule row and the
+  "add day to calendar" button clear of the tab bar; no change needed there.

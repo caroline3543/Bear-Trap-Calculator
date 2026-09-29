@@ -896,7 +896,6 @@ test("applyTraining tags each timer with its mode (finish / max / custom) when g
 
 /* ---------- time-blindness: proportional gaps, overdue tasks, reschedule ---------- */
 import { gapVisualHeight, taskVisualHeight, overdueTasks, findNextGap } from "../lib/plan.js";
-
 test("gap height grows with duration and is clamped (time blindness: more time looks bigger, never absurd)", () => {
   const h10 = gapVisualHeight(10 * MINUTE), h30 = gapVisualHeight(30 * MINUTE), h60 = gapVisualHeight(HOUR);
   const h120 = gapVisualHeight(2 * HOUR), h240 = gapVisualHeight(4 * HOUR), h480 = gapVisualHeight(8 * HOUR), h1000 = gapVisualHeight(20 * HOUR);
@@ -1202,4 +1201,86 @@ test("accounts: up to 6 are supported, each with its own colour, and a 7th is dr
   const r = sanitizeState(s, T0, mkId);
   assert.equal(r.accounts.length, 6); // capped at save time
   assert.deepEqual(r.accounts.map((a) => a.id), accs.slice(0, 6).map((a) => a.id));
+});
+
+/* ---------- passive status grouping: contributions don't dominate or fragment the timeline ---------- */
+import { groupContrib, CONTRIB_GROUP_WINDOW_MS } from "../lib/agenda.js";
+
+const CD = Date.UTC(2026, 8, 24); // Thu 24 Sep 00:00 UTC
+const CH = (h, m = 0) => CD + h * HOUR + m * MINUTE;
+const ctItem = (acc, start, max = 20) => ({ id: `ct:${acc}`, kind: "contrib", start, end: null, accountId: acc, ref: { max }, status: "upcoming" });
+const evItem = (id, start, end) => ({ id, kind: "event", start, end, accountId: null, ref: { ev: { id, templateId: "x" } }, status: "upcoming" });
+
+test("groupContrib: five accounts within the window merge into one group, positioned at the first", () => {
+  const items = [
+    ctItem("mcg", CH(18, 24)), ctItem("caroline", CH(18, 49)), ctItem("hihi", CH(18, 52)),
+    ctItem("chaz", CH(18, 59)), ctItem("kirito", CH(18, 59)),
+  ];
+  const out = groupContrib(items);
+  assert.equal(out.length, 1);
+  assert.equal(out[0].kind, "contribGroup");
+  assert.equal(out[0].start, CH(18, 24)); // the FIRST account's time, not the last or an average
+  assert.deepEqual(out[0].ref.members.map((m) => m.accountId), ["mcg", "caroline", "hihi", "chaz", "kirito"]);
+  assert.equal(CONTRIB_GROUP_WINDOW_MS, 60 * MINUTE);
+});
+
+test("groupContrib: a lone account is left as a normal single contrib item, not wrapped in a group", () => {
+  const out = groupContrib([ctItem("mcg", CH(18, 24)), evItem("bt", CH(20), CH(20, 30))]);
+  assert.deepEqual(out.map((i) => i.kind).sort(), ["contrib", "event"]);
+});
+
+test("groupContrib: two clusters more than the window apart stay separate; real events never merge with contributions", () => {
+  const out = groupContrib([
+    ctItem("a", CH(9, 0)), ctItem("b", CH(9, 20)),          // cluster 1
+    ctItem("c", CH(11, 0)), ctItem("d", CH(11, 30)),        // cluster 2 (>60m after cluster 1's first)
+    evItem("bt", CH(10), CH(10, 30)), evItem("fd", CH(13), CH(13, 30)),
+  ]);
+  const groups = out.filter((i) => i.kind === "contribGroup").sort((a, b) => a.start - b.start);
+  assert.equal(groups.length, 2);
+  assert.deepEqual(groups[0].ref.members.map((m) => m.accountId), ["a", "b"]);
+  assert.deepEqual(groups[1].ref.members.map((m) => m.accountId), ["c", "d"]);
+  assert.equal(out.filter((i) => i.kind === "event").length, 2); // Bear Trap / Foundry untouched
+  // order is preserved chronologically once merged back in
+  assert.deepEqual(out.map((i) => i.id), ["ctg:a,b", "bt", "ctg:c,d", "fd"]);
+});
+
+test("groupContrib: exactly-60-minutes-apart still merges; a hair over splits", () => {
+  const at60 = groupContrib([ctItem("a", CH(9, 0)), ctItem("b", CH(10, 0))]);
+  assert.equal(at60.length, 1);
+  const at61 = groupContrib([ctItem("a", CH(9, 0)), ctItem("b", CH(10, 1))]);
+  assert.equal(at61.filter((i) => i.kind === "contrib").length, 2);
+});
+
+test("passive occupancy: contrib/contribGroup never fragment free time or claim their own row", () => {
+  assert.equal(occupancy(ctItem("a", CH(9))), "passive");
+  assert.equal(occupancy({ kind: "contribGroup", ref: { members: [] } }), "passive");
+  const group = groupContrib([ctItem("mcg", CH(18, 24)), ctItem("caroline", CH(18, 49)), ctItem("hihi", CH(18, 52))])[0];
+  const bearTrap = evItem("bt", CH(20), CH(20, 30));
+  const now = CH(16, 31);
+  const timeline = buildTimeline([group, bearTrap], [], CD, CD + DAY, now);
+  // ONE continuous gap from now to Bear Trap — not three tiny fragments around the contrib times
+  // (a second gap after Bear Trap, until midnight, is expected and unrelated)
+  const gaps = timeline.filter((e) => e.type === "gap");
+  const before = gaps.find((g) => g.start === now);
+  assert.equal(before.end, CH(20));
+  // the group is attached as a notice on that one gap, not rendered as its own item row
+  assert.equal(timeline.filter((e) => e.type === "item").length, 1); // just Bear Trap
+  assert.deepEqual(before.notices.map((n) => n.kind), ["contribGroup"]);
+  assert.equal(before.notices[0].ref.members.length, 3);
+});
+
+test("passive occupancy: a notice with nowhere to live (no gap contains it) still shows, as its own row", () => {
+  // Bear Trap runs right through where the contrib would land — no gap exists at that moment
+  const running = evItem("bt", CH(18), CH(19));
+  const ct = ctItem("solo", CH(18, 30));
+  const timeline = buildTimeline([running, ct], [], CD, CD + DAY, CH(17));
+  assert.equal(timeline.filter((e) => e.type === "gap" && e.notices).length, 0);
+  assert.deepEqual(timeline.filter((e) => e.type === "item").map((e) => e.item.kind), ["event", "contrib"]);
+});
+
+test("nextUp never surfaces a contribution group as the next thing to do", () => {
+  const group = groupContrib([ctItem("a", CH(9)), ctItem("b", CH(9, 10))])[0];
+  const bearTrap = evItem("bt", CH(11), CH(11, 30));
+  const r = nextUp([group, bearTrap], CH(8));
+  assert.equal(r.primary.item.id, "bt");
 });

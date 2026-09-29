@@ -7,7 +7,7 @@ import React, { useMemo, useRef, useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
 import { success } from "../lib/feedback.js";
 import { useMinute, useClockFor } from "../hooks/useNow.jsx";
-import { buildAgenda } from "../lib/agenda.js";
+import { buildAgenda, groupContrib } from "../lib/agenda.js";
 import { computeReminders, needsAttention } from "../lib/reminders.js";
 import { contribState, spendAttempt } from "../lib/contributions.js";
 import { idleCamps, splitNow, stillRunning, weekStrip } from "../lib/today.js";
@@ -350,6 +350,9 @@ function Row({ i, day, rems, open, setOpen, isNext }) {
   if (i.kind === "contrib") {
     actions.push(<Btn key="spend" small tone="gold" onClick={() => { success(); updateAccount(i.accountId, (d) => ({ ...d, contrib: spendAttempt(d.contrib, Date.now(), contribState(d.contrib, Date.now()).count) || d.contrib })); }}>{t("spendAll", { n: i.ref.max })}</Btn>);
   }
+  if (i.kind === "contribGroup") {
+    actions.push(<Btn key="spend" small tone="gold" onClick={() => { success(); i.ref.members.forEach((m) => updateAccount(m.accountId, (d) => ({ ...d, contrib: spendAttempt(d.contrib, Date.now(), contribState(d.contrib, Date.now()).count) || d.contrib }))); }}>{t("spendAll", { n: i.ref.max })}</Btn>);
+  }
   const need = myRems.find((r) => r.status === "open" || r.status === "unsure");
   if (need) actions.push(<Btn key="book" small tone="gold" onClick={() => openBooking({ accountId: need.accountId, startAt: Math.floor(need.occ.start / 1800000) * 1800000, position: "minister_strategy", eventKey: need.key })}>{t("bookShort")} · {accountById(need.accountId)?.name}</Btn>);
   if (timer) actions.push(<Btn key="upd" small onClick={() => { setEditing(true); setOpen(false); }}>{t("updateTimeLeft")}</Btn>);
@@ -454,6 +457,39 @@ function TaskForm({ gap, task, onDone }) {
   );
 }
 
+/** A quiet annotation inside a free-time block for a passive status update (Alliance
+ *  Contributions reaching full) — never its own timeline row, never implies the block is busy.
+ *  A lone account shows compactly; several within the grouping window collapse to one card with
+ *  progressive disclosure ("+N more") and a single bulk "Spend all". */
+function GapNotice({ item }) {
+  const { t, tz, lang, updateAccount } = useTimeHub();
+  const [expanded, setExpanded] = useState(false);
+  const members = item.kind === "contribGroup" ? item.ref.members : [item];
+  const shown = expanded ? members : members.slice(0, 3);
+  const restN = members.length - shown.length;
+  const spendAll = () => {
+    success();
+    members.forEach((m) => updateAccount(m.accountId, (d) => ({ ...d, contrib: spendAttempt(d.contrib, Date.now(), contribState(d.contrib, Date.now()).count) || d.contrib })));
+  };
+  return (
+    <div className="th-gap-notice">
+      <div className="th-gap-notice-head">
+        <span className="th-gap-notice-title">{t("contribFull")}</span>
+        {members.length > 1 && <span className="th-gap-notice-when"><Ltr>{formatTime(members[0].start, tz, lang)}</Ltr>–<Ltr>{formatTime(members[members.length - 1].start, tz, lang)}</Ltr></span>}
+      </div>
+      <ul className="th-gap-notice-list">
+        {shown.map((m) => (
+          <li key={m.accountId}><AccountTag accountId={m.accountId} /><Ltr>{formatTime(m.start, tz, lang)}</Ltr></li>
+        ))}
+      </ul>
+      <div className="th-gap-notice-foot">
+        {restN > 0 && <button type="button" className="th-link" onClick={() => setExpanded(true)}>{t("moreN", { n: restN })}</button>}
+        <Btn small tone="gold" onClick={spendAll}>{t("spendAll", { n: members[0].ref.max })}</Btn>
+      </div>
+    </div>
+  );
+}
+
 function GapRow({ gap }) {
   const { t, lang } = useTimeHub();
   const [adding, setAdding] = useState(false);
@@ -466,6 +502,7 @@ function GapRow({ gap }) {
         <span className="th-gap-free">{t("freeTime", { time: formatSpan(gap.ms, lang) })}</span>
         {!adding && gap.ms >= 30 * MINUTE && <button type="button" className="th-gap-add" onClick={() => setAdding(true)}>＋ {t("addTask")}</button>}
       </div>
+      {gap.notices?.map((n) => <GapNotice key={n.id} item={n} />)}
       {adding && <TaskForm gap={gap} onDone={() => setAdding(false)} />}
     </li>
   );
@@ -531,7 +568,7 @@ function Schedule({ offset, setOffset }) {
   const [showPast, setShowPast] = useState(false);
   const [openId, setOpenId] = useState(null);
   const day = localDayRange(now, tz, offset);
-  const items = useMemo(() => groupTraining(buildAgenda(state, day.start, day.end, accountIds, now)), [state, accountIds.join(), day.start, now]); // eslint-disable-line react-hooks/exhaustive-deps
+  const items = useMemo(() => groupContrib(groupTraining(buildAgenda(state, day.start, day.end, accountIds, now))), [state, accountIds.join(), day.start, now]); // eslint-disable-line react-hooks/exhaustive-deps
   const { past, rest } = splitNow(items);
   const isToday = offset === 0;
   const dayTasks = useMemo(() => (state.tasks || []).filter((x) => x.start >= day.start && x.start < day.end), [state.tasks, day.start]); // eslint-disable-line react-hooks/exhaustive-deps

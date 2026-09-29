@@ -20,6 +20,7 @@ export function itemTitle(item, t, templates) {
     case "training": return past ? t("campReady", { camp: t(item.ref.category) }) : t("campFinishes", { camp: t(item.ref.category) });
     case "research": return past ? t("researchReady", { place: t(item.ref.category) }) : t("researchFinishes", { place: t(item.ref.category) });
     case "contrib": return t("contribFull");
+    case "contribGroup": return t("contribFullN", { n: item.ref.members.length });
     case "drop": {
       const d = item.ref.drop;
       return d.kind === "store" ? t("dropStore", { n: d.amount }) : t(d.manual ? "dropTrek" : "dropTrekAuto", { n: d.amount });

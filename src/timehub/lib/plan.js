@@ -39,10 +39,15 @@ export function taskVisualHeight(ms) {
 /**
  * How much time an agenda item takes up:
  *  "range"   — a known start and end (events with a duration, minister bookings, championship rounds)
- *  "instant" — a moment (timer/research finishes, contributions full, claims, stamina 200, intel, daily reset)
+ *  "instant" — a moment that DOES mark the point busy time resumes from (timer/research finishes,
+ *              claims, stamina 200, intel, daily reset) — still gets its own row in the timeline.
+ *  "passive" — a moment that's purely informational and should never fragment free time or crowd
+ *              the timeline with a full row of its own (Alliance Contributions reaching full).
+ *              Rendered instead as a small note inside whichever free-time gap it falls in.
  *  "unknown" — an event with no known length: no free time is claimed straight after it.
  */
 export function occupancy(item) {
+  if (item.kind === "contrib" || item.kind === "contribGroup") return "passive";
   if (item.kind === "event") {
     if (item.ref?.ev?.templateId === "daily_reset") return "instant";
     return item.end != null && item.end > item.start ? "range" : "unknown";
@@ -55,11 +60,18 @@ export function occupancy(item) {
  * Timeline for one day: scheduled items and personal tasks in time order, with free-time gaps
  * between them. Overlapping busy periods merge (no gap inside them). Gaps are only shown from `now`
  * onwards and when at least MIN_GAP_MS long. Tasks marked done are shown but take no time.
- * → [{ type: "item", item } | { type: "task", task } | { type: "gap", start, end, ms }]
+ * "passive" items (Contributions full, possibly grouped by groupContrib first) never fragment a
+ * free-time block or claim a row of their own — they're attached as `.notices` on whichever gap
+ * (or, failing that, item/task) their moment falls inside, so a long free stretch stays one block
+ * with a small note in it rather than several small pieces around a status update.
+ * → [{ type: "item", item, notices? } | { type: "task", task, notices? }
+ *    | { type: "gap", start, end, ms, notices? }]
  */
 export function buildTimeline(items, tasks, dayStart, dayEnd, now, minGap = MIN_GAP_MS) {
+  const passive = items.filter((i) => occupancy(i) === "passive");
+  const active = items.filter((i) => occupancy(i) !== "passive");
   const entries = [
-    ...items.map((item) => ({ type: "item", item, start: item.start, end: item.end, occ: occupancy(item) })),
+    ...active.map((item) => ({ type: "item", item, start: item.start, end: item.end, occ: occupancy(item) })),
     ...tasks.map((task) => ({ type: "task", task, start: task.start, end: task.end, occ: task.done ? "ignore" : "range" })),
   ].sort((a, b) => a.start - b.start || (a.type === "task") - (b.type === "task") || (a.end ?? a.start) - (b.end ?? b.start));
 
@@ -79,6 +91,21 @@ export function buildTimeline(items, tasks, dayStart, dayEnd, now, minGap = MIN_
     else if (e.occ === "unknown") freeFrom = null;
   }
   pushGap(dayEnd);
+
+  // attach each passive notice to the gap whose span contains its moment; anything that lands
+  // nowhere (no enclosing gap — e.g. the day is wall-to-wall busy right then) still gets shown,
+  // as its own row, rather than silently dropped.
+  const orphans = [];
+  for (const p of [...passive].sort((a, b) => a.start - b.start)) {
+    const gap = out.find((e) => e.type === "gap" && p.start >= e.start && p.start < e.end);
+    if (gap) (gap.notices || (gap.notices = [])).push(p);
+    else orphans.push(p);
+  }
+  if (orphans.length) {
+    for (const p of orphans) out.push({ type: "item", item: p });
+    const at = (e) => (e.type === "gap" ? e.start : e.type === "item" ? e.item.start : e.task.start);
+    out.sort((a, b) => at(a) - at(b));
+  }
   return out;
 }
 

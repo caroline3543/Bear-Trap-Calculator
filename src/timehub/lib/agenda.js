@@ -9,6 +9,36 @@ import { bookingEnd } from "./bookings.js";
 import { contribState } from "./contributions.js";
 import { dropsBetween, dropStatus, staminaNow, isCurrentDrop, intelRefreshesBetween, intelPeriod } from "./daily.js";
 import { champRounds } from "./championship.js";
+import { MINUTE } from "./time.js";
+
+/** Repeated instances of the SAME passive status (Alliance Contributions reaching full on several
+ *  accounts) shouldn't each claim a full row on Today — see lib/plan.js's "passive" occupancy.
+ *  Contribution-full moments within this many minutes of the first one in a run are merged into
+ *  one "contribGroup" item; a run of exactly one account is left as a normal single "contrib" item. */
+export const CONTRIB_GROUP_WINDOW_MS = 60 * MINUTE;
+
+/** Clusters "contrib" items (from buildAgenda) that fall within CONTRIB_GROUP_WINDOW_MS of the
+ *  first one in a run into a single "contribGroup" item, positioned at that first account's full
+ *  time. Everything else passes through unchanged. Bear Trap, Foundry, and other real events are
+ *  never affected — only repeats of this one passive status get merged. */
+export function groupContrib(items) {
+  const contribs = items.filter((i) => i.kind === "contrib").sort((a, b) => a.start - b.start || a.id.localeCompare(b.id));
+  if (contribs.length < 2) return items;
+  const others = items.filter((i) => i.kind !== "contrib");
+  const groups = [];
+  let cluster = [];
+  for (const c of contribs) {
+    if (cluster.length && c.start - cluster[0].start > CONTRIB_GROUP_WINDOW_MS) { groups.push(cluster); cluster = []; }
+    cluster.push(c);
+  }
+  if (cluster.length) groups.push(cluster);
+  const merged = groups.map((members) => (members.length === 1 ? members[0] : {
+    id: `ctg:${members.map((m) => m.accountId).join(",")}`,
+    kind: "contribGroup", start: members[0].start, end: null, accountId: null,
+    ref: { members, max: members[0].ref.max }, status: "upcoming",
+  }));
+  return [...others, ...merged].sort((a, b) => a.start - b.start || String(a.id).localeCompare(String(b.id)));
+}
 
 function statusOf(start, end, now) {
   const e = end ?? start + JUST_STARTED_MS;
@@ -97,7 +127,7 @@ export function buildAgenda(state, from, to, accountIds, now) {
  * → { primary: { item, phase: "active" | "upcoming" } | null, then: item | null, live: item[] }
  */
 export function nextUp(items, now) {
-  const eligible = items.filter((i) => i.kind !== "contrib");
+  const eligible = items.filter((i) => i.kind !== "contrib" && i.kind !== "contribGroup");
   const live = eligible.filter((i) => i.status === "now" && (i.kind === "event" || i.kind === "booking"));
   const upcoming = eligible.filter((i) => i.start > now);
   if (live.length) {
