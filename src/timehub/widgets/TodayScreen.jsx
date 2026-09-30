@@ -401,13 +401,13 @@ function Row({ i, day, rems, open, setOpen, isNext }) {
         <span className="th-srow-body">
           <span className="th-srow-title">{title}</span>
           <span className="th-srow-tags">
+            <AccountTag accountId={i.accountId} />
             {timer && (
               <button type="button" className={`th-countbtn ${i.start - now < 5 * 60000 ? "urgent" : ""}`} onClick={() => setEditing(!editing)} aria-label={`${t("updateTimeLeft")}: ${title}`}>
-                <Remaining to={i.start} fmt="clock" />
+                <span className="th-lc">{t("eduInWord")}</span> <Remaining to={i.start} fmt="countdown" />
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z" /></svg>
               </button>
             )}
-            <AccountTag accountId={i.accountId} />
             {i.kind === "contrib" && <span className="th-srow-note">{i.ref.max} / {i.ref.max}</span>}
             {i.kind === "drop" && <span className={`th-srow-note ${i.ref.drop.manual ? "warn" : ""}`}>{i.ref.drop.manual ? t("claimByHand") : t("automatic")} · {t("allAccountsShort")}</span>}
             {i.kind === "stamina" && <span className="th-srow-note">{t("regenStops")}</span>}

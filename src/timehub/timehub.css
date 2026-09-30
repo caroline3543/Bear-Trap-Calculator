@@ -595,11 +595,13 @@ button[aria-pressed="true"] .th-dots i { box-shadow: 0 0 0 1.5px var(--selectedT
 .th-band.b-afternoon { background: var(--neutralChipBg); color: var(--cocoa); }
 .th-band.b-evening { background: var(--statusT9Bg); color: var(--statusT9Text); }
 .th-band.b-lateNight, .th-band.b-night { background: var(--tierTrackBg); color: var(--gold); }
-.th-srow { position: relative; border-top: 1px solid var(--cardBorderT); }
+/* no border-top here on purpose: rows are separated by whitespace and the timeline spine, not a
+   full-width rule per row — a rule on every row plus the spine reads as a table grid. */
+.th-srow { position: relative; }
 .th-srow::before { content: ""; position: absolute; inset-inline-start: 121px; top: 0; bottom: 0; width: 1.5px; background: var(--cardBorderT); }
 .th-band + .th-srow { border-top: none; }
 .th-srow.now { background: var(--goldBg); }
-.th-srow-main { position: relative; display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 11px 16px; touch-action: pan-y; }
+.th-srow-main { position: relative; display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 14px 16px; touch-action: pan-y; }
 .th-srow-hit { position: absolute; inset: 0; background: none; border: none; cursor: pointer; z-index: 0; }
 .th-srow-hit:focus-visible { outline: 2.5px solid var(--teal); outline-offset: -3px; }
 .th-srow-time, .th-srow-body, .th-srow-side { position: relative; z-index: 1; pointer-events: none; }
@@ -612,7 +614,9 @@ button[aria-pressed="true"] .th-dots i { box-shadow: 0 0 0 1.5px var(--selectedT
 .th-srow-tags:empty { display: none; }
 .th-srow-note { font-size: 12px; font-weight: 700; color: var(--sub); }
 .th-srow-side { display: flex; align-items: center; gap: 8px; }
-.th-countbtn { min-height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--btnSecondaryBorder); background: var(--btnSecondaryBg); color: var(--gold); font: 800 13px 'Nunito Sans', sans-serif; font-variant-numeric: tabular-nums; cursor: pointer; }
+/* plain text weight, not another bordered pill — the event title should be the only thing that
+   reads as "important" here; this is supporting detail the person can still tap to adjust. */
+.th-countbtn { min-height: 36px; padding: 0 2px; border: none; background: none; color: var(--sub); font: 700 13px 'Nunito Sans', sans-serif; font-variant-numeric: tabular-nums; cursor: pointer; }
 .th-srow-actions { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 12px 102px; animation: th-rise .15s ease-out; }
 [dir="rtl"] .th-srow-actions { padding: 0 102px 12px 16px; }
 @media (max-width: 380px) { .th-srow-actions { padding-inline: 16px; } }
@@ -844,7 +848,7 @@ button[aria-pressed="true"] .th-dots i { box-shadow: 0 0 0 1.5px var(--selectedT
 @keyframes th-ring { 0% { transform: scale(.5); opacity: .6; } 100% { transform: scale(1.4); opacity: 0; } }
 .th-srow.next .th-srow-main::after { content: ""; position: absolute; inset: 4px 8px; border-radius: 12px; border: 1.5px solid var(--goldStrong); opacity: 0; animation: th-glow 3s ease-in-out infinite; pointer-events: none; }
 @keyframes th-glow { 0%, 100% { opacity: 0; } 50% { opacity: .55; } }
-.th-countbtn.urgent { border-color: var(--amber); color: var(--amber); animation: th-urgent 1.2s ease-in-out infinite; }
+.th-countbtn.urgent { color: var(--amber); font-weight: 800; animation: th-urgent 1.2s ease-in-out infinite; }
 @keyframes th-urgent { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
 .th-srow-hit:active ~ .th-srow-time, .th-srow-hit:active ~ .th-srow-body { transform: scale(.985); }
 .th-srow-time, .th-srow-body { transition: transform .1s ease; }
@@ -1408,3 +1412,5 @@ html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
 
 .th-rail-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--cardBgT); border: 1.5px solid var(--teal); justify-self: center; position: relative; z-index: 1; }
 .th-rail-dot.now { border-color: var(--gold); background: var(--gold); }
+
+.th-lc { text-transform: lowercase; }

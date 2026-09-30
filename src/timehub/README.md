@@ -637,3 +637,21 @@ Flagging honestly rather than skipping quietly:
   yet.
 - **Auto-scroll to NOW + collapse earlier items** ("✓ 8 earlier items · Show") on opening Timeline.
 - A distinct **"Needs you soon"** (next ~2h) grouping separate from the existing Needs You card.
+
+## Removed the table-grid feel from the Timeline (Sep 2026)
+Refinement of last round's spine, not a rebuild — the smallest changes that fixed it:
+- **Removed the full-width `border-top` on every row** (`timehub.css → .th-srow`) — this, combined
+  with the vertical spine, was exactly what read as a table (horizontal rule + vertical rule =
+  grid cells). Rows are now separated by whitespace and the spine alone; slightly more vertical
+  padding (11px → 14px) keeps them from feeling cramped without it. The NOW marker and "after
+  midnight" boundary have their own independent styling and were unaffected.
+- **The inline countdown next to each event no longer shows a live HH:MM:SS clock.** It was using
+  `fmt="clock"` (always-precise, seconds included) instead of the tiered `fmt="countdown"` built
+  last round — swapped to the latter, so it now reads "in 2h 9m" the way the brief's examples show,
+  and it also lost its bordered-pill background (now plain, muted text with a small edit pencil) so
+  it no longer visually competes with the event title above it.
+- **Reordered the row's tag line** so the account chip comes before the relative-time text, matching
+  the requested hierarchy (event → account → relative time → supporting details → UTC, the last of
+  which already lives in the smaller text under the local time on the left).
+- Checked in the browser, Arabic RTL, and dark mode; 134 tests pass; your calculator rebuild shows
+  no performance change.
