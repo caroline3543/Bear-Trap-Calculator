@@ -655,3 +655,56 @@ Refinement of last round's spine, not a rebuild — the smallest changes that fi
   which already lives in the smaller text under the local time on the left).
 - Checked in the browser, Arabic RTL, and dark mode; 134 tests pass; your calculator rebuild shows
   no performance change.
+
+## Vice President research reminders, a Timeline filter, and a calmer To-do list (Sep 2026)
+
+### Part 1 — Research → Vice President booking reminder
+- `lib/research.js` rewritten to be specifically about the **Vice President** position (+10%
+  research speed) rather than "any minister" — confirmed as the right position this round.
+  `researchReminder()` now checks bookings filtered to `vice_president` only, and adds conflict
+  detection: if a VP booking exists nearby (within 6h) but no longer covers the *current*
+  recommended slot — because the research timer's finish time drifted — it's surfaced as
+  "booking may need updating" rather than silently ignored, moved, or re-prompted forever.
+  As instructed, the +10% buff's effect on the finish time itself is **not** modelled (same
+  reasoning as the Ministry of Education planner): the app has no research-speed formula to
+  correct the estimate with, so the current projected finish is used as-is.
+- Shown in two places, both reading the same underlying state: a quiet line under each research
+  timer in the Timers tab (`Book this slot` / `Mark booked`), and — new — a proper action card in
+  **Needs You** on the Timeline once the reminder enters its 24-hour or 3-hour tier. "Mark booked"
+  writes a real record into the existing bookings model; nothing is duplicated or invented.
+- Two real bugs found and fixed while building this: a wrong translation-key convention showed
+  literal text like "short_war_academy" instead of "War Academy" (research buildings use a
+  different key convention than training camps); and giving the Needs-You card two buttons broke
+  its layout entirely (the title's available width was squeezed to about 9px) — resolved by
+  keeping one primary action there and leaving the second ("Mark booked") where it already has
+  room, in the Research tab.
+
+### New: a Timeline filter
+- `Schedule` (Today/Timeline) gained an All / Game / Personal / Work filter
+  (`state.settings.timelineFilter`), right under the "Schedule" heading. "Game" keeps every real
+  game item (events, timers, bookings, contributions…) plus Game-category to-dos together, since
+  both are "the game side of the day"; Personal/Work show just that to-do category and quiet the
+  game noise entirely. Verified in the browser and in Arabic RTL/dark mode: switching to Personal
+  correctly hid all 17 game rows while keeping a scheduled personal task, and switching to Game
+  correctly hid the personal task while keeping the events.
+
+### Part 2 — To-do, a first pass toward feeling like a real task manager
+Scoped deliberately — see "not done" below for the rest of this large brief.
+- **Completed tasks now leave the active list.** Ticking one off moves it into a collapsed
+  "Completed · N" toggle at the bottom of its category (per-category, not yet a shared
+  History view) instead of sitting inline with strikethrough forever. Un-checking it in that
+  list moves it straight back to active — this doubles as "Restore".
+- **Quick-add now shows duration as a real, always-visible field** next to the title, instead of
+  behind a "+ How long?" toggle — matches the brief's exact requested layout.
+
+### Not done this round (flagged, not skipped quietly)
+This brief's Part 2 is large. Still outstanding: tap-a-task-to-edit (title/duration/category/
+account/priority/notes in one sheet), swipe gestures (delete/complete), drag-and-drop reordering,
+user-created subgroups within Game/Personal/Work, a proper cross-category Completed/History view
+with date-range filtering, and the task data-model additions (notes, priority as a separate field
+from "important", custom sort order) that those would need. Also from an earlier round, still
+outstanding: action/event/completion/passive colour hierarchy on timeline nodes, action-oriented
+completions, sleep-aware gap phrasing, and auto-scroll-to-NOW with earlier items collapsed.
+
+Checked in the browser, Arabic RTL, and dark mode; 135 tests pass (5 new this round); your
+calculator rebuild shows no performance change and no leaks.

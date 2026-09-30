@@ -10,6 +10,7 @@ import { EventForm } from "./EventsWidget.jsx";
 import { useMinute, useClockFor } from "../hooks/useNow.jsx";
 import { buildAgenda, groupContrib, groupTraining } from "../lib/agenda.js";
 import { bestFits } from "../lib/tasks.js";
+import { researchReminder, VP_POSITION } from "../lib/research.js";
 
 /** Whether ANY unfinished, unscheduled to-do exists — decides whether "+ Add task" opens the
  *  suggestion sheet first or goes straight to a blank form (no point suggesting from nothing). */
@@ -31,7 +32,7 @@ import { buildTimeline, parseTaskDuration, placeTask, resizeTask, pruneTasks, ro
 import { champRounds } from "../lib/championship.js";
 import { ChampQuestion } from "./ChampIntel.jsx";
 import { localDayRange, formatTime, formatDate, formatSpan, zonedParts, formatWeekdayShort, formatDayNumber, HOUR, MINUTE, DAY } from "../lib/time.js";
-import { Ltr, Bidi, AccountTag, Btn, SleepingBear, DurationFields, durFrom, durParse, CalendarButtons, BrushUnderline, SectionIcon, Remaining } from "../components/ui.jsx";
+import { Ltr, Bidi, AccountTag, Btn, Seg, SleepingBear, DurationFields, durFrom, durParse, CalendarButtons, BrushUnderline, SectionIcon, Remaining } from "../components/ui.jsx";
 import { itemTitle, toCalendarItem } from "../components/labels.js";
 import { ReminderRow } from "./ReminderRow.jsx";
 import { useWhenLocal } from "./TimerCard.jsx";
@@ -53,7 +54,13 @@ export function useNeeds() {
     const intel = intelNeedingAction(state, accountIds, now);
     const champ = state.settings.champ;
     const round = champ?.leader && champ.anchor ? champRounds(champ.anchor, now, now + 1).find((r) => r.start <= now && now < r.end) : null;
-    return { drops, stamina, idle, minister, intel, round, count: drops.length + stamina.length + idle.length + minister.length + (intel ? 1 : 0) + (round ? 1 : 0) };
+    // Vice President booking reminder for research nearing completion — only while it still needs
+    // action (booked ones stop appearing here, matching the rest of Needs You).
+    const vp = accountIds.flatMap((acc) => (dataFor(acc).timers || [])
+      .filter((x) => x.kind === "research" && x.endAt > now)
+      .map((x) => ({ acc, x, r: researchReminder(x, dataFor(acc).bookings, now) }))
+      .filter((e) => e.r && !e.r.booked));
+    return { drops, stamina, idle, minister, intel, round, vp, count: drops.length + stamina.length + idle.length + minister.length + (intel ? 1 : 0) + (round ? 1 : 0) + vp.length };
   }, [state, accountIds.join(), now]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
@@ -83,7 +90,7 @@ function NeedRow({ tone = "warm", title, sub, children, leaving, icon = "bell" }
 }
 
 function NeedsYou({ hiddenKeys }) {
-  const { t, tz, lang, accountById, startTraining, setTab, updateAccount } = useTimeHub();
+  const { t, tz, lang, accountById, startTraining, setTab, updateAccount, openBooking } = useTimeHub();
   const now = useMinute();
   const when = useWhenLocal();
   const claim = useClaim();
@@ -138,6 +145,13 @@ function NeedsYou({ hiddenKeys }) {
             title={t("idleFor", { time: formatSpan(now - idle.since, lang) })}
             sub={<><AccountTag accountId={acc} /> {idle.fullBatchMs ? t("fullBatchNowFinishes", { time: when(now + idle.fullBatchMs) }) : t("setFullBatchHint")}</>}>
             <Btn tone="gold" small onClick={() => startTraining({ accountId: acc, camps: idle.camps.map((c) => c.camp), troops: Object.fromEntries(idle.camps.map((c) => [c.camp, c.troop])), ms: idle.fullBatchMs })}>{t("start")}</Btn>
+          </NeedRow>
+        ))}
+        {n.vp.map(({ acc, x, r }) => (
+          <NeedRow key={`vp${x.id}`} tone="gold" icon="flask" leaving={leaving.includes(`vp${x.id}`)}
+            title={t("vpNeedTitle")}
+            sub={<><AccountTag accountId={acc} /> {t(x.category)} · {t("vpNeedSlot", { time: formatTime(r.slot.start, tz, lang) })}{r.conflict && <> · {t("vpConflictShort")}</>}</>}>
+            <Btn small tone="gold" onClick={() => later(`vp${x.id}`, () => openBooking({ accountId: acc, startAt: r.slot.start, position: "vice_president" }))}>{t("bookThisSlot")}</Btn>
           </NeedRow>
         ))}
         {n.minister.length > 0 && (
@@ -627,16 +641,23 @@ function TaskRow({ task, overdue, moveTarget }) {
 /** Camps of one account finishing in the same minute become one row. */
 /* ---------- schedule ---------- */
 function Schedule({ offset, setOffset }) {
-  const { t, tz, lang, state, accountIds, templates, accountById } = useTimeHub();
+  const { t, tz, lang, state, dispatch, accountIds, templates, accountById } = useTimeHub();
   const now = useMinute(); // rows keep their own 1-second countdowns
   const when = useWhenLocal();
   const [showPast, setShowPast] = useState(false);
   const [openId, setOpenId] = useState(null);
   const day = localDayRange(now, tz, offset);
-  const items = useMemo(() => groupContrib(groupTraining(buildAgenda(state, day.start, day.end, accountIds, now))), [state, accountIds.join(), day.start, now]); // eslint-disable-line react-hooks/exhaustive-deps
+  const filter = state.settings.timelineFilter;
+  const rawItems = useMemo(() => groupContrib(groupTraining(buildAgenda(state, day.start, day.end, accountIds, now))), [state, accountIds.join(), day.start, now]); // eslint-disable-line react-hooks/exhaustive-deps
+  // A simple filter across BOTH dimensions on the timeline: real game items (events, timers,
+  // bookings, contributions…) versus the To-do categories. "Game" keeps game items AND game
+  // to-dos together, since both are "the game side of the day"; Personal/Work show just that
+  // category of to-do and quiet the game noise entirely.
+  const items = filter === "personal" || filter === "work" ? [] : rawItems;
   const { past, rest } = splitNow(items);
   const isToday = offset === 0;
-  const dayTasks = useMemo(() => (state.tasks || []).filter((x) => x.start >= day.start && x.start < day.end), [state.tasks, day.start]); // eslint-disable-line react-hooks/exhaustive-deps
+  const dayTasksAll = useMemo(() => (state.tasks || []).filter((x) => x.start >= day.start && x.start < day.end), [state.tasks, day.start]); // eslint-disable-line react-hooks/exhaustive-deps
+  const dayTasks = filter === "all" ? dayTasksAll : dayTasksAll.filter((x) => x.category === filter);
   // A task's planned time passing is not completion: only tasks the person actually ticked off
   // fold away into "completed". Everything else stays visible until they say otherwise.
   const pastTasks = dayTasks.filter((x) => x.done);
@@ -661,6 +682,9 @@ function Schedule({ offset, setOffset }) {
       <img className="th-snowedge" src={snowEdge} alt="" aria-hidden="true" decoding="async" />
       <div className="th-sband-body">
       <div className="th-sband-head"><span className="th-eyebrow">{t("comingUp")}</span><h2 className="th-sband-title">{isToday ? t("scheduleTitle") : heading}</h2><p className="th-sec-sub">{t("scheduleSub")}</p></div>
+      <Seg value={filter} onChange={(v) => dispatch({ type: "settings", patch: { timelineFilter: v } })} label={t("timelineFilter")} options={[
+        { value: "all", label: t("all") }, { value: "game", label: t("todoGame") }, { value: "personal", label: t("todoPersonal") }, { value: "work", label: t("todoWork") },
+      ]} />
       <WeekStrip offset={offset} setOffset={setOffset} />
       <div className="th-card th-sched">
       {past.length + pastTasks.length > 0 && (

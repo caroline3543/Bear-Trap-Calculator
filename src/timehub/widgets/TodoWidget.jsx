@@ -30,9 +30,8 @@ function useTodayTasks() {
 }
 
 function QuickAdd({ category, onDone }) {
-  const { t, lang, update, newId } = useTimeHub();
+  const { t, update, newId } = useTimeHub();
   const [title, setTitle] = useState("");
-  const [showMore, setShowMore] = useState(false);
   const [durRaw, setDurRaw] = useState("");
   const ms = durRaw ? parseTaskDuration(durRaw) : null;
   const add = () => {
@@ -42,25 +41,18 @@ function QuickAdd({ category, onDone }) {
       accountId: null, important: null, done: false, createdAt: Date.now(),
     }] }));
     success();
-    setTitle(""); setShowMore(false); setDurRaw("");
+    setTitle(""); setDurRaw("");
     onDone?.();
   };
   return (
     <form className="th-todo-add" onSubmit={(e) => { e.preventDefault(); add(); }}>
       <input className="th-input" value={title} maxLength={120} placeholder={t("todoPlaceholder")} onChange={(e) => setTitle(e.target.value)} />
-      {showMore ? (
-        <label className="th-todo-add-more">
-          <span className="th-label">{t("howLong")}</span>
-          <input className="th-input th-task-dur" inputMode="numeric" value={durRaw} placeholder="30" onChange={(e) => setDurRaw(e.target.value.replace(/[^\d:]/g, ""))} />
-          <span className="th-hint">{durRaw ? (ms ? formatSpan(ms, lang) : t("durInvalidTask")) : t("durTaskHint")}</span>
-        </label>
-      ) : (
-        <button type="button" className="th-link" onClick={() => setShowMore(true)}>+ {t("howLong")}</button>
-      )}
+      <input className="th-input th-task-dur th-todo-dur" inputMode="numeric" value={durRaw} placeholder={t("durPlaceholder")} onChange={(e) => setDurRaw(e.target.value.replace(/[^\d:]/g, ""))} />
       <Btn small tone="gold" type="submit" disabled={!title.trim()}>{t("add")}</Btn>
     </form>
   );
 }
+
 
 /** Offers real, currently-open gaps on today's timeline for this task's length; picking one
  *  schedules it (same task object — nothing is duplicated into a second timeline entry). */
@@ -131,6 +123,7 @@ function CategorySection({ category, tasks, count }) {
   const open = state.settings.todoOpen[category] !== false;
   const setOpen = (v) => dispatch({ type: "settings", patch: { todoOpen: { ...state.settings.todoOpen, [category]: v } } });
   const [adding, setAdding] = useState(false);
+  const [showDone, setShowDone] = useState(false);
   const openTasks = tasks.filter((t) => !t.done);
   const doneTasks = tasks.filter((t) => t.done);
   return (
@@ -142,14 +135,20 @@ function CategorySection({ category, tasks, count }) {
       </button>
       {open && (
         <div className="th-todo-cat-body">
-          {openTasks.length === 0 && doneTasks.length === 0 && <p className="th-note">{t("todoEmpty")}</p>}
-          {(openTasks.length > 0 || doneTasks.length > 0) && (
+          {openTasks.length === 0 && <p className="th-note">{t("todoEmpty")}</p>}
+          {openTasks.length > 0 && (
             <ul className="th-slist">
-              {[...openTasks, ...doneTasks].map((task) => <TodoRow key={task.id} task={task} showAccount={category === "game"} />)}
+              {openTasks.map((task) => <TodoRow key={task.id} task={task} showAccount={category === "game"} />)}
             </ul>
           )}
           {adding ? <QuickAdd category={category} onDone={() => setAdding(false)} /> : (
             <button type="button" className="th-gap-add" onClick={() => setAdding(true)}>＋ {t("addCategoryTask", { cat: t(CAT_LABEL[category]) })}</button>
+          )}
+          {doneTasks.length > 0 && (
+            <div className="th-todo-done">
+              <button type="button" className="th-link" aria-expanded={showDone} onClick={() => setShowDone(!showDone)}>{t("completedN", { n: doneTasks.length })}</button>
+              {showDone && <ul className="th-slist">{doneTasks.map((task) => <TodoRow key={task.id} task={task} showAccount={category === "game"} />)}</ul>}
+            </div>
           )}
         </div>
       )}

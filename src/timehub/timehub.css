@@ -1414,3 +1414,9 @@ html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
 .th-rail-dot.now { border-color: var(--gold); background: var(--gold); }
 
 .th-lc { text-transform: lowercase; }
+
+/* Timeline filter (All/Game/Personal/Work) sits right under the Schedule heading */
+.th-sband-head + .th-seg { margin: 10px 0 4px; }
+
+.th-todo-dur { flex: 0 0 92px; }
+.th-todo-done { margin-top: 4px; }

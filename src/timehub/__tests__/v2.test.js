@@ -1420,11 +1420,30 @@ test("researchReminder: the acceptance test — Tue 07:42 UTC finish, reminder a
   assert.equal(r.tier, "day");
   assert.deepEqual([r.slot.start, r.slot.end], [finishAt - 12 * MINUTE, finishAt + 18 * MINUTE]);
   assert.equal(r.booked, false);
-  // once something is booked covering that slot, it flips
-  const booked = researchReminder(t, [{ id: "b1", position: "minister_defense", startAt: r.slot.start }], nowAtReminder);
+  assert.equal(r.conflict, null);
+  // a DIFFERENT minister position covering the same slot doesn't count — this is specifically Vice President
+  assert.equal(researchReminder(t, [{ id: "b0", position: "minister_defense", startAt: r.slot.start }], nowAtReminder).booked, false);
+  // once Vice President is booked covering that slot, it flips
+  const booked = researchReminder(t, [{ id: "b1", position: "vice_president", startAt: r.slot.start }], nowAtReminder);
   assert.equal(booked.booked, true);
   // far in the future (outside the app's bookable window) → no reminder at all, not a false promise
   assert.equal(researchReminder({ endAt: finishAt + 20 * 24 * HOUR }, [], nowAtReminder), null);
   // already finished → no reminder
   assert.equal(researchReminder(t, [], finishAt + MINUTE), null);
+});
+
+test("researchReminder: a nearby but non-covering Vice President booking is flagged as a possible conflict, never silently moved", () => {
+  const finishAt = RD + 8 * HOUR + 42 * MINUTE;
+  const now = finishAt - 2 * HOUR;
+  const slot = researchSlotFor(finishAt);
+  // the player booked for an earlier estimate; research has since drifted into a later slot
+  const stale = researchReminder({ endAt: finishAt }, [{ id: "b1", position: "vice_president", startAt: slot.start - 90 * MINUTE }], now);
+  assert.equal(stale.booked, false);
+  assert.equal(stale.conflict.startAt, slot.start - 90 * MINUTE);
+  // a Vice President booking far away (outside the conflict window) is NOT flagged as related
+  const unrelated = researchReminder({ endAt: finishAt }, [{ id: "b2", position: "vice_president", startAt: slot.start - 20 * HOUR }], now);
+  assert.equal(unrelated.conflict, null);
+  // already correctly covering the current slot → no conflict, just booked
+  const fine = researchReminder({ endAt: finishAt }, [{ id: "b3", position: "vice_president", startAt: slot.start }], now);
+  assert.deepEqual([fine.booked, fine.conflict], [true, null]);
 });
