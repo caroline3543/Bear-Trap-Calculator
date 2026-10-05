@@ -42,6 +42,8 @@ import { useClaim } from "./DailyWidgets.jsx";
 import { FriendsWidget, FriendTimes } from "./FriendsWidget.jsx";
 import { SpendAllButton } from "./SpendAll.jsx";
 import { NextUp, useNextUp, ReadyNow } from "./NextUp.jsx";
+import { groupVpReminders } from "../lib/research.js";
+import { eventName } from "../lib/events.js";
 import { SwipeRow } from "./SwipeRow.jsx";
 import { eventAccounts } from "../lib/friends.js";
 
@@ -66,6 +68,7 @@ export function useNeeds() {
       .filter((x) => x.kind === "research" && x.endAt > now)
       .map((x) => ({ acc, x, r: researchReminder(x, dataFor(acc).bookings, now, dataFor(acc).vpDismiss) }))
       .filter((e) => e.r && e.r.status === "pending"));
+    const vpGroups = groupVpReminders(vp);
     // Alliance Contributions that are full RIGHT NOW (one grouped row, one Spend all)
     const contrib = state.settings.track?.contrib === false ? [] : accountIds.filter((a) => contribState(dataFor(a).contrib, now).full);
     // Education restart reminders the player accepted from the training planner
@@ -74,8 +77,8 @@ export function useNeeds() {
     const todoRem = remindersDue(todayView(state.tasks, now, tz), now, tz);
     const focus = state.settings.focus && state.settings.focus.endsAt > 0 && state.settings.focus.endsAt <= now ? state.settings.focus : null;
     const focusTask = focus ? (state.tasks || []).find((x) => x.id === focus.taskId) : null;
-    const count = drops.length + stamina.length + idle.length + minister.length + (intel ? 1 : 0) + (round ? 1 : 0) + vp.length + (contrib.length ? 1 : 0) + eduPlans.length + (todoRem.length ? 1 : 0) + (focusTask ? 1 : 0);
-    return { drops, stamina, idle, minister, intel, round, vp, contrib, eduPlans, todoRem, focusTask, count };
+    const count = drops.length + stamina.length + idle.length + minister.length + (intel ? 1 : 0) + (round ? 1 : 0) + vpGroups.length + (contrib.length ? 1 : 0) + eduPlans.length + (todoRem.length ? 1 : 0) + (focusTask ? 1 : 0);
+    return { drops, stamina, idle, minister, intel, round, vp: vpGroups, contrib, eduPlans, todoRem, focusTask, count };
   }, [state, accountIds.join(), now, tz]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
@@ -115,7 +118,7 @@ function NeedRow({ tone = "warm", title, sub, children, leaving, icon = "bell" }
 /** Needs You, prioritised by immediacy: NOW (act on it) above COMING UP (plan for it).
  *  One concise row per situation — several full Contributions accounts share one row. */
 function NeedsYou({ hiddenKeys }) {
-  const { t, tz, lang, accountById, startTraining, setTab, updateAccount, update, openBooking, notify } = useTimeHub();
+  const { t, tz, lang, accountById, startTraining, setTab, updateAccount, update, openBooking, notify, newId, templates } = useTimeHub();
   const now = useMinute();
   const when = useWhenLocal();
   const claim = useClaim();
@@ -129,10 +132,18 @@ function NeedsYou({ hiddenKeys }) {
   const [all, setAll] = useState(false);
   const [moreMin, setMoreMin] = useState([]); // minister boxes expanded to every account
   if (!n.count) return null;
-  const dismissVp = (acc, r) => {
+  // one booking action covers every research in the slot: dismiss / book them together
+  const dismissVpGroup = (g) => {
     const at = Date.now();
-    updateAccount(acc, (d) => ({ ...d, vpDismiss: { ...(d.vpDismiss || {}), [r.key]: at } }));
+    updateAccount(g.acc, (d) => ({ ...d, vpDismiss: { ...(d.vpDismiss || {}), ...Object.fromEntries(g.keys.map((k) => [k, at])) } }));
     notify([t("vpDismissed"), t("vpDismissedSub")]);
+  };
+  // "I've booked it" records the VP booking itself, so BOOKED is derived everywhere (Research card,
+  // Timeline, Next Up) from the one real bookings list — never a separate flag.
+  const bookedVpGroup = (g) => {
+    updateAccount(g.acc, (d) => (d.bookings.some((b) => b.position === "vice_president" && b.startAt === g.slot.start) ? d
+      : { ...d, bookings: [...d.bookings, { id: newId(), position: "vice_president", startAt: g.slot.start, notes: "", createdAt: Date.now() }] }));
+    success();
   };
   const dismissMinister = (r) => {
     update((s) => ({ ...s, reminders: { ...s.reminders, [r.key]: { state: "dismissed", buff: null } } }));
@@ -203,17 +214,22 @@ function NeedsYou({ hiddenKeys }) {
       </NeedRow>
     );
   }
-  for (const { acc, x, r } of n.vp) {
-    const place = t(x.category);
+  for (const g of n.vp) {
+    const id = `vp${g.acc}${g.slot.start}`;
+    const utc = `${formatTime(g.slot.start, "UTC", lang)}–${formatTime(g.slot.end, "UTC", lang)}`;
     soonRows.push(
-      <SwipeRow key={`vp${x.id}`} label={t("vpBookTitle", { utc: `${formatTime(r.slot.start, "UTC", lang)}–${formatTime(r.slot.end, "UTC", lang)}` })} onDismiss={() => dismissVp(acc, r)}>
-        <NeedRow tone="gold" icon="flask" leaving={leaving.includes(`vp${x.id}`)}
-          title={<>{t("bookVpShort")} · <Ltr>{formatTime(r.slot.start, "UTC", lang)}–{formatTime(r.slot.end, "UTC", lang)}</Ltr> UTC</>}
+      <SwipeRow key={id} label={t("vpBookTitle", { utc })} onDismiss={() => dismissVpGroup(g)}>
+        <NeedRow tone="gold" icon="flask" leaving={leaving.includes(id)}
+          title={<>{t("vpShort")} · {accountById(g.acc)?.name}</>}
           sub={<>
-            <span className="th-need-line"><AccountTag accountId={acc} /> {t("vpFinishesLine", { place, day: dayWordFor(r.finishAt, now, tz, lang, t) })} <b><Ltr>{formatTime(r.finishAt, tz, lang)}</Ltr></b> <span className="th-utc">· <Ltr>{formatTime(r.finishAt, "UTC", lang)}</Ltr> UTC</span></span>
-            <span className="th-need-line">{t("vpSlotLocal")} <b><Ltr>{formatTime(r.slot.start, tz, lang)}–{formatTime(r.slot.end, tz, lang)}</Ltr></b>{r.conflict && <> · {t("vpConflictShort")}</>}</span>
+            <span className="th-need-line">{t("bookColon")} <b><Ltr>{formatTime(g.slot.start, tz, lang)}–{formatTime(g.slot.end, tz, lang)}</Ltr></b> {dayWordFor(g.slot.start, now, tz, lang, t) !== t("today").toLocaleLowerCase(lang) ? dayWordFor(g.slot.start, now, tz, lang, t) : ""} <span className="th-utc">· <Ltr>{utc}</Ltr> UTC</span></span>
+            <span className="th-need-line">{t("coversColon")} {g.items.map((i) => `${t(i.x.category)} · ${formatTime(i.r.finishAt, tz, lang)}`).join(", ")}{g.items.some((i) => i.r.conflict) && <> · {t("vpConflictShort")}</>}</span>
           </>}>
-          <Btn small tone="gold" onClick={() => later(`vp${x.id}`, () => openBooking({ accountId: acc, startAt: r.slot.start, position: "vice_president" }))}>{t("bookShort")}</Btn>
+          <span className="th-item-actions th-need-acts">
+            <Btn small tone="gold" aria-label={t("bookVpShort")} onClick={() => later(id, () => openBooking({ accountId: g.acc, startAt: g.slot.start, position: "vice_president" }))}>{t("bookShort")}</Btn>
+            <Btn small aria-label={t("iBookedIt")} onClick={() => later(id, () => bookedVpGroup(g))}>{t("bookedShort")}</Btn>
+            <Btn small onClick={() => dismissVpGroup(g)}>{t("dismiss")}</Btn>
+          </span>
         </NeedRow>
       </SwipeRow>
     );
@@ -246,24 +262,49 @@ function NeedsYou({ hiddenKeys }) {
   const rank = (el) => { const k = String(el.key); const hit = RANK.find(([p]) => k.startsWith(p)); return hit ? hit[1] : 9; };
   nowRows.sort((a, b) => rank(a) - rank(b));
   soonRows.sort((a, b) => rank(a) - rank(b));
-  const VISIBLE = 2;
-  // collapsed: the most important rows across both tiers; expanded: Now / Coming up, each ranked
-  const shown = all ? nowRows : [...nowRows, ...soonRows].sort((a, b) => rank(a) - rank(b)).slice(0, VISIBLE);
-  const nowShown = all ? nowRows.length : shown.length;
-  const hiddenN = nowRows.length + soonRows.length - Math.min(VISIBLE, nowRows.length + soonRows.length);
+  // ACTION TYPES first (one line each); the detailed rows are behind Review. A single action shows
+  // its full row straight away, so it can be resolved without an extra tap.
+  const nm = (a) => accountById(a)?.name || "";
+  const summary = [];
+  if (n.minister.length) {
+    const evs = [...new Set(n.minister.map((r) => eventName(r.ev, t, templates)))];
+    summary.push({ k: "min", text: t("sumMinister", { what: evs.join(", "), n: new Set(n.minister.map((r) => r.accountId)).size }) });
+  }
+  if (n.focusTask) summary.push({ k: "focus", text: `${t("fiveMinDone")} · ${n.focusTask.title}` });
+  if (n.contrib.length) summary.push({ k: "contrib", text: t("sumContrib", { n: n.contrib.length }) });
+  for (const g of n.vp.slice(0, 2)) {
+    const day = dayWordFor(g.slot.start, now, tz, lang, t);
+    summary.push({ k: `vp${g.acc}${g.slot.start}`, text: `${t("vpShort")} · ${nm(g.acc)} · ${day !== t("today").toLocaleLowerCase(lang) ? `${day} ` : ""}${formatTime(g.slot.start, tz, lang)}–${formatTime(g.slot.end, tz, lang)}${g.items.length > 1 ? ` · ${t("coversN", { n: g.items.length })}` : ""}` });
+  }
+  if (n.vp.length > 2) summary.push({ k: "vpmore", text: t("sumVpMore", { n: n.vp.length - 2 }) });
+  if (n.eduPlans.length) summary.push({ k: "edu", text: t("restartWithEduAt", { time: formatTime(n.eduPlans[0].p.startAt, tz, lang) }) });
+  if (n.round) summary.push({ k: "champ", text: t("champRoundOpen", { n: n.round.round }) });
+  if (n.todoRem.length) summary.push({ k: "todorem", text: `${t("stillAvailableToday")} · ${n.todoRem.length}` });
+  if (n.stamina.length) summary.push({ k: "st", text: t("sumStamina", { n: n.stamina.length }) });
+  if (n.drops.length) summary.push({ k: "drops", text: t("sumClaims", { n: n.drops.length }) });
+  if (n.intel) summary.push({ k: "intel", text: t("intelSoon", { time: formatTime(n.intel.next, tz, lang) }) });
+  const actions = summary.length;
+  const collapsed = actions > 1 && !all;
   if (!nowRows.length && !soonRows.length) return null;
   return (
     <section className="th-needs-sec" id="th-needs" aria-label={t("needsYou")}>
       <div className="th-home-head">
-        <h2 className="th-home-label urgent">{t("needsYou")} · {nowRows.length + soonRows.length}</h2>
-        {hiddenN > 0 && <button type="button" className="th-link" aria-expanded={all} onClick={() => setAll(!all)}>{all ? t("showLess") : t("reviewN", { n: hiddenN })}</button>}
+        <h2 className="th-home-label urgent">{t("needsYou")} · {actions}</h2>
+        {actions > 1 && <button type="button" className="th-link" aria-expanded={all} onClick={() => setAll(!all)}>{all ? t("showLess") : t("review")}</button>}
       </div>
-      <div className="th-needs">
-        {all && nowRows.length > 0 && soonRows.length > 0 && <div className="th-needs-tier now" role="heading" aria-level={3}>{t("tierNow")}</div>}
-        {shown.slice(0, all ? undefined : nowShown)}
-        {all && soonRows.length > 0 && nowRows.length > 0 && <div className="th-needs-tier" role="heading" aria-level={3}>{t("tierComingUp")}</div>}
-        {all ? soonRows : shown.slice(nowShown)}
-      </div>
+      {collapsed ? (
+        <ul className="th-sum-list">
+          {summary.slice(0, 4).map((x) => <li key={x.k}>{x.text}</li>)}
+          {summary.length > 4 && <li className="th-sum-more">{t("plusNMore", { n: summary.length - 4 })}</li>}
+        </ul>
+      ) : (
+        <div className="th-needs">
+          {nowRows.length > 0 && soonRows.length > 0 && <div className="th-needs-tier now" role="heading" aria-level={3}>{t("tierNow")}</div>}
+          {nowRows}
+          {soonRows.length > 0 && nowRows.length > 0 && <div className="th-needs-tier" role="heading" aria-level={3}>{t("tierComingUp")}</div>}
+          {soonRows}
+        </div>
+      )}
     </section>
   );
 }
@@ -756,8 +797,7 @@ function TodayPreview({ full, setFull }) {
   const items = useMemo(() => {
     const day = localDayRange(now, tz, 0);
     return groupTraining(buildAgenda(state, now, day.end, accountIds, now))
-      .filter((i) => (i.status === "upcoming" || i.status === "now") && !["contrib", "intel"].includes(i.kind))
-      .slice(0, 4);
+      .filter((i) => (i.status === "upcoming" || i.status === "now") && !["contrib", "intel"].includes(i.kind));
   }, [state, accountIds.join(), now, tz]); // eslint-disable-line react-hooks/exhaustive-deps
   const title = (i) => (i.group ? (i.group.length === 3 ? t("allCampsFinish") : t("nCampsFinish", { n: i.group.length })) : itemTitle(i, t, templates));
   return (
@@ -768,12 +808,13 @@ function TodayPreview({ full, setFull }) {
       </div>
       {!full && (items.length ? (
         <ol className="th-preview-list">
-          {items.map((i) => (
+          {items.slice(0, 3).map((i) => (
             <li key={i.id}>
               <span className="th-preview-time"><b><Ltr>{formatTime(i.start, tz, lang)}</Ltr></b><small><Ltr>{formatTime(i.start, "UTC", lang)}</Ltr> UTC</small></span>
               <span className="th-preview-name">{title(i)}{i.accountId && <AccountTag accountId={i.accountId} />}</span>
             </li>
           ))}
+          {items.length > 3 && <li className="th-preview-more"><button type="button" className="th-link" onClick={() => setFull(true)}>{t("nLaterToday", { n: items.length - 3 })}</button></li>}
         </ol>
       ) : <p className="th-note">{t("nothingLeftToday")}</p>)}
     </section>

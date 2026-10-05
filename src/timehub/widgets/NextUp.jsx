@@ -7,13 +7,13 @@
    leaf ticks every second, so nothing else on the screen re-renders per second. */
 import React, { useMemo, useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
-import { useMinute, useNow } from "../hooks/useNow.jsx";
+import { useMinute } from "../hooks/useNow.jsx";
 import { buildAgenda, groupTraining } from "../lib/agenda.js";
 import { computeReminders, needsAttention } from "../lib/reminders.js";
 import { idleCamps } from "../lib/today.js";
-import { formatTime, formatSpan, formatCountdownClock, DAY } from "../lib/time.js";
+import { formatTime, formatSpan, DAY } from "../lib/time.js";
 import { itemTitle } from "../components/labels.js";
-import { Ltr, Bidi, AccountTag } from "../components/ui.jsx";
+import { Ltr, AccountTag, Remaining, Btn } from "../components/ui.jsx";
 import pool from "../assets/hero-pool-corner.webp";
 
 /** Routine or passive things never take the spotlight (they still appear on the Timeline). */
@@ -70,11 +70,10 @@ export function useNextUp() {
   }, [state, accountIds.join(), now]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
-/** The only per-second piece. */
+/** Human precision (4h 44m → 44m → 8m 42s). <Remaining> ticks once a minute and only switches to
+ *  per-second updates in the last 10 minutes — and only this leaf re-renders. */
 function Clock({ to }) {
-  const { lang } = useTimeHub();
-  const now = useNow();
-  return <span className="th-nextup-clock" role="timer"><Bidi>{formatCountdownClock(Math.max(0, to - now), lang)}</Bidi></span>;
+  return <span className="th-nextup-clock" role="timer"><Remaining to={to} /></span>;
 }
 
 function titleOf(i, t, templates) {
@@ -88,50 +87,64 @@ function SmallLine({ label, i }) {
   return (
     <li className="th-nextup-line">
       <span className="th-nextup-lbl">{label}</span>
-      <span className="th-nextup-txt">
-        <b>{titleOf(i, t, templates)}</b> · <Ltr>{formatTime(i.start, tz, lang)}</Ltr>
-        {i.start > now && <> · {t("inTime", { time: formatSpan(i.start - now, lang) })}</>}
-      </span>
+      <b className="th-nextup-ltitle">{titleOf(i, t, templates)}</b>
+      <span className="th-nextup-lwhen"><Ltr>{formatTime(i.start, tz, lang)}</Ltr>{i.start > now && <> · {t("inTime", { time: formatSpan(i.start - now, lang) })}</>}</span>
     </li>
   );
 }
 
-/** READY NOW · 5 — a compact count with groups; Review opens the individual actions.
- *  Lives BELOW the hero (never inside it). ≤ 2 things: shown directly with their action. */
+/** READY NOW — collapsed by default to ACTION counts ("Training camps · 4 accounts",
+ *  "Research · 3 ready"), not item counts. Review opens one grouped card: a row per account.
+ *  Expanding is remembered (settings.homeReadyOpen) because the player chose it. */
 export function ReadyNow() {
-  const { t, multi, accountById, startTraining, setTab } = useTimeHub();
+  const { t, accountById, startTraining, setTab, state, dispatch } = useTimeHub();
   const ready = useReadyNow();
-  const [open, setOpen] = useState(false);
-  const total = ready.camps.length + ready.research.length;
-  if (!total) return null;
-  const name = (x) => `${t(x.name)}${multi ? ` · ${accountById(x.a)?.name}` : ""}`;
-  const campAccts = [...new Set(ready.camps.map((x) => x.a))];
-  const restart = (a) => startTraining({ accountId: a, restart: true, camps: ready.camps.filter((x) => x.a === a).map((x) => x.name) });
-  const details = (
-    <ul className="th-ready-list">
-      {campAccts.map((a) => (
-        <li key={`c${a}`}>
-          <span>{ready.camps.filter((x) => x.a === a).map((x) => t(`short_${x.name}`)).join(", ")}{multi ? ` · ${accountById(a)?.name}` : ""}</span>
-          <button type="button" className="th-btn small gold" onClick={() => restart(a)}>↻ {t("restartShort")}</button>
-        </li>
-      ))}
-      {ready.research.map((x, i) => (
-        <li key={`r${i}`}><span>{name(x)}</span><button type="button" className="th-btn small" onClick={() => setTab("timers")}>{t("startResearchShort")}</button></li>
-      ))}
-    </ul>
-  );
+  const open = state.settings.homeReadyOpen === true;
+  const setOpen = (v) => dispatch({ type: "settings", patch: { homeReadyOpen: v } });
+  const byAcct = useMemo(() => {
+    const m = new Map();
+    for (const x of ready.camps) { if (!m.has(x.a)) m.set(x.a, { camps: [], research: [] }); m.get(x.a).camps.push(x.name); }
+    for (const x of ready.research) { if (!m.has(x.a)) m.set(x.a, { camps: [], research: [] }); m.get(x.a).research.push(x.name); }
+    return [...m.entries()];
+  }, [ready]);
+  if (!byAcct.length) return null;
+  const campAccts = byAcct.filter(([, v]) => v.camps.length).length;
   return (
     <section className="th-ready" aria-label={t("readyNowTitle")}>
       <div className="th-home-head">
-        <span className="th-home-label">{t("readyNowTitle")} · {total}</span>
-        {total > 2 && <button type="button" className="th-link" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? t("showLess") : t("review")}</button>}
+        <span className="th-home-label">{t("readyNowTitle")}</span>
+        <button type="button" className="th-link" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? t("showLess") : t("review")}</button>
       </div>
-      {total > 2 && !open && (
-        <p className="th-ready-sum">
-          {[ready.camps.length && `${t("readyCamps")} · ${ready.camps.length}`, ready.research.length && `${t("readyResearch")} · ${ready.research.length}`].filter(Boolean).join("   ")}
-        </p>
+      {!open ? (
+        <ul className="th-sum-list">
+          {campAccts > 0 && <li>{t("readyCamps")} · {campAccts === 1 ? accountById(byAcct.find(([, v]) => v.camps.length)[0])?.name : t("nAccounts", { n: campAccts })}</li>}
+          {ready.research.length > 0 && <li>{t("readyResearch")} · {t("nReady", { n: ready.research.length })}</li>}
+        </ul>
+      ) : (
+        <ul className="th-ready-card">
+          {byAcct.map(([a, v]) => (
+            <li key={a}>
+              <b className="th-ready-acct">{accountById(a)?.name}</b>
+              {v.camps.length > 0 && (
+                <div className="th-ready-row">
+                  <span>
+                    {v.camps.length === 3 ? t("allCampsReady") : t("nCampsReady", { n: v.camps.length })}
+                    <small>{v.camps.map((c) => t(`short_${c}`)).join(" · ")}</small>
+                  </span>
+                  <Btn small tone="gold" onClick={() => startTraining({ accountId: a, restart: true, camps: v.camps })}>↻ {t("restartShort")}</Btn>
+                </div>
+              )}
+              {v.research.length > 0 && (
+                <div className="th-ready-row">
+                  <span>{v.research.length === 1 ? t("researchReadyOne", { place: t(v.research[0]) }) : t("researchReadyN", { n: v.research.length })}
+                    {v.research.length > 1 && <small>{v.research.map((r) => t(r)).join(" · ")}</small>}</span>
+                  <Btn small aria-label={t("startResearchShort")} onClick={() => setTab("timers")}>{t("startShort")}</Btn>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
       )}
-      {(total <= 2 || open) && details}
     </section>
   );
 }
@@ -160,7 +173,7 @@ export function NextUp({ data }) {
       {small.length > 0 && (
         <ul className="th-nextup-more">
           {small.map((i, k) => {
-            const label = i.start < p.start ? t("soonerWord") : small.slice(0, k).some((x) => x.start >= p.start) ? t("later") : t("thenWord");
+            const label = i.start < p.start ? t("soonerWord") : k === 0 || small[0].start < p.start ? t("thenWord") : t("later");
             return <SmallLine key={i.id} label={label} i={i} />;
           })}
         </ul>

@@ -74,3 +74,23 @@ export function researchReminder(timer, bookings, now, dismissed = null) {
   const status = booked ? "booked" : dismissed && dismissed[key] ? "dismissed" : "pending";
   return { tier, finishAt: timer.endAt, slot, booked, conflict, key, status };
 }
+
+/**
+ * One booking action per account + 30-minute VP slot. Two researches finishing in the same slot
+ * (War Academy 00:39, Research Center 00:43 → 00:30–01:00 UTC) are ONE booking that covers both.
+ * entries: [{ acc, x: researchTimer, r: researchReminder(...) }]
+ * → [{ acc, slot, items: [{ x, r }] (by finish), keys }] sorted by slot start
+ */
+export function groupVpReminders(entries) {
+  const map = new Map();
+  for (const e of entries) {
+    const k = `${e.acc}|${e.r.slot.start}`;
+    if (!map.has(k)) map.set(k, { acc: e.acc, slot: e.r.slot, items: [], keys: [] });
+    const g = map.get(k);
+    g.items.push({ x: e.x, r: e.r });
+    g.keys.push(e.r.key);
+    if (e.r.slot.tight) g.slot = { ...g.slot, tight: true };
+  }
+  for (const g of map.values()) g.items.sort((a, b) => a.r.finishAt - b.r.finishAt);
+  return [...map.values()].sort((a, b) => a.slot.start - b.slot.start || String(a.acc).localeCompare(String(b.acc)));
+}

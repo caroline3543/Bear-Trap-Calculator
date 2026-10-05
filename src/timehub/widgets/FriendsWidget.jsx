@@ -3,7 +3,7 @@ import { useTimeHub } from "../TimeHubContext.jsx";
 import { useMinute } from "../hooks/useNow.jsx";
 import { classifyAt, DEFAULT_HOURS, validateHours } from "../lib/dayNight.js";
 import { formatTime, formatDate, offsetMinutes, formatHoursMinutes, isValidTimeZone, zoneCity } from "../lib/time.js";
-import { Section, Btn, Field, TimeZonePicker, FormActions, Icon, Ltr, AccountTag } from "../components/ui.jsx";
+import { Section, Btn, Field, TimeZonePicker, FormActions, Icon, Ltr } from "../components/ui.jsx";
 import { friendsForAccounts, friendDayOffset } from "../lib/friends.js";
 
 const PHASE_ICON = { day: Icon.sun, evening: Icon.dusk, sleep: Icon.moon };
@@ -138,9 +138,8 @@ export function FriendsWidget({ move: sectionMove }) {
                 <div className="th-item-name">{f.name}</div>
                 <div className="th-item-sub">{f.location || zoneCity(f.tz)} · {t(PHASE_KEY[phase])}</div>
                 <div className="th-item-sub">{rel}</div>
-                <div className="th-item-sub th-plays-line">{(f.accounts || []).length
-                  ? (f.accounts || []).map((a) => <AccountTag key={a} accountId={a} />)
-                  : <span className="th-plays-none">{t("playsWithNone")}</span>}</div>
+                {/* linked accounts are set in the friend's edit form; only flag a friend with none */}
+                {!(f.accounts || []).length && <div className="th-item-sub th-plays-line"><span className="th-plays-none">{t("playsWithNone")}</span></div>}
               </div>
               <div>
                 <div className="th-friend-time"><Ltr>{formatTime(now, f.tz, lang)}</Ltr></div>

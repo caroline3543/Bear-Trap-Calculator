@@ -1604,3 +1604,24 @@ html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
 .th-need.col > .th-swipe { flex-shrink: 0; }
 .th-min-more { align-self: flex-start; margin: 2px 4px 0; font-size: 13px; }
 .th-home .th-needs > .th-need.col { padding: 12px 12px 10px; gap: 8px; }
+
+/* ---------- Round 25: compact briefing ---------- */
+.th-nextup-line { display: grid; grid-template-columns: 1fr; gap: 1px; }
+.th-nextup-more { gap: 10px; }
+.th-nextup-ltitle { font: 700 14.5px/19px 'Nunito Sans', sans-serif; color: #fff; }
+.th-nextup-lwhen { font: 600 13px/17px 'Nunito Sans', sans-serif; color: #D9E4DE; }
+.th-nextup-lbl { font-size: 10.5px; line-height: 14px; }
+.th-nextup-clock { font: 600 36px/40px 'Fredoka', 'Nunito Sans', sans-serif; }
+.th-sum-list { list-style: none; margin: 0; padding: 12px 14px; display: grid; gap: 6px; border-radius: 16px; background: var(--surface); border: 1px solid var(--cardBorder); font: 700 14.5px/20px 'Nunito Sans', sans-serif; color: var(--ink); }
+.th-sum-list li { display: flex; gap: 8px; }
+.th-sum-list li::before { content: "•"; color: var(--gold); }
+.th-sum-more { color: var(--sub); }
+.th-ready-card { list-style: none; margin: 0; padding: 4px 14px; border-radius: 16px; background: var(--surface); border: 1px solid var(--cardBorder); }
+.th-ready-card > li { padding: 10px 0; border-bottom: 1px solid var(--cardBorder); display: grid; gap: 6px; }
+.th-ready-card > li:last-child { border-bottom: 0; }
+.th-ready-acct { font: 800 14px 'Nunito Sans', sans-serif; color: var(--ink); }
+.th-ready-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font: 600 14px 'Nunito Sans', sans-serif; color: var(--ink); }
+.th-ready-row > span { display: grid; min-width: 0; }
+.th-ready-row small { font: 600 12px 'Nunito Sans', sans-serif; color: var(--sub); }
+.th-preview-more { border-bottom: 0 !important; padding-top: 4px !important; }
+.th-need-acts { flex-wrap: wrap; gap: 6px; }
