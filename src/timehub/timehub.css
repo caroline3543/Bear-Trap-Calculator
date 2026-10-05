@@ -1530,3 +1530,77 @@ html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
 .th-freenow b { color: var(--ink); }
 .th-swipe-action.teal { background: var(--teal, #2F5D53); }
 .th-swipe-actions { z-index: 0; }
+
+/* ---------- Round 23: actionable minister rows, Next Up ---------- */
+.th-rem.slim { flex-wrap: wrap; }
+.th-rem.slim .th-rem-line { flex: 1 1 60%; min-width: 0; }
+.th-rem.slim .th-rem-acts { flex: 1 1 100%; justify-content: flex-start; }
+.th-rem.slim .th-del-choice { flex: 1 1 100%; }
+.th-nextup { position: relative; overflow: hidden; background: var(--th-hero-bg, #24433B); color: #FBF7EC; border-radius: 24px; padding: 20px 22px 18px; display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.th-nextup-art { position: absolute; inset-inline-end: 0; top: 0; width: 140px; height: 130px; pointer-events: none; opacity: .9; }
+[dir="rtl"] .th-nextup-art { transform: scaleX(-1); }
+.th-nextup.bear .th-nextup-eyebrow, .th-nextup.bear .th-nextup-title, .th-nextup.bear .th-nextup-when { padding-inline-end: 96px; }
+.th-nextup-eyebrow { font: 800 12px/16px 'Nunito Sans', sans-serif; letter-spacing: 1.4px; text-transform: uppercase; color: #E9C877; }
+.th-nextup-title { margin: 2px 0 0; font: 600 26px/30px 'Fredoka', 'Nunito Sans', sans-serif; color: #fff; }
+.th-nextup-when { font: 600 14px/20px 'Nunito Sans', sans-serif; color: #E3DBC4; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.th-nextup-count { display: flex; align-items: baseline; gap: 10px; margin-top: 6px; }
+.th-nextup-countlbl { font: 700 13px 'Nunito Sans', sans-serif; color: #CFE6DD; }
+.th-nextup-clock { font: 600 40px/44px 'Fredoka', 'Nunito Sans', sans-serif; letter-spacing: -.5px; font-variant-numeric: tabular-nums; color: #fff; }
+.th-nextup-status { align-self: flex-start; margin-top: 2px; padding: 4px 12px; border-radius: 999px; font: 800 12.5px 'Nunito Sans', sans-serif; text-decoration: none; }
+.th-nextup-status.warn { background: #E9A548; color: #2A2112; }
+.th-nextup-status.ok { background: rgba(255,255,255,.12); color: #CFE6DD; }
+.th-nextup-more, .th-nextup-ready ul { list-style: none; margin: 0; padding: 0; }
+.th-nextup-more { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.14); display: grid; gap: 4px; }
+.th-nextup-line { display: grid; grid-template-columns: 84px 1fr; gap: 8px; font: 600 13px/18px 'Nunito Sans', sans-serif; color: #D9E4DE; }
+.th-nextup-line b { color: #fff; font-weight: 700; }
+.th-nextup-lbl { font: 800 11px/18px 'Nunito Sans', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: #9FCBBE; }
+.th-nextup-ready { display: grid; grid-template-columns: 84px 1fr; align-items: center; gap: 8px; margin-top: 8px; font: 700 13px/18px 'Nunito Sans', sans-serif; color: #fff; }
+.th-nextup-ready ul { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.th-nextup-group { border: none; background: rgba(255,255,255,.12); color: #fff; border-radius: 999px; padding: 4px 12px; font: 700 13px 'Nunito Sans', sans-serif; cursor: pointer; min-height: 30px; }
+.th-nextup-group:focus-visible, .th-nextup-status:focus-visible { outline: 3px solid #E9C877; outline-offset: 2px; }
+.th-nextup-sub { display: grid !important; gap: 2px; padding: 4px 0 0 4px !important; font-weight: 600; color: #D9E4DE; }
+@media (max-width: 380px) { .th-nextup-clock { font-size: 34px; } .th-nextup-title { font-size: 23px; line-height: 27px; } }
+.th-camp-rows-live .th-trow { width: 100%; box-sizing: border-box; }
+.th-camp-rows-live.together { gap: 0; margin: 0 0 4px 14px; border-radius: 0 0 14px 14px; }
+[dir="rtl"] .th-camp-rows-live.together { margin: 0 14px 4px 0; }
+.th-camp-rows-live.together .th-trow.slim { border-radius: 0; border-inline: 0; border-top: 0; background: transparent; padding-block: 8px; }
+.th-nextup .th-ftimes { color: rgba(255,255,255,.8); margin: 6px 0 0; }
+.th-nextup .th-ftime b { color: #fff; }
+.th-nextup .th-ftime-day { color: #E9C877; }
+.th-nextup .th-ftimes-more { color: #fff; }
+/* the row's full-size tap target must not swallow taps on the friends "+N more" button */
+.th-srow .th-ftimes-more { position: relative; z-index: 2; pointer-events: auto; }
+
+/* ---------- Round 24: calm home page — one hero, then light sections (no card-in-card) ---------- */
+.th-home > * + * { margin-top: 18px; }
+.th-home .th-nextup { margin-bottom: 0; }
+.th-home-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 4px 6px; }
+.th-home-label { margin: 0; font: 800 12.5px/18px 'Nunito Sans', sans-serif; letter-spacing: 1.3px; text-transform: uppercase; color: var(--sub); }
+.th-home-label.urgent { color: var(--amber, #C65D43); }
+.th-home .th-needs { display: grid; gap: 8px; }
+.th-home .th-needs > .th-need, .th-home .th-needs > .th-swipe { background: var(--surface); border-radius: 16px; border: 1px solid var(--cardBorder); }
+.th-ready-sum { margin: 0 4px; font: 700 15px 'Nunito Sans', sans-serif; color: var(--ink); white-space: pre-wrap; }
+.th-ready-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.th-ready-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--cardBorder); font: 700 14px 'Nunito Sans', sans-serif; color: var(--ink); }
+.th-preview-list { list-style: none; margin: 0; padding: 0 4px; display: grid; }
+.th-preview-list li { display: grid; grid-template-columns: 84px 1fr; gap: 12px; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--cardBorder); }
+.th-preview-list li:last-child { border-bottom: 0; }
+.th-preview-time { display: grid; }
+.th-preview-time b { font: 700 15px 'Nunito Sans', sans-serif; color: var(--ink); }
+.th-preview-time small { font: 600 11.5px 'Nunito Sans', sans-serif; color: var(--sub); }
+.th-preview-name { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font: 700 15px 'Nunito Sans', sans-serif; color: var(--ink); }
+.th-more-btn { min-width: 36px; min-height: 36px; border-radius: 10px; border: 1px solid var(--cardBorder); background: transparent; color: var(--sub); font: 800 18px/1 'Nunito Sans', sans-serif; cursor: pointer; }
+.th-more-btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.th-home-more { display: block; margin: 22px auto 4px; }
+.th-nextup.bear .th-nextup-title { font-size: 24px; line-height: 28px; }
+.th-nextup-more { margin-top: 8px; padding-top: 8px; }
+.th-nextup-line { grid-template-columns: 70px 1fr; }
+.th-nextup.bear .th-nextup-eyebrow, .th-nextup.bear .th-nextup-title, .th-nextup.bear .th-nextup-when { padding-inline-end: 128px; }
+/* slim minister row: icon + title on one line, the actions on a full-width line beneath */
+.th-rem.slim { grid-template-columns: auto minmax(0, 1fr); row-gap: 8px; padding: 10px 12px; }
+.th-rem.slim .th-rem-acts, .th-rem.slim .th-del-choice { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+/* the grouped minister box holds several full rows: never cap or shrink it (the 240px cap is for single rows sliding away) */
+.th-need.col { max-height: none; }
+.th-need.col > .th-swipe { flex-shrink: 0; }
+.th-min-more { align-self: flex-start; margin: 2px 4px 0; font-size: 13px; }
+.th-home .th-needs > .th-need.col { padding: 12px 12px 10px; gap: 8px; }

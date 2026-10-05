@@ -28,12 +28,8 @@ import { computeReminders, needsAttention } from "../lib/reminders.js";
 import { contribState, spendAttempt } from "../lib/contributions.js";
 import { idleCamps, splitNow, stillRunning, weekStrip } from "../lib/today.js";
 import { dropsNeedingAction, dropsBetween, staminaNow, intelNeedingAction, INTEL_MISSIONS_PER_REFRESH } from "../lib/daily.js";
-import { Marker, markerFor } from "../components/Trail.jsx";
 import snowEdge from "../assets/snow-edge.webp";
-import pool from "../assets/hero-pool-corner.webp";
-import quietScene from "../assets/scene-distant-bear.webp";
-import { slotContaining } from "../lib/bookings.js";
-import { eventName } from "../lib/events.js";
+
 import { buildTimeline, parseTaskDuration, placeTask, resizeTask, pruneTasks, rowChips, gapVisualHeight, taskVisualHeight, overdueTasks, findNextGap } from "../lib/plan.js";
 import { champRounds } from "../lib/championship.js";
 import { ChampQuestion } from "./ChampIntel.jsx";
@@ -45,6 +41,7 @@ import { useWhenLocal } from "./TimerCard.jsx";
 import { useClaim } from "./DailyWidgets.jsx";
 import { FriendsWidget, FriendTimes } from "./FriendsWidget.jsx";
 import { SpendAllButton } from "./SpendAll.jsx";
+import { NextUp, useNextUp, ReadyNow } from "./NextUp.jsx";
 import { SwipeRow } from "./SwipeRow.jsx";
 import { eventAccounts } from "../lib/friends.js";
 
@@ -128,17 +125,10 @@ function NeedsYou({ hiddenKeys }) {
   const later = (key, fn) => { setLeaving((l) => [...l, key]); setTimeout(fn, 230); };
   const n0 = useNeeds();
   const minister = n0.minister.filter((r) => !hiddenKeys?.has(r.key));
-  const n = { ...n0, minister, count: n0.count - (n0.minister.length - minister.length) };
-  if (!n.count) {
-    return (
-      <section className="th-card th-caught-up" aria-label={t("allCaughtUp")}>
-        <span className="th-caught-bear" aria-hidden="true">
-          <svg width="46" height="38" viewBox="0 0 64 52"><circle cx="14" cy="10" r="7" className="fur" /><circle cx="50" cy="10" r="7" className="fur" /><ellipse cx="32" cy="28" rx="22" ry="20" className="fur" /><ellipse cx="32" cy="34" rx="9" ry="7" className="face" /><path d="M22 24q3-3 6 0M36 24q3-3 6 0" stroke="#241B10" strokeWidth="2.4" fill="none" strokeLinecap="round" /><path d="M28 36q4 3 8 0" stroke="#241B10" strokeWidth="2" fill="none" strokeLinecap="round" /></svg>
-        </span>
-        <div><b>{t("allCaughtUp")}</b><div className="th-need-sub">{t("allCaughtUpSub")}</div></div>
-      </section>
-    );
-  }
+  const n = { ...n0, minister, count: n0.count - (n0.minister.length - minister.length) - n0.idle.length };
+  const [all, setAll] = useState(false);
+  const [moreMin, setMoreMin] = useState([]); // minister boxes expanded to every account
+  if (!n.count) return null;
   const dismissVp = (acc, r) => {
     const at = Date.now();
     updateAccount(acc, (d) => ({ ...d, vpDismiss: { ...(d.vpDismiss || {}), [r.key]: at } }));
@@ -162,15 +152,6 @@ function NeedsYou({ hiddenKeys }) {
     );
   }
   if (n.round) nowRows.push(<NeedRow key="champ" tone="gold" icon="bell" title={t("champRoundOpen", { n: n.round.round })} sub={t("champRoundUntil", { time: formatTime(n.round.end, tz, lang) })} />);
-  for (const { acc, idle } of n.idle) {
-    nowRows.push(
-      <NeedRow key={`id${acc}`} tone="amber" icon="flame"
-        title={t("restartCampsIdle", { time: formatSpan(now - idle.since, lang) })}
-        sub={<><AccountTag accountId={acc} /> {idle.fullBatchMs ? t("fullBatchNowFinishes", { time: when(now + idle.fullBatchMs) }) : t("setFullBatchHint")}</>}>
-        <Btn tone="gold" small onClick={() => startTraining({ accountId: acc, camps: idle.camps.map((c) => c.camp), troops: Object.fromEntries(idle.camps.map((c) => [c.camp, c.troop])), ms: idle.fullBatchMs, restart: true })}>{t("restartShort")}</Btn>
-      </NeedRow>
-    );
-  }
   for (const { a, s } of n.stamina) {
     (s.over || s.atCap ? nowRows : soonRows).push(
       <NeedRow key={`st${a}`} tone="amber" icon="bolt"
@@ -243,147 +224,51 @@ function NeedsYou({ hiddenKeys }) {
     const box = (list, key) => list.length > 0 && (
       <div key={key} className="th-need gold col">
         <span className="th-action-label">{t("ministerNeeded", { n: list.length })}</span>
-        {list.map((r) => (
+        {(moreMin.includes(key) ? list : list.slice(0, 1)).map((r) => (
           <SwipeRow key={r.key + (asking.includes(r.key) ? "f" : "s")} label={t("ministerNeededShort")} onDismiss={() => dismissMinister(r)}>
             <ReminderRow r={r} slim={!asking.includes(r.key)} onAsk={() => setAsking([...asking, r.key])} />
           </SwipeRow>
         ))}
+        {list.length > 1 && !moreMin.includes(key) && (
+          <button type="button" className="th-link th-min-more" onClick={() => setMoreMin([...moreMin, key])}>
+            {t("alsoNeedOne", { names: list.slice(1).map((r) => accountById(r.accountId)?.name).join(", ") })} · {t("showWord")}
+          </button>
+        )}
       </div>
     );
     if (urgent.length) nowRows.push(box(urgent, "min-now"));
     if (later2.length) soonRows.push(box(later2, "min-soon"));
   }
 
+  // Importance, not insertion order: a minister needed for the next combat event comes first,
+  // routine claims last. The two most important rows stay visible; the rest fold behind Review.
+  const RANK = [["min-now", 0], ["min-soon", 0], ["focus", 1], ["contrib", 2], ["vp", 3], ["edu", 3], ["champ", 5], ["todorem", 6], ["st", 7]];
+  const rank = (el) => { const k = String(el.key); const hit = RANK.find(([p]) => k.startsWith(p)); return hit ? hit[1] : 9; };
+  nowRows.sort((a, b) => rank(a) - rank(b));
+  soonRows.sort((a, b) => rank(a) - rank(b));
+  const VISIBLE = 2;
+  // collapsed: the most important rows across both tiers; expanded: Now / Coming up, each ranked
+  const shown = all ? nowRows : [...nowRows, ...soonRows].sort((a, b) => rank(a) - rank(b)).slice(0, VISIBLE);
+  const nowShown = all ? nowRows.length : shown.length;
+  const hiddenN = nowRows.length + soonRows.length - Math.min(VISIBLE, nowRows.length + soonRows.length);
+  if (!nowRows.length && !soonRows.length) return null;
   return (
-    <section className="th-needs-sec" aria-label={t("needsYou")}>
-      <div className="th-needs-head"><span className="th-eyebrow">{t("fieldNotes")}</span><h2 className="th-needs-title">{t("needsYou")}<span className="th-needs-count">{n.count}</span></h2></div>
-      <div className="th-card th-needs-card">
-        <div className="th-needs">
-          {nowRows.length > 0 && <div className="th-needs-tier now" role="heading" aria-level={3}>{t("tierNow")}</div>}
-          {nowRows}
-          {soonRows.length > 0 && <div className="th-needs-tier" role="heading" aria-level={3}>{t("tierComingUp")}</div>}
-          {soonRows}
-        </div>
+    <section className="th-needs-sec" id="th-needs" aria-label={t("needsYou")}>
+      <div className="th-home-head">
+        <h2 className="th-home-label urgent">{t("needsYou")} · {nowRows.length + soonRows.length}</h2>
+        {hiddenN > 0 && <button type="button" className="th-link" aria-expanded={all} onClick={() => setAll(!all)}>{all ? t("showLess") : t("reviewN", { n: hiddenN })}</button>}
+      </div>
+      <div className="th-needs">
+        {all && nowRows.length > 0 && soonRows.length > 0 && <div className="th-needs-tier now" role="heading" aria-level={3}>{t("tierNow")}</div>}
+        {shown.slice(0, all ? undefined : nowShown)}
+        {all && soonRows.length > 0 && nowRows.length > 0 && <div className="th-needs-tier" role="heading" aria-level={3}>{t("tierComingUp")}</div>}
+        {all ? soonRows : shown.slice(nowShown)}
       </div>
     </section>
   );
 }
 
 /* ---------- the Bear Trap hero: what's next, how long, who still needs a minister ---------- */
-export function useBearHero() {
-  const { state, accountIds } = useTimeHub();
-  const now = useMinute();
-  return useMemo(() => {
-    const item = buildAgenda(state, now, now + 7 * DAY, accountIds, now).find((i) => i.kind === "event" && i.start > now && String(i.ref?.ev?.templateId || "").startsWith("bear_trap"));
-    if (!item) return null;
-    const rems = computeReminders(state, now, accountIds).filter((r) => r.ev.id === item.ref.ev.id && r.occ.key === item.ref.occ.key);
-    return { item, rems };
-  }, [state, accountIds.join(), now]); // eslint-disable-line react-hooks/exhaustive-deps
-}
-
-function BearHero({ hero }) {
-  const { t, tz, lang, templates, accountById, openBooking, accountIds } = useTimeHub();
-  const [panel, setPanel] = useState(false);
-  const [asking, setAsking] = useState([]);
-  const { item, rems } = hero;
-  const needs = rems.filter((r) => r.status === "open" || r.status === "unsure");
-  const name = eventName(item.ref.ev, t, templates);
-  const book = () => { const r = needs[0]; openBooking({ accountId: r.accountId, startAt: slotContaining(r.occ.start), position: "minister_strategy", eventKey: r.key }); };
-  return (
-    <>
-      <section className="th-bthero" aria-label={name}>
-        <img className="th-bthero-pool" src={pool} alt="" aria-hidden="true" decoding="async" />
-        <div className="th-bthero-top">
-          <span className="th-bthero-eyebrow">{name}</span>
-          <div className="th-bthero-count">{t("heroIn")} <Remaining to={item.start} /> {t("heroInAfter")}</div>
-          <div className="th-bthero-when"><Ltr>{formatTime(item.start, tz, lang)}</Ltr> · <Ltr>{formatTime(item.start, "UTC", lang)}</Ltr> UTC</div>
-        </div>
-        <ul className="th-bthero-accts">
-          {rems.map((r) => {
-            const a = accountById(r.accountId);
-            const ok = r.status === "covered" || r.status === "booked";
-            return (
-              <li key={r.key}><i className={`th-bthero-dot c${a?.color}`} aria-hidden="true" /><span>{a?.name}</span>
-                <span className={`r ${ok || r.status === "dismissed" ? "" : "warn"}`}>{ok ? t("ministerSet") : r.status === "dismissed" ? t("reminderDismissed") : t("ministerNeededShort")}</span></li>
-            );
-          })}
-        </ul>
-        <FriendTimes at={item.start} accountIds={eventAccounts(item.ref.ev, accountIds)} />
-        {needs.length > 0 ? (
-          <>
-            <Btn block onClick={book}>{needs.length === 1 ? t("bookMinistersOne") : t("bookMinistersMany", { n: needs.length })}</Btn>
-            <button type="button" className="th-bthero-link" aria-expanded={panel} onClick={() => setPanel(!panel)}>{t("alreadyBookedQ")}</button>
-          </>
-        ) : rems.length > 0 && <p className="th-bthero-ok">{t("allMinistersBooked")}</p>}
-      </section>
-      {panel && needs.length > 0 && (
-        <section className="th-card th-bthero-panel">
-          {needs.map((r) => <ReminderRow key={r.key + (asking.includes(r.key) ? "f" : "s")} r={r} slim={!asking.includes(r.key)} onAsk={() => setAsking([...asking, r.key])} />)}
-        </section>
-      )}
-    </>
-  );
-}
-
-/** The single soonest thing on the schedule, across every visible account — of ANY kind, not just
- *  Bear Trap (that's BearHero's job) and not just something that needs an action (that's NeedsYou's
- *  job). This is what actually answers "what's up next?" when it isn't the Bear Trap. */
-export function useWhatsNext() {
-  const { state, accountIds } = useTimeHub();
-  const now = useMinute();
-  return useMemo(() => {
-    const items = groupTraining(buildAgenda(state, now, now + 7 * DAY, accountIds, now));
-    return items.find((i) => i.status === "upcoming" || i.status === "now") || null;
-  }, [state, accountIds.join(), now]); // eslint-disable-line react-hooks/exhaustive-deps
-}
-
-function WhatsNextWidget({ item }) {
-  const { t, tz, lang, templates, accountById } = useTimeHub();
-  const groupN = item.group ? item.group.length : 0;
-  const title = groupN ? (groupN === 3 ? t("allCampsFinish") : t("nCampsFinish", { n: groupN })) : itemTitle(item, t, templates);
-  const acct = item.accountId ? accountById(item.accountId) : null;
-  const marker = markerFor(item);
-  return (
-    <a href="#th-sec-today" className="th-whatsnext" aria-label={`${t("whatsNext")}: ${title}`}>
-      <span className={`th-whatsnext-ic m-${marker}`} aria-hidden="true"><Marker kind={marker} /></span>
-      <span className="th-whatsnext-body">
-        <span className="th-whatsnext-eyebrow">{t("whatsNext")}</span>
-        <span className="th-whatsnext-title">{title}</span>
-        {acct && <AccountTag accountId={acct.id} />}
-      </span>
-      <span className="th-whatsnext-time">
-        {item.status === "now" ? t("happeningNow") : <><Remaining to={item.start} /></>}
-        <small><Ltr>{formatTime(item.start, tz, lang)}</Ltr></small>
-      </span>
-    </a>
-  );
-}
-
-/** Nothing needs doing and nothing is due for a while → the calm illustrated day. */
-function useQuiet(needsCount) {
-  const { state, accountIds } = useTimeHub();
-  const now = useMinute();
-  return useMemo(() => {
-    if (needsCount) return null;
-    const list = buildAgenda(state, now, now + 7 * DAY, accountIds, now).filter((i) => i.start > now && !["drop", "contrib", "intel"].includes(i.kind) && !(i.kind === "event" && i.ref?.ev?.templateId === "daily_reset"));
-    const first = list[0];
-    return first && first.start >= now + 3 * HOUR ? first : null;
-  }, [state, accountIds.join(), now, needsCount]); // eslint-disable-line react-hooks/exhaustive-deps
-}
-
-function QuietHero({ first }) {
-  const { t, tz, lang } = useTimeHub();
-  const now = useMinute();
-  const time = formatTime(first.start, tz, lang);
-  return (
-    <section className="th-quiet" aria-label={t("quietTitle")}>
-      <img className="th-quiet-scene" src={quietScene} alt="" aria-hidden="true" decoding="async" />
-      <h2 className="th-quiet-title">{t("quietTitle")}</h2>
-      <p>{t("nothingUntil", { time, utc: formatTime(first.start, "UTC", lang), in: formatSpan(first.start - now, lang) })}</p>
-    </section>
-  );
-}
-
 /** Like the calculator's AVAILABLE / ALLOCATED strip. */
 export function StatStrip() {
   const { t, tz, lang } = useTimeHub();
@@ -863,30 +748,57 @@ function Schedule({ offset, setOffset }) {
   );
 }
 
+/** TODAY — a short preview (next few things, plain time order, no day-part headings). The full
+ *  proportional Timeline is one tap away, in the same place. */
+function TodayPreview({ full, setFull }) {
+  const { t, tz, lang, state, accountIds, templates } = useTimeHub();
+  const now = useMinute();
+  const items = useMemo(() => {
+    const day = localDayRange(now, tz, 0);
+    return groupTraining(buildAgenda(state, now, day.end, accountIds, now))
+      .filter((i) => (i.status === "upcoming" || i.status === "now") && !["contrib", "intel"].includes(i.kind))
+      .slice(0, 4);
+  }, [state, accountIds.join(), now, tz]); // eslint-disable-line react-hooks/exhaustive-deps
+  const title = (i) => (i.group ? (i.group.length === 3 ? t("allCampsFinish") : t("nCampsFinish", { n: i.group.length })) : itemTitle(i, t, templates));
+  return (
+    <section className="th-preview" aria-label={t("todayWord")} id="th-sec-today-preview">
+      <div className="th-home-head">
+        <h2 className="th-home-label">{t("todayWord")}</h2>
+        <button type="button" className="th-link" aria-expanded={full} onClick={() => setFull(!full)}>{full ? t("hideFullSchedule") : t("viewFullSchedule")}</button>
+      </div>
+      {!full && (items.length ? (
+        <ol className="th-preview-list">
+          {items.map((i) => (
+            <li key={i.id}>
+              <span className="th-preview-time"><b><Ltr>{formatTime(i.start, tz, lang)}</Ltr></b><small><Ltr>{formatTime(i.start, "UTC", lang)}</Ltr> UTC</small></span>
+              <span className="th-preview-name">{title(i)}{i.accountId && <AccountTag accountId={i.accountId} />}</span>
+            </li>
+          ))}
+        </ol>
+      ) : <p className="th-note">{t("nothingLeftToday")}</p>)}
+    </section>
+  );
+}
+
 export function TodayScreen() {
   const [offset, setOffset] = useState(0);
-  const needs = useNeeds();
-  const hero = useBearHero();
-  const heroKeys = useMemo(() => new Set((hero?.rems || []).map((r) => r.key)), [hero]);
-  const remaining = needs.count - needs.minister.filter((r) => heroKeys.has(r.key)).length;
-  const quiet = useQuiet(remaining);
-  const next = useWhatsNext();
-  // The Bear Trap hero already answers "what's up next" when that IS the next thing; the quiet
-  // illustrated day already leads with it too. Only show this separate strip when the true next
-  // item is something else the player could otherwise miss (a sooner booking, a camp, a task…).
-  const showNext = next && !quiet && !(hero && next.id === hero.item.id);
+  const [full, setFull] = useState(false);
+  const [friends, setFriends] = useState(false);
+  const next = useNextUp();
+  const { t } = useTimeHub();
+  // Calm first screen: NEXT UP (+ two small lines) → NEEDS YOU (only if actionable) → READY NOW
+  // (compact count) → TODAY (short preview). The full Timeline and friends' clocks are one tap away.
   return (
-    <div className="th-screen">
-      {showNext && <WhatsNextWidget item={next} />}
+    <div className="th-screen th-home">
+      <NextUp data={next} />
+      <NeedsYou />
+      <ReadyNow />
+      <TodayPreview full={full} setFull={setFull} />
+      {full && <Schedule offset={offset} setOffset={setOffset} />}
+      {/* one-time setup question: still asked, but it never pushes Next Up / Needs You off screen */}
       <ChampQuestion />
-      {quiet ? <QuietHero first={quiet} /> : (
-        <>
-          {hero && <BearHero hero={hero} />}
-          <NeedsYou hiddenKeys={heroKeys} />
-        </>
-      )}
-      <Schedule offset={offset} setOffset={setOffset} />
-      <FriendsWidget />
+      <button type="button" className="th-link th-home-more" aria-expanded={friends} onClick={() => setFriends(!friends)}>{friends ? t("hideFriendClocks") : t("showFriendClocks")}</button>
+      {friends && <FriendsWidget />}
     </div>
   );
 }
