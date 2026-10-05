@@ -38,7 +38,9 @@ const warned = new Set();
 export function makeT(lang) {
   const table = TIMEHUB_STRINGS[lang] || en;
   return (key, vars) => {
-    let s = table[key] ?? en[key];
+    // singular: "Covers 1 research" — a key_one form is used automatically when the count is 1
+    const one = vars && vars.n === 1 ? (table[`${key}_one`] ?? (table === en || table[key] == null ? en[`${key}_one`] : undefined)) : undefined;
+    let s = one ?? table[key] ?? en[key];
     if (s == null) {
       // Never silent: a key with no text means a string file isn't registered above (or a typo).
       // The i18n tests fail on this too; at runtime it's logged once per key.

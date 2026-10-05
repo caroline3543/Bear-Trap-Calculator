@@ -39,7 +39,7 @@ import { itemTitle, toCalendarItem } from "../components/labels.js";
 import { ReminderRow } from "./ReminderRow.jsx";
 import { useWhenLocal } from "./TimerCard.jsx";
 import { useClaim } from "./DailyWidgets.jsx";
-import { FriendsWidget, FriendTimes } from "./FriendsWidget.jsx";
+import { FriendTimes } from "./FriendsWidget.jsx";
 import { SpendAllButton } from "./SpendAll.jsx";
 import { NextUp, useNextUp, ReadyNow } from "./NextUp.jsx";
 import { groupVpReminders } from "../lib/research.js";
@@ -217,20 +217,28 @@ function NeedsYou({ hiddenKeys }) {
   for (const g of n.vp) {
     const id = `vp${g.acc}${g.slot.start}`;
     const utc = `${formatTime(g.slot.start, "UTC", lang)}–${formatTime(g.slot.end, "UTC", lang)}`;
+    const tmr = localDayRange(now, tz, 0).end <= g.slot.start;
     soonRows.push(
       <SwipeRow key={id} label={t("vpBookTitle", { utc })} onDismiss={() => dismissVpGroup(g)}>
-        <NeedRow tone="gold" icon="flask" leaving={leaving.includes(id)}
-          title={<>{t("vpShort")} · {accountById(g.acc)?.name}</>}
-          sub={<>
-            <span className="th-need-line">{t("bookColon")} <b><Ltr>{formatTime(g.slot.start, tz, lang)}–{formatTime(g.slot.end, tz, lang)}</Ltr></b> {dayWordFor(g.slot.start, now, tz, lang, t) !== t("today").toLocaleLowerCase(lang) ? dayWordFor(g.slot.start, now, tz, lang, t) : ""} <span className="th-utc">· <Ltr>{utc}</Ltr> UTC</span></span>
-            <span className="th-need-line">{t("coversColon")} {g.items.map((i) => `${t(i.x.category)} · ${formatTime(i.r.finishAt, tz, lang)}`).join(", ")}{g.items.some((i) => i.r.conflict) && <> · {t("vpConflictShort")}</>}</span>
-          </>}>
-          <span className="th-item-actions th-need-acts">
-            <Btn small tone="gold" aria-label={t("bookVpShort")} onClick={() => later(id, () => openBooking({ accountId: g.acc, startAt: g.slot.start, position: "vice_president" }))}>{t("bookShort")}</Btn>
-            <Btn small aria-label={t("iBookedIt")} onClick={() => later(id, () => bookedVpGroup(g))}>{t("bookedShort")}</Btn>
+        <div className={`th-vp-card ${leaving.includes(id) ? "leaving" : ""}`}>
+          <span className="th-vp-eyebrow">{t("vpShort")}</span>
+          <b className="th-vp-acct">{accountById(g.acc)?.name}</b>
+          <div className="th-vp-block">
+            <span className="th-vp-lbl">{t("bookColon")}</span>
+            <span><b>{tmr ? `${t("tomorrow")} ` : ""}<Ltr>{formatTime(g.slot.start, tz, lang)}–{formatTime(g.slot.end, tz, lang)}</Ltr></b> {t("localWord")}</span>
+            <span className="th-utc"><Ltr>{utc}</Ltr> UTC</span>
+          </div>
+          <div className="th-vp-block">
+            <span className="th-vp-lbl">{t("coversColon")}</span>
+            <ul className="th-vp-covers">{g.items.map((i) => <li key={i.x.id}>{t(i.x.category)} · <Ltr>{formatTime(i.r.finishAt, tz, lang)}</Ltr></li>)}</ul>
+            {g.items.some((i) => i.r.conflict) && <span className="th-utc">{t("vpConflictShort")}</span>}
+          </div>
+          <div className="th-vp-acts">
+            <Btn small tone="gold" className="th-vp-book" aria-label={t("bookVpShort")} onClick={() => later(id, () => openBooking({ accountId: g.acc, startAt: g.slot.start, position: "vice_president" }))}>{t("bookShort")}</Btn>
+            <Btn small onClick={() => later(id, () => bookedVpGroup(g))}>{t("iBookedIt")}</Btn>
             <Btn small onClick={() => dismissVpGroup(g)}>{t("dismiss")}</Btn>
-          </span>
-        </NeedRow>
+          </div>
+        </div>
       </SwipeRow>
     );
   }
@@ -273,8 +281,9 @@ function NeedsYou({ hiddenKeys }) {
   if (n.focusTask) summary.push({ k: "focus", text: `${t("fiveMinDone")} · ${n.focusTask.title}` });
   if (n.contrib.length) summary.push({ k: "contrib", text: t("sumContrib", { n: n.contrib.length }) });
   for (const g of n.vp.slice(0, 2)) {
-    const day = dayWordFor(g.slot.start, now, tz, lang, t);
-    summary.push({ k: `vp${g.acc}${g.slot.start}`, text: `${t("vpShort")} · ${nm(g.acc)} · ${day !== t("today").toLocaleLowerCase(lang) ? `${day} ` : ""}${formatTime(g.slot.start, tz, lang)}–${formatTime(g.slot.end, tz, lang)}${g.items.length > 1 ? ` · ${t("coversN", { n: g.items.length })}` : ""}` });
+    const tmr = localDayRange(now, tz, 0).end <= g.slot.start;
+    summary.push({ k: `vp${g.acc}${g.slot.start}`, text: `${t("vpShort")} · ${nm(g.acc)}`,
+      sub: `${tmr ? `${t("tomorrow")} ` : ""}${formatTime(g.slot.start, tz, lang)}–${formatTime(g.slot.end, tz, lang)}${g.items.length > 1 ? ` · ${t("coversN", { n: g.items.length })}` : ""}` });
   }
   if (n.vp.length > 2) summary.push({ k: "vpmore", text: t("sumVpMore", { n: n.vp.length - 2 }) });
   if (n.eduPlans.length) summary.push({ k: "edu", text: t("restartWithEduAt", { time: formatTime(n.eduPlans[0].p.startAt, tz, lang) }) });
@@ -294,7 +303,7 @@ function NeedsYou({ hiddenKeys }) {
       </div>
       {collapsed ? (
         <ul className="th-sum-list">
-          {summary.slice(0, 4).map((x) => <li key={x.k}>{x.text}</li>)}
+          {summary.slice(0, 4).map((x) => <li key={x.k}><span>{x.text}{x.sub && <small>{x.sub}</small>}</span></li>)}
           {summary.length > 4 && <li className="th-sum-more">{t("plusNMore", { n: summary.length - 4 })}</li>}
         </ul>
       ) : (
@@ -824,7 +833,6 @@ function TodayPreview({ full, setFull }) {
 export function TodayScreen() {
   const [offset, setOffset] = useState(0);
   const [full, setFull] = useState(false);
-  const [friends, setFriends] = useState(false);
   const next = useNextUp();
   const { t } = useTimeHub();
   // Calm first screen: NEXT UP (+ two small lines) → NEEDS YOU (only if actionable) → READY NOW
@@ -838,8 +846,6 @@ export function TodayScreen() {
       {full && <Schedule offset={offset} setOffset={setOffset} />}
       {/* one-time setup question: still asked, but it never pushes Next Up / Needs You off screen */}
       <ChampQuestion />
-      <button type="button" className="th-link th-home-more" aria-expanded={friends} onClick={() => setFriends(!friends)}>{friends ? t("hideFriendClocks") : t("showFriendClocks")}</button>
-      {friends && <FriendsWidget />}
     </div>
   );
 }

@@ -34,3 +34,21 @@ test("every t(key) used in the code has text in every language", () => {
     assert.deepEqual(missing, [], `${l} is missing: ${missing.slice(0, 20).join(", ")}`);
   }
 });
+
+import { makeT } from "../i18n/index.js";
+test("singular/plural: key_one is used for a count of 1, in English and where a language has it", () => {
+  const en = makeT("en");
+  assert.equal(en("coversN", { n: 1 }), "Covers 1 research");
+  assert.equal(en("coversN", { n: 2 }), "Covers 2 researches");
+  assert.equal(en("nAccounts", { n: 1 }), "1 account");
+  assert.equal(en("nCampsReady", { n: 1 }), "1 camp ready");
+  assert.equal(makeT("de")("coversN", { n: 1 }), "Deckt 1 Forschung ab");
+  // a language without a separate singular keeps its own wording (never falls back to English)
+  assert.equal(makeT("ru")("coversN", { n: 1 }), "Покрывает исследований: 1");
+});
+test("the strings from your screenshots now resolve to real text", () => {
+  const en = makeT("en");
+  for (const k of ["thenWord", "vpShort", "coversN", "bookColon", "readyNowTitle", "readyCamps", "readyResearch", "nReady", "allCampsReady", "researchReadyOne", "researchReadyN", "startShort", "viewFullSchedule", "review", "showFriendClocks"]) {
+    assert.notEqual(en(k, { n: 2 }), k, k);
+  }
+});

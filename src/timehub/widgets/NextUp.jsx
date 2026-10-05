@@ -11,7 +11,7 @@ import { useMinute } from "../hooks/useNow.jsx";
 import { buildAgenda, groupTraining } from "../lib/agenda.js";
 import { computeReminders, needsAttention } from "../lib/reminders.js";
 import { idleCamps } from "../lib/today.js";
-import { formatTime, formatSpan, DAY } from "../lib/time.js";
+import { formatTime, formatSpan, localDayRange, DAY } from "../lib/time.js";
 import { itemTitle } from "../components/labels.js";
 import { Ltr, AccountTag, Remaining, Btn } from "../components/ui.jsx";
 import pool from "../assets/hero-pool-corner.webp";
@@ -82,13 +82,18 @@ function titleOf(i, t, templates) {
 }
 
 function SmallLine({ label, i }) {
-  const { t, tz, lang, templates } = useTimeHub();
+  const { t, tz, lang, templates, accountById, multi } = useTimeHub();
   const now = useMinute();
   return (
     <li className="th-nextup-line">
       <span className="th-nextup-lbl">{label}</span>
       <b className="th-nextup-ltitle">{titleOf(i, t, templates)}</b>
-      <span className="th-nextup-lwhen"><Ltr>{formatTime(i.start, tz, lang)}</Ltr>{i.start > now && <> · {t("inTime", { time: formatSpan(i.start - now, lang) })}</>}</span>
+      <span className="th-nextup-lwhen">
+        {/* account name when several accounts are shown: two "Research Center finishes" lines stay distinct */}
+        {multi && i.accountId && <>{accountById(i.accountId)?.name} · </>}
+        {localDayRange(now, tz, 0).end <= i.start && <>{t("tomorrowLower")} </>}<Ltr>{formatTime(i.start, tz, lang)}</Ltr>
+        {i.start > now && <> · {t("inTime", { time: formatSpan(i.start - now, lang) })}</>}
+      </span>
     </li>
   );
 }
@@ -97,10 +102,12 @@ function SmallLine({ label, i }) {
  *  "Research · 3 ready"), not item counts. Review opens one grouped card: a row per account.
  *  Expanding is remembered (settings.homeReadyOpen) because the player chose it. */
 export function ReadyNow() {
-  const { t, accountById, startTraining, setTab, state, dispatch } = useTimeHub();
+  const { t, accountById, startTraining, setTab } = useTimeHub();
   const ready = useReadyNow();
-  const open = state.settings.homeReadyOpen === true;
-  const setOpen = (v) => dispatch({ type: "settings", patch: { homeReadyOpen: v } });
+  // remembered for this session only — every new visit starts calm (collapsed)
+  const [open, setOpenState] = useState(() => { try { return sessionStorage.getItem("th:readyOpen") === "1"; } catch { return false; } });
+  const setOpen = (v) => { setOpenState(v); try { sessionStorage.setItem("th:readyOpen", v ? "1" : "0"); } catch { /* storage blocked */ } };
+  const openResearch = () => { setTab("timers"); setTimeout(() => document.getElementById("th-sec-research")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80); };
   const byAcct = useMemo(() => {
     const m = new Map();
     for (const x of ready.camps) { if (!m.has(x.a)) m.set(x.a, { camps: [], research: [] }); m.get(x.a).camps.push(x.name); }
@@ -136,9 +143,9 @@ export function ReadyNow() {
               )}
               {v.research.length > 0 && (
                 <div className="th-ready-row">
-                  <span>{v.research.length === 1 ? t("researchReadyOne", { place: t(v.research[0]) }) : t("researchReadyN", { n: v.research.length })}
-                    {v.research.length > 1 && <small>{v.research.map((r) => t(r)).join(" · ")}</small>}</span>
-                  <Btn small aria-label={t("startResearchShort")} onClick={() => setTab("timers")}>{t("startShort")}</Btn>
+                  <span>{v.research.length === 1 ? t("researchReadyOne") : t("researchReadyN", { n: v.research.length })}
+                    <small>{v.research.map((r) => t(r)).join(" · ")}</small></span>
+                  <Btn small aria-label={t("startResearchShort")} onClick={openResearch}>{t("startShort")}</Btn>
                 </div>
               )}
             </li>

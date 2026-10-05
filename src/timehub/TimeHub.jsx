@@ -27,6 +27,7 @@ import { TrainingWidget } from "./widgets/TrainingWidget.jsx";
 import { ResearchWidget } from "./widgets/ResearchWidget.jsx";
 import { ContributionWidget } from "./widgets/ContributionWidget.jsx";
 import { TodoWidget } from "./widgets/TodoWidget.jsx";
+import { FriendsWidget } from "./widgets/FriendsWidget.jsx";
 import { HistoryWidget } from "./widgets/HistoryWidget.jsx";
 import { ShareCard } from "./widgets/ShareCard.jsx";
 import { AccountsPanel } from "./widgets/AccountsPanel.jsx";
@@ -198,6 +199,27 @@ function TrainingMaxSettings({ closeSettings }) {
   );
 }
 
+/** Minister reminders the player switched off ("Don't remind me"), each with Turn back on.
+ *  Hidden entirely while nothing is muted. */
+function MinisterMuteSettings() {
+  const { t, state, dispatch, update, accountById } = useTimeHub();
+  const mute = state.settings.ministerMute || { accounts: [], combat: false };
+  const hidden = state.events.filter((e) => e.reminderHidden && !e.archived);
+  if (!mute.combat && !mute.accounts.length && !hidden.length) return null;
+  const set = (patch) => dispatch({ type: "settings", patch: { ministerMute: { ...mute, ...patch } } });
+  return (
+    <section className="th-card" id="th-set-ministermute" aria-label={t("ministerMuteTitle")}>
+      <div className="th-sec-head"><SectionIcon name="booking" /><span className="th-sec-title">{t("ministerMuteTitle")}</span></div>
+      <p className="th-sec-sub">{t("ministerMuteSub")}</p>
+      <ul className="th-maxset">
+        {mute.combat && <li><div className="th-maxset-head"><b>{t("mutedAllCombat")}</b><Btn small onClick={() => set({ combat: false })}>{t("turnOn")}</Btn></div></li>}
+        {mute.accounts.map((a) => <li key={a}><div className="th-maxset-head"><b>{accountById(a)?.name || a}</b><Btn small onClick={() => set({ accounts: mute.accounts.filter((x) => x !== a) })}>{t("turnOn")}</Btn></div></li>)}
+        {hidden.length > 0 && <li><div className="th-maxset-head"><b>{t("mutedEventsN", { n: hidden.length })}</b><Btn small onClick={() => update((s) => ({ ...s, events: s.events.map((e) => ({ ...e, reminderHidden: false })) }))}>{t("turnOn")}</Btn></div></li>}
+      </ul>
+    </section>
+  );
+}
+
 function SettingsPanel({ headerExtra, closeSettings, reopenSettings, hasCalc, startTour }) {
   const { t, tz, state, dispatch } = useTimeHub();
   return (
@@ -248,6 +270,7 @@ function SettingsPanel({ headerExtra, closeSettings, reopenSettings, hasCalc, st
         </label>
       </section>
       <ChampSettings />
+      <MinisterMuteSettings />
       <section className="th-card" id="th-set-suggest" aria-label={t("taskSuggestTitle")}>
         <div className="th-sec-head"><SectionIcon name="checklist" /><span className="th-sec-title">{t("taskSuggestTitle")}</span></div>
         <p className="th-sec-sub">{t("taskSuggestSub")}</p>
@@ -289,7 +312,9 @@ const TimersPanel = React.memo(function TimersPanel() {
   );
 });
 const EventsPanel = React.memo(function EventsPanel() {
-  return <Stack><EventsWidget /><BookingsWidget /><ShareCard /><HistoryWidget /></Stack>;
+  // friends' clocks (add/edit friends, their linked accounts) live here now; their local times
+  // also appear on the relevant event rows and the Next Up card
+  return <Stack><EventsWidget /><BookingsWidget /><FriendsWidget /><ShareCard /><HistoryWidget /></Stack>;
 });
 const CalcPanel = React.memo(function CalcPanel({ calculator }) { return <div className="th-calc-slot">{calculator}</div>; });
 const Panel = React.memo(function Panel({ on, children }) {

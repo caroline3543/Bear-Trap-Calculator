@@ -1625,3 +1625,22 @@ html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
 .th-ready-row small { font: 600 12px 'Nunito Sans', sans-serif; color: var(--sub); }
 .th-preview-more { border-bottom: 0 !important; padding-top: 4px !important; }
 .th-need-acts { flex-wrap: wrap; gap: 6px; }
+
+/* ---------- Round 26: polish ---------- */
+/* the last content always scrolls clear of the fixed tab bar (+ iPhone home indicator + spacing) */
+.th-app { padding-bottom: calc(132px + env(safe-area-inset-bottom, 0px)); }
+.th-sum-list li > span { display: grid; gap: 1px; }
+.th-sum-list small { font: 600 13px/18px 'Nunito Sans', sans-serif; color: var(--sub); }
+/* Vice President booking card: information full-width first, actions underneath */
+.th-vp-card { display: grid; gap: 8px; padding: 14px 16px; border-radius: 16px; background: var(--surface); border: 1px solid var(--cardBorder); color: var(--ink); transition: opacity .22s ease, transform .22s ease; }
+.th-vp-card.leaving { opacity: 0; transform: translateX(-12px); }
+.th-vp-eyebrow { font: 800 11.5px/16px 'Nunito Sans', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--gold); }
+.th-vp-acct { font: 800 16px/20px 'Nunito Sans', sans-serif; }
+.th-vp-block { display: grid; gap: 1px; font: 600 14px/19px 'Nunito Sans', sans-serif; }
+.th-vp-lbl { font: 800 11.5px/16px 'Nunito Sans', sans-serif; letter-spacing: .6px; text-transform: uppercase; color: var(--sub); }
+.th-vp-block .th-utc { font-size: 13px; color: var(--sub); }
+.th-vp-covers { margin: 0; padding-inline-start: 18px; }
+.th-vp-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+.th-vp-acts .th-vp-book { grid-column: 1 / -1; }
+.th-vp-acts .th-btn { justify-content: center; }
+@media (min-width: 520px) { .th-vp-acts { grid-template-columns: auto auto auto; justify-content: start; } .th-vp-acts .th-vp-book { grid-column: auto; } }
