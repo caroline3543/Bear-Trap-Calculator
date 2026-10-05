@@ -96,3 +96,19 @@ export function reconfigure(state, now, patch) {
   const { max } = cfg(next);
   return setAttempts(next, now, Math.min(live.count, max), live.nextAt ? live.nextAt - now : undefined);
 }
+
+/**
+ * "Spend all" — spend every attempt available right now, through the same regeneration rules as
+ * spendAttempt (no second timer formula). Returns null when there is nothing to spend, so a second
+ * tap that lands before the UI refreshes is a harmless no-op rather than a double spend.
+ * → { contrib (new anchor, with lastSpent recorded), spent, nextAt, fullAt }
+ */
+export function spendAll(state, now) {
+  const n = contribState(state, now).count;
+  if (!(n > 0)) return null;
+  const next = spendAttempt(state, now, n);
+  if (!next) return null;
+  const contrib = { ...next, lastSpent: { at: now, n } };
+  const after = contribState(contrib, now);
+  return { contrib, spent: n, nextAt: after.nextAt, fullAt: after.fullAt };
+}

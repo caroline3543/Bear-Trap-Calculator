@@ -49,11 +49,18 @@ export function researchReminderTier(finishAt, now) {
 /**
  * One research timer's Vice-President reminder, or null if it's too far out, already finished, or
  * the recommended slot isn't a real bookable slot right now (outside the app's booking window).
- * → { tier, finishAt, slot: {start,end,tight}, booked: boolean, conflict: booking|null }
+ * → { tier, finishAt, slot: {start,end,tight}, booked: boolean, conflict: booking|null,
+ *     key, status: "booked" | "dismissed" | "pending" }
+ * dismissed — the account's vpDismiss map ({ [key]: dismissedAt }). Dismissing never disables
+ *   reminders for the building or the minister, and never marks anything as booked.
  *   conflict — a Vice-President booking that exists nearby but does not cover the recommended
  *   slot (only set when `booked` is false): "your booking may need updating".
  */
-export function researchReminder(timer, bookings, now) {
+/** One reminder OCCURRENCE: this research timer × this recommended slot. If the research estimate
+ *  moves far enough to need a different slot, the key changes and a fresh reminder may appear. */
+export const vpReminderKey = (timer, slotStart) => `${timer.id}@${slotStart}`;
+
+export function researchReminder(timer, bookings, now, dismissed = null) {
   const tier = researchReminderTier(timer.endAt, now);
   if (!tier) return null;
   const slot = researchSlotFor(timer.endAt);
@@ -62,5 +69,8 @@ export function researchReminder(timer, bookings, now) {
   const vp = (bookings || []).filter((b) => b.position === VP_POSITION);
   const booked = !!bookingCovering(vp, timer.endAt);
   const conflict = booked ? null : vp.find((b) => Math.abs(b.startAt - slot.start) <= VP_CONFLICT_WINDOW_MS && b.startAt !== slot.start) || null;
-  return { tier, finishAt: timer.endAt, slot, booked, conflict };
+  const key = vpReminderKey(timer, slot.start);
+  // BOOKED (derived from real bookings) wins over DISMISSED (this occurrence only); else PENDING
+  const status = booked ? "booked" : dismissed && dismissed[key] ? "dismissed" : "pending";
+  return { tier, finishAt: timer.endAt, slot, booked, conflict, key, status };
 }

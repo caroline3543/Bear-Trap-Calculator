@@ -1,5 +1,8 @@
 /* To-do lists (Game/Personal/Work) and the ADHD-friendly Priority view. */
 export const en = {
+  category: "Category",
+  notes: "Notes",
+  confirmDeleteTask: "Delete this task?",
   completedN: "Completed · {n}",
   durPlaceholder: "Duration",
   timelineFilter: "Filter the timeline",
@@ -46,6 +49,9 @@ export const en = {
   prioLaterHint: "Can wait.",
 };
 export const it = {
+  category: "Categoria",
+  notes: "Note",
+  confirmDeleteTask: "Eliminare questa attività?",
   completedN: "Completate · {n}",
   durPlaceholder: "Durata",
   timelineFilter: "Filtra la sequenza",
@@ -92,6 +98,9 @@ export const it = {
   prioLaterHint: "Può aspettare.",
 };
 export const es = {
+  category: "Categoría",
+  notes: "Notas",
+  confirmDeleteTask: "¿Eliminar esta tarea?",
   completedN: "Completadas · {n}",
   durPlaceholder: "Duración",
   timelineFilter: "Filtrar la cronología",
@@ -138,6 +147,9 @@ export const es = {
   prioLaterHint: "Puede esperar.",
 };
 export const ko = {
+  category: "카테고리",
+  notes: "메모",
+  confirmDeleteTask: "이 할 일을 삭제할까요?",
   completedN: "완료됨 · {n}",
   durPlaceholder: "소요 시간",
   timelineFilter: "타임라인 필터",
@@ -184,6 +196,9 @@ export const ko = {
   prioLaterHint: "나중에 해도 됨.",
 };
 export const de = {
+  category: "Kategorie",
+  notes: "Notizen",
+  confirmDeleteTask: "Diese Aufgabe löschen?",
   completedN: "Erledigt · {n}",
   durPlaceholder: "Dauer",
   timelineFilter: "Zeitleiste filtern",
@@ -230,6 +245,9 @@ export const de = {
   prioLaterHint: "Kann warten.",
 };
 export const ru = {
+  category: "Категория",
+  notes: "Заметки",
+  confirmDeleteTask: "Удалить эту задачу?",
   completedN: "Готово · {n}",
   durPlaceholder: "Длительность",
   timelineFilter: "Фильтр хронологии",
@@ -276,6 +294,9 @@ export const ru = {
   prioLaterHint: "Может подождать.",
 };
 export const pl = {
+  category: "Kategoria",
+  notes: "Notatki",
+  confirmDeleteTask: "Usunąć to zadanie?",
   completedN: "Ukończone · {n}",
   durPlaceholder: "Czas trwania",
   timelineFilter: "Filtruj oś czasu",
@@ -322,6 +343,9 @@ export const pl = {
   prioLaterHint: "Może poczekać.",
 };
 export const tr = {
+  category: "Kategori",
+  notes: "Notlar",
+  confirmDeleteTask: "Bu görev silinsin mi?",
   completedN: "Tamamlandı · {n}",
   durPlaceholder: "Süre",
   timelineFilter: "Zaman çizelgesini filtrele",
@@ -368,6 +392,9 @@ export const tr = {
   prioLaterHint: "Bekleyebilir.",
 };
 export const ar = {
+  category: "الفئة",
+  notes: "ملاحظات",
+  confirmDeleteTask: "هل تريد حذف هذه المهمة؟",
   completedN: "منجزة · {n}",
   durPlaceholder: "المدة",
   timelineFilter: "تصفية الجدول الزمني",

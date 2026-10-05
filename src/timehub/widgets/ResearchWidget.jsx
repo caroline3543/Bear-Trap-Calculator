@@ -16,16 +16,18 @@ import { TimerRow } from "./TimerCard.jsx";
 function MinisterNote({ timer, accountId }) {
   const { t, tz, lang, dataFor, openBooking, updateAccount, newId } = useTimeHub();
   const now = useClockFor([timer.endAt]);
-  const r = researchReminder(timer, dataFor(accountId).bookings, now);
+  const r = researchReminder(timer, dataFor(accountId).bookings, now, dataFor(accountId).vpDismiss);
   if (!r) return null;
+  const undo = () => updateAccount(accountId, (d) => { const { [r.key]: _x, ...rest } = d.vpDismiss || {}; return { ...d, vpDismiss: rest }; });
   const markBooked = () => {
     updateAccount(accountId, (d) => ({ ...d, bookings: [...d.bookings, { id: newId(), position: VP_POSITION, startAt: r.slot.start, notes: "", createdAt: Date.now() }] }));
     success();
   };
   if (r.booked) return <div className="th-srow-note ok">✓ {t("vpBookedAt", { time: formatTime(r.slot.start, "UTC", lang) })}</div>;
+  if (r.status === "dismissed") return <div className="th-srow-note">{t("vpDismissedHere", { time: `${formatTime(r.slot.start, "UTC", lang)}–${formatTime(r.slot.end, "UTC", lang)}` })} · <button type="button" className="th-link" onClick={undo}>{t("undo")}</button></div>;
   return (
     <div className={`th-research-note ${r.tier === "soon" ? "soon" : ""}`}>
-      <span>{t("bookVpFor")} <Ltr>{formatTime(r.slot.start, tz, lang)}–{formatTime(r.slot.end, tz, lang)}</Ltr> ({<Ltr>{formatTime(r.slot.start, "UTC", lang)}</Ltr>} UTC)</span>
+      <span>{t("bookVpFor")} <Ltr>{formatTime(r.slot.start, tz, lang)}–{formatTime(r.slot.end, tz, lang)}</Ltr> (<Ltr>{formatTime(r.slot.start, "UTC", lang)}–{formatTime(r.slot.end, "UTC", lang)}</Ltr> UTC)</span>
       {r.slot.tight && <span className="warn">{t("slotTight")}</span>}
       {r.conflict && <span className="warn">{t("vpConflict", { time: formatTime(r.conflict.startAt, "UTC", lang) })}</span>}
       <span className="th-item-actions">

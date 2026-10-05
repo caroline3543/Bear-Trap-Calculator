@@ -5,11 +5,11 @@ import React, { useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
 import { success } from "../lib/feedback.js";
 import { useMinute, useClockFor } from "../hooks/useNow.jsx";
-import { TRAINING_CAMPS, applyTraining, busyCamps, planFinish, finishTogether, sortTimers, campMaxFor, hasHelios, campTroopsFor, troopsForDuration, durationForTroops } from "../lib/timers.js";
+import { TRAINING_CAMPS, applyTraining, busyCamps, planFinish, finishTogether, sortTimers, campMaxFor, hasHelios, campTroopsFor, troopsForDuration, durationForTroops, maxIncreases, applyLearnedMax, rememberTroops, defaultTroop, restartSummary } from "../lib/timers.js";
 import { timingCheck, nextCycleCheck, finishAdvice, nextFinishTarget, inSleepWindow } from "../lib/sleep.js";
 import { EducationStrip, useEduPlan } from "./EducationPlan.jsx";
-import { eduWindow, finishMissesWindow, insideFinishTarget } from "../lib/education.js";
-import { parseCompactTime, zonedParts, zonedTimeToUtc, formatTime, formatDate, formatSpan, formatCountdown, formatCountdownClock, localDayRange, hhmmToMinutes } from "../lib/time.js";
+import { eduWindow, finishMissesWindow, insideFinishTarget, eduAwareMax } from "../lib/education.js";
+import { MINUTE, parseCompactTime, zonedParts, zonedTimeToUtc, formatTime, formatDate, formatSpan, formatCountdown, formatCountdownClock, localDayRange, hhmmToMinutes } from "../lib/time.js";
 import { Section, Btn, Field, Seg, DurationFields, EMPTY_DUR, durFrom, durParse, FormActions, Icon, Ltr, Bidi, Remaining, GroupName } from "../components/ui.jsx";
 import { TimerRow, useWhenLocal } from "./TimerCard.jsx";
 
@@ -19,19 +19,122 @@ function digitsAt(ms, tz) {
   return `${String(p.hour).padStart(2, "0")}${String(p.minute).padStart(2, "0")}`;
 }
 
+/* ---------- shared pieces: the "before you restart" review, and Education-aware advice ---------- */
+
+/** The compact summary shown before camps (re)start. Shows one shared finish only when every camp
+ *  really does finish in the same minute; otherwise each camp's own finish time. Also where a
+ *  longer-than-stored duration is either adopted (small increase) or confirmed (big jump). */
+function ReviewCard({ title, review, onConfirm, onBack, onKeepOld }) {
+  const { t, tz, lang } = useTimeHub();
+  const sum = restartSummary(review.list, review.at);
+  const name = (r) => `${t(r.camp)} · ${t(r.troop === "helios" ? "helios" : "normalTroops")}`;
+  const ask = review.increases.filter((x) => x.kind === "confirm");
+  const silent = review.increases.filter((x) => x.kind === "update");
+  // one question per distinct change (same duration for all camps → asked once, not three times)
+  const groups = Object.values(ask.reduce((m, x) => {
+    const k = `${x.prevMs}|${x.ms}`;
+    (m[k] = m[k] || { key: k, prevMs: x.prevMs, ms: x.ms, items: [] }).items.push(x);
+    return m;
+  }, {}));
+  return (
+    <div className="th-review" role="group" aria-label={title}>
+      <b className="th-review-title">{title}</b>
+      {sum.together && <div className="th-review-when">{t("finishAround", { time: formatTime(sum.finishAt, tz, lang) })} <span className="th-utc">· <Ltr>{formatTime(sum.finishAt, "UTC", lang)}</Ltr> UTC</span></div>}
+      {!sum.together && <div className="th-review-when">{t("finishDifferent")}</div>}
+      <ul className="th-review-list">
+        {sum.rows.map((r) => (
+          <li key={r.camp}><span>{name(r)}</span><span><b>{formatSpan(r.durationMs, lang)}</b>{!sum.together && <> → <Ltr>{formatTime(r.finishAt, tz, lang)}</Ltr></>}</span></li>
+        ))}
+      </ul>
+      {review.busy?.length > 0 && <div className="th-warn">{t("replaceCamps", { camps: review.busy.map((c) => t(c)).join(", ") })}</div>}
+      {silent.length > 0 && <p className="th-note">{t("maxLearnedNote", { list: silent.map((x) => `${t(`short_${x.camp}`)}${x.troop === "helios" ? ` ${t("helios")}` : ""} ${formatSpan(x.ms, lang)}`).join(", ") })}</p>}
+      {groups.map((g) => (
+        <div key={g.key} className="th-limit" role="alert">
+          <span><b>{t("updateMaxQ")}</b> {t("updateMaxBody", { camp: g.items.map((x) => t(x.camp)).join(", "), prev: formatSpan(g.prevMs, lang), ms: formatSpan(g.ms, lang) })}</span>
+          <span className="th-item-actions">
+            <Btn small tone="gold" onClick={() => onConfirm({ accept: g.items.map((x) => `${x.camp}:${x.troop}`) })}>{t("useAsNewMax", { ms: formatSpan(g.ms, lang) })}</Btn>
+            <Btn small onClick={() => onKeepOld(g.items)}>{t("keepOldMax", { prev: formatSpan(g.prevMs, lang) })}</Btn>
+          </span>
+        </div>
+      ))}
+      <div className="th-form-actions">
+        <Btn tone="gold" onClick={() => onConfirm({ go: true })} disabled={ask.length > 0}>{review.restart ? t("restartVerb") : t("startVerb")}</Btn>
+        <Btn onClick={onBack}>{t("back")}</Btn>
+      </div>
+    </div>
+  );
+}
+
+/** Answering "Update maximum?" only resolves the question — the player still taps Restart. */
+function answerReview(review, setReview, { accept, go }, commit) {
+  if (accept) return setReview({ ...review, increases: review.increases.map((x) => (accept.includes(`${x.camp}:${x.troop}`) ? { ...x, kind: "update" } : x)) });
+  if (go && !review.increases.some((x) => x.kind === "confirm")) commit(review.list, review.extraPlan, review.increases);
+}
+/** "Keep 7h": treat the long value as a typo and train for the stored maximum instead. */
+function keepOldMaxes(review, setReview, items) {
+  const hit = (e) => items.some((x) => x.camp === e.camp && x.troop === (e.troop === "helios" ? "helios" : "normal"));
+  setReview({
+    ...review,
+    list: review.list.map((e) => (hit(e) ? { ...e, durationMs: items.find((x) => x.camp === e.camp).prevMs, mode: "max" } : e)),
+    increases: review.increases.filter((y) => !hit(y)),
+  });
+}
+
+/** "Maximum would keep your camps busy through Education" → a short run now, restart with the buff.
+ *  Advice only: the Maximum button stays right there. */
+function EduAdvice({ advice, onUse }) {
+  const { t, tz, lang } = useTimeHub();
+  const now = useMinute();
+  const [why, setWhy] = useState(false);
+  if (!advice) return null;
+  const at = formatTime(advice.restartAt, tz, lang);
+  return (
+    <div className="th-advice" role="note">
+      <div className="th-advice-head">{t("eduInLine", { time: formatSpan(advice.restartAt - now, lang) })}</div>
+      {advice.kind === "bridge" ? (
+        <>
+          <p>{t("eduCanBeReady")}</p>
+          <p className="th-advice-rec"><span className="th-advice-tag">{t("recommended")}</span> {t("eduRecBridge", { dur: formatSpan(advice.trainFor, lang), time: at })}</p>
+        </>
+      ) : <p className="th-advice-rec"><span className="th-advice-tag">{t("recommended")}</span> {t("eduRecWait", { time: at })}</p>}
+      <div className="th-item-actions">
+        <Btn small tone="gold" onClick={onUse}>{advice.kind === "bridge" ? t("useThisPlan") : t("remindAtTime", { time: at })}</Btn>
+        <button type="button" className="th-link" aria-expanded={why} onClick={() => setWhy(!why)}>{t("whyThis")}</button>
+      </div>
+      {why && <p className="th-advice-why">{advice.kind === "bridge" ? t("whyBridge") : t("whyWait")}</p>}
+    </div>
+  );
+}
+
+/** Advice for a set of camps' maximums against this account's next Education appointment. */
+function useEduAdvice(accountId, maxMsList) {
+  const { state } = useTimeHub();
+  const { booking } = useEduPlan(accountId);
+  const now = useMinute();
+  if (!booking || !maxMsList.length) return null;
+  const win = eduWindow(booking, state.settings.eduBufferMin * 60000);
+  return eduAwareMax(now, Math.max(...maxMsList), win);
+}
+
 function TrainForm({ onDone, preset, accountId }) {
-  const { t, lang, tz, newId, dataFor, updateAccount, state } = useTimeHub();
+  const { t, lang, tz, newId, dataFor, updateAccount, state, notify } = useTimeHub();
   const sleep = state.settings.sleep;
   const now = useMinute(); // the planner works in minutes
-  const [mode, setMode] = useState(preset?.ms ? "custom" : "finish"); // finish (default) | max | custom
+  const data = dataFor(accountId);
+  const restart = !!preset?.restart;
+  const [mode, setMode] = useState(preset?.ms && !restart ? "custom" : "finish"); // finish (default) | custom (Duration) | max
   const [share, setShare] = useState(preset?.camp ? "each" : "same");
   const [shared, setShared] = useState(preset?.camps && preset.ms ? durFrom(preset.ms) : EMPTY_DUR);
   const [each, setEach] = useState(() => Object.fromEntries(TRAINING_CAMPS.map((c) => [c, preset?.camp === c ? durFrom(preset.ms) : EMPTY_DUR])));
-  const [ticked, setTicked] = useState(() => Object.fromEntries(TRAINING_CAMPS.map((c) => [c, preset?.camps ? preset.camps.includes(c) : true])));
-  const [troops, setTroops] = useState(() => Object.fromEntries(TRAINING_CAMPS.map((c) => [c, (preset?.camp === c && preset.troop === "helios") || preset?.troops?.[c] === "helios" ? "helios" : "normal"])));
-  const [confirm, setConfirm] = useState(null);
+  const [ticked, setTicked] = useState(() => Object.fromEntries(TRAINING_CAMPS.map((c) => [c, preset?.camps ? preset.camps.includes(c) : preset?.camp ? preset.camp === c : true])));
+  // troop type per camp: what the player last chose for that camp (only if it has Helios)
+  const [troops, setTroops] = useState(() => Object.fromEntries(TRAINING_CAMPS.map((c) => {
+    const want = preset?.camp === c && preset.troop ? preset.troop : preset?.troops?.[c];
+    return [c, hasHelios(data, c) ? (want === "helios" || want === "normal" ? want : defaultTroop(data, c)) : "normal"];
+  })));
+  const [review, setReview] = useState(null); // { list, extraPlan, busy, increases, at, restart }
+  const [longOk, setLongOk] = useState(false); // "my camps can train longer" (Finish at past the stored max)
   const [error, setError] = useState(null);
-  const data = dataFor(accountId);
   const troopOf = (c) => (hasHelios(data, c) ? troops[c] : "normal");
   const troopToggle = (c) => hasHelios(data, c) && (
     <span className="th-troop" role="group" aria-label={t(c)}>
@@ -56,68 +159,92 @@ function TrainForm({ onDone, preset, accountId }) {
     setShare(v);
   };
 
-  // --- time-left entries (secondary mode)
+  // --- Duration entries
   const entries = share === "same"
     ? TRAINING_CAMPS.filter((c) => ticked[c]).map((camp) => ({ camp, troop: troopOf(camp), r: durParse(shared) }))
     : TRAINING_CAMPS.filter((c) => each[c].days || each[c].hhmm).map((camp) => ({ camp, troop: troopOf(camp), r: durParse(each[camp]) }));
 
-  // --- Maximum training time (mode "max"): run each selected camp for ITS OWN configured maximum
+  // --- Maximum: run each selected camp for ITS OWN known maximum
   const maxEntries = TRAINING_CAMPS.filter((c) => ticked[c]).map((camp) => ({ camp, troop: troopOf(camp), max: campMaxFor(data, camp, troopOf(camp)) }));
   const maxKnown = maxEntries.filter((x) => x.max > 0);
+  const advice = useEduAdvice(accountId, mode === "max" ? maxKnown.map((x) => x.max) : []);
 
   function startMax() {
     if (!maxKnown.length) return setError(t("errPickCamp"));
     setError(null);
-    withConfirm(maxKnown.map(({ camp, troop, max }) => ({ camp, troop, durationMs: max, mode: "max" })));
+    withReview(maxKnown.map(({ camp, troop, max }) => ({ camp, troop, durationMs: max, mode: "max" })));
+  }
+  function useAdvice() {
+    const at = Date.now();
+    const plan = { id: newId(), camps: maxKnown.map((x) => x.camp), startAt: advice.restartAt, target: advice.restartAt + 30 * MINUTE, edu: true };
+    if (advice.kind === "wait") {
+      updateAccount(accountId, (d) => ({ ...d, plans: [...(d.plans || []).filter((x) => x.startAt > at), plan] }));
+      notify([`✓ ${t("remindAtTime", { time: formatTime(advice.restartAt, tz, lang) })}`]);
+      return onDone();
+    }
+    withReview(maxKnown.map(({ camp, troop, max }) => ({ camp, troop, durationMs: Math.min(max, advice.trainFor), mode: "custom" })), plan);
   }
 
-  // --- Finish At (default mode): uses the account's existing maximum training times
+  // --- Finish at (default): uses the account's known maximum training times
   const planCamps = TRAINING_CAMPS.filter((c) => ticked[c]);
   const maxes = planCamps.map((c) => ({ camp: c, max: campMaxFor(data, c, troopOf(c)) }));
   const known = maxes.filter((m) => m.max > 0);
   const limit = known.length ? known.reduce((a, b) => (b.max < a.max ? b : a)) : null; // the camp that runs out first
-  const advice = limit ? finishAdvice(now, limit.max, tz, sleep) : null;
-  const [raw, setRaw] = useState(() => (advice ? digitsAt(advice.finishAt, tz) : ""));
+  const sAdvice = limit ? finishAdvice(now, limit.max, tz, sleep) : null;
+  const [raw, setRaw] = useState(() => (sAdvice ? digitsAt(sAdvice.finishAt, tz) : ""));
   const { booking: eduB } = useEduPlan(accountId);
   const hhmm = parseCompactTime(raw);
   const target = hhmm ? nextFinishTarget(now, hhmm, tz) : NaN;
   const plans = planCamps.map((camp) => ({ camp, troop: troopOf(camp), plan: planFinish(target, now, campMaxFor(data, camp, troopOf(camp))) }));
   const tooLong = plans.filter((x) => x.plan.ok && !x.plan.fitsMax);
+  const blockedLong = tooLong.length > 0 && !longOk;
   const latest = limit ? now + limit.max : null;
-  const isAdvice = advice && Number.isFinite(target) && Math.abs(target - advice.finishAt) < 60000;
+  const isAdvice = sAdvice && Number.isFinite(target) && Math.abs(target - sAdvice.finishAt) < 60000;
   const dayWord = Number.isFinite(target) ? (localDayRange(now, tz, 0).end > target ? t("today") : t("tomorrow")) : "";
+  const need = Number.isFinite(target) ? Math.floor((target - now) / MINUTE) * MINUTE : 0;
 
-  function commit(list, extraPlan) {
+  function commit(list, extraPlan, accepted = []) {
     const at = Date.now();
-    updateAccount(accountId, (d) => ({
-      ...d,
-      timers: applyTraining(d.timers, list, at, newId),
-      plans: extraPlan ? [...(d.plans || []).filter((x) => x.startAt > at), extraPlan] : d.plans,
-    }));
+    updateAccount(accountId, (d) => {
+      const learned = applyLearnedMax(d, accepted, at);
+      return {
+        ...rememberTroops(learned, list),
+        timers: applyTraining(d.timers, list, at, newId),
+        plans: extraPlan ? [...(d.plans || []).filter((x) => x.startAt > at), extraPlan] : d.plans,
+      };
+    });
     success();
+    const sum = restartSummary(list, at);
+    notify([`✓ ${restart ? t("campsRestarted", { n: list.length }) : t("trainingStartedN", { n: list.length })}`,
+      sum.together ? t("finishAround", { time: formatTime(sum.finishAt, tz, lang) }) : t("finishDifferent")]);
     onDone();
   }
 
-  function withConfirm(list, extraPlan) {
+  /** Every start goes through the compact summary, except editing a single camp's time with
+   *  nothing to replace or learn (that stays a one-tap correction). */
+  function withReview(list, extraPlan) {
     const busy = busyCamps(data.timers, list.map((e) => e.camp), now);
-    if (busy.length && !confirm) { setConfirm({ busy, list, extraPlan }); return; }
-    commit(list, extraPlan);
+    const increases = maxIncreases(data, list);
+    if (list.length === 1 && !busy.length && !increases.length && !restart) return commit(list, extraPlan);
+    setReview({ list, extraPlan, busy, increases, at: Date.now(), restart });
   }
+  function confirmReview(a) { answerReview(review, setReview, a, commit); }
+  function keepOld(items) { keepOldMaxes(review, setReview, items); }
 
   function saveLeft() {
     if (!entries.length) return setError(t("errPickCamp"));
     if (entries.some((e) => e.r.error)) return setError(t("errDigitsFix"));
     setError(null);
-    withConfirm(entries.map((e) => ({ camp: e.camp, troop: e.troop, durationMs: e.r.ms, mode: "custom" })));
+    withReview(entries.map((e) => ({ camp: e.camp, troop: e.troop, durationMs: e.r.ms, mode: "custom" })));
   }
 
   function startPlanNow() {
     if (!plans.length) return setError(t("errPickCamp"));
     if (!hhmm) return setError(t("errFinishTime"));
     if (plans.some((x) => !x.plan.ok)) return setError(t("errPlanPast"));
-    if (tooLong.length) return setError(t("errTooLong"));
+    if (blockedLong) return setError(t("errTooLong"));
     setError(null);
-    withConfirm(plans.map(({ camp, troop, plan }) => ({ camp, troop, durationMs: plan.trainFor, mode: "finish" })));
+    withReview(plans.map(({ camp, troop, plan }) => ({ camp, troop, durationMs: plan.fitsMax ? plan.trainFor : need, mode: "finish" })));
   }
 
   function remindLater() {
@@ -126,14 +253,24 @@ function TrainForm({ onDone, preset, accountId }) {
     onDone();
   }
 
+  const title = restart ? t("restartAllCampsTitle") : null;
+  if (review) {
+    return (
+      <div className="th-form">
+        <ReviewCard title={restart ? t("restartAllCampsTitle") : t("startTrainingTitle")} review={review} onConfirm={confirmReview} onKeepOld={keepOld} onBack={() => setReview(null)} />
+      </div>
+    );
+  }
+
   const modeBar = (
     <>
-      <Seg value={mode} onChange={setMode} label={t("trainingMode")} options={[
-        { value: "finish", label: t("modeFinish") },
-        { value: "max", label: t("modeMax") },
-        { value: "custom", label: t("modeCustom") },
+      {title && <b className="th-restart-title">{title}</b>}
+      <Seg value={mode} onChange={(v) => { setMode(v); setError(null); }} label={t("trainingMode")} options={[
+        { value: "finish", label: t("modeFinishShort") },
+        { value: "custom", label: t("modeDurationShort") },
+        { value: "max", label: t("modeMaxShort") },
       ]} />
-      <p className="th-hint th-mode-note">{t("troopGuidance")}</p>
+      <p className="th-hint th-mode-note">{t(mode === "finish" ? "modeFinishHelp" : mode === "custom" ? "modeDurationHelp" : "modeMaxHelp")}</p>
     </>
   );
 
@@ -141,7 +278,6 @@ function TrainForm({ onDone, preset, accountId }) {
     return (
       <div className="th-form">
         {modeBar}
-        <p className="th-sec-sub">{t("maxModeHelp")}</p>
         {campChecks}
         {maxKnown.length > 0 && (
           <ul className="th-max-list">
@@ -154,12 +290,11 @@ function TrainForm({ onDone, preset, accountId }) {
           </ul>
         )}
         {!maxKnown.length && <p className="th-note">{t("noMaxNote")}</p>}
+        <EduAdvice advice={advice} onUse={useAdvice} />
         {error && <span className="th-error" role="alert">{error}</span>}
-        {confirm && <div className="th-warn" role="alert">{t("replaceCamps", { camps: confirm.busy.map((c) => t(c)).join(", ") })}</div>}
-        <Btn tone="gold" block onClick={() => (confirm ? commit(confirm.list, confirm.extraPlan) : startMax())} disabled={!maxKnown.length}>
-          {confirm ? t("replace") : t("startMaxTraining")}
+        <Btn tone={advice ? "ghost" : "gold"} block onClick={startMax} disabled={!maxKnown.length}>
+          {advice ? t("startMaxAnyway") : t("startMaxTraining")}
         </Btn>
-        <p className="th-note">{t("restartAllNote")}</p>
         <button type="button" className="th-link" onClick={onDone}>{t("cancel")}</button>
       </div>
     );
@@ -169,9 +304,9 @@ function TrainForm({ onDone, preset, accountId }) {
       <div className="th-form">
         {modeBar}
         <Field label={t("camps")} as="div">
-          <Seg value={share} onChange={switchShare} label={t("camps")} options={[{ value: "same", label: t("sameForAll") }, { value: "each", label: t("setEachCamp") }]} />
+          <Seg value={share} onChange={switchShare} label={t("camps")} options={[{ value: "same", label: t("sameDurationAll") }, { value: "each", label: t("setIndividually") }]} />
         </Field>
-        {share === "same" && (<><DurationFields value={shared} onChange={setShared} label={t("timeLeftAll")} />{campChecks}</>)}
+        {share === "same" && (<><DurationFields value={shared} onChange={setShared} label={t("trainAllFor")} />{campChecks}</>)}
         {share === "each" && (
           <div className="th-camp-rows">
             {TRAINING_CAMPS.map((c) => (
@@ -184,8 +319,7 @@ function TrainForm({ onDone, preset, accountId }) {
           </div>
         )}
         {error && <span className="th-error" role="alert">{error}</span>}
-        {confirm && <div className="th-warn" role="alert">{t("replaceCamps", { camps: confirm.busy.map((c) => t(c)).join(", ") })}</div>}
-        <FormActions onSave={() => (confirm ? commit(confirm.list, confirm.extraPlan) : saveLeft())} onCancel={onDone} saveLabel={confirm ? t("replace") : t("startTimers")} />
+        <FormActions onSave={saveLeft} onCancel={onDone} saveLabel={restart ? t("restartAllCampsBtn") : t("startTimers")} />
       </div>
     );
   }
@@ -197,13 +331,14 @@ function TrainForm({ onDone, preset, accountId }) {
       <label className="th-finish">
         <span className="th-finish-q">{t("finishAtQ")}</span>
         <input className="th-finish-input" inputMode="numeric" autoComplete="off" placeholder="2200" maxLength={5}
-          aria-describedby="th-finish-read" value={raw} onChange={(e) => { setRaw(e.target.value.replace(/[^\d:.]/g, "")); setError(null); setConfirm(null); }} />
+          aria-describedby="th-finish-read" value={raw} onChange={(e) => { setRaw(e.target.value.replace(/[^\d:.]/g, "")); setError(null); setLongOk(false); }} />
         <span id="th-finish-read" className="th-finish-read">
           {hhmm ? <><b><Ltr>{formatTime(target, tz, lang)}</Ltr></b> {dayWord} · <Ltr>{formatTime(target, "UTC", lang)}</Ltr> UTC</> : raw ? t("finishInvalid") : t("finishHint")}
         </span>
       </label>
+      {/* troop type per camp stays visible here: Helios and normal troops have different times */}
+      {TRAINING_CAMPS.some((c) => ticked[c] && hasHelios(data, c)) && campChecks}
 
-      {/* 3. Suggested finish (only when it differs from what's typed) */}
       {/* Education booked: a finish time that lands after the window would miss the buff */}
       {eduB && Number.isFinite(target) && finishMissesWindow(target, eduWindow(eduB, state.settings.eduBufferMin * 60000), now) && (() => {
         const w = eduWindow(eduB, state.settings.eduBufferMin * 60000);
@@ -215,18 +350,18 @@ function TrainForm({ onDone, preset, accountId }) {
           </div>
         );
       })()}
-      {advice && !isAdvice && (
-        <button type="button" className="th-suggest-btn" onClick={() => setRaw(digitsAt(advice.finishAt, tz))}>
-          {t(advice.kind === "bed" ? "suggestBed" : "suggestFull", { time: formatTime(advice.finishAt, tz, lang) })}
+      {sAdvice && !isAdvice && (
+        <button type="button" className="th-suggest-btn" onClick={() => setRaw(digitsAt(sAdvice.finishAt, tz))}>
+          {t(sAdvice.kind === "bed" ? "suggestBed" : "suggestFull", { time: formatTime(sAdvice.finishAt, tz, lang) })}
         </button>
       )}
 
       {/* 4. What will happen */}
-      {hhmm && plans.length > 0 && !tooLong.length && plans.every((x) => x.plan.ok) && (
+      {hhmm && plans.length > 0 && !blockedLong && plans.every((x) => x.plan.ok) && (
         <p className="th-outcome">
-          {t("outcomeTrainFor", { dur: formatSpan(plans[0].plan.trainFor, lang), time: formatTime(target, tz, lang) })}
-          {isAdvice && advice.kind === "bed" && <> {t("outcomeOvernight", { end: formatTime(advice.overnightEnd, tz, lang) })}</>}
-          {!isAdvice && inSleepWindow(target, tz, sleep) && advice && <> {t("outcomeAsleep")}</>}
+          {t("outcomeTrainFor", { dur: formatSpan(tooLong.length ? need : plans[0].plan.trainFor, lang), time: formatTime(target, tz, lang) })}
+          {isAdvice && sAdvice.kind === "bed" && <> {t("outcomeOvernight", { end: formatTime(sAdvice.overnightEnd, tz, lang) })}</>}
+          {!isAdvice && inSleepWindow(target, tz, sleep) && sAdvice && <> {t("outcomeAsleep")}</>}
         </p>
       )}
       {hhmm && !tooLong.length && plans.every((x) => x.plan.ok) && plans.some((x) => campTroopsFor(data, x.camp)) && (
@@ -235,30 +370,33 @@ function TrainForm({ onDone, preset, accountId }) {
         </p>
       )}
 
-      {/* 5. Limitation: never plan past the account's maximum */}
-      {tooLong.length > 0 && latest && (
+      {/* 5. Longer than the KNOWN maximum: suggest the latest, but the stored maximum may be out of
+             date, so the player can say their camps really can train that long (the app learns it). */}
+      {blockedLong && latest && (
         <div className="th-limit" role="alert">
-          <span>{t("limitMax", { camp: t(limit.camp), max: formatSpan(limit.max, lang), time: formatTime(target, tz, lang), latest: formatTime(latest, tz, lang) })}</span>
+          <span>{t("limitMaxKnown", { camp: t(limit.camp), max: formatSpan(limit.max, lang), time: formatTime(target, tz, lang), latest: formatTime(latest, tz, lang) })}</span>
           <span className="th-item-actions">
             <Btn small tone="gold" onClick={() => setRaw(digitsAt(latest, tz))}>{t("useTime", { time: formatTime(latest, tz, lang) })}</Btn>
             <Btn small onClick={remindLater}>{t("remindStartAt", { time: formatTime(Math.min(...tooLong.map((x) => x.plan.startAt)), tz, lang) })}</Btn>
+            <Btn small onClick={() => setLongOk(true)}>{t("canTrainLonger", { dur: formatSpan(need, lang) })}</Btn>
           </span>
         </div>
       )}
       {!known.length && <p className="th-note">{t("noMaxNote")}</p>}
       {error && <span className="th-error" role="alert">{error}</span>}
-      {confirm && <div className="th-warn" role="alert">{t("replaceCamps", { camps: confirm.busy.map((c) => t(c)).join(", ") })}</div>}
 
       {/* primary action */}
-      <Btn tone="gold" block onClick={() => (confirm ? commit(confirm.list, confirm.extraPlan) : startPlanNow())} disabled={!hhmm || !!tooLong.length}>
-        {confirm ? t("replace") : hhmm ? t("startFinishing", { time: formatTime(target, tz, lang) }) : t("startNow")}
+      <Btn tone="gold" block onClick={startPlanNow} disabled={!hhmm || blockedLong}>
+        {hhmm ? t(restart ? "restartFinishing" : "startFinishing", { time: formatTime(target, tz, lang) }) : t("startNow")}
       </Btn>
 
       {/* 6. Secondary */}
-      <details className="th-secondary">
-        <summary>{t("whichCamps")}</summary>
-        {campChecks}
-      </details>
+      {!TRAINING_CAMPS.some((c) => ticked[c] && hasHelios(data, c)) && (
+        <details className="th-secondary">
+          <summary>{t("whichCamps")}</summary>
+          {campChecks}
+        </details>
+      )}
       <button type="button" className="th-link" onClick={onDone}>{t("cancel")}</button>
     </div>
   );
@@ -395,8 +533,8 @@ function restartable(data, now) {
     const mine = (data.timers || []).filter((x) => x.kind === "training" && x.category === camp);
     if (mine.some((x) => x.endAt > now)) return null;
     const last = mine.sort((a, b) => b.endAt - a.endAt)[0];
-    const troop = last?.troop === "helios" ? "helios" : "normal";
-    const fullMs = last?.durationMs > 0 ? last.durationMs : campMaxFor(data, camp, troop);
+    const troop = defaultTroop(data, camp);
+    const fullMs = campMaxFor(data, camp, troop) || (last?.durationMs > 0 ? last.durationMs : null);
     return { camp, troop, fullMs: fullMs > 0 ? fullMs : null };
   }).filter(Boolean);
 }
@@ -406,44 +544,92 @@ function MoonNote({ children }) {
 }
 
 function RestartAll({ acc, onDone }) {
-  const { t, tz, lang, dataFor, updateAccount, newId, state } = useTimeHub();
+  const { t, tz, lang, dataFor, updateAccount, newId, state, notify } = useTimeHub();
   const sleep = state.settings.sleep;
   const now = useMinute();
   const data = dataFor(acc);
-  const list = restartable(data, now);
+  const base = restartable(data, now);
+  // troop type per camp (toggle only where Helios is set up); the full batch follows the troop type
+  const [troopSel, setTroopSel] = useState(() => Object.fromEntries(base.map((c) => [c.camp, c.troop])));
+  const list = base.map((c) => {
+    const troop = troopSel[c.camp] || c.troop;
+    const fullMs = campMaxFor(data, c.camp, troop) || (troop === c.troop ? c.fullMs : null);
+    return { ...c, troop, fullMs };
+  });
   const label = (c) => (c.troop === "helios" ? t("heliosCamp", { camp: t(c.camp) }) : t(c.camp));
   const rows = list.map((c) => ({ ...c, batch: campTroopsFor(data, c.camp), check: c.fullMs ? timingCheck(now, c.fullMs, tz, sleep) : null }));
   const ready = rows.filter((c) => c.fullMs);
   const troopsKnown = ready.some((c) => c.batch);
   const [unit, setUnit] = useState(troopsKnown ? "troops" : "time"); // how the player enters it: time | troops
-  // what the player typed per camp (defaults: the full batch)
   const [dur, setDur] = useState(() => Object.fromEntries(ready.map((c) => [c.camp, durFrom(c.fullMs)])));
   const [troops, setTroops] = useState(() => Object.fromEntries(ready.map((c) => [c.camp, c.batch ? String(c.batch) : ""])));
+  const [review, setReview] = useState(null);
+  const [plan, setPlan] = useState(null); // Education restart reminder accepted from the advice
+  const switchTroop = (c, tp) => {
+    setTroopSel({ ...troopSel, [c.camp]: tp });
+    const ms = campMaxFor(data, c.camp, tp);
+    if (ms) setDur({ ...dur, [c.camp]: durFrom(ms) });
+  };
+  // A duration longer than the stored full batch is NOT blocked: the stored value may be out of
+  // date, so it's learned (asked first only when it's a big jump). Troop counts above the batch
+  // size still can't be converted, so those remain an input error.
   const msFor = (c) => {
     if (unit === "troops" && c.batch) {
       const n = Number(String(troops[c.camp] || "").replace(/\D/g, ""));
       return n > 0 && n <= c.batch ? durationForTroops(n, c.fullMs, c.batch) : n > c.batch ? { over: true } : null;
     }
     const r = durParse(dur[c.camp] || EMPTY_DUR);
-    return r.error || !r.ms ? null : r.ms > c.fullMs ? { over: true } : r.ms;
+    return r.error || !r.ms ? null : r.ms;
   };
   const values = ready.map((c) => ({ c, ms: msFor(c) }));
   const valid = values.filter((v) => typeof v.ms === "number" && v.ms > 0);
+  const advice = useEduAdvice(acc, valid.map((v) => v.ms));
   const useSuggestion = (c) => {
     const ms = c.check.suggestion.durationMs;
     setDur({ ...dur, [c.camp]: durFrom(ms) });
     if (c.batch) setTroops({ ...troops, [c.camp]: String(troopsForDuration(ms, c.fullMs, c.batch)) });
   };
+  function useAdvice() {
+    const p = { id: newId(), camps: ready.map((c) => c.camp), startAt: advice.restartAt, target: advice.restartAt + 30 * MINUTE, edu: true };
+    if (advice.kind === "wait") {
+      updateAccount(acc, (d) => ({ ...d, plans: [...(d.plans || []).filter((x) => x.startAt > Date.now()), p] }));
+      notify([`✓ ${t("remindAtTime", { time: formatTime(advice.restartAt, tz, lang) })}`]);
+      return onDone();
+    }
+    setUnit("time");
+    setDur(Object.fromEntries(ready.map((c) => [c.camp, durFrom(Math.min(c.fullMs, advice.trainFor))])));
+    setPlan(p);
+  }
   function go() {
+    const list2 = valid.map(({ c, ms }) => ({ camp: c.camp, troop: c.troop, durationMs: ms, mode: ms >= c.fullMs ? "max" : "custom" }));
+    setReview({ list: list2, busy: [], increases: maxIncreases(data, list2), at: Date.now(), restart: true, extraPlan: plan });
+  }
+  function commit(list2, extraPlan, accepted) {
     const at = Date.now();
-    const entries = valid.map(({ c, ms }) => ({ camp: c.camp, troop: c.troop, durationMs: ms, mode: ms >= c.fullMs ? "max" : "custom" }));
-    updateAccount(acc, (d) => ({ ...d, timers: applyTraining(d.timers, entries, at, newId) }));
+    updateAccount(acc, (d) => ({
+      ...rememberTroops(applyLearnedMax(d, accepted, at), list2),
+      timers: applyTraining(d.timers, list2, at, newId),
+      plans: extraPlan ? [...(d.plans || []).filter((x) => x.startAt > at), extraPlan] : d.plans,
+    }));
     success();
+    const sum = restartSummary(list2, at);
+    notify([`✓ ${t("campsRestarted", { n: list2.length })}`, sum.together ? t("finishAround", { time: formatTime(sum.finishAt, tz, lang) }) : t("finishDifferent")]);
     onDone();
+  }
+  if (review) {
+    return (
+      <div className="th-form th-restart">
+        <ReviewCard title={t("restartAllCampsTitle")} review={review} onBack={() => setReview(null)}
+          onConfirm={(a) => answerReview(review, setReview, a, commit)}
+          onKeepOld={(items) => keepOldMaxes(review, setReview, items)} />
+      </div>
+    );
   }
   return (
     <div className="th-form th-restart">
       <b className="th-restart-title">{t("restartAllTitle")}</b>
+      {!plan && <EduAdvice advice={advice} onUse={useAdvice} />}
+      {plan && <p className="th-note">✓ {t("eduPlanSet", { time: formatTime(plan.startAt, tz, lang) })}</p>}
       {rows.some((c) => c.check?.suggestion) && (
         <MoonNote>{t("timingSuggestionShort", { n: rows.filter((c) => c.check?.suggestion).length, finish: formatTime(rows.find((c) => c.check?.suggestion).check.suggestion.finishAt, tz, lang) })}</MoonNote>
       )}
@@ -455,14 +641,20 @@ function RestartAll({ acc, onDone }) {
         const ms = typeof v === "number" ? v : null;
         const useTroops = unit === "troops" && c.batch;
         const sug = c.check?.suggestion;
+        const longer = ms && c.fullMs && ms > c.fullMs;
         return (
           <div key={c.camp} className="th-restart-row">
             <div className="th-restart-head">
               <b>{label(c)}</b>
-              {c.fullMs
-                ? <span className={c.check.overnight ? "t-warn" : "t-ok"}>{t("fullTraining")} {formatSpan(c.fullMs, lang)}{c.batch ? ` · ${c.batch.toLocaleString(lang)}` : ""} → <Ltr>{formatTime(c.check.fullEnd, tz, lang)}</Ltr> {c.check.overnight ? "🌙" : "✓"}</span>
-                : <span className="th-hint">{t("noFullBatch")}</span>}
+              {hasHelios(data, c.camp) && (
+                <span className="th-troop" role="group" aria-label={t(c.camp)}>
+                  {["normal", "helios"].map((tp) => <button key={tp} type="button" aria-pressed={c.troop === tp} onClick={() => switchTroop(c, tp)}>{t(tp === "helios" ? "helios" : "normalTroops")}</button>)}
+                </span>
+              )}
             </div>
+            {c.fullMs
+              ? <span className={c.check.overnight ? "t-warn" : "t-ok"}>{t("fullTraining")} {formatSpan(c.fullMs, lang)}{c.batch ? ` · ${c.batch.toLocaleString(lang)}` : ""} → <Ltr>{formatTime(c.check.fullEnd, tz, lang)}</Ltr> {c.check.overnight ? "🌙" : "✓"}</span>
+              : <span className="th-hint">{t("noFullBatch")}</span>}
             {c.fullMs && (
               <>
                 {useTroops ? (
@@ -476,10 +668,10 @@ function RestartAll({ acc, onDone }) {
                 )}
                 <span className={`th-restart-read ${v && v.over ? "bad" : ""}`}>
                   {v && v.over
-                    ? t(useTroops ? "overBatchTroops" : "overBatchTime", { max: useTroops ? c.batch.toLocaleString(lang) : formatSpan(c.fullMs, lang) })
-                    : ms ? <>{useTroops ? `= ${formatSpan(ms, lang)} → ` : "→ "}<b><Ltr>{formatTime(now + ms, tz, lang)}</Ltr></b>{!useTroops && c.batch ? ` · ≈ ${troopsForDuration(ms, c.fullMs, c.batch).toLocaleString(lang)} ${t("troopsWord")}` : ""}</> : ""}
+                    ? t("overBatchTroops", { max: c.batch.toLocaleString(lang) })
+                    : ms ? <>{useTroops ? `= ${formatSpan(ms, lang)} → ` : "→ "}<b><Ltr>{formatTime(now + ms, tz, lang)}</Ltr></b>{!useTroops && c.batch && !longer ? ` · ≈ ${troopsForDuration(ms, c.fullMs, c.batch).toLocaleString(lang)} ${t("troopsWord")}` : ""}{longer ? ` · ${t("longerThanKnown")}` : ""}</> : ""}
                 </span>
-                {sug && (
+                {sug && !plan && (
                   <button type="button" className="th-suggest-btn" onClick={() => useSuggestion(c)}>
                     {useTroops
                       ? t("suggestTroops", { n: troopsForDuration(sug.durationMs, c.fullMs, c.batch).toLocaleString(lang), finish: formatTime(sug.finishAt, tz, lang) })
@@ -614,7 +806,8 @@ function TrainGroup({ acc, showName, open, setOpen }) {
       {!kind && (
         <div className="th-group-actions">
           <Btn small onClick={() => setOpen({ acc, kind: "finish", key: Date.now() })}>{t("setFinishTime")}</Btn>
-          {st.idle.some((c) => c.fullMs) && <Btn small onClick={() => setOpen({ acc, kind: "restart" })}>↻ {t("restartAll", { n: st.idle.filter((c) => c.fullMs).length })}</Btn>}
+          {st.idle.length > 0 && <Btn small tone="gold" onClick={() => setOpen({ acc, kind: "finish", preset: { accountId: acc, restart: true, camps: st.idle.map((c) => c.camp) }, key: Date.now() })}>↻ {st.idle.length === TRAINING_CAMPS.length ? t("restartAllCampsBtn") : t("restartAll", { n: st.idle.length })}</Btn>}
+          {st.idle.some((c) => c.fullMs) && <button type="button" className="th-link" onClick={() => setOpen({ acc, kind: "restart" })}>{t("restartPerCamp")}</button>}
           {st.timers.length > 0 && <button type="button" className="th-link" aria-expanded={details} onClick={() => setDetails(!details)}>{details ? t("hideCamps") : t("campDetails")}</button>}
           {campsSet && <button type="button" className="th-link" onClick={() => setOpen({ acc, kind: "times" })}>{t("trainingTimes")}</button>}
         </div>
@@ -650,7 +843,8 @@ export function TrainingWidget({ move }) {
   React.useEffect(() => {
     if (!trainDraft) return;
     dispatch({ type: "setSection", id: "training", closed: false });
-    setOpen({ acc: trainDraft.accountId, kind: trainDraft.edu ? "edu" : "finish", preset: trainDraft, key: trainDraft.nonce });
+    setOpen({ acc: trainDraft.accountId, kind: trainDraft.times ? "times" : trainDraft.edu ? "edu" : "finish", preset: trainDraft, key: trainDraft.nonce });
+    setTimeout(() => document.querySelector(".th-train-group .th-form")?.scrollIntoView({ block: "center" }), 120);
     setTrainDraft(null);
   }, [trainDraft]); // eslint-disable-line react-hooks/exhaustive-deps
   const count = accountIds.reduce((n, a) => n + dataFor(a).timers.filter((x) => x.kind === "training" && x.endAt > Date.now()).length, 0);

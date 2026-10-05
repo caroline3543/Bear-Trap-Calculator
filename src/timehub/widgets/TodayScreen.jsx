@@ -9,14 +9,20 @@ import { success } from "../lib/feedback.js";
 import { EventForm } from "./EventsWidget.jsx";
 import { useMinute, useClockFor } from "../hooks/useNow.jsx";
 import { buildAgenda, groupContrib, groupTraining } from "../lib/agenda.js";
-import { bestFits } from "../lib/tasks.js";
+import { inSleepWindow } from "../lib/sleep.js";
+import { todayView, scheduledToday, fitsIn, gapHint, setDone, notToday, placeAt, unplace, remindersDue, snoozeHour } from "../lib/todo.js";
 import { researchReminder, VP_POSITION } from "../lib/research.js";
 
 /** Whether ANY unfinished, unscheduled to-do exists — decides whether "+ Add task" opens the
  *  suggestion sheet first or goes straight to a blank form (no point suggesting from nothing). */
 function useHasUnscheduledTasks() {
-  const { state } = useTimeHub();
-  return (state.tasks || []).some((x) => !x.done && x.start == null);
+  return useTodayOpen().some((x) => x.start == null);
+}
+/** Today's open to-dos (recurring occurrences included), derived — never copied. */
+function useTodayOpen() {
+  const { state, tz } = useTimeHub();
+  const now = useMinute();
+  return useMemo(() => todayView(state.tasks, now, tz).open, [state.tasks, now, tz]);
 }
 import { computeReminders, needsAttention } from "../lib/reminders.js";
 import { contribState, spendAttempt } from "../lib/contributions.js";
@@ -37,13 +43,16 @@ import { itemTitle, toCalendarItem } from "../components/labels.js";
 import { ReminderRow } from "./ReminderRow.jsx";
 import { useWhenLocal } from "./TimerCard.jsx";
 import { useClaim } from "./DailyWidgets.jsx";
-import { FriendsWidget } from "./FriendsWidget.jsx";
+import { FriendsWidget, FriendTimes } from "./FriendsWidget.jsx";
+import { SpendAllButton } from "./SpendAll.jsx";
+import { SwipeRow } from "./SwipeRow.jsx";
+import { eventAccounts } from "../lib/friends.js";
 
 const BUFF_NAME = { strategy: "buffStrategyName", defense: "buffDefenseName", neither: "buffNeither", unsure: "bookingUnknown" };
 
 /* ---------- what needs doing (one card, like the calculator's steps) ---------- */
 export function useNeeds() {
-  const { state, accountIds, dataFor } = useTimeHub();
+  const { state, accountIds, dataFor, tz } = useTimeHub();
   const now = useMinute(); // once a minute is plenty for "what needs doing"
   return useMemo(() => {
     const drops = dropsNeedingAction(state, accountIds, now);
@@ -54,16 +63,32 @@ export function useNeeds() {
     const intel = intelNeedingAction(state, accountIds, now);
     const champ = state.settings.champ;
     const round = champ?.leader && champ.anchor ? champRounds(champ.anchor, now, now + 1).find((r) => r.start <= now && now < r.end) : null;
-    // Vice President booking reminder for research nearing completion — only while it still needs
-    // action (booked ones stop appearing here, matching the rest of Needs You).
+    // Vice President booking reminder for research nearing completion — only while PENDING
+    // (booked ones are done; a dismissed occurrence stays dismissed until its slot changes).
     const vp = accountIds.flatMap((acc) => (dataFor(acc).timers || [])
       .filter((x) => x.kind === "research" && x.endAt > now)
-      .map((x) => ({ acc, x, r: researchReminder(x, dataFor(acc).bookings, now) }))
-      .filter((e) => e.r && !e.r.booked));
-    return { drops, stamina, idle, minister, intel, round, vp, count: drops.length + stamina.length + idle.length + minister.length + (intel ? 1 : 0) + (round ? 1 : 0) + vp.length };
-  }, [state, accountIds.join(), now]); // eslint-disable-line react-hooks/exhaustive-deps
+      .map((x) => ({ acc, x, r: researchReminder(x, dataFor(acc).bookings, now, dataFor(acc).vpDismiss) }))
+      .filter((e) => e.r && e.r.status === "pending"));
+    // Alliance Contributions that are full RIGHT NOW (one grouped row, one Spend all)
+    const contrib = state.settings.track?.contrib === false ? [] : accountIds.filter((a) => contribState(dataFor(a).contrib, now).full);
+    // Education restart reminders the player accepted from the training planner
+    const eduPlans = accountIds.flatMap((acc) => (dataFor(acc).plans || []).filter((p) => p.edu && p.startAt > now - 30 * MINUTE && p.startAt - now <= 3 * HOUR).map((p) => ({ acc, p })));
+    // to-dos whose in-app reminder time has passed and that are still open today (one grouped row)
+    const todoRem = remindersDue(todayView(state.tasks, now, tz), now, tz);
+    const focus = state.settings.focus && state.settings.focus.endsAt > 0 && state.settings.focus.endsAt <= now ? state.settings.focus : null;
+    const focusTask = focus ? (state.tasks || []).find((x) => x.id === focus.taskId) : null;
+    const count = drops.length + stamina.length + idle.length + minister.length + (intel ? 1 : 0) + (round ? 1 : 0) + vp.length + (contrib.length ? 1 : 0) + eduPlans.length + (todoRem.length ? 1 : 0) + (focusTask ? 1 : 0);
+    return { drops, stamina, idle, minister, intel, round, vp, contrib, eduPlans, todoRem, focusTask, count };
+  }, [state, accountIds.join(), now, tz]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
+/** "Today" / "Tomorrow" / a date, for a moment in the player's own calendar ("" = today). */
+function dayWordFor(at, now, tz, lang, t) {
+  const a = zonedParts(at, tz), b = zonedParts(now, tz);
+  const diff = Math.round((Date.UTC(a.year, a.month - 1, a.day) - Date.UTC(b.year, b.month - 1, b.day)) / DAY);
+  // lower-case inside a sentence ("finishes tomorrow at"); a date stays as formatted
+  return diff === 0 ? t("today").toLocaleLowerCase(lang) : diff === 1 ? t("tomorrow").toLocaleLowerCase(lang) : formatDate(at, tz, lang);
+}
 
 const NEED_ICON = {
   store: "M4 9l1.5-5h13L20 9M5 9v11h14V9M9 20v-6h6v6",
@@ -72,6 +97,7 @@ const NEED_ICON = {
   flame: "M12 3c1 3.2 4.5 4.8 4.5 9a4.5 4.5 0 0 1-9 0c0-1.8.8-3 1.8-4 .2 1.4 1 2 1.8 2C11.4 7.6 11 5.4 12 3z",
   bell: "M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0",
   flask: "M9 3h6M10 3v6L5 18a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-9V3",
+  flag: "M5 21V4M5 4h11l-2 4 2 4H5",
 };
 const NeedIcon = ({ name, warm }) => (
   <span className={`th-need-ic ${warm ? "warm" : ""}`} aria-hidden="true">
@@ -89,8 +115,10 @@ function NeedRow({ tone = "warm", title, sub, children, leaving, icon = "bell" }
   );
 }
 
+/** Needs You, prioritised by immediacy: NOW (act on it) above COMING UP (plan for it).
+ *  One concise row per situation — several full Contributions accounts share one row. */
 function NeedsYou({ hiddenKeys }) {
-  const { t, tz, lang, accountById, startTraining, setTab, updateAccount, openBooking } = useTimeHub();
+  const { t, tz, lang, accountById, startTraining, setTab, updateAccount, update, openBooking, notify } = useTimeHub();
   const now = useMinute();
   const when = useWhenLocal();
   const claim = useClaim();
@@ -111,58 +139,131 @@ function NeedsYou({ hiddenKeys }) {
       </section>
     );
   }
+  const dismissVp = (acc, r) => {
+    const at = Date.now();
+    updateAccount(acc, (d) => ({ ...d, vpDismiss: { ...(d.vpDismiss || {}), [r.key]: at } }));
+    notify([t("vpDismissed"), t("vpDismissedSub")]);
+  };
+  const dismissMinister = (r) => {
+    update((s) => ({ ...s, reminders: { ...s.reminders, [r.key]: { state: "dismissed", buff: null } } }));
+    notify([t("reminderDismissed"), t("vpDismissedSub")]);
+  };
+  const SOON_MS = 2 * HOUR;
+  const nowRows = [];
+  const soonRows = [];
+
+  for (const { drop: d, status, accounts } of n.drops) {
+    (status === "ready" ? nowRows : soonRows).push(
+      <NeedRow key={d.key} tone="gold" icon={d.kind === "store" ? "store" : "boot"} leaving={leaving.includes(d.key)}
+        title={`${d.kind === "store" ? t("dropStore", { n: d.amount }) : t("dropTrek", { n: d.amount })} · ${formatTime(d.at, tz, lang)}`}
+        sub={<>{status === "ready" ? t("readyToClaim") : t("inTime", { time: formatSpan(d.at - now, lang) })} · {accounts.length > 1 ? t("nAccounts", { n: accounts.length }) : accountById(accounts[0])?.name}</>}>
+        {status === "ready" && <Btn small onClick={() => later(d.key, () => claim(d))}>{t("claimed")}</Btn>}
+      </NeedRow>
+    );
+  }
+  if (n.round) nowRows.push(<NeedRow key="champ" tone="gold" icon="bell" title={t("champRoundOpen", { n: n.round.round })} sub={t("champRoundUntil", { time: formatTime(n.round.end, tz, lang) })} />);
+  for (const { acc, idle } of n.idle) {
+    nowRows.push(
+      <NeedRow key={`id${acc}`} tone="amber" icon="flame"
+        title={t("restartCampsIdle", { time: formatSpan(now - idle.since, lang) })}
+        sub={<><AccountTag accountId={acc} /> {idle.fullBatchMs ? t("fullBatchNowFinishes", { time: when(now + idle.fullBatchMs) }) : t("setFullBatchHint")}</>}>
+        <Btn tone="gold" small onClick={() => startTraining({ accountId: acc, camps: idle.camps.map((c) => c.camp), troops: Object.fromEntries(idle.camps.map((c) => [c.camp, c.troop])), ms: idle.fullBatchMs, restart: true })}>{t("restartShort")}</Btn>
+      </NeedRow>
+    );
+  }
+  for (const { a, s } of n.stamina) {
+    (s.over || s.atCap ? nowRows : soonRows).push(
+      <NeedRow key={`st${a}`} tone="amber" icon="bolt"
+        title={s.over || s.atCap ? t("staminaAtCapShort") : t("staminaSoon", { time: formatSpan(s.fullAt - now, lang) })}
+        sub={<><AccountTag accountId={a} /> {t("regenStops")}</>}>
+        <Btn small onClick={() => setTab("timers")}>{t("update")}</Btn>
+      </NeedRow>
+    );
+  }
+  if (n.focusTask) {
+    nowRows.push(
+      <NeedRow key="focus" tone="gold" icon="flame" title={t("fiveMinDone")} sub={n.focusTask.title}>
+        <Btn small tone="gold" onClick={() => setTab("todos")}>{t("openShort")}</Btn>
+      </NeedRow>
+    );
+  }
+  if (n.todoRem.length) {
+    const names = n.todoRem.slice(0, 3).map((x) => x.title).join(", ") + (n.todoRem.length > 3 ? ` +${n.todoRem.length - 3}` : "");
+    nowRows.push(
+      <NeedRow key="todorem" tone="gold" icon="flag" title={t("stillAvailableToday")} sub={names}>
+        <Btn small onClick={() => { const at = Date.now(); const ids = new Set(n.todoRem.map((x) => x.id)); update((s) => ({ ...s, tasks: s.tasks.map((x) => (ids.has(x.id) ? snoozeHour(x, at, tz) : x)) })); }}>{t("laterShort")}</Btn>
+        <Btn small tone="gold" onClick={() => setTab("todos")}>{t("openShort")}</Btn>
+      </NeedRow>
+    );
+  }
+  if (n.contrib.length) {
+    nowRows.push(
+      <NeedRow key="contrib" tone="gold" icon="flag" title={t("contribFull")}
+        sub={<>{n.contrib.map((a) => <AccountTag key={a} accountId={a} />)} {t("contribFullSub")}</>}>
+        <SpendAllButton accountIds={n.contrib} />
+      </NeedRow>
+    );
+  }
+  if (n.intel) {
+    (n.intel.next - now <= 15 * MINUTE ? nowRows : soonRows).push(
+      <NeedRow key={n.intel.key} tone="gold" icon="flask" leaving={leaving.includes(n.intel.key)}
+        title={t("intelSoon", { time: formatTime(n.intel.next, tz, lang) })}
+        sub={<>{t("intelSoonSub", { in: formatSpan(n.intel.next - now, lang) })} · {n.intel.accounts.length > 1 ? t("nAccounts", { n: n.intel.accounts.length }) : accountById(n.intel.accounts[0])?.name}</>}>
+        <Btn small onClick={() => later(n.intel.key, () => { const at = Date.now(); n.intel.accounts.forEach((a) => updateAccount(a, (d) => ({ ...d, claims: { ...d.claims, [n.intel.key]: at } }))); success(); })}>{t("cleared")}</Btn>
+      </NeedRow>
+    );
+  }
+  for (const { acc, p } of n.eduPlans) {
+    (p.startAt - now <= 15 * MINUTE ? nowRows : soonRows).push(
+      <NeedRow key={`edu${p.id}`} tone="gold" icon="flame"
+        title={t("restartWithEduAt", { time: formatTime(p.startAt, tz, lang) })}
+        sub={<><AccountTag accountId={acc} /> <Ltr>{formatTime(p.startAt, "UTC", lang)}</Ltr> UTC · {p.startAt > now ? t("inTime", { time: formatSpan(p.startAt - now, lang) }) : t("happeningNow")}</>}>
+        <Btn small onClick={() => startTraining({ accountId: acc, edu: true })}>{t("trainingPlan")}</Btn>
+      </NeedRow>
+    );
+  }
+  for (const { acc, x, r } of n.vp) {
+    const place = t(x.category);
+    soonRows.push(
+      <SwipeRow key={`vp${x.id}`} label={t("vpBookTitle", { utc: `${formatTime(r.slot.start, "UTC", lang)}–${formatTime(r.slot.end, "UTC", lang)}` })} onDismiss={() => dismissVp(acc, r)}>
+        <NeedRow tone="gold" icon="flask" leaving={leaving.includes(`vp${x.id}`)}
+          title={<>{t("bookVpShort")} · <Ltr>{formatTime(r.slot.start, "UTC", lang)}–{formatTime(r.slot.end, "UTC", lang)}</Ltr> UTC</>}
+          sub={<>
+            <span className="th-need-line"><AccountTag accountId={acc} /> {t("vpFinishesLine", { place, day: dayWordFor(r.finishAt, now, tz, lang, t) })} <b><Ltr>{formatTime(r.finishAt, tz, lang)}</Ltr></b> <span className="th-utc">· <Ltr>{formatTime(r.finishAt, "UTC", lang)}</Ltr> UTC</span></span>
+            <span className="th-need-line">{t("vpSlotLocal")} <b><Ltr>{formatTime(r.slot.start, tz, lang)}–{formatTime(r.slot.end, tz, lang)}</Ltr></b>{r.conflict && <> · {t("vpConflictShort")}</>}</span>
+          </>}>
+          <Btn small tone="gold" onClick={() => later(`vp${x.id}`, () => openBooking({ accountId: acc, startAt: r.slot.start, position: "vice_president" }))}>{t("bookShort")}</Btn>
+        </NeedRow>
+      </SwipeRow>
+    );
+  }
+  if (n.minister.length) {
+    const urgent = n.minister.filter((r) => r.occ.start - now <= SOON_MS);
+    const later2 = n.minister.filter((r) => r.occ.start - now > SOON_MS);
+    const box = (list, key) => list.length > 0 && (
+      <div key={key} className="th-need gold col">
+        <span className="th-action-label">{t("ministerNeeded", { n: list.length })}</span>
+        {list.map((r) => (
+          <SwipeRow key={r.key + (asking.includes(r.key) ? "f" : "s")} label={t("ministerNeededShort")} onDismiss={() => dismissMinister(r)}>
+            <ReminderRow r={r} slim={!asking.includes(r.key)} onAsk={() => setAsking([...asking, r.key])} />
+          </SwipeRow>
+        ))}
+      </div>
+    );
+    if (urgent.length) nowRows.push(box(urgent, "min-now"));
+    if (later2.length) soonRows.push(box(later2, "min-soon"));
+  }
+
   return (
     <section className="th-needs-sec" aria-label={t("needsYou")}>
       <div className="th-needs-head"><span className="th-eyebrow">{t("fieldNotes")}</span><h2 className="th-needs-title">{t("needsYou")}<span className="th-needs-count">{n.count}</span></h2></div>
       <div className="th-card th-needs-card">
-      <div className="th-needs">
-        {n.drops.map(({ drop: d, status, accounts }) => (
-          <NeedRow key={d.key} tone="gold" icon={d.kind === "store" ? "store" : "boot"} leaving={leaving.includes(d.key)}
-            title={`${d.kind === "store" ? t("dropStore", { n: d.amount }) : t("dropTrek", { n: d.amount })} · ${formatTime(d.at, tz, lang)}`}
-            sub={<>{status === "ready" ? t("readyToClaim") : t("inTime", { time: formatSpan(d.at - now, lang) })} · {accounts.length > 1 ? t("nAccounts", { n: accounts.length }) : accountById(accounts[0])?.name}</>}>
-            {status === "ready" && <Btn small onClick={() => later(d.key, () => claim(d))}>{t("claimed")}</Btn>}
-          </NeedRow>
-        ))}
-        {n.round && (
-          <NeedRow tone="gold" icon="bell" title={t("champRoundOpen", { n: n.round.round })} sub={t("champRoundUntil", { time: formatTime(n.round.end, tz, lang) })} />
-        )}
-        {n.intel && (
-          <NeedRow key={n.intel.key} tone="gold" icon="flask" leaving={leaving.includes(n.intel.key)}
-            title={t("intelSoon", { time: formatTime(n.intel.next, tz, lang) })}
-            sub={<>{t("intelSoonSub", { in: formatSpan(n.intel.next - now, lang) })} · {n.intel.accounts.length > 1 ? t("nAccounts", { n: n.intel.accounts.length }) : accountById(n.intel.accounts[0])?.name}</>}>
-            <Btn small onClick={() => later(n.intel.key, () => { const at = Date.now(); n.intel.accounts.forEach((a) => updateAccount(a, (d) => ({ ...d, claims: { ...d.claims, [n.intel.key]: at } }))); success(); })}>{t("cleared")}</Btn>
-          </NeedRow>
-        )}
-        {n.stamina.map(({ a, s }) => (
-          <NeedRow key={`st${a}`} tone="amber" icon="bolt"
-            title={s.over || s.atCap ? t("staminaAtCapShort") : t("staminaSoon", { time: formatSpan(s.fullAt - now, lang) })}
-            sub={<><AccountTag accountId={a} /> {t("regenStops")}</>}>
-            <Btn small onClick={() => setTab("timers")}>{t("update")}</Btn>
-          </NeedRow>
-        ))}
-        {n.idle.map(({ acc, idle }) => (
-          <NeedRow key={`id${acc}`} tone="amber" icon="flame"
-            title={t("idleFor", { time: formatSpan(now - idle.since, lang) })}
-            sub={<><AccountTag accountId={acc} /> {idle.fullBatchMs ? t("fullBatchNowFinishes", { time: when(now + idle.fullBatchMs) }) : t("setFullBatchHint")}</>}>
-            <Btn tone="gold" small onClick={() => startTraining({ accountId: acc, camps: idle.camps.map((c) => c.camp), troops: Object.fromEntries(idle.camps.map((c) => [c.camp, c.troop])), ms: idle.fullBatchMs })}>{t("start")}</Btn>
-          </NeedRow>
-        ))}
-        {n.vp.map(({ acc, x, r }) => (
-          <NeedRow key={`vp${x.id}`} tone="gold" icon="flask" leaving={leaving.includes(`vp${x.id}`)}
-            title={t("vpNeedTitle")}
-            sub={<><AccountTag accountId={acc} /> {t(x.category)} · {t("vpNeedSlot", { time: formatTime(r.slot.start, tz, lang) })}{r.conflict && <> · {t("vpConflictShort")}</>}</>}>
-            <Btn small tone="gold" onClick={() => later(`vp${x.id}`, () => openBooking({ accountId: acc, startAt: r.slot.start, position: "vice_president" }))}>{t("bookThisSlot")}</Btn>
-          </NeedRow>
-        ))}
-        {n.minister.length > 0 && (
-          <div className="th-need gold col">
-            <span className="th-action-label">{t("ministerNeeded", { n: n.minister.length })}</span>
-            {n.minister.map((r) => (
-              <ReminderRow key={r.key + (asking.includes(r.key) ? "f" : "s")} r={r} slim={!asking.includes(r.key)} onAsk={() => setAsking([...asking, r.key])} />
-            ))}
-          </div>
-        )}
-      </div>
+        <div className="th-needs">
+          {nowRows.length > 0 && <div className="th-needs-tier now" role="heading" aria-level={3}>{t("tierNow")}</div>}
+          {nowRows}
+          {soonRows.length > 0 && <div className="th-needs-tier" role="heading" aria-level={3}>{t("tierComingUp")}</div>}
+          {soonRows}
+        </div>
       </div>
     </section>
   );
@@ -181,7 +282,7 @@ export function useBearHero() {
 }
 
 function BearHero({ hero }) {
-  const { t, tz, lang, templates, accountById, openBooking } = useTimeHub();
+  const { t, tz, lang, templates, accountById, openBooking, accountIds } = useTimeHub();
   const [panel, setPanel] = useState(false);
   const [asking, setAsking] = useState([]);
   const { item, rems } = hero;
@@ -207,6 +308,7 @@ function BearHero({ hero }) {
             );
           })}
         </ul>
+        <FriendTimes at={item.start} accountIds={eventAccounts(item.ref.ev, accountIds)} />
         {needs.length > 0 ? (
           <>
             <Btn block onClick={book}>{needs.length === 1 ? t("bookMinistersOne") : t("bookMinistersMany", { n: needs.length })}</Btn>
@@ -380,10 +482,10 @@ function Row({ i, day, rems, open, setOpen, isNext }) {
 
   const actions = [];
   if (i.kind === "contrib") {
-    actions.push(<Btn key="spend" small tone="gold" onClick={() => { success(); updateAccount(i.accountId, (d) => ({ ...d, contrib: spendAttempt(d.contrib, Date.now(), contribState(d.contrib, Date.now()).count) || d.contrib })); }}>{t("spendAll", { n: i.ref.max })}</Btn>);
+    actions.push(<SpendAllButton key="spend" accountIds={[i.accountId]} />);
   }
   if (i.kind === "contribGroup") {
-    actions.push(<Btn key="spend" small tone="gold" onClick={() => { success(); i.ref.members.forEach((m) => updateAccount(m.accountId, (d) => ({ ...d, contrib: spendAttempt(d.contrib, Date.now(), contribState(d.contrib, Date.now()).count) || d.contrib }))); }}>{t("spendAll", { n: i.ref.max })}</Btn>);
+    actions.push(<SpendAllButton key="spend" accountIds={i.ref.members.map((m) => m.accountId)} />);
   }
   const need = myRems.find((r) => r.status === "open" || r.status === "unsure");
   if (need) actions.push(<Btn key="book" small tone="gold" onClick={() => openBooking({ accountId: need.accountId, startAt: Math.floor(need.occ.start / 1800000) * 1800000, position: "minister_strategy", eventKey: need.key })}>{t("bookShort")} · {accountById(need.accountId)?.name}</Btn>);
@@ -422,7 +524,7 @@ function Row({ i, day, rems, open, setOpen, isNext }) {
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z" /></svg>
               </button>
             )}
-            {i.kind === "contrib" && <span className="th-srow-note">{i.ref.max} / {i.ref.max}</span>}
+            {i.kind === "contrib" && <span className="th-srow-note">{t("contribPredicted", { n: i.ref.count, max: i.ref.max })}</span>}
             {i.kind === "drop" && <span className={`th-srow-note ${i.ref.drop.manual ? "warn" : ""}`}>{i.ref.drop.manual ? t("claimByHand") : t("automatic")} · {t("allAccountsShort")}</span>}
             {i.kind === "stamina" && <span className="th-srow-note">{t("regenStops")}</span>}
             {i.kind === "intel" && <span className="th-srow-note">{t("intelRowNote", { n: INTEL_MISSIONS_PER_REFRESH })}</span>}
@@ -437,6 +539,7 @@ function Row({ i, day, rems, open, setOpen, isNext }) {
             const txt = r.status === "covered" ? t(r.booking.position) : r.status === "booked" || r.status === "unsure" ? t(BUFF_NAME[r.buff] || "bookingUnknown") : r.status === "dismissed" ? t("reminderDismissed") : t("ministerNeededShort");
             return <span key={r.key} className={`th-min ${ok ? "ok" : "todo"}`}>{r.chip && <><AccountTag accountId={r.accountId} /> </>}{ok ? "✓ " : ""}{txt}</span>;
           })}
+          {i.kind === "event" && i.ref.ev.templateId !== "daily_reset" && i.status !== "done" && <FriendTimes at={i.start} accountIds={eventAccounts(i.ref.ev, accountIdsAll)} compact />}
         </span>
       </div>
       {open && <div className="th-srow-actions">{actions}</div>}
@@ -457,7 +560,9 @@ function TaskForm({ gap, task, onDone }) {
     const len = overrideMs ?? ms;
     if (!title.trim() || !len) return;
     if (task) {
-      update((s) => ({ ...s, tasks: s.tasks.map((x) => (x.id === task.id ? { ...resizeTask(x, len), title: title.trim() } : x)) }));
+      update((s) => ({ ...s, tasks: s.tasks.map((x) => (x.id !== task.id ? x : x.repeat
+        ? { ...x, title: title.trim(), durationMs: len, placed: x.placed ? { ...x.placed, end: x.placed.start + len } : x.placed }
+        : { ...resizeTask(x, len), title: title.trim() })) }));
       success();
       return onDone();
     }
@@ -506,10 +611,6 @@ function GapNotice({ item }) {
   const members = item.kind === "contribGroup" ? item.ref.members : [item];
   const shown = expanded ? members : members.slice(0, 3);
   const restN = members.length - shown.length;
-  const spendAll = () => {
-    success();
-    members.forEach((m) => updateAccount(m.accountId, (d) => ({ ...d, contrib: spendAttempt(d.contrib, Date.now(), contribState(d.contrib, Date.now()).count) || d.contrib })));
-  };
   return (
     <div className="th-gap-notice">
       <div className="th-gap-notice-head">
@@ -523,7 +624,7 @@ function GapNotice({ item }) {
       </ul>
       <div className="th-gap-notice-foot">
         {restN > 0 && <button type="button" className="th-link" onClick={() => setExpanded(true)}>{t("moreN", { n: restN })}</button>}
-        <Btn small tone="gold" onClick={spendAll}>{t("spendAll", { n: members[0].ref.max })}</Btn>
+        <SpendAllButton accountIds={members.map((m) => m.accountId)} />
       </div>
     </div>
   );
@@ -533,14 +634,15 @@ function GapNotice({ item }) {
  *  unfinished and how long things take, so it suggests what actually fits before asking for
  *  something new. Picking a suggestion schedules that exact task (no duplicate created). */
 function GapTaskSheet({ gap, onNew, onDone }) {
-  const { t, lang, state, update } = useTimeHub();
-  const unscheduled = (state.tasks || []).filter((x) => !x.done && x.start == null);
-  const fits = bestFits(unscheduled, gap.ms);
+  const { t, lang, tz, update } = useTimeHub();
+  const unscheduled = useTodayOpen().filter((x) => x.start == null);
+  const fits = fitsIn(unscheduled, gap.ms);
   const tooLong = unscheduled.filter((x) => x.durationMs && x.durationMs > gap.ms);
   const [showLong, setShowLong] = useState(false);
   const place = (task) => {
     const p = placeTask(gap, task.durationMs);
-    update((s) => ({ ...s, tasks: s.tasks.map((x) => (x.id === task.id ? { ...x, start: p.start, end: p.end } : x)) }));
+    const at = Date.now();
+    update((s) => ({ ...s, tasks: s.tasks.map((x) => (x.id === task.id ? placeAt(x, p.start, p.end, at, tz) : x)) }));
     success();
     onDone();
   };
@@ -555,7 +657,8 @@ function GapTaskSheet({ gap, onNew, onDone }) {
               <li key={task.id} className="th-todo-row">
                 <button type="button" className="th-gap-fit" onClick={() => place(task)}>
                   <span className="th-todo-check-dot" aria-hidden="true" />
-                  <span className="th-todo-main"><span className="th-todo-title">{task.title}</span><span className="th-todo-meta">{formatSpan(task.durationMs, lang)}</span></span>
+                  <span className="th-todo-main"><span className="th-todo-title">{task.title}</span><span className="th-todo-meta">{formatSpan(task.durationMs, lang)}{task.essential ? ` · ${t("essentialShort")}` : ""}{task.recurring ? " · ↻" : ""}</span></span>
+                  <span className="th-gap-addhere">{t("addHere")}</span>
                 </button>
               </li>
             ))}
@@ -577,9 +680,14 @@ function GapTaskSheet({ gap, onNew, onDone }) {
 }
 
 function GapRow({ gap }) {
-  const { t, lang } = useTimeHub();
+  const { t, lang, state, tz } = useTimeHub();
   const [mode, setMode] = useState(null); // null | "sheet" | "form"
-  const hasUnscheduled = useHasUnscheduledTasks();
+  const open = useTodayOpen();
+  // free time that is mostly sleep isn't task time: say so, and don't offer tasks there
+  const asleep = gap.ms >= HOUR && inSleepWindow(gap.start + gap.ms / 2, tz, state.settings.sleep) && inSleepWindow(gap.start + Math.min(30 * MINUTE, gap.ms), tz, state.settings.sleep);
+  const hasUnscheduled = open.some((x) => x.start == null);
+  // "3 of your To-dos fit here" — only where the free-time preference allows (breathing room)
+  const hint = !asleep && gap.end > Date.now() ? gapHint(open, Math.min(gap.ms, gap.end - Date.now()), state.settings.taskSuggest) : null;
   const openTap = () => setMode(hasUnscheduled ? "sheet" : "form");
   // time blindness: the block's own height gives a visual sense of "how much time" (12–96px),
   // the text gives the exact number — neither replaces the other.
@@ -588,9 +696,10 @@ function GapRow({ gap }) {
   return (
     <li className={`th-gap ${mode ? "adding" : ""}`} style={{ "--gh": `${h}px` }}>
       <div className="th-gap-mid">
-        <span className="th-gap-free">{t(big ? "openTime" : "freeTime", { time: formatSpan(gap.ms, lang) })}</span>
-        {!mode && gap.ms >= 30 * MINUTE && <button type="button" className="th-gap-add" onClick={openTap}>＋ {t("addTask")}</button>}
+        <span className="th-gap-free">{asleep ? t("asleepGap", { time: formatSpan(gap.ms, lang) }) : big ? t("nothingNeedsYouFor", { time: formatSpan(gap.ms, lang) }) : t("freeTime", { time: formatSpan(gap.ms, lang) })}</span>
+        {!mode && !asleep && (gap.ms >= 30 * MINUTE || hint) && <button type="button" className="th-gap-add" onClick={openTap}>＋ {t("addTask")}</button>}
       </div>
+      {!mode && hint && <button type="button" className="th-gap-hint" onClick={() => setMode("sheet")}>{t("nTodosFitHere", { n: hint.count })}</button>}
       {gap.notices?.map((n) => <GapNotice key={n.id} item={n} />)}
       {mode === "sheet" && <GapTaskSheet gap={gap} onNew={() => setMode("form")} onDone={() => setMode(null)} />}
       {mode === "form" && <TaskForm gap={gap} onDone={() => setMode(null)} />}
@@ -601,12 +710,16 @@ function GapRow({ gap }) {
 function TaskRow({ task, overdue, moveTarget }) {
   const { t, tz, lang, update } = useTimeHub();
   const [editing, setEditing] = useState(false);
-  const toggle = () => { update((s) => ({ ...s, tasks: s.tasks.map((x) => (x.id === task.id ? { ...x, done: !x.done } : x)) })); if (!task.done) success(); };
-  const remove = () => update((s) => ({ ...s, tasks: s.tasks.filter((x) => x.id !== task.id) }));
+  // recurring: today's occurrence only — the routine itself is never touched from here
+  const toggle = () => { const at = Date.now(); update((s) => ({ ...s, tasks: s.tasks.map((x) => (x.id === task.id ? setDone(x, !task.done, at, tz) : x)) })); if (!task.done) success(); };
+  const remove = () => { const at = Date.now(); update((s) => ({ ...s, tasks: task.recurring
+    ? s.tasks.map((x) => (x.id !== task.id ? x : x.placed ? unplace(x) : notToday(x, at, tz)))
+    : s.tasks.filter((x) => x.id !== task.id) })); };
   const move = () => {
     if (!moveTarget) return;
     const len = task.end - task.start;
-    update((s) => ({ ...s, tasks: s.tasks.map((x) => (x.id === task.id ? { ...x, start: moveTarget.start, end: moveTarget.start + len } : x)) }));
+    const at = Date.now();
+    update((s) => ({ ...s, tasks: s.tasks.map((x) => (x.id === task.id ? placeAt(x, moveTarget.start, moveTarget.start + len, at, tz) : x)) }));
     success();
   };
   const h = Math.max(48, taskVisualHeight(task.end - task.start));
@@ -656,7 +769,11 @@ function Schedule({ offset, setOffset }) {
   const items = filter === "personal" || filter === "work" ? [] : rawItems;
   const { past, rest } = splitNow(items);
   const isToday = offset === 0;
-  const dayTasksAll = useMemo(() => (state.tasks || []).filter((x) => x.start >= day.start && x.start < day.end), [state.tasks, day.start]); // eslint-disable-line react-hooks/exhaustive-deps
+  // today: derived occurrences (recurring tasks with a time or placed today, plus one-offs);
+  // other days: one-off tasks scheduled there
+  const dayTasksAll = useMemo(() => (offset === 0
+    ? scheduledToday(todayView(state.tasks, now, tz), day.start, day.end)
+    : (state.tasks || []).filter((x) => !x.repeat && x.start >= day.start && x.start < day.end)), [state.tasks, day.start, offset === 0 ? now : 0]); // eslint-disable-line react-hooks/exhaustive-deps
   const dayTasks = filter === "all" ? dayTasksAll : dayTasksAll.filter((x) => x.category === filter);
   // A task's planned time passing is not completion: only tasks the person actually ticked off
   // fold away into "completed". Everything else stays visible until they say otherwise.

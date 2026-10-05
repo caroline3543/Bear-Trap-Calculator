@@ -708,3 +708,15 @@ completions, sleep-aware gap phrasing, and auto-scroll-to-NOW with earlier items
 
 Checked in the browser, Arabic RTL, and dark mode; 135 tests pass (5 new this round); your
 calculator rebuild shows no performance change and no leaks.
+
+## Tap a task to edit it (Sep 2026)
+- `widgets/TodoWidget.jsx → TaskEditForm`: tapping a to-do's title (not the checkbox) now opens it
+  in place — title, duration, category (switching to Game reveals the account picker via the
+  existing `AccountSelect`), and a new **notes** field, plus Delete (with confirmation). Saving
+  updates the same task object everywhere; nothing is duplicated.
+- `lib/storage.js → cleanTasks`: added `notes` (trimmed, 500-char cap) to the task schema.
+  Migration-safe — a task saved before this field existed just gets `notes: ""` on next load,
+  confirmed with a dedicated test.
+- Verified end-to-end in the browser: opened a task, switched it to Game, assigned an account,
+  added a note, saved, reopened it and confirmed the note persisted, then deleted it. 135 tests
+  pass, full regression clean, calculator rebuild shows no performance change or leaks.

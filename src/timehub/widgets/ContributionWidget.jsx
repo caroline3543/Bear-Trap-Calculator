@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
 import { success } from "../lib/feedback.js";
 import { useClockFor } from "../hooks/useNow.jsx";
+import { SpendAllButton } from "./SpendAll.jsx";
 import { contribState, spendAttempt, setAttempts, adjustAttempts, reconfigure } from "../lib/contributions.js";
 import { formatCountdown, formatCountdownClock, formatTime, formatDate, MINUTE } from "../lib/time.js";
 import { Section, Btn, Field, Seg, FormActions, Ltr, Bidi, Remaining, GroupName } from "../components/ui.jsx";
@@ -100,10 +101,6 @@ function ContribRow({ accountId, showName, open, onToggle }) {
   const peek = contribState(contrib, Date.now());
   const now = useClockFor([peek.nextAt]); // re-render when the next attempt arrives
   const live = contribState(contrib, now);
-  const spendAll = () => { success(); updateAccount((acc) => {
-    const n = contribState(acc.contrib, Date.now()).count;
-    return n > 0 ? { ...acc, contrib: spendAttempt(acc.contrib, Date.now(), n) || acc.contrib } : acc;
-  }); };
   const nudge = (d) => updateAccount((acc) => ({ ...acc, contrib: adjustAttempts(acc.contrib, Date.now(), d) }));
   return (
     <div className={`th-contrib-row ${live.full ? "full" : ""} ${open ? "open" : ""}`}>
@@ -114,7 +111,7 @@ function ContribRow({ accountId, showName, open, onToggle }) {
           <span className={`th-contrib-st ${live.full ? "full" : ""}`}>{live.full ? t("fullStatus") : <>+1 · <Remaining to={live.nextAt} fmt="clock" /></>}</span>
         </button>
         {/* the one common action: always right there, no need to expand anything */}
-        {live.count > 0 && <Btn small tone="gold" onClick={spendAll}>{t("spendAllShort")}</Btn>}
+        {live.count > 0 && <SpendAllButton accountIds={[accountId]} />}
       </div>
       {open && (
         <div className="th-contrib-more">

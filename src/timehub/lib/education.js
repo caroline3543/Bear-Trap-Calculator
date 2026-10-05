@@ -225,3 +225,25 @@ export function insideFinishTarget(win) {
 export function finishMissesWindow(finishAt, win, now) {
   return win.end > now && finishAt > win.latest;
 }
+
+/**
+ * Should "Maximum" really be maximum right now? If a full batch started now would keep the camps
+ * busy right through an upcoming Education appointment, a shorter training that frees them just
+ * before the window is usually better — so the restart can happen while the buff is active.
+ * Advice only: the player can still choose Maximum.
+ *
+ * win — eduWindow(booking, buffer). Returns null when Maximum is fine:
+ *   no appointment, it's already running (restarting now uses it), a full batch is ready in time,
+ *   or a full batch would finish inside the window anyway.
+ * → { kind: "bridge", trainFor, readyAt, restartAt }   train this long now, restart at Education
+ *   { kind: "wait", restartAt }                         too little time to be worth a short run
+ */
+export function eduAwareMax(now, maxMs, win) {
+  if (!win || !(maxMs > 0) || win.end <= now || now >= win.start) return null;
+  const finish = now + maxMs;
+  if (finish <= win.ready) return null; // ready before Education anyway
+  if (finish <= win.latest) return null; // a full batch lands inside the window — perfect
+  const bridge = floorMin(win.ready - now);
+  if (bridge >= EDU_MIN_BRIDGE_MS) return { kind: "bridge", trainFor: bridge, readyAt: now + bridge, restartAt: win.start };
+  return { kind: "wait", restartAt: win.start };
+}

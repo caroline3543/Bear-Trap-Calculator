@@ -5,16 +5,17 @@
    ============================================================ */
 import React, { startTransition, useEffect, useState } from "react";
 import "./timehub.css";
-import { TimeHubProvider, useTimeHub, useTab, FreezeWhenHidden } from "./TimeHubContext.jsx";
+import { TimeHubProvider, useTimeHub, useTab, useToast, FreezeWhenHidden } from "./TimeHubContext.jsx";
 import { useNow, useMinute, ActiveTab } from "./hooks/useNow.jsx";
 import { onPress } from "./lib/feedback.js";
 import { flushSync } from "react-dom";
 import { SpeedTest, diag } from "./widgets/SpeedTest.jsx";
 import horizon from "./assets/header-landscape.webp";
 import { Tour } from "./widgets/Tour.jsx";
-import { zoneCity, deviceTimeZone, formatLongDay } from "./lib/time.js";
+import { zoneCity, deviceTimeZone, formatLongDay, formatSpan } from "./lib/time.js";
+import { TRAINING_CAMPS, resetLearnedMax } from "./lib/timers.js";
 import { splitColumns } from "./lib/layout.js";
-import { TimeZonePicker, BrushUnderline, SectionIcon, TabIcon, Btn } from "./components/ui.jsx";
+import { TimeZonePicker, BrushUnderline, SectionIcon, TabIcon, Btn, Seg } from "./components/ui.jsx";
 import { ALL, MAX_ACCOUNTS } from "./lib/accounts.js";
 import { tracking } from "./lib/agenda.js";
 import { StaminaWidget, TrekWidget } from "./widgets/DailyWidgets.jsx";
@@ -156,6 +157,47 @@ function ChampSettings() {
   );
 }
 
+/** Training maximums per account, including what Time Hub learned from durations you actually
+ *  set. Each learned value can be reset to what it was before; full editing lives on the Timers tab
+ *  (the training card's "Training times"), one tap away. */
+function TrainingMaxSettings({ closeSettings }) {
+  const { t, lang, accounts, dataFor, updateAccount, startTraining } = useTimeHub();
+  const rows = accounts.map((a) => ({ a, d: dataFor(a.id) }));
+  return (
+    <section className="th-card" id="th-set-trainmax" aria-label={t("trainingMaxTitle")}>
+      <div className="th-sec-head"><SectionIcon name="training" /><span className="th-sec-title">{t("trainingMaxTitle")}</span></div>
+      <p className="th-sec-sub">{t("trainingMaxSub")}</p>
+      <ul className="th-maxset">
+        {rows.map(({ a, d }) => {
+          const learned = Object.entries(d.maxLearned || {});
+          const vals = TRAINING_CAMPS.map((c) => d.campMax?.[c]);
+          const same = new Set(vals.map((v) => v || 0)).size === 1;
+          const span = (ms) => (ms ? formatSpan(ms, lang) : "—");
+          const summary = same ? `${t("allCamps")} ${span(vals[0])}` : TRAINING_CAMPS.map((c) => `${t(`short_${c}`)} ${span(d.campMax?.[c])}`).join(" · ");
+          const helios = (d.helios?.classes || []).map((c) => `${t("heliosCamp", { camp: t(`short_${c}`) })} ${span(d.helios.max?.[c])}`).join(" · ");
+          return (
+            <li key={a.id}>
+              <div className="th-maxset-head"><b>{a.name}</b>
+                <button type="button" className="th-link" onClick={() => { closeSettings(); startTraining({ accountId: a.id, times: true }); }}>{t("edit")}</button></div>
+              <div className="th-hint">{summary}{helios ? ` · ${helios}` : ""}</div>
+              {learned.map(([k, v]) => {
+                const [camp, troop] = k.split(":");
+                const cur = troop === "helios" ? d.helios?.max?.[camp] : d.campMax?.[camp];
+                return (
+                  <div key={k} className="th-maxset-learned">
+                    <span>{t("learnedLine", { camp: troop === "helios" ? t("heliosCamp", { camp: t(camp) }) : t(camp), ms: span(cur), prev: span(v.prev) })}</span>
+                    <Btn small onClick={() => updateAccount(a.id, (dd) => resetLearnedMax(dd, k))}>{t("resetTo", { prev: span(v.prev) })}</Btn>
+                  </div>
+                );
+              })}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
 function SettingsPanel({ headerExtra, closeSettings, reopenSettings, hasCalc, startTour }) {
   const { t, tz, state, dispatch } = useTimeHub();
   return (
@@ -206,6 +248,13 @@ function SettingsPanel({ headerExtra, closeSettings, reopenSettings, hasCalc, st
         </label>
       </section>
       <ChampSettings />
+      <section className="th-card" id="th-set-suggest" aria-label={t("taskSuggestTitle")}>
+        <div className="th-sec-head"><SectionIcon name="checklist" /><span className="th-sec-title">{t("taskSuggestTitle")}</span></div>
+        <p className="th-sec-sub">{t("taskSuggestSub")}</p>
+        <Seg value={state.settings.taskSuggest} onChange={(v) => dispatch({ type: "settings", patch: { taskSuggest: v } })} label={t("taskSuggestTitle")}
+          options={["minimal", "balanced", "frequent"].map((x) => ({ value: x, label: t(`suggest_${x}`) }))} />
+      </section>
+      <TrainingMaxSettings closeSettings={closeSettings} />
       <section className="th-card" id="th-set-sleep" aria-label={t("sleepHours")}>
         <div className="th-sec-head"><SectionIcon name="plan" /><span className="th-sec-title">{t("sleepHours")}</span></div>
         <BrushUnderline />
@@ -257,6 +306,20 @@ const TODAY_EL = <TodayPanel />;
 const TIMERS_EL = <TimersPanel />;
 const EVENTS_EL = <EventsPanel />;
 const TODOS_EL = <TodosPanel />;
+
+/** Short confirmation after an action (e.g. "✓ 20 contributions spent · Next attempt in 10m"). */
+function Toast() {
+  const { toast, dismiss } = useToast();
+  return (
+    <div className="th-toast-slot" role="status" aria-live="polite">
+      {toast && (
+        <button type="button" key={toast.id} className="th-toast" onClick={dismiss}>
+          {toast.lines.map((l, i) => <span key={i} className={i === 0 ? "th-toast-main" : "th-toast-sub"}>{l}</span>)}
+        </button>
+      )}
+    </div>
+  );
+}
 
 function TimeHubBody({ showHeader, headerExtra, calculator }) {
   const { t, dir, compact } = useTimeHub();
@@ -328,6 +391,7 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
         {calculator && panel("calc", <CalcPanel calculator={calculator} />)}
       </main>
       {tour != null && <Tour step={tour} setStep={setTour} setSettings={setSettings} />}
+      <Toast />
       <TabBar hasCalc={!!calculator} active={pressed} />
       {state.settings.showSpeed && speed && <div className="th-speed" role="status">{t(`tab_${speed.tab}`)} · {speed.ms} ms</div>}
     </div>

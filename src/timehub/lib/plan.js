@@ -3,6 +3,7 @@
    Pure functions (tested). Called from the Schedule with the minute
    clock, so nothing here runs every second.
    ============================================================ */
+import { keepTask } from "./todo.js";
 import { MINUTE, HOUR, parseDaysTime } from "./time.js";
 
 export const MIN_GAP_MS = 10 * MINUTE;
@@ -146,7 +147,7 @@ export function resizeTask(task, durationMs) {
 
 /** Tasks worth keeping (last 7 days and later; unscheduled tasks are judged by when they were made). */
 export function pruneTasks(tasks, now) {
-  return (tasks || []).filter((t) => (t.end ?? t.createdAt ?? now) > now - TASK_KEEP_MS);
+  return (tasks || []).filter((t) => keepTask(t, now));
 }
 
 /**

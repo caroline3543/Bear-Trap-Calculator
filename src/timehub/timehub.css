@@ -1420,3 +1420,113 @@ html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
 
 .th-todo-dur { flex: 0 0 92px; }
 .th-todo-done { margin-top: 4px; }
+
+/* Task edit sheet — tap a to-do's title to open it in place */
+.th-task-edit { display: grid; gap: 10px; padding: 10px 0 4px; }
+.th-task-edit-row { display: flex; gap: 10px; align-items: flex-end; }
+.th-task-edit-row .th-task-dur { width: 90px; }
+.th-textarea { resize: vertical; min-height: 56px; font-family: inherit; }
+.th-todo-main { width: 100%; }
+
+/* ---------- Round 21: toast, tiers, swipe-dismiss, friends line, restart summary ---------- */
+.th-toast-slot { position: fixed; left: 0; right: 0; bottom: calc(88px + env(safe-area-inset-bottom, 0px)); z-index: 30; display: flex; justify-content: center; pointer-events: none; padding: 0 12px; }
+.th-toast { pointer-events: auto; display: grid; gap: 2px; max-width: min(420px, 100%); padding: 10px 16px; border-radius: 14px; border: none; background: var(--ink); color: var(--surface); text-align: start; font: 600 13px 'Nunito Sans', sans-serif; box-shadow: 0 6px 20px rgba(0,0,0,.18); cursor: pointer; animation: th-toast-in .18s ease-out; }
+.th-toast-main { font-weight: 800; font-size: 14px; }
+.th-toast-sub { opacity: .85; }
+@keyframes th-toast-in { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .th-toast { animation: none; } }
+.th-swipe { position: relative; overflow: hidden; border-radius: 14px; }
+.th-swipe-body { position: relative; z-index: 1; transform: translateX(var(--swx, 0px)); transition: transform .18s ease; touch-action: pan-y; background: var(--surface); }
+.th-swipe-actions { position: absolute; inset-block: 0; inset-inline-end: 0; display: flex; }
+.th-swipe-action { flex: 1; border: none; background: var(--amber, #C65D43); color: #fff; font: 800 13px 'Nunito Sans', sans-serif; cursor: pointer; }
+.th-swipe-action:focus-visible { outline: 3px solid var(--gold); outline-offset: -3px; }
+@media (prefers-reduced-motion: reduce) { .th-swipe-body { transition: none; } }
+.th-needs-tier { display: flex; align-items: center; gap: 8px; margin: 4px 2px 2px; font: 800 11px 'Nunito Sans', sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--sub); }
+.th-needs-tier::after { content: ""; flex: 1; height: 1px; background: var(--cardBorder); opacity: .7; }
+.th-needs-tier.now { color: var(--amber, #C65D43); }
+.th-need-sub .th-need-line { display: block; }
+.th-need-sub .th-utc { opacity: .8; }
+.th-plays { border: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.th-plays-line { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+.th-plays-none { font-style: italic; color: var(--amber, #C65D43); }
+.th-ftimes { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin-top: 6px; font: 600 12.5px 'Nunito Sans', sans-serif; color: var(--sub); }
+.th-ftimes-label { font-weight: 800; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.th-ftimes-list { display: flex; flex-wrap: wrap; gap: 2px 10px; min-width: 0; }
+.th-ftime b { color: var(--ink); font-weight: 800; }
+.th-ftime-day { color: var(--amber, #C65D43); font-weight: 700; }
+.th-ftimes-more { font-size: 12.5px; padding: 0; min-height: 0; }
+.th-bthero .th-ftimes { color: rgba(255,255,255,.8); margin: 10px 0 4px; }
+.th-bthero .th-ftime b { color: #fff; }
+.th-bthero .th-ftime-day { color: var(--goldStrong, #E9A548); }
+.th-bthero .th-ftimes-more { color: #fff; }
+.th-maxset { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.th-maxset li { display: grid; gap: 4px; padding-bottom: 8px; border-bottom: 1px solid var(--cardBorder); }
+.th-maxset li:last-child { border-bottom: none; }
+.th-maxset-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.th-maxset-learned { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; font: 600 13px 'Nunito Sans', sans-serif; color: var(--ink); }
+.th-review { display: grid; gap: 10px; }
+.th-review-title { font: 600 18px Fredoka, 'Nunito Sans', sans-serif; color: var(--ink); }
+.th-review-when { font: 800 15px 'Nunito Sans', sans-serif; color: var(--ink); }
+.th-review .th-utc { font-weight: 600; color: var(--sub); }
+.th-review-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.th-review-list li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 12px; border-radius: 12px; background: var(--goldBg); font: 600 13.5px 'Nunito Sans', sans-serif; color: var(--ink); }
+.th-advice { display: grid; gap: 6px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--goldBorder); background: var(--goldBg); font: 600 13.5px 'Nunito Sans', sans-serif; color: var(--ink); }
+.th-advice p { margin: 0; }
+.th-advice-head { font-weight: 800; }
+.th-advice-tag { display: inline-block; padding: 1px 8px; margin-inline-end: 4px; border-radius: 999px; background: var(--gold); color: var(--surface); font-size: 11px; font-weight: 800; }
+.th-advice-why { color: var(--sub); font-size: 12.5px; }
+.th-swipe:not(.open):not(.moving) .th-swipe-actions:not(:focus-within) { opacity: 0; }
+.th-swipe-action.quiet { background: var(--sub); }
+
+/* ---------- Round 22: flexible to-dos ---------- */
+.th-todos-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0 10px; }
+.th-todo-add-wrap { display: grid; gap: 6px; }
+.th-task-opts { display: grid; gap: 6px; padding: 10px 12px; border-radius: 12px; background: var(--goldBg); }
+.th-task-opts .th-check { font: 700 13px 'Nunito Sans', sans-serif; }
+.th-todo-line { position: relative; }
+.th-drag { flex: none; width: 26px; min-height: 36px; border: none; background: transparent; color: var(--sub); font: 800 14px/1 'Nunito Sans', sans-serif; letter-spacing: -2px; cursor: grab; touch-action: none; border-radius: 8px; }
+.th-drag:focus-visible { outline: 3px solid var(--gold); }
+.th-todo-row.dragging { position: relative; z-index: 5; opacity: .92; box-shadow: 0 8px 20px rgba(0,0,0,.16); pointer-events: none; border-radius: 14px; background: var(--surface); }
+.th-todo-cat.drop-target { outline: 2px dashed var(--gold); outline-offset: 2px; border-radius: 14px; }
+.th-todo-sub { display: flex; flex-wrap: wrap; gap: 4px 14px; padding-inline-start: 64px; margin-top: -2px; }
+.th-todo-sub .th-link { font-size: 12.5px; min-height: 28px; }
+.th-ess { color: var(--gold); font-size: 12px; font-weight: 800; }
+.th-todo-group { margin-top: 6px; }
+.th-todo-group-head { display: flex; align-items: center; gap: 8px; padding: 4px 6px; font: 800 12px 'Nunito Sans', sans-serif; letter-spacing: .04em; text-transform: uppercase; color: var(--sub); }
+.th-todo-group-name { color: var(--ink); }
+.th-todo-group-head .th-link { margin-inline-start: auto; text-transform: none; letter-spacing: 0; font-size: 12px; }
+.th-del-choice { display: grid; gap: 6px; padding: 10px 12px; margin: 4px 0; border-radius: 12px; border: 1px solid var(--cardBorder); font: 700 13.5px 'Nunito Sans', sans-serif; color: var(--ink); }
+.th-steps { padding-inline-start: 40px; display: grid; gap: 6px; margin: 4px 0 6px; }
+.th-steps-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; border-inline-start: 2px solid var(--cardBorder); padding-inline-start: 10px; }
+.th-steps-list li { display: flex; align-items: center; gap: 8px; font: 600 13.5px 'Nunito Sans', sans-serif; color: var(--ink); }
+.th-steps-list li.done span { text-decoration: line-through; color: var(--sub); }
+.th-step-check { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--cardBorder); background: transparent; color: var(--teal, #2F5D53); font-weight: 800; font-size: 12px; cursor: pointer; }
+.th-step-del { margin-inline-start: auto; font-size: 16px; }
+.th-focus { display: grid; gap: 6px; padding: 12px 14px; margin-bottom: 10px; border-radius: 14px; background: var(--ink); color: var(--surface); font: 600 14px 'Nunito Sans', sans-serif; }
+.th-focus b { font-weight: 800; }
+.th-focus-time { font: 600 26px Fredoka, 'Nunito Sans', sans-serif; }
+.th-focus .th-hint { color: inherit; opacity: .8; margin: 0; }
+.th-focus .th-btn:not(.gold) { background: rgba(255,255,255,.12); color: inherit; border-color: transparent; }
+.th-whatnow, .th-minday, .th-routine, .th-history { display: grid; gap: 8px; padding: 12px 14px; margin-bottom: 10px; border-radius: 14px; border: 1px solid var(--goldBorder); background: var(--goldBg); color: var(--ink); font: 600 13.5px 'Nunito Sans', sans-serif; }
+.th-whatnow-head { display: flex; justify-content: space-between; align-items: center; font-size: 16px; }
+.th-whatnow-pick { display: grid; gap: 2px; }
+.th-whatnow-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 12px; background: var(--surface); }
+.th-whatnow-row .th-todo-main { flex: 1; min-width: 0; text-align: start; }
+.th-minday-title { font: 600 18px Fredoka, 'Nunito Sans', sans-serif; }
+.th-minday-sub, .th-minday-left { margin: 0; }
+.th-minday-left { font-weight: 800; }
+.th-todo-lists.quiet { opacity: .72; }
+.th-todos-foot { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 12px 2px 4px; }
+.th-routine-item { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.th-routine-item .th-input:first-child { flex: 1 1 160px; }
+.th-history-day { display: grid; gap: 4px; }
+.th-history-item { display: flex; justify-content: space-between; gap: 8px; padding: 4px 2px; }
+.th-history-item.skipped span:first-child, .th-history-item.removed span:first-child { color: var(--sub); }
+.th-gap-hint { display: block; margin: 2px auto 0; border: none; background: transparent; color: var(--teal, #2F5D53); font: 700 12.5px 'Nunito Sans', sans-serif; text-decoration: underline; cursor: pointer; }
+.th-gap-addhere { margin-inline-start: auto; font: 800 12px 'Nunito Sans', sans-serif; color: var(--teal, #2F5D53); white-space: nowrap; }
+.th-todo-gap-opt.best { border-color: var(--gold); }
+.th-todo-gap-opt { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.th-freenow { margin: 0 2px 10px; font: 600 13px 'Nunito Sans', sans-serif; color: var(--sub); }
+.th-freenow b { color: var(--ink); }
+.th-swipe-action.teal { background: var(--teal, #2F5D53); }
+.th-swipe-actions { z-index: 0; }

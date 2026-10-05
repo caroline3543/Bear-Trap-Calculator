@@ -136,3 +136,95 @@ export function durationForTroops(troops, fullMs, fullTroops) {
   if (!(fullMs > 0) || !(fullTroops > 0) || !(troops > 0)) return 0;
   return Math.min(fullMs, Math.round(((troops / fullTroops) * fullMs) / 1000) * 1000);
 }
+
+/* ---------- learning the player's real maximum ----------
+   The stored maximum is only the app's last-known value; the game may allow longer (research,
+   buffs, upgrades). A longer duration the player actually entered is treated as new information,
+   not an error. Only a dramatic jump asks first, so a typo can't silently corrupt the planner. */
+
+/** A jump counts as "dramatic" (ask first) above both limits: +25% and +30 minutes. */
+export const LEARN_CONFIRM_RATIO = 1.25;
+export const LEARN_CONFIRM_MIN_MS = 30 * MINUTE;
+
+/**
+ * What a typed duration means for the stored maximum.
+ * → "none"    — nothing to learn (no stored max, or not longer than it)
+ *   "update"  — a modest increase: adopt it silently
+ *   "confirm" — a big jump: ask "Use 18h as new maximum?" first
+ */
+export function learnMax(storedMs, enteredMs) {
+  if (!(storedMs > 0) || !(enteredMs > storedMs)) return "none";
+  return enteredMs > storedMs * LEARN_CONFIRM_RATIO && enteredMs - storedMs >= LEARN_CONFIRM_MIN_MS ? "confirm" : "update";
+}
+
+/** Entries whose duration is longer than their camp's stored maximum for that troop type.
+ *  → [{ camp, troop, prevMs, ms, kind: "update"|"confirm" }] */
+export function maxIncreases(data, entries) {
+  return entries.map((e) => {
+    const troop = e.troop === "helios" ? "helios" : "normal";
+    const prevMs = campMaxFor(data, e.camp, troop);
+    return { camp: e.camp, troop, prevMs, ms: e.durationMs, kind: learnMax(prevMs, e.durationMs) };
+  }).filter((x) => x.kind !== "none");
+}
+
+export const learnedKey = (camp, troop) => `${camp}:${troop === "helios" ? "helios" : "normal"}`;
+
+/** Store new maximums (per camp and troop type), remembering the ORIGINAL value so Settings can
+ *  undo a learned maximum. Keeps "same for all camps" honest: it turns off if the camps now differ. */
+export function applyLearnedMax(data, increases, now) {
+  if (!increases.length) return data;
+  const campMax = { ...(data.campMax || {}) };
+  const heliosMax = { ...(data.helios?.max || {}) };
+  const maxLearned = { ...(data.maxLearned || {}) };
+  for (const x of increases) {
+    const k = learnedKey(x.camp, x.troop);
+    maxLearned[k] = { prev: maxLearned[k]?.prev ?? x.prevMs, at: now };
+    if (x.troop === "helios") heliosMax[x.camp] = x.ms;
+    else campMax[x.camp] = x.ms;
+  }
+  const same = new Set(TRAINING_CAMPS.map((c) => campMax[c] || 0)).size === 1;
+  return {
+    ...data, campMax, maxLearned,
+    helios: { classes: data.helios?.classes || [], max: heliosMax },
+    campSame: data.campSame === true && !same ? false : data.campSame,
+  };
+}
+
+/** Put one learned maximum back to what it was before the app learned it. */
+export function resetLearnedMax(data, key) {
+  const rec = data.maxLearned?.[key];
+  if (!rec) return data;
+  const [camp, troop] = key.split(":");
+  const { [key]: _drop, ...rest } = data.maxLearned;
+  if (troop === "helios") return { ...data, maxLearned: rest, helios: { ...data.helios, max: { ...data.helios.max, [camp]: rec.prev ?? null } } };
+  return { ...data, maxLearned: rest, campMax: { ...data.campMax, [camp]: rec.prev ?? null } };
+}
+
+/** The troop type a camp's form should start on: the player's last choice for that camp,
+ *  never Helios unless that camp has Helios set up. */
+export function defaultTroop(data, camp) {
+  if (!hasHelios(data, camp)) return "normal";
+  if (data?.campTroop?.[camp]) return data.campTroop[camp] === "helios" ? "helios" : "normal";
+  const last = (data?.timers || []).filter((t) => t.kind === "training" && t.category === camp).sort((a, b) => b.endAt - a.endAt)[0];
+  return last?.troop === "helios" ? "helios" : "normal";
+}
+
+/** Remember each camp's troop choice from a restart. */
+export function rememberTroops(data, entries) {
+  const campTroop = { ...(data.campTroop || {}) };
+  for (const e of entries) campTroop[e.camp] = e.troop === "helios" ? "helios" : "normal";
+  return { ...data, campTroop };
+}
+
+/**
+ * The compact "before you restart" summary. Camps only "finish together" when every one lands in
+ * the same minute — it never implies a shared finish that isn't real.
+ * → { rows: [{ camp, troop, durationMs, finishAt }], together: boolean, finishAt|null }
+ */
+export function restartSummary(entries, now) {
+  const rows = entries.map((e) => ({ camp: e.camp, troop: e.troop === "helios" ? "helios" : "normal", durationMs: e.durationMs, finishAt: now + e.durationMs }))
+    .sort((a, b) => TRAINING_CAMPS.indexOf(a.camp) - TRAINING_CAMPS.indexOf(b.camp));
+  const minutes = new Set(rows.map((r) => Math.floor(r.finishAt / MINUTE)));
+  const together = rows.length > 0 && minutes.size === 1;
+  return { rows, together, finishAt: together ? rows[0].finishAt : null };
+}

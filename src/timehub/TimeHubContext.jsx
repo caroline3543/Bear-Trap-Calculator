@@ -14,6 +14,11 @@ const Ctx = createContext(null);
 const TAB_KEY = "timehub:tab";
 /** The open tab lives in its own context so switching tabs only re-renders the tab bar and panels. */
 const TabCtx = createContext({ tab: "today", setTab: () => {} });
+/** The current confirmation toast, in its own context so showing one re-renders only the toast. */
+const ToastCtx = createContext({ toast: null, dismiss: () => {} });
+export function useToast() {
+  return useContext(ToastCtx);
+}
 export function useTab() {
   return useContext(TabCtx);
 }
@@ -50,6 +55,15 @@ export function TimeHubProvider({ lang = "en", children }) {
   const [rearrange, setRearrange] = useState(false);
   const [bookingDraft, setBookingDraft] = useState(null);
   const [trainDraft, setTrainDraft] = useState(null);
+  // One short confirmation at a time ("✓ 20 contributions spent · …"): immediate feedback that
+  // survives the row it came from disappearing (a spent "Contributions full" row leaves the list).
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
+  const notify = useCallback((lines) => {
+    clearTimeout(toastTimer.current);
+    setToast({ lines: Array.isArray(lines) ? lines : [lines], id: Date.now() });
+    toastTimer.current = setTimeout(() => setToast(null), 5000);
+  }, []);
   // Tab switches paint instantly (local state); remembering the tab happens in the background.
   // (stored under its own key so a tab switch never re-renders the other tabs)
   const [tab, setTabState] = useState(() => {
@@ -111,13 +125,17 @@ export function TimeHubProvider({ lang = "en", children }) {
       setFilter: (f) => dispatch({ type: "settings", patch: { accountFilter: f } }),
       rearrange, setRearrange, bookingDraft, setBookingDraft, openBooking,
       trainDraft, setTrainDraft, startTraining, setTab,
+      notify,
+      // "Start for 5 min" — a small focus timer, no commitment to finish (stopping isn't failure)
+      setFocus: (taskId) => { const at = Date.now(); dispatch({ type: "settings", patch: { focus: { taskId, startedAt: at, endsAt: at + 5 * 60000 } } }); },
     };
-  }, [state, lang, rearrange, bookingDraft, openBooking, trainDraft, startTraining, setTab]);
+  }, [state, lang, rearrange, bookingDraft, openBooking, trainDraft, startTraining, setTab, notify]);
+  const toastValue = useMemo(() => ({ toast, dismiss: () => setToast(null) }), [toast]);
 
   const tabValue = useMemo(() => ({ tab, setTab }), [tab, setTab]);
   return (
     <Ctx.Provider value={value}>
-      <TabCtx.Provider value={tabValue}>{children}</TabCtx.Provider>
+      <TabCtx.Provider value={tabValue}><ToastCtx.Provider value={toastValue}>{children}</ToastCtx.Provider></TabCtx.Provider>
     </Ctx.Provider>
   );
 }

@@ -23,6 +23,8 @@ import { RECURRENCE_TYPES } from "./events.js";
 import { BUFF_CHOICES } from "./reminders.js";
 import { DEFAULT_SLEEP } from "./sleep.js";
 import { isThursdayStart } from "./championship.js";
+import { cleanFriendAccounts } from "./friends.js";
+import { cleanTodoFields, keepTask, SUGGEST_LEVELS, ENERGY } from "./todo.js";
 
 export const STORAGE_KEY = "timehub:v1";
 export const SCHEMA_VERSION = 2;
@@ -41,7 +43,7 @@ function defaultSettings() {
     displayTz: null, compact: false, collapsed: {}, showArchived: false,
     layout: sanitizeLayout([]), accountFilter: ALL, calendarAlarmMin: 10, setupDismissed: false,
     knownTemplates: Object.keys(TEMPLATES), timeOptionsRev: TIME_OPTIONS_REV, tab: "today", haptics: true, showSpeed: false, tour: null, eduPri: "checkins", eduFinish: null, eduBufferMin: 5, eduDismiss: {},
-    timelineFilter: "all", todoView: "list", todoFilter: "all", todoOpen: { game: true, personal: true, work: true }, prioOpen: { next: true, plan: true, quick: true, later: true },
+    timelineFilter: "all", todoView: "list", todoFilter: "all", minDay: null, energy: null, taskSuggest: "balanced", focus: null, todoHistory: false, todoOpen: { game: true, personal: true, work: true }, prioOpen: { next: true, plan: true, quick: true, later: true },
     track: { reset: true, store: true, trek: true, stamina: true, contrib: true, intel: true }, sleep: { ...DEFAULT_SLEEP },
     champ: { leader: null, anchor: null },
   };
@@ -136,6 +138,7 @@ function cleanContrib(c) {
     anchorAt: isNum(c.anchorAt) ? c.anchorAt : 0,
     intervalMs: isNum(c.intervalMs) && c.intervalMs >= 1000 ? c.intervalMs : d.intervalMs,
     whenFull: c.whenFull === "continue" ? "continue" : "pause",
+    ...(c.lastSpent && isNum(c.lastSpent.at) && isNum(c.lastSpent.n) && c.lastSpent.n > 0 ? { lastSpent: { at: c.lastSpent.at, n: Math.floor(c.lastSpent.n) } } : {}),
   };
 }
 
@@ -153,7 +156,7 @@ function cleanHelios(h) {
 function cleanPlan(p) {
   if (!p || !id(p.id) || !isNum(p.startAt) || !isNum(p.target)) return null;
   const camps = (Array.isArray(p.camps) ? p.camps : []).filter((c) => TRAINING_CAMPS.includes(c));
-  return camps.length ? { id: id(p.id), camps, startAt: p.startAt, target: p.target, ...(p.troop === "helios" ? { troop: "helios" } : {}) } : null;
+  return camps.length ? { id: id(p.id), camps, startAt: p.startAt, target: p.target, ...(p.troop === "helios" ? { troop: "helios" } : {}), ...(p.edu === true ? { edu: true } : {}) } : null;
 }
 
 function cleanAccountData(a) {
@@ -163,6 +166,12 @@ function cleanAccountData(a) {
     campMax: cleanCampMax(a.campMax), helios: cleanHelios(a.helios), plans: list(a.plans, cleanPlan),
     lastEnded: Object.fromEntries(TRAINING_CAMPS.filter((c) => isNum(a.lastEnded?.[c])).map((c) => [c, a.lastEnded[c]])),
     campMaxEdu: cleanCampMax(a.campMaxEdu),
+    campTroop: Object.fromEntries(TRAINING_CAMPS.filter((c) => a.campTroop?.[c] === "helios" || a.campTroop?.[c] === "normal").map((c) => [c, a.campTroop[c]])),
+    maxLearned: Object.fromEntries(Object.entries(a.maxLearned && typeof a.maxLearned === "object" ? a.maxLearned : {})
+      .filter(([k, v]) => /^(infantry|lancer|marksman)_camp:(normal|helios)$/.test(k) && v && isNum(v.at) && (v.prev === null || isNum(v.prev)))
+      .map(([k, v]) => [k, { prev: v.prev, at: v.at }])),
+    vpDismiss: Object.fromEntries(Object.entries(a.vpDismiss && typeof a.vpDismiss === "object" ? a.vpDismiss : {})
+      .filter(([k, v]) => typeof k === "string" && k.length <= 120 && isNum(v)).slice(-40)),
     eduDone: Object.fromEntries(Object.entries(a.eduDone && typeof a.eduDone === "object" ? a.eduDone : {}).slice(-12)
       .filter(([k, v]) => typeof k === "string" && k.length <= 80 && v && typeof v === "object")
       .map(([k, v]) => [k, { ...(isNum(v.bridge) ? { bridge: v.bridge } : {}), ...(isNum(v.buff) ? { buff: v.buff } : {}) }])),
@@ -173,10 +182,10 @@ function cleanAccountData(a) {
   };
 }
 
-function cleanFriend(f, i) {
+function cleanFriend(f, i, accountIds = []) {
   if (!f || !id(f.id) || !str(f.name).trim() || !isValidTimeZone(f.tz)) return null;
   const hours = f.hours && validateHours(f.hours) ? { day: f.hours.day, evening: f.hours.evening, sleep: f.hours.sleep } : null;
-  return { id: id(f.id), name: str(f.name, 80), location: str(f.location, 80), tz: f.tz, notes: str(f.notes), hours, order: isNum(f.order) ? f.order : i };
+  return { id: id(f.id), name: str(f.name, 80), location: str(f.location, 80), tz: f.tz, notes: str(f.notes), hours, order: isNum(f.order) ? f.order : i, accounts: cleanFriendAccounts(f.accounts, accountIds) };
 }
 
 /** Bump when DEFAULT_TIME_OPTIONS gains game-confirmed times: saved lists get them merged in once. */
@@ -252,7 +261,7 @@ export function sanitizeState(raw, now = Date.now(), makeId = newId) {
   const s = raw.settings && typeof raw.settings === "object" ? raw.settings : {};
   const collapsed = {};
   if (s.collapsed && typeof s.collapsed === "object") for (const k of Object.keys(s.collapsed)) if (typeof s.collapsed[k] === "boolean") collapsed[k] = s.collapsed[k];
-  const friends = list(raw.friends, cleanFriend).sort((a, b) => a.order - b.order).map((f, i) => ({ ...f, order: i }));
+  const friends = list(raw.friends, (f, i) => cleanFriend(f, i, accountIds)).sort((a, b) => a.order - b.order).map((f, i) => ({ ...f, order: i }));
 
   // Seed templates added after this state was created (once — a deleted template stays deleted).
   // Templates are only kept once they have a time (no "set up" placeholders).
@@ -288,6 +297,11 @@ export function sanitizeState(raw, now = Date.now(), makeId = newId) {
       timelineFilter: ["all", "game", "personal", "work"].includes(s.timelineFilter) ? s.timelineFilter : "all",
       todoView: s.todoView === "priority" ? "priority" : "list",
       todoFilter: ["all", "game", "personal", "work"].includes(s.todoFilter) ? s.todoFilter : "all",
+      minDay: /^\d{4}-\d{2}-\d{2}$/.test(s.minDay || "") ? s.minDay : null,
+      energy: s.energy && /^\d{4}-\d{2}-\d{2}$/.test(s.energy.day || "") && ENERGY.includes(s.energy.level) ? { day: s.energy.day, level: s.energy.level } : null,
+      taskSuggest: SUGGEST_LEVELS.includes(s.taskSuggest) ? s.taskSuggest : "balanced",
+      focus: s.focus && typeof s.focus.taskId === "string" && isNum(s.focus.startedAt) && isNum(s.focus.endsAt) ? { taskId: s.focus.taskId, startedAt: s.focus.startedAt, endsAt: s.focus.endsAt } : null,
+      todoHistory: s.todoHistory === true,
       todoOpen: Object.fromEntries(["game", "personal", "work"].map((k) => [k, s.todoOpen?.[k] !== false])),
       prioOpen: Object.fromEntries(["next", "plan", "quick", "later"].map((k) => [k, s.prioOpen?.[k] !== false])),
     },
@@ -314,8 +328,8 @@ function cleanTasks(list, now) {
       if (t.start == null && t.end == null) return true;
       return isNum(t.start) && isNum(t.end) && t.end > t.start && t.end - t.start <= 24 * 3600000;
     })
-    .filter((t) => (t.end ?? t.createdAt ?? now) > now - 7 * 24 * 3600000)
-    .slice(0, 300)
+    .filter((t) => keepTask({ ...t, repeat: t.repeat && cleanTodoFields(t).repeat }, now))
+    .slice(-300)
     .map((t) => ({
       id: t.id, title: t.title.trim().slice(0, 120),
       category: cats.has(t.category) ? t.category : "personal",
@@ -323,7 +337,9 @@ function cleanTasks(list, now) {
       start: isNum(t.start) ? t.start : null, end: isNum(t.end) ? t.end : null,
       accountId: typeof t.accountId === "string" ? t.accountId : null,
       important: t.important === true ? true : t.important === false ? false : null,
+      notes: typeof t.notes === "string" ? t.notes.trim().slice(0, 500) : "",
       done: t.done === true, createdAt: isNum(t.createdAt) ? t.createdAt : now,
+      ...cleanTodoFields(t),
     }));
 }
 

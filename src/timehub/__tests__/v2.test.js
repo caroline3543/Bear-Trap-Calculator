@@ -851,23 +851,26 @@ test("an account chip can't appear twice on one row", () => {
   assert.equal(new Set(chipsShown).size, chipsShown.length);
 });
 
+// round 22: every task carries the optional to-do fields; old tasks migrate to "behaves exactly as before"
+const TODO_DEFAULTS = { repeat: null, occ: {}, when: "anytime", at: null, reminder: "none", remindAt: null, essential: false, effort: null, group: null, order: null, subtasks: [], placed: null, doneAt: null, deferredTo: null, deferrals: 0, endedOn: null, createdDay: null, snooze: null };
 test("tasks survive save/load; junk and old tasks are dropped; category/duration/account/importance default sensibly", async () => {
   const { sanitizeState } = await import("../lib/storage.js");
   const s = emptyState(T0, mkId);
   s.tasks = [
-    { id: "t1", title: " Make dinner ", start: T0, end: T0 + 45 * MINUTE, done: true },
+    { id: "t1", title: " Make dinner ", start: T0, end: T0 + 45 * MINUTE, done: true }, // pre-existing task, saved before "notes" existed
     { id: "t2", title: "", start: T0, end: T0 + MINUTE },
     { id: "t3", title: "Old", start: T0 - 9 * DAY, end: T0 - 9 * DAY + HOUR },
     { id: "t4", title: "Wash sheets" }, // no time at all — a plain to-do
     { id: "t5", title: "Bad cat", category: "space-pirate" },
-    { id: "t6", title: "Restart camps", category: "game", accountId: "A", important: true, durationMs: 5 * MINUTE },
+    { id: "t6", title: "Restart camps", category: "game", accountId: "A", important: true, durationMs: 5 * MINUTE, notes: "  bring gems  " },
   ];
   const r = sanitizeState(JSON.parse(JSON.stringify(s)), T0, mkId);
   assert.deepEqual(r.tasks.map((t) => t.id), ["t1", "t4", "t5", "t6"]);
-  assert.deepEqual(r.tasks[0], { id: "t1", title: "Make dinner", category: "personal", durationMs: 45 * MINUTE, start: T0, end: T0 + 45 * MINUTE, accountId: null, important: null, done: true, createdAt: T0 });
-  assert.deepEqual(r.tasks[1], { id: "t4", title: "Wash sheets", category: "personal", durationMs: null, start: null, end: null, accountId: null, important: null, done: false, createdAt: T0 });
+  // migration: a task saved before "notes" existed gets a safe empty default, nothing lost or crashed
+  assert.deepEqual(r.tasks[0], { id: "t1", title: "Make dinner", category: "personal", durationMs: 45 * MINUTE, start: T0, end: T0 + 45 * MINUTE, accountId: null, important: null, notes: "", done: true, createdAt: T0, ...TODO_DEFAULTS });
+  assert.deepEqual(r.tasks[1], { id: "t4", title: "Wash sheets", category: "personal", durationMs: null, start: null, end: null, accountId: null, important: null, notes: "", done: false, createdAt: T0, ...TODO_DEFAULTS });
   assert.equal(r.tasks[2].category, "personal"); // an unrecognised category falls back, doesn't crash
-  assert.deepEqual(r.tasks[3], { id: "t6", title: "Restart camps", category: "game", durationMs: 5 * MINUTE, start: null, end: null, accountId: "A", important: true, done: false, createdAt: T0 });
+  assert.deepEqual(r.tasks[3], { id: "t6", title: "Restart camps", category: "game", durationMs: 5 * MINUTE, start: null, end: null, accountId: "A", important: true, notes: "bring gems", done: false, createdAt: T0, ...TODO_DEFAULTS });
 });
 
 /* ---------- research: fixed display order, not by finish time ---------- */

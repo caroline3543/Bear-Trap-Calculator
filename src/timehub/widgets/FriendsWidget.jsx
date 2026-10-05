@@ -3,13 +3,17 @@ import { useTimeHub } from "../TimeHubContext.jsx";
 import { useMinute } from "../hooks/useNow.jsx";
 import { classifyAt, DEFAULT_HOURS, validateHours } from "../lib/dayNight.js";
 import { formatTime, formatDate, offsetMinutes, formatHoursMinutes, isValidTimeZone, zoneCity } from "../lib/time.js";
-import { Section, Btn, Field, TimeZonePicker, FormActions, Icon, Ltr } from "../components/ui.jsx";
+import { Section, Btn, Field, TimeZonePicker, FormActions, Icon, Ltr, AccountTag } from "../components/ui.jsx";
+import { friendsForAccounts, friendDayOffset } from "../lib/friends.js";
 
 const PHASE_ICON = { day: Icon.sun, evening: Icon.dusk, sleep: Icon.moon };
 const PHASE_KEY = { day: "day", evening: "evening", sleep: "sleep" };
 
 function FriendForm({ initial, onDone }) {
-  const { t, state, dispatch, newId } = useTimeHub();
+  const { t, state, dispatch, newId, accounts } = useTimeHub();
+  // Which accounts you play with this person on (any number). Brand-new friend with one account:
+  // that account is the obvious answer, so it starts ticked.
+  const [plays, setPlays] = useState(() => initial?.accounts?.length ? initial.accounts : accounts.length === 1 ? [accounts[0].id] : []);
   const [name, setName] = useState(initial?.name || "");
   const [location, setLocation] = useState(initial?.location || "");
   const [tz, setTz] = useState(initial?.tz || "");
@@ -30,6 +34,7 @@ function FriendForm({ initial, onDone }) {
       item: {
         id: initial?.id || newId(), name: name.trim(), location: location.trim() || zoneCity(tz), tz, notes: notes.trim(),
         hours: custom ? hours : null, order: initial?.order ?? state.friends.length,
+        accounts: accounts.map((a) => a.id).filter((id) => plays.includes(id)),
       },
     });
     onDone();
@@ -46,6 +51,18 @@ function FriendForm({ initial, onDone }) {
         </Field>
       </div>
       <TimeZonePicker value={tz} onChange={setTz} error={errors.tz && t(errors.tz)} />
+      <fieldset className="th-plays">
+        <legend className="th-label">{t("playsWithQ")}</legend>
+        <div className="th-checks">
+          {accounts.map((a) => (
+            <label key={a.id} className="th-check">
+              <input type="checkbox" checked={plays.includes(a.id)} onChange={(e) => setPlays(e.target.checked ? [...plays, a.id] : plays.filter((x) => x !== a.id))} />
+              {a.name}
+            </label>
+          ))}
+        </div>
+        <span className="th-hint">{t("playsWithHint")}</span>
+      </fieldset>
       <label className="th-check">
         <input type="checkbox" checked={custom} onChange={(e) => setCustom(e.target.checked)} />
         {t("customHours")}
@@ -121,6 +138,9 @@ export function FriendsWidget({ move: sectionMove }) {
                 <div className="th-item-name">{f.name}</div>
                 <div className="th-item-sub">{f.location || zoneCity(f.tz)} · {t(PHASE_KEY[phase])}</div>
                 <div className="th-item-sub">{rel}</div>
+                <div className="th-item-sub th-plays-line">{(f.accounts || []).length
+                  ? (f.accounts || []).map((a) => <AccountTag key={a} accountId={a} />)
+                  : <span className="th-plays-none">{t("playsWithNone")}</span>}</div>
               </div>
               <div>
                 <div className="th-friend-time"><Ltr>{formatTime(now, f.tz, lang)}</Ltr></div>
@@ -144,5 +164,34 @@ export function FriendsWidget({ move: sectionMove }) {
       })}
       {friends.length > 0 && <p className="th-note">{t("estimateNote")}</p>}
     </Section>
+  );
+}
+
+/**
+ * "For your friends" — what an event's time is for the friends who play on a participating
+ * account. Two names show; the rest fold behind "+N more". Adds "Tomorrow"/"Yesterday" only when
+ * the friend's date differs from yours. Renders nothing when no linked friend is involved.
+ */
+export function FriendTimes({ at, accountIds, compact = false }) {
+  const { t, tz, lang, state } = useTimeHub();
+  const [all, setAll] = useState(false);
+  const list = friendsForAccounts(state.friends, accountIds);
+  if (!list.length) return null;
+  const shown = all ? list : list.slice(0, 2);
+  const rest = list.length - shown.length;
+  const day = (f) => {
+    const d = friendDayOffset(at, f.tz, tz);
+    return d === 1 ? t("tomorrow") : d === -1 ? t("yesterday") : d ? formatDate(at, f.tz, lang) : null;
+  };
+  return (
+    <div className={`th-ftimes ${compact ? "compact" : ""}`}>
+      <span className="th-ftimes-label">{t("forYourFriends")}</span>
+      <span className="th-ftimes-list">
+        {shown.map((f) => (
+          <span key={f.id} className="th-ftime"><b>{f.name}</b> <Ltr>{formatTime(at, f.tz, lang)}</Ltr>{day(f) && <span className="th-ftime-day"> · {day(f)}</span>}</span>
+        ))}
+        {rest > 0 && <button type="button" className="th-link th-ftimes-more" onClick={(e) => { e.stopPropagation(); setAll(true); }}>{t("moreN", { n: rest })}</button>}
+      </span>
+    </div>
   );
 }
