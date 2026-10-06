@@ -1644,3 +1644,14 @@ html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
 .th-vp-acts .th-vp-book { grid-column: 1 / -1; }
 .th-vp-acts .th-btn { justify-content: center; }
 @media (min-width: 520px) { .th-vp-acts { grid-template-columns: auto auto auto; justify-content: start; } .th-vp-acts .th-vp-book { grid-column: auto; } }
+/* Round 27: compact VP card (tap to expand) */
+.th-vp-toggle { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; padding: 0; border: 0; background: none; color: inherit; text-align: start; cursor: pointer; }
+.th-vp-toggle > :not(.th-vp-chev) { grid-column: 1; }
+.th-vp-chev { grid-column: 2; grid-row: 1 / span 3; align-self: center; color: var(--sub); font-size: 14px; }
+.th-vp-toggle:focus-visible { outline: 3px solid var(--gold); outline-offset: 4px; border-radius: 10px; }
+.th-vp-sub { font: 600 13.5px/18px 'Nunito Sans', sans-serif; color: var(--sub); }
+.th-vp-card.compact { padding: 12px 14px; gap: 8px; }
+.th-vp-acts.one { grid-template-columns: auto; justify-content: start; margin-top: 0; }
+.th-vp-acts.one .th-vp-book { grid-column: auto; min-width: 96px; }
+.th-vp-card.compact { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 12px; }
+.th-vp-card.compact .th-vp-acts { margin: 0; }

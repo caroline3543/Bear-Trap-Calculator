@@ -39,7 +39,7 @@ import { itemTitle, toCalendarItem } from "../components/labels.js";
 import { ReminderRow } from "./ReminderRow.jsx";
 import { useWhenLocal } from "./TimerCard.jsx";
 import { useClaim } from "./DailyWidgets.jsx";
-import { FriendTimes } from "./FriendsWidget.jsx";
+import { FriendsWidget, FriendTimes } from "./FriendsWidget.jsx";
 import { SpendAllButton } from "./SpendAll.jsx";
 import { NextUp, useNextUp, ReadyNow } from "./NextUp.jsx";
 import { groupVpReminders } from "../lib/research.js";
@@ -111,6 +111,45 @@ function NeedRow({ tone = "warm", title, sub, children, leaving, icon = "bell" }
       <NeedIcon name={icon} warm={tone === "amber" || tone === "warm"} />
       <div className="th-need-main"><div className="th-need-title">{title}</div><div className="th-need-sub">{sub}</div></div>
       {children}
+    </div>
+  );
+}
+
+/** One Vice President booking (account + 30-min slot). Compact by default: who, when (local),
+ *  what it covers, and Book. Tapping the card opens UTC, the covered researches, Booked, Dismiss. */
+function VpCard({ g, now, leaving, onBook, onBooked, onDismiss }) {
+  const { t, tz, lang, accountById } = useTimeHub();
+  const [open, setOpen] = useState(false);
+  const tmr = localDayRange(now, tz, 0).end <= g.slot.start;
+  const when = <>{tmr ? `${t("tomorrowLower")} ` : ""}<Ltr>{formatTime(g.slot.start, tz, lang)}–{formatTime(g.slot.end, tz, lang)}</Ltr></>;
+  const covers = g.items.map((i) => `${t(i.x.category)} · ${formatTime(i.r.finishAt, tz, lang)}`).join(", ");
+  return (
+    <div className={`th-vp-card ${open ? "open" : "compact"} ${leaving ? "leaving" : ""}`}>
+      <button type="button" className="th-vp-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <span className="th-vp-eyebrow">{t("vpShort")}</span>
+        <b className="th-vp-acct">{accountById(g.acc)?.name} · {when}</b>
+        {!open && <span className="th-vp-sub">{covers}</span>}
+        <span className="th-vp-chev" aria-hidden="true">{open ? "▾" : "▸"}</span>
+      </button>
+      {open && (
+        <>
+          <div className="th-vp-block">
+            <span className="th-vp-lbl">{t("bookColon")}</span>
+            <span><b>{when}</b> {t("localWord")}</span>
+            <span className="th-utc"><Ltr>{formatTime(g.slot.start, "UTC", lang)}–{formatTime(g.slot.end, "UTC", lang)}</Ltr> UTC</span>
+          </div>
+          <div className="th-vp-block">
+            <span className="th-vp-lbl">{t("coversColon")}</span>
+            <ul className="th-vp-covers">{g.items.map((i) => <li key={i.x.id}>{t(i.x.category)} · <Ltr>{formatTime(i.r.finishAt, tz, lang)}</Ltr></li>)}</ul>
+            {g.items.some((i) => i.r.conflict) && <span className="th-utc">{t("vpConflictShort")}</span>}
+          </div>
+        </>
+      )}
+      <div className={`th-vp-acts ${open ? "" : "one"}`}>
+        <Btn small tone="gold" className="th-vp-book" aria-label={t("bookVpShort")} onClick={onBook}>{t("bookShort")}</Btn>
+        {open && <Btn small onClick={onBooked}>{t("iBookedIt")}</Btn>}
+        {open && <Btn small onClick={onDismiss}>{t("dismiss")}</Btn>}
+      </div>
     </div>
   );
 }
@@ -216,29 +255,11 @@ function NeedsYou({ hiddenKeys }) {
   }
   for (const g of n.vp) {
     const id = `vp${g.acc}${g.slot.start}`;
-    const utc = `${formatTime(g.slot.start, "UTC", lang)}–${formatTime(g.slot.end, "UTC", lang)}`;
-    const tmr = localDayRange(now, tz, 0).end <= g.slot.start;
     soonRows.push(
-      <SwipeRow key={id} label={t("vpBookTitle", { utc })} onDismiss={() => dismissVpGroup(g)}>
-        <div className={`th-vp-card ${leaving.includes(id) ? "leaving" : ""}`}>
-          <span className="th-vp-eyebrow">{t("vpShort")}</span>
-          <b className="th-vp-acct">{accountById(g.acc)?.name}</b>
-          <div className="th-vp-block">
-            <span className="th-vp-lbl">{t("bookColon")}</span>
-            <span><b>{tmr ? `${t("tomorrow")} ` : ""}<Ltr>{formatTime(g.slot.start, tz, lang)}–{formatTime(g.slot.end, tz, lang)}</Ltr></b> {t("localWord")}</span>
-            <span className="th-utc"><Ltr>{utc}</Ltr> UTC</span>
-          </div>
-          <div className="th-vp-block">
-            <span className="th-vp-lbl">{t("coversColon")}</span>
-            <ul className="th-vp-covers">{g.items.map((i) => <li key={i.x.id}>{t(i.x.category)} · <Ltr>{formatTime(i.r.finishAt, tz, lang)}</Ltr></li>)}</ul>
-            {g.items.some((i) => i.r.conflict) && <span className="th-utc">{t("vpConflictShort")}</span>}
-          </div>
-          <div className="th-vp-acts">
-            <Btn small tone="gold" className="th-vp-book" aria-label={t("bookVpShort")} onClick={() => later(id, () => openBooking({ accountId: g.acc, startAt: g.slot.start, position: "vice_president" }))}>{t("bookShort")}</Btn>
-            <Btn small onClick={() => later(id, () => bookedVpGroup(g))}>{t("iBookedIt")}</Btn>
-            <Btn small onClick={() => dismissVpGroup(g)}>{t("dismiss")}</Btn>
-          </div>
-        </div>
+      <SwipeRow key={id} label={t("vpBookTitle", { utc: `${formatTime(g.slot.start, "UTC", lang)}–${formatTime(g.slot.end, "UTC", lang)}` })} onDismiss={() => dismissVpGroup(g)}>
+        <VpCard g={g} now={now} leaving={leaving.includes(id)}
+          onBook={() => later(id, () => openBooking({ accountId: g.acc, startAt: g.slot.start, position: "vice_president" }))}
+          onBooked={() => later(id, () => bookedVpGroup(g))} onDismiss={() => dismissVpGroup(g)} />
       </SwipeRow>
     );
   }
@@ -846,6 +867,7 @@ export function TodayScreen() {
       {full && <Schedule offset={offset} setOffset={setOffset} />}
       {/* one-time setup question: still asked, but it never pushes Next Up / Needs You off screen */}
       <ChampQuestion />
+      <FriendsWidget />
     </div>
   );
 }

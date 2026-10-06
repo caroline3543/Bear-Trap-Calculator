@@ -104,9 +104,8 @@ function SmallLine({ label, i }) {
 export function ReadyNow() {
   const { t, accountById, startTraining, setTab } = useTimeHub();
   const ready = useReadyNow();
-  // remembered for this session only — every new visit starts calm (collapsed)
-  const [open, setOpenState] = useState(() => { try { return sessionStorage.getItem("th:readyOpen") === "1"; } catch { return false; } });
-  const setOpen = (v) => { setOpenState(v); try { sessionStorage.setItem("th:readyOpen", v ? "1" : "0"); } catch { /* storage blocked */ } };
+  // always starts collapsed: the details open only when tapped (never remembered)
+  const [open, setOpen] = useState(false);
   const openResearch = () => { setTab("timers"); setTimeout(() => document.getElementById("th-sec-research")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80); };
   const byAcct = useMemo(() => {
     const m = new Map();
