@@ -228,3 +228,25 @@ export function restartSummary(entries, now) {
   const together = rows.length > 0 && minutes.size === 1;
   return { rows, together, finishAt: together ? rows[0].finishAt : null };
 }
+
+/* ---------- Training Capacity ----------
+   An optional modifier that triples troop capacity, so a full batch takes about three times as long.
+   Its maximum is stored SEPARATELY from the normal maximum (per account, per camp, per troop type),
+   and only ever set by the player confirming or editing it — never learned from a long Finish-at
+   plan, and never overwritten by the ×3 estimate once confirmed. Turning it off uses the normal
+   maximum again; the confirmed capacity maximum is kept for next time. */
+export const CAPACITY_FACTOR = 3;
+export const capKey = (camp, troop) => `${camp}:${troop === "helios" ? "helios" : "normal"}`;
+/** The confirmed Training Capacity maximum, or null if not confirmed yet. */
+export const capMaxFor = (data, camp, troop) => data?.trainCap?.max?.[capKey(camp, troop)] ?? null;
+/** ×3 of this camp's normal (or Helios) maximum — only ever shown as an estimate to confirm. */
+export const capEstimate = (data, camp, troop) => { const m = campMaxFor(data, camp, troop); return m > 0 ? m * CAPACITY_FACTOR : null; };
+/** The maximum the planner uses: confirmed capacity max when Training Capacity is on, else normal. */
+export const effectiveMax = (data, camp, troop, capOn) => (capOn ? capMaxFor(data, camp, troop) : campMaxFor(data, camp, troop));
+/** Save confirmed capacity maximums: { [capKey]: ms } (null clears one). Keeps everything else. */
+export function setCapMax(data, values) {
+  const max = { ...(data.trainCap?.max || {}) };
+  for (const [k, v] of Object.entries(values)) { if (v > 0) max[k] = v; else delete max[k]; }
+  return { ...data, trainCap: { on: data.trainCap?.on === true, max } };
+}
+export const setCapOn = (data, on) => ({ ...data, trainCap: { on: !!on, max: { ...(data.trainCap?.max || {}) } } });

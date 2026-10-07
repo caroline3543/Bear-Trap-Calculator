@@ -166,6 +166,11 @@ function cleanAccountData(a) {
     campMax: cleanCampMax(a.campMax), helios: cleanHelios(a.helios), plans: list(a.plans, cleanPlan),
     lastEnded: Object.fromEntries(TRAINING_CAMPS.filter((c) => isNum(a.lastEnded?.[c])).map((c) => [c, a.lastEnded[c]])),
     campMaxEdu: cleanCampMax(a.campMaxEdu),
+    trainCap: {
+      on: a.trainCap?.on === true,
+      max: Object.fromEntries(Object.entries(a.trainCap?.max && typeof a.trainCap.max === "object" ? a.trainCap.max : {})
+        .filter(([k, v]) => /^(infantry|lancer|marksman)_camp:(normal|helios)$/.test(k) && isNum(v) && v > 0)),
+    },
     campTroop: Object.fromEntries(TRAINING_CAMPS.filter((c) => a.campTroop?.[c] === "helios" || a.campTroop?.[c] === "normal").map((c) => [c, a.campTroop[c]])),
     maxLearned: Object.fromEntries(Object.entries(a.maxLearned && typeof a.maxLearned === "object" ? a.maxLearned : {})
       .filter(([k, v]) => /^(infantry|lancer|marksman)_camp:(normal|helios)$/.test(k) && v && isNum(v.at) && (v.prev === null || isNum(v.prev)))

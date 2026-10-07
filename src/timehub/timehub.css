@@ -1655,3 +1655,30 @@ html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
 .th-vp-acts.one .th-vp-book { grid-column: auto; min-width: 96px; }
 .th-vp-card.compact { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 12px; }
 .th-vp-card.compact .th-vp-acts { margin: 0; }
+
+/* ---------- Round 28: multi-batch Finish-at plans + Training Capacity ---------- */
+.th-cap { display: grid; gap: 4px; margin: 2px 0 4px; }
+.th-cap .th-check { align-items: flex-start; }
+.th-cap .th-check > span { display: grid; gap: 1px; }
+.th-cap .th-check small { font: 600 12.5px/17px 'Nunito Sans', sans-serif; color: var(--sub); }
+.th-cap-max { font: 700 13px 'Nunito Sans', sans-serif; color: var(--ink); padding-inline-start: 28px; }
+.th-capcal { display: grid; gap: 8px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--goldBorder); background: var(--goldBg); color: var(--ink); font: 600 13.5px 'Nunito Sans', sans-serif; }
+.th-capcal-title { font: 800 14px 'Nunito Sans', sans-serif; }
+.th-capcal-sub, .th-capcal-q { margin: 0; }
+.th-capcal-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.th-capcal-list li { display: grid; gap: 2px; }
+.th-capcal-name { font-weight: 800; }
+.th-dayadd { margin-top: -2px; }
+.th-reset-tag { color: var(--amber, #C65D43); }
+.th-bplan { display: grid; gap: 8px; padding: 14px 16px; border-radius: 16px; background: var(--surface); border: 1px solid var(--cardBorder); color: var(--ink); font: 600 13.5px/19px 'Nunito Sans', sans-serif; }
+.th-bplan-title { font: 600 17px Fredoka, 'Nunito Sans', sans-serif; }
+.th-bplan p { margin: 0; }
+.th-bplan-warn { color: var(--amber, #C65D43); font-weight: 700; }
+.th-bplan-batches, .th-bplan-percamp, .th-bplan-checkins ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.th-bplan-batches li, .th-bplan-percamp li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 10px; padding: 7px 10px; border-radius: 10px; background: var(--goldBg); }
+.th-bplan-checkins { display: grid; gap: 4px; }
+.th-bplan-checkins li { padding: 2px 0; }
+.th-bplan-checkins .th-utc { color: var(--sub); font-size: 12.5px; }
+.th-bplan-sleep { color: var(--sub); }
+.th-bplan-final { font-weight: 700; }
+.th-onego { justify-self: start; font-size: 13px; }
