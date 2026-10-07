@@ -205,7 +205,7 @@ export function EducationStrip({ acc, open, setOpen, hasCamps, onAddTime, onRest
             {mode === "over" ? t("eduOver") : active ? <>{t("eduActiveTitle")} · <Remaining to={win.end} /> {t("eduLeftWord")}</> : <>{t("startsIn")} <Remaining to={win.start} /></>}
           </span>
         </div>
-        <div className="th-edu-window"><b><Ltr>{L.time(win.start)}–{L.time(win.end)}</Ltr></b><small>{dayP ? `${dayP} · ` : ""}<Ltr>{formatTime(win.start, "UTC", lang)}</Ltr> UTC</small></div>
+        <div className="th-edu-window"><b><Ltr>{L.time(win.start)}–{L.time(win.end)}</Ltr></b><small>{dayP ? `${dayP} · ` : ""}<Ltr>{formatTime(win.start, "UTC", lang)}–{formatTime(win.end, "UTC", lang)}</Ltr> UTC</small></div>
 
         {/* 2. what to do */}
         {mode === "wait" && next && (

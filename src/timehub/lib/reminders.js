@@ -24,10 +24,14 @@ export function reminderKey(eventId, occStart, accountId) {
 export function computeReminders(state, now, accountIds) {
   const out = [];
   const { to } = bookingWindow(now);
+  // "Don't remind me" scopes: this event (ev.reminderHidden), this account, or this reminder type
+  // (minister-for-combat-event reminders). Never a silent global switch — each is an explicit choice.
+  const mute = state.settings?.ministerMute || { accounts: [], combat: false };
+  if (mute.combat) return out;
   for (const ev of state.events) {
     if (!ev.combat || ev.reminderHidden || ev.archived || !isScheduled(ev)) continue;
     const lead = ev.reminderLeadMs > 0 ? ev.reminderLeadMs : REMINDER_LEAD_MS;
-    const accs = ev.accountId ? accountIds.filter((a) => a === ev.accountId) : accountIds;
+    const accs = (ev.accountId ? accountIds.filter((a) => a === ev.accountId) : accountIds).filter((a) => !mute.accounts.includes(a));
     if (!accs.length) continue;
     for (const occ of occurrencesBetween(ev, now, now + Math.max(lead, 2 * DAY))) {
       if (occ.start <= now || now < occ.start - lead) continue;

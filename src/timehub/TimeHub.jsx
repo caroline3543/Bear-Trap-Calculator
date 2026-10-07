@@ -27,7 +27,6 @@ import { TrainingWidget } from "./widgets/TrainingWidget.jsx";
 import { ResearchWidget } from "./widgets/ResearchWidget.jsx";
 import { ContributionWidget } from "./widgets/ContributionWidget.jsx";
 import { TodoWidget } from "./widgets/TodoWidget.jsx";
-import { FriendsWidget } from "./widgets/FriendsWidget.jsx";
 import { HistoryWidget } from "./widgets/HistoryWidget.jsx";
 import { ShareCard } from "./widgets/ShareCard.jsx";
 import { AccountsPanel } from "./widgets/AccountsPanel.jsx";
@@ -312,9 +311,7 @@ const TimersPanel = React.memo(function TimersPanel() {
   );
 });
 const EventsPanel = React.memo(function EventsPanel() {
-  // friends' clocks (add/edit friends, their linked accounts) live here now; their local times
-  // also appear on the relevant event rows and the Next Up card
-  return <Stack><EventsWidget /><BookingsWidget /><FriendsWidget /><ShareCard /><HistoryWidget /></Stack>;
+  return <Stack><EventsWidget /><BookingsWidget /><ShareCard /><HistoryWidget /></Stack>;
 });
 const CalcPanel = React.memo(function CalcPanel({ calculator }) { return <div className="th-calc-slot">{calculator}</div>; });
 const Panel = React.memo(function Panel({ on, children }) {

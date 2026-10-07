@@ -79,3 +79,17 @@ export function finishAdvice(now, maxMs, tz, sleep = DEFAULT_SLEEP) {
 export function nextFinishTarget(now, hhmm, tz) {
   return nextLocalTime(now, hhmm, tz);
 }
+
+/**
+ * A batch that finishes while you're asleep sits idle until you're up. How long?
+ * (A running batch can't be changed in the game, so this explains the gap; the fix happens at
+ * the next evening restart, where finishAdvice/timingCheck plan around bedtime and waking.)
+ * → null when it doesn't finish during sleep or the gap is under 15 minutes;
+ *   else { wakeAt, idleMs }
+ */
+export function idleUntilWake(endAt, tz, sleep = DEFAULT_SLEEP) {
+  if (!inSleepWindow(endAt, tz, sleep)) return null;
+  const wakeAt = nextLocalTime(endAt - 1, sleep.end, tz);
+  const idleMs = wakeAt - endAt;
+  return idleMs >= 15 * MINUTE ? { wakeAt, idleMs } : null;
+}
