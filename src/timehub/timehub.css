@@ -1699,3 +1699,49 @@ html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
 [dir="rtl"] .th-seq-gap { padding: 2px 22px 2px 0; }
 .th-bplan-count { margin: 0; font-weight: 800; }
 .th-bplan-foot { margin: -2px 2px 0; display: grid; gap: 2px; font: 600 13px 'Nunito Sans', sans-serif; color: var(--ink); }
+
+/* ---------- Round 30: Finish-at works backwards — the answer is WHEN TO START ---------- */
+.th-bk-opt { display: grid; gap: 5px; }
+.th-bk-optlabel { font: 800 11.5px 'Nunito Sans', sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--sub); }
+.th-bk-date { justify-self: start; min-height: 44px; }
+.th-bk-offsets { display: grid; gap: 4px; }
+.th-bk-capsum { display: grid; gap: 2px; padding: 8px 12px; border-radius: 12px; background: var(--goldBg); color: var(--ink); font: 600 13px/18px 'Nunito Sans', sans-serif; }
+.th-bk-capsum .th-link { justify-self: start; padding: 2px 0; min-height: 28px; }
+.th-bk-maxes { display: flex; flex-wrap: wrap; gap: 0 10px; }
+.th-bk-maxes > span { white-space: nowrap; }
+.th-bk { display: grid; gap: 8px; padding: 14px 16px; border-radius: 16px; background: var(--surface); border: 1.5px solid var(--goldBorder); color: var(--ink); font: 600 13.5px/19px 'Nunito Sans', sans-serif; }
+.th-bk p { margin: 0; }
+.th-bk-kicker { font: 800 11.5px 'Nunito Sans', sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--gold); }
+.th-bk-edu { padding: 8px 10px; border-radius: 10px; background: var(--goldBg); }
+.th-bk-miss { display: grid; gap: 2px; padding: 10px 12px; border-radius: 12px; background: var(--amberBg); color: var(--amber); font-weight: 700; }
+.th-bk-miss b { font: 800 15px/20px 'Nunito Sans', sans-serif; }
+.th-bk-miss .th-utc { color: inherit; opacity: .85; }
+.th-bk-starts { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.th-bk-starts li { display: grid; gap: 1px; }
+.th-bk-starts li + li { padding-top: 8px; border-top: 1px dashed var(--cardBorder); }
+.th-bk-camps { font-weight: 800; color: var(--gold); }
+.th-bk-label { font: 800 11.5px 'Nunito Sans', sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--sub); }
+.th-bk-when { font: 600 26px/31px Fredoka, 'Nunito Sans', sans-serif; color: var(--ink); overflow-wrap: anywhere; }
+.th-bk-starts li + li .th-bk-when { font-size: 21px; line-height: 26px; }
+.th-bk-sub { color: var(--sub); font-weight: 700; }
+.th-bk-sub b { color: var(--ink); }
+.th-bk .th-utc { font-size: 12.5px; color: var(--sub); }
+.th-bk-fact, .th-bk-finish { font-weight: 700; }
+.th-bk-finish { padding-top: 8px; border-top: 1px solid var(--cardBorder); }
+.th-bk-then { padding: 8px 10px; border-radius: 10px; background: var(--goldBg); box-shadow: inset 3px 0 0 var(--gold); }
+[dir="rtl"] .th-bk-then { box-shadow: inset -3px 0 0 var(--gold); }
+.th-bk-busy { color: var(--amber); font-weight: 700; }
+.th-bk-actions { display: grid; gap: 6px; margin-top: 2px; }
+.th-bk-alts { margin-top: 0; }
+.th-bk-cmp { display: grid; gap: 4px; }
+.th-bk-cmprow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 10px; align-items: baseline; padding: 7px 10px; border-radius: 10px; background: var(--goldBg); color: var(--ink); font: 600 13px/18px 'Nunito Sans', sans-serif; }
+.th-bk-cmprow > * { overflow-wrap: anywhere; min-width: 0; }
+.th-bk-cmprow > span:not(.th-bk-cmpdur) { grid-column: 1 / -1; grid-row: 2; }
+.th-finishform .th-dayadd .th-chip-btn, .th-bk-offsets .th-chip-btn { max-width: 100%; }
+.th-bk-cmprow.on { box-shadow: inset 0 0 0 1.5px var(--goldBorder); }
+.th-bk-cmpdur { color: var(--sub); font-weight: 700; white-space: nowrap; }
+.th-bk-details { list-style: none; margin: 0 0 4px; padding: 0; display: grid; gap: 6px; font: 600 13px/18px 'Nunito Sans', sans-serif; color: var(--ink); }
+.th-bk-details li { display: grid; gap: 1px; padding: 7px 10px; border-radius: 10px; background: var(--goldBg); }
+.th-bk-nonstop > .th-btn { margin-top: 8px; }
+.th-bk-nonstop .th-bplan { margin-top: 4px; }
+.th-bk-alt { color: var(--sub); }
