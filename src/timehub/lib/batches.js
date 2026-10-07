@@ -18,8 +18,43 @@
      "max"    — maximum troops: continuous, maximum-length batches first, shorter final batch.
      "fewest" — one check-in only: a maximum batch now, then a final batch timed to end at the
                 target. Leaves a gap when the window is longer than two batches (reported, never hidden).
+     "rested" — like "max", but no check-in lands in the player's sleep: a check-in that would is
+                moved to bedtime (a shorter batch, then a full one overnight — nothing lost) or,
+                when that isn't possible, to when they're up (camps idle meanwhile — reported).
    ============================================================ */
-import { MINUTE } from "./time.js";
+import { MINUTE, DAY } from "./time.js";
+import { inSleepWindow, nextLocalTime } from "./sleep.js";
+
+/** A batch shorter than this isn't worth a check-in. */
+const MIN_BATCH = 15 * MINUTE;
+
+/** The player's sleep, as the planner needs it: asleep at t? when are they up? when was bedtime? */
+export function restOpts(tz, sleep) {
+  return {
+    asleep: (t) => inSleepWindow(t, tz, sleep),
+    wake: (t) => nextLocalTime(t - 1, sleep.end, tz),
+    bed: (t) => nextLocalTime(t - DAY, sleep.target, tz), // the "before bed" time of that night
+  };
+}
+
+/** Shared check-in times that avoid the sleep window (see "rested" above). */
+function restedRestarts(start, end, minMax, rest) {
+  const out = [];
+  let pos = start;
+  for (let i = 0; i < 80 && end - pos > minMax; i++) {
+    let next = pos + minMax;
+    if (rest.asleep(next)) {
+      const bed = rest.bed(next);
+      const wake = rest.wake(next);
+      if (bed - pos >= MIN_BATCH && bed < next && !rest.asleep(bed)) next = bed; // check in before bed instead
+      else if (end - wake >= MIN_BATCH) next = wake; // can't be earlier: wait until you're up
+      // otherwise nothing easier still reaches the target — keep it
+    }
+    out.push(next);
+    pos = next;
+  }
+  return out;
+}
 
 const floorMin = (ms) => Math.floor(ms / MINUTE) * MINUTE;
 
@@ -27,7 +62,7 @@ const floorMin = (ms) => Math.floor(ms / MINUTE) * MINUTE;
  *  → { ok, error?, windowMs, multi, checkIns: [{ at, camps: [camp] }],
  *      camps: [{ camp, troop, maxMs, batches: [{ start, end, ms, isMax }], trainedMs, idleMs }],
  *      trainedMs (per camp, the minimum), idleMs (largest gap), mode } */
-export function planBatches(now, target, camps, mode = "max") {
+export function planBatches(now, target, camps, mode = "max", rest = null) {
   if (!Number.isFinite(target) || target - now < MINUTE) return { ok: false, error: "errPlanPast" };
   const list = camps.filter((c) => c.maxMs > 0);
   if (!list.length) return { ok: false, error: "noMax" };
@@ -41,6 +76,8 @@ export function planBatches(now, target, camps, mode = "max") {
   let restarts;
   if (mode === "fewest" && windowMs > 2 * minMax) {
     restarts = [end - minMax]; // one check-in: the final batch, timed to end at the target
+  } else if (mode === "rested" && rest) {
+    restarts = restedRestarts(start, end, minMax, rest);
   } else {
     const n = Math.ceil(windowMs / minMax);
     restarts = Array.from({ length: n - 1 }, (_, i) => start + (i + 1) * minMax);
@@ -124,16 +161,17 @@ export function eduInJourney(now, target, win) {
  * eduAt — when the in-window restart happens (insideFinishTarget(win)); only used with win.
  * → planBatches' shape + { usesEdu, eduAt, eduIn }
  */
-export function planJourney(now, target, camps, { win = null, eduAt = null, mode = "max" } = {}) {
+export function planJourney(now, target, camps, { win = null, eduAt = null, mode = "max", rest = null } = {}) {
   const eduIn = eduInJourney(now, target, win);
-  const plain = (m) => ({ ...planBatches(now, target, camps, m), usesEdu: eduIn && now >= win.start, eduAt: null, eduIn });
+  const cont = mode === "rested" && rest ? "rested" : "max"; // the continuous flavour
+  const plain = (m) => ({ ...planBatches(now, target, camps, m, rest), mode, usesEdu: eduIn && now >= win.start, eduAt: null, eduIn });
   // already inside the window: starting now uses it — nothing to add
-  if (!eduIn || now >= win.start || mode === "fewest") return plain(mode === "fewest" ? "fewest" : "max");
+  if (!eduIn || now >= win.start || mode === "fewest") return plain(mode === "fewest" ? "fewest" : cont);
   const e = Math.min(Math.max(eduAt ?? win.start, win.start), win.latest);
-  if (e - now < MINUTE || target - e < MINUTE) return plain("max");
-  const A = planBatches(now, e, camps, "max");
-  const B = planBatches(e, target, camps, "max");
-  if (!A.ok || !B.ok) return plain("max");
+  if (e - now < MINUTE || target - e < MINUTE) return plain(cont);
+  const A = planBatches(now, e, camps, cont, rest);
+  const B = planBatches(e, target, camps, cont, rest);
+  if (!A.ok || !B.ok) return plain(cont);
   const out = A.camps.map((a, i) => {
     const b = B.camps[i];
     return { ...a, batches: [...a.batches, ...b.batches], trainedMs: a.trainedMs + b.trainedMs, idleMs: a.idleMs + b.idleMs };
@@ -151,4 +189,18 @@ export function planJourney(now, target, camps, { win = null, eduAt = null, mode
 /** Are "Maximum troops" and "Fewer check-ins" actually different here? */
 export function modesDiffer(a, b) {
   return !!(a?.ok && b?.ok) && (a.checkIns.length !== b.checkIns.length || a.usesEdu !== b.usesEdu || a.idleMs !== b.idleMs);
+}
+
+/** How many of a plan's check-ins fall in the player's sleep (rest = restOpts(tz, sleep)). */
+export const sleepyCheckIns = (plan, rest) => (plan?.ok && rest ? plan.checkIns.filter((c) => rest.asleep(c.at)) : []);
+
+/**
+ * Is there an easier plan than `plan` (the maximum-troops one)? Only when it has a check-in in the
+ * player's sleep and the rested plan has fewer of those.
+ * → null | { plan, moved: the first check-in it avoids, lostMs: training time given up, extra: more check-ins }
+ */
+export function easierPlan(plan, rested, rest) {
+  const before = sleepyCheckIns(plan, rest);
+  if (!before.length || !rested?.ok || sleepyCheckIns(rested, rest).length >= before.length) return null;
+  return { plan: rested, moved: before[0].at, lostMs: Math.max(0, plan.trainedMs - rested.trainedMs), extra: Math.max(0, rested.checkIns.length - plan.checkIns.length) };
 }

@@ -54,7 +54,7 @@ function useLabels(now) {
   const time = (at) => formatTime(at, tz, lang);
   const when = (at) => { const p = dayPrefix(at, now, tz, lang, t); return p ? `${p} · ${time(at)}` : time(at); };
   const camps = (list) => (list.length >= TRAINING_CAMPS.length ? t("eduCampsAll") : list.map((c) => t(`short_${c}`)).join(", "));
-  const title = (a) => (a.type === "bridge" ? t("eduA_restart", { camps: camps(a.camps) }) : t("eduA_restartEdu", { camps: camps(a.camps) }));
+  const title = (a) => (a.type === "bridge" ? t("trEduA", { camps: camps(a.camps) }) : t("trPlanEdu", { camps: camps(a.camps) }));
   const detail = (a) => (a.durationMs ? t("eduTrainFor", { dur: formatSpan(a.durationMs, lang) }) : null);
   return { time, when, camps, title, detail };
 }
@@ -176,7 +176,7 @@ export function EducationFind({ acc, onClose }) {
           <span className="th-label">{i === 0 ? t("eduBestFit") : t("eduAlt")}</span>
           <b><Ltr>{formatTime(s.start, tz, lang)}–{formatTime(s.end, tz, lang)}</Ltr> · {formatDate(s.start, tz, lang)}</b>
           <small><Ltr>{formatTime(s.start, "UTC", lang)}</Ltr> UTC</small>
-          <p>{s.inside > 0 ? t("eduWhyInside", { n: s.inside, total: s.total }) : t("eduWhyBridge", { time: formatTime(s.firstReady, tz, lang) })}</p>
+          <p>{s.inside > 0 ? t("trEduWhyInside", { n: s.inside, total: s.total }) : t("trEduWhyBridge", { time: formatTime(s.firstReady, tz, lang) })}</p>
           <Btn small tone="gold" onClick={() => openBooking({ accountId: acc, startAt: s.start, position: EDU_POSITION })}>{t("eduBook")}</Btn>
         </div>
       ))}
@@ -184,16 +184,39 @@ export function EducationFind({ acc, onClose }) {
   );
 }
 
-/** The one card that lives in a Training group: the booking (compact, action-first) or a quiet hint. */
-export function EducationStrip({ acc, open, setOpen, hasCamps, onAddTime, onRestart }) {
-  const { t, tz, lang, state, dispatch, updateAccount } = useTimeHub();
+/** Education prompts set aside with "Not now": hidden for this session, back the next time the app opens. */
+const snoozed = new Set();
+
+/** What lives in a Training group for Education: a one-line prompt while there is nothing to do
+ *  yet (tap it for the full plan), the action card when it's time to act, or a quiet hint. */
+export function EducationStrip({ acc, open, setOpen, hasCamps, onAddTime, onRestart, onPlan }) {
+  const { t, tz, lang, state, updateAccount } = useTimeHub();
   const { booking, plan, now, data, done, key } = useEduPlan(acc);
   const L = useLabels(now);
+  const [, bump] = useState(0);
+  const snooze = (k) => { snoozed.add(k); bump((n) => n + 1); };
   const kind = open?.kind;
   if (booking && plan) {
     const { win, next, then, mode, active } = plan;
     const expanded = kind === "edu";
     const dayP = dayPrefix(win.start, now, tz, lang, t);
+    // nothing to do yet: one line. The full card is for when it's time to act (or when asked for).
+    // The full card is for the moment that matters — Education is active now (or was missed) — and for when it's asked for.
+    if (!active && mode !== "missed" && mode !== "over" && !expanded && kind !== "edufind") {
+      if (snoozed.has(`${acc}:${key}`)) return null;
+      return (
+        <div className="th-edu-mini">
+          <button type="button" className="th-edu-mini-what" aria-expanded="false" onClick={() => setOpen({ acc, kind: "edu" })}>
+            <span>🎓 <b>{t("eduCardTitle")}</b></span>
+            <span><Ltr>{L.when(win.start)}</Ltr> <small><Ltr>{formatTime(win.start, "UTC", lang)}</Ltr> UTC</small></span>
+          </button>
+          <span className="th-item-actions">
+            {onPlan && mode !== "done" && <Btn small onClick={onPlan}>{t("trPlanAround")}</Btn>}
+            <button type="button" className="th-link" onClick={() => snooze(`${acc}:${key}`)}>{t("eduNotNow")}</button>
+          </span>
+        </div>
+      );
+    }
     const mark = (type) => { updateAccount(acc, (d) => ({ ...d, eduDone: { ...(d.eduDone || {}), [key]: { ...(d.eduDone?.[key] || {}), [type]: Date.now() } } })); success(); };
     const needTime = !plan.eduKnown && mode !== "over" && mode !== "missed" && mode !== "done";
     return (
@@ -216,7 +239,7 @@ export function EducationStrip({ acc, open, setOpen, hasCamps, onAddTime, onRest
               <div className="th-edu-when-big"><Ltr>{L.when(next.at)}</Ltr></div>
               <Action a={next} L={L} big />
             </div>
-            {then && <div className="th-edu-then">{t("eduThen", { time: L.when(then.at), what: t("eduA_restartEdu", { camps: L.camps(then.camps) }) })}</div>}
+            {then && <div className="th-edu-then">{t("eduThen", { time: L.when(then.at), what: t("trPlanEdu", { camps: L.camps(then.camps) }) })}</div>}
           </>
         )}
         {mode === "doNow" && next && (
@@ -225,13 +248,13 @@ export function EducationStrip({ acc, open, setOpen, hasCamps, onAddTime, onRest
             <Action a={next} L={L} big />
             <div className="th-item-actions">
               <Btn tone="gold" onClick={() => mark(next.type === "bridge" ? "bridge" : "buff")}>{t("eduDoneBtn")}</Btn>
-              {onRestart && <button type="button" className="th-link" onClick={onRestart}>{t("eduSetTimers")}</button>}
+              {onRestart && <button type="button" className="th-link" onClick={onRestart}>{t("trStart")}</button>}
             </div>
-            {then && <div className="th-edu-then">{t("eduThen", { time: L.when(then.at), what: t("eduA_restartEdu", { camps: L.camps(then.camps) }) })}</div>}
+            {then && <div className="th-edu-then">{t("eduThen", { time: L.when(then.at), what: t("trPlanEdu", { camps: L.camps(then.camps) }) })}</div>}
           </div>
         )}
         {mode === "done" && (
-          <div className="th-edu-ok">✓ {t("eduDoneLine", { time: L.time(done.buff) })}{plan.camps.find((p) => p.finalFinish) && <small>{t("eduTL_final")} · <Ltr>{L.when(plan.camps.find((p) => p.finalFinish).finalFinish)}</Ltr></small>}</div>
+          <div className="th-edu-ok">✓ {t("trEduDone", { time: L.time(done.buff) })}{plan.camps.find((p) => p.finalFinish) && <small>{t("eduTL_final")} · <Ltr>{L.when(plan.camps.find((p) => p.finalFinish).finalFinish)}</Ltr></small>}</div>
         )}
         {mode === "missed" && (
           <div className="th-edu-warn">{t("eduMissed")} <button type="button" className="th-link" onClick={() => setOpen({ acc, kind: "edufind" })}>{t("eduFind")}</button></div>
@@ -270,14 +293,14 @@ export function EducationStrip({ acc, open, setOpen, hasCamps, onAddTime, onRest
   // planning first: one quiet, dismissible hint
   const soon = (data.timers || []).some((x) => x.kind === "training" && x.endAt > now && x.endAt < now + 12 * 3600000);
   const idle = TRAINING_CAMPS.some((c) => !(data.timers || []).some((x) => x.kind === "training" && x.category === c && x.endAt > now) && data.campMax?.[c]);
-  if (!hasCamps || state.settings.eduDismiss?.[acc] || !(soon || idle)) return null;
+  if (!hasCamps || state.settings.eduDismiss?.[acc] || snoozed.has(acc) || !(soon || idle)) return null;
   if (kind === "edufind") return <div className="th-edu-strip"><EducationFind acc={acc} onClose={() => setOpen(null)} /></div>;
   return (
-    <div className="th-edu-strip hint">
-      <span>🎓 {t("eduHint")}</span>
+    <div className="th-edu-mini hint">
+      <span>🎓 {t("trEduAsk")}</span>
       <span className="th-item-actions">
         <button type="button" className="th-link" onClick={() => setOpen({ acc, kind: "edufind" })}>{t("eduFind")}</button>
-        <button type="button" className="th-link" onClick={() => dispatch({ type: "settings", patch: { eduDismiss: { ...state.settings.eduDismiss, [acc]: true } } })}>{t("eduNotNow")}</button>
+        <button type="button" className="th-link" onClick={() => snooze(acc)}>{t("eduNotNow")}</button>
       </span>
     </div>
   );

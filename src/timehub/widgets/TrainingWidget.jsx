@@ -6,14 +6,15 @@ import { useTimeHub } from "../TimeHubContext.jsx";
 import { success } from "../lib/feedback.js";
 import { useMinute, useClockFor } from "../hooks/useNow.jsx";
 import { TRAINING_CAMPS, applyTraining, busyCamps, planFinish, finishTogether, sortTimers, campMaxFor, hasHelios, campTroopsFor, troopsForDuration, durationForTroops, maxIncreases, applyLearnedMax, rememberTroops, defaultTroop, restartSummary, effectiveMax, capMaxFor, capEstimate, capKey, setCapMax, setCapOn, CAPACITY_FACTOR } from "../lib/timers.js";
-import { crossesReset, checkInPlans, planJourney, modesDiffer } from "../lib/batches.js";
+import { crossesReset, checkInPlans, planJourney, modesDiffer, restOpts, sleepyCheckIns, easierPlan } from "../lib/batches.js";
 import { backPlan, resetTarget, startReminders, START_GRACE_MS } from "../lib/backplan.js";
 import { timingCheck, nextCycleCheck, finishAdvice, nextFinishTarget, inSleepWindow, idleUntilWake } from "../lib/sleep.js";
 import { EducationStrip, useEduPlan } from "./EducationPlan.jsx";
 import { eduWindow, insideFinishTarget, eduAwareMax } from "../lib/education.js";
-import { MINUTE, HOUR, DAY, parseCompactTime, zonedParts, zonedTimeToUtc, formatTime, formatDate, formatSpan, formatCountdown, formatCountdownClock, localDayRange, hhmmToMinutes, intlLocale } from "../lib/time.js";
-import { Section, Btn, Field, Seg, DurationFields, EMPTY_DUR, durFrom, durParse, FormActions, Icon, Ltr, Bidi, Remaining, GroupName } from "../components/ui.jsx";
-import { TimerRow, useWhenLocal } from "./TimerCard.jsx";
+import { MINUTE, HOUR, DAY, parseCompactTime, zonedParts, zonedTimeToUtc, formatTime, formatDate, formatSpan, formatCountdown, formatCountdownClock, localDayRange, hhmmToMinutes, intlLocale, formatWeekdayShort } from "../lib/time.js";
+import { Section, Btn, Field, Seg, DurationFields, EMPTY_DUR, durFrom, durParse, FormActions, Icon, Ltr, Bidi, Remaining, GroupName, CalendarButtons } from "../components/ui.jsx";
+import { useWhenLocal } from "./TimerCard.jsx";
+import { rememberEnd } from "../lib/today.js";
 
 /** Local "HH:MM" of an instant, as the digits typed into Finish At (e.g. "2145"). */
 function digitsAt(ms, tz) {
@@ -105,7 +106,7 @@ function ReviewCard({ title, review, onConfirm, onBack, onKeepOld }) {
         </div>
       ))}
       <div className="th-form-actions">
-        <Btn tone="gold" onClick={() => onConfirm({ go: true })} disabled={ask.length > 0}>{review.restart ? t("restartVerb") : t("startVerb")}</Btn>
+        <Btn tone="gold" onClick={() => onConfirm({ go: true })} disabled={ask.length > 0}>{t(review.change ? "trUpdate" : "trStart")}</Btn>
         <Btn onClick={onBack}>{t("back")}</Btn>
       </div>
     </div>
@@ -141,14 +142,14 @@ function EduAdvice({ advice, onUse }) {
       {advice.kind === "bridge" ? (
         <>
           <p>{t("eduCanBeReady")}</p>
-          <p className="th-advice-rec"><span className="th-advice-tag">{t("recommended")}</span> {t("eduRecBridge", { dur: formatSpan(advice.trainFor, lang), time: at })}</p>
+          <p className="th-advice-rec"><span className="th-advice-tag">{t("recommended")}</span> {t("trEduRecBridge", { dur: formatSpan(advice.trainFor, lang), time: at })}</p>
         </>
-      ) : <p className="th-advice-rec"><span className="th-advice-tag">{t("recommended")}</span> {t("eduRecWait", { time: at })}</p>}
+      ) : <p className="th-advice-rec"><span className="th-advice-tag">{t("recommended")}</span> {t("trEduRecWait", { time: at })}</p>}
       <div className="th-item-actions">
         <Btn small tone="gold" onClick={onUse}>{advice.kind === "bridge" ? t("useThisPlan") : t("remindAtTime", { time: at })}</Btn>
         <button type="button" className="th-link" aria-expanded={why} onClick={() => setWhy(!why)}>{t("whyThis")}</button>
       </div>
-      {why && <p className="th-advice-why">{advice.kind === "bridge" ? t("whyBridge") : t("whyWait")}</p>}
+      {why && <p className="th-advice-why">{advice.kind === "bridge" ? t("trWhyBridge") : t("trWhyWait")}</p>}
     </div>
   );
 }
@@ -165,13 +166,13 @@ function useEduAdvice(accountId, maxMsList) {
 
 /** Training Capacity calibration: shows the normal maximum and the ×3 estimate for each selected
  *  camp, and saves only what the player confirms (or types from the game). Never a warning. */
-function CapCalibration({ accountId, rows, onDone, onCancel }) {
+function CapCalibration({ accountId, rows, onDone, onCancel, turnOn = true }) {
   const { t, lang, updateAccount } = useTimeHub();
   const [editing, setEditing] = useState(rows.some((r) => !r.est));
   const [vals, setVals] = useState(() => Object.fromEntries(rows.map((r) => [r.key, durFrom(r.cur || r.est)])));
   const name = (r) => (r.troop === "helios" ? t("heliosCamp", { camp: t(r.camp) }) : t(r.camp));
   const ests = [...new Set(rows.map((r) => r.est))];
-  const save = (values) => { updateAccount(accountId, (d) => setCapOn(setCapMax(d, values), true)); onDone(); };
+  const save = (values) => { updateAccount(accountId, (d) => (turnOn ? setCapOn(setCapMax(d, values), true) : setCapMax(d, values))); onDone(); };
   const typed = rows.map((r) => ({ r, v: durParse(vals[r.key] || EMPTY_DUR) }));
   const bad = typed.some(({ v }) => v.error || !v.ms);
   return (
@@ -207,81 +208,56 @@ function CapCalibration({ accountId, rows, onDone, onCancel }) {
   );
 }
 
-/** The plan as a short sequence: Now → check-ins → target. The typed target is always the end.
- *  Education (when it's between now and the target) is shown as fitting into the plan or skipped. */
-function JourneyPlan({ plan, mode, setMode, showModes, win, minMax, other }) {
+/** "13h 14m ×5 + 6h 32m" — a camp's batches, without repeating equal lengths. */
+function batchRuns(batches, lang) {
+  const runs = [];
+  for (const b of batches) {
+    const last = runs[runs.length - 1];
+    if (last && last.ms === b.ms) last.n += 1; else runs.push({ ms: b.ms, n: 1 });
+  }
+  return runs.map((r) => `${formatSpan(r.ms, lang)}${r.n > 1 ? ` ×${r.n}` : ""}`).join(" + ");
+}
+
+/** The full sequence, shown only after "View plan": one line per moment — when, and what to do.
+ *  The times themselves carry the rhythm; batch lengths sit in one quiet line underneath. */
+function PlanSteps({ plan }) {
   const { t, tz, lang, state } = useTimeHub();
   const sleep = state.settings.sleep;
-  const span = (ms) => formatSpan(ms, lang);
-  const loc = (ms) => <Ltr>{formatTime(ms, tz, lang)}</Ltr>;
-  const utc = (ms) => <small className="th-utc"><Ltr>{formatTime(ms, "UTC", lang)}</Ltr> UTC</small>;
-  const day = (ms) => (localDayRange(plan.start, tz, 0).end > ms ? "" : `${localDayRange(plan.start, tz, 1).end > ms ? t("tomorrowLower") : formatDate(ms, tz, lang)} `);
-  const needsCycles = plan.camps.some((c) => plan.windowMs > c.maxMs);
-  const points = [plan.start, ...plan.checkIns.map((c) => c.at), plan.end];
-  const sub = (p) => `${p.usesEdu ? t("bpUsesEdu") : plan.eduIn ? t("bpSkipsEdu") : ""}${p.usesEdu || plan.eduIn ? " · " : ""}${t("bpCheckinsN", { n: p.checkIns.length })}`;
+  const day = (ms) => (localDayRange(plan.start, tz, 0).end > ms ? "" : localDayRange(plan.start, tz, 1).end > ms ? `${t("tomorrow")} `
+    : ms - plan.start < 6 * DAY ? `${formatWeekdayShort(ms, tz, lang)} ` : `${formatDate(ms, tz, lang)} `);
+  const when = (ms) => <span className="th-steps-when">{day(ms)}<Ltr>{formatTime(ms, tz, lang)}</Ltr></span>;
   return (
-    <div className="th-bplan" role="group" aria-label={t("bpTitle")}>
-      <p className="th-bplan-why">
-        🎯 {t("bpTargetAway", { time: span(plan.windowMs) })}
-        {minMax > 0 && <> · {t("bpYourMax", { max: span(minMax) })}</>}
-        {needsCycles && <> {t("bpNeedsCycles")}</>}
-      </p>
-      {win && plan.eduIn && (
-        <p className="th-bplan-edu">
-          🎓 <b>{t("eduWord")}</b> {day(win.start)}{loc(win.start)}–{loc(win.end)} <small className="th-utc"><Ltr>{formatTime(win.start, "UTC", lang)}–{formatTime(win.end, "UTC", lang)}</Ltr> UTC</small>
-          <br /><span className={plan.usesEdu ? "th-bplan-ok" : "th-bplan-skip"}>{plan.usesEdu ? t("bpEduFits", { time: formatTime(plan.end, tz, lang) }) : t("bpEduSkipped")}</span>
-        </p>
-      )}
-      {showModes && (
-        <>
-          <Seg value={mode} onChange={setMode} label={t("bpModeQ")} options={[{ value: "max", label: t("bpModeMax") }, { value: "fewest", label: t("bpModeFewest") }]} />
-          <p className="th-bplan-modesub">{sub(plan)}<span className="th-hint"> · {t("bpOtherOption", { what: sub(other) })}</span></p>
-        </>
-      )}
-      {mode === "fewest" && plan.idleMs > 0 && (
-        <p className="th-bplan-warn">{t("bpFewestNote", { n: plan.checkIns.length, idle: span(plan.idleMs), trained: span(plan.trainedMs), window: span(plan.windowMs) })}</p>
-      )}
-      <ol className="th-seq">
-        {points.map((at, i) => {
-          const ci = i > 0 && i < points.length - 1 ? plan.checkIns[i - 1] : null;
-          const last = i === points.length - 1;
-          const label = i === 0 ? t("bpStartTraining")
-            : last ? <>✓ {t("bpTargetFinish")}{crossesReset(plan.start, at) && <> · {t("afterReset")}</>}</>
-            : ci.edu ? <>🎓 {t("bpRestartEdu")}</>
-            : i === points.length - 2 ? (ci.camps.length === plan.camps.length ? t("bpRestartFinal") : t("bpRestartSome", { camps: ci.camps.map((c) => t(`short_${c}`)).join(", ") }))
-            : ci.camps.length === plan.camps.length ? t("bpRestart") : t("bpRestartSome", { camps: ci.camps.map((c) => t(`short_${c}`)).join(", ") });
-          return (
-            <React.Fragment key={at}>
-              {i > 0 && <li className="th-seq-gap" aria-hidden="true">↓ {span(at - points[i - 1])}</li>}
-              <li className={`th-seq-pt ${last ? "end" : ""} ${ci?.edu ? "edu" : ""}`}>
-                <span className="th-seq-time">{i === 0 ? <b>{t("bpNow")}</b> : <><b>{day(at)}{loc(at)}</b> {utc(at)}</>}</span>
-                <span className="th-seq-what">{label}{ci && inSleepWindow(at, tz, sleep) && <span className="th-bplan-sleep"> · 🌙 {t("bpAsleep")}</span>}</span>
-              </li>
-            </React.Fragment>
-          );
-        })}
+    <>
+      <ol className="th-steps">
+        <li><span className="th-steps-when">{t("bpNow")}</span><span>{t("bpStartTraining")}</span></li>
+        {plan.checkIns.map((ci, i) => (
+          <li key={ci.at} className={ci.edu ? "edu" : ""}>
+            {when(ci.at)}
+            <span>
+              {ci.edu ? `🎓 ${t("trNextBatchEdu")}` : i === plan.checkIns.length - 1 ? t("trFinalBatch") : t("trNextBatch")}
+              {ci.camps.length < plan.camps.length && <>: {ci.camps.map((c) => t(`short_${c}`)).join(", ")}</>}
+              {inSleepWindow(ci.at, tz, sleep) && <small className="th-steps-note">{t("trUsuallyAsleep")}</small>}
+            </span>
+          </li>
+        ))}
+        <li className="end">{when(plan.end)}<span>✓ {t("trTargetReached")}</span></li>
       </ol>
-      {plan.checkIns.length > 0 && <p className="th-bplan-count">{t("bpCheckinsN", { n: plan.checkIns.length })}</p>}
-      {!plan.sameBatches && (
-        <details className="th-secondary">
-          <summary>{t("bpViewFull")}</summary>
-          <ul className="th-bplan-percamp">
-            {plan.camps.map((c) => (
-              <li key={c.camp}><b>{t(`short_${c.camp}`)}{c.troop === "helios" ? ` · ${t("helios")}` : ""}</b> <span>{c.batches.map((b) => span(b.ms)).join(" + ")}</span></li>
-            ))}
-          </ul>
-        </details>
-      )}
-    </div>
+      <p className="th-steps-batches">
+        {plan.sameBatches
+          ? <>{t("trBatches")}: {batchRuns(plan.camps[0].batches, lang)}</>
+          : plan.camps.map((c) => <span key={c.camp}>{t(`short_${c.camp}`)}{c.troop === "helios" ? ` · ${t("helios")}` : ""}: {batchRuns(c.batches, lang)}</span>)}
+      </p>
+    </>
   );
 }
 
-function TrainForm({ onDone, preset, accountId, onEditTimes }) {
+function TrainForm({ onDone, preset, accountId, onEditTimes, onPerCamp }) {
   const { t, lang, tz, newId, dataFor, updateAccount, state, notify, dispatch } = useTimeHub();
   const sleep = state.settings.sleep;
   const now = useMinute(); // the planner works in minutes
   const data = dataFor(accountId);
   const restart = !!preset?.restart;
+  const changing = !!preset?.change; // opened from a running training: "Change", not "Start"
   const [mode, setMode] = useState(preset?.ms && !restart ? "custom" : "finish"); // finish (default) | custom (Duration) | max
   const [share, setShare] = useState(preset?.camp ? "each" : "same");
   const [shared, setShared] = useState(preset?.camps && preset.ms ? durFrom(preset.ms) : EMPTY_DUR);
@@ -307,10 +283,12 @@ function TrainForm({ onDone, preset, accountId, onEditTimes }) {
   const [calibrate, setCalibrate] = useState(false);
   const [dayAdd, setDayAdd] = useState(0); // finish 1–3 days after the next occurrence of the time typed
   // the target: a typed time (+ day), "just after reset" (+ the offset the player picked), or the Education booking
-  const [tgtKind, setTgtKind] = useState("time"); // time | reset | edu
+  const [tgtKind, setTgtKind] = useState(preset?.eduTarget ? "edu" : "time"); // time | reset | edu
   const [resetOpen, setResetOpen] = useState(false);
   const [resetOff, setResetOff] = useState(null);
-  const [customDate, setCustomDate] = useState(() => (duePlan ? ymdAt(duePlan.target, tz) : "")); // a local day "YYYY-MM-DD"
+  // a target more than a day away is a calendar day, not "the next time the clock shows this"
+  const startAt0 = preset?.endAt > now ? preset.endAt : duePlan ? duePlan.target : null;
+  const [customDate, setCustomDate] = useState(() => (startAt0 && startAt0 - now >= DAY ? ymdAt(startAt0, tz) : "")); // a local day "YYYY-MM-DD"
   const [dateOpen, setDateOpen] = useState(false);
   const [eduNote, setEduNote] = useState(false);
   const [batch, setBatch] = useState("max"); // each camp's own maximum | one typed duration
@@ -318,6 +296,11 @@ function TrainForm({ onDone, preset, accountId, onEditTimes }) {
   // finish together (each camp its own start — the default) | start together (shorter batches end earlier)
   const [sync, setSync] = useState(() => (duePlan && new Set(duePlan.camps.map((c) => effectiveMax(data, c, hasHelios(data, c) ? defaultTroop(data, c) : "normal", data.trainCap?.on === true))).size > 1 ? "start" : "finish"));
   const timeRef = React.useRef(null);
+  // a target further away than one batch: one batch started later ("back"), or non-stop from now
+  const [style, setStyle] = useState(null);
+  const [planOpen, setPlanOpen] = useState(false); // the full sequence stays folded until asked for
+  const [rested, setRested] = useState(false); // the easier plan: no check-ins during sleep
+  const [moreOpen, setMoreOpen] = useState(false);
   // planning goal: the player's last choice (remembered); first time it depends on the target
   const [pmodeRaw, setPmodeRaw] = useState(state.settings.trainPlanMode || null);
   const setPmode = (v) => { setPmodeRaw(v); dispatch({ type: "settings", patch: { trainPlanMode: v } }); };
@@ -391,7 +374,7 @@ function TrainForm({ onDone, preset, accountId, onEditTimes }) {
   const known = maxes.filter((m) => m.max > 0);
   const limit = known.length ? known.reduce((a, b) => (b.max < a.max ? b : a)) : null; // the camp that runs out first
   const sAdvice = limit ? finishAdvice(now, limit.max, tz, sleep) : null;
-  const [raw, setRaw] = useState(() => (duePlan ? digitsAt(duePlan.target, tz) : sAdvice ? digitsAt(sAdvice.finishAt, tz) : ""));
+  const [raw, setRaw] = useState(() => (startAt0 ? digitsAt(startAt0, tz) : sAdvice ? digitsAt(sAdvice.finishAt, tz) : ""));
   const { booking: eduB } = useEduPlan(accountId);
   const eduWin = eduB ? eduWindow(eduB, state.settings.eduBufferMin * 60000) : null;
   // "Minister booking" target: camps free when Education STARTS, so they can be restarted with the buff
@@ -438,10 +421,17 @@ function TrainForm({ onDone, preset, accountId, onEditTimes }) {
   const jMax = canPlan ? planJourney(now, target, specs, { ...jOpts, mode: "max" }) : null;
   const jFew = canPlan ? planJourney(now, target, specs, { ...jOpts, mode: "fewest" }) : null;
   const pmode = pmodeRaw || (jFew?.ok && !jFew.multi ? "fewest" : "max");
-  const bplan = pmode === "max" ? jMax : jFew;
+  // a check-in in the player's sleep isn't just flagged: there's an easier plan to switch to
+  const rest = restOpts(tz, sleep);
+  const jRest = canPlan ? planJourney(now, target, specs, { ...jOpts, mode: "rested", rest }) : null;
+  const easier = pmode === "max" ? easierPlan(jMax, jRest, rest) : null;
+  const bplan = pmode === "max" ? (rested && easier ? jRest : jMax) : jFew;
   const showModes = modesDiffer(jMax, jFew);
   const multi = !!(bplan?.ok && bplan.checkIns.length > 0 && !longOk); // needs at least one check-in
   const nonstop = later.length > 0 && !!bplan?.ok && bplan.checkIns.length > 0;
+  // Training Capacity and Education are about ONE batch timed to the target; everyday training keeps the camps busy
+  const planStyle = !nonstop ? "back" : style || (capOn || eduGoal || batch === "custom" ? "back" : "nonstop");
+  const asleepN = bplan?.ok ? sleepyCheckIns(bplan, rest).length : 0;
   const isAdvice = sAdvice && Number.isFinite(target) && Math.abs(target - sAdvice.finishAt) < 60000;
   const dayWordFor = (x) => (localDayRange(now, tz, 0).end > x ? t("today") : localDayRange(now, tz, 1).end > x ? t("tomorrow") : formatDate(x, tz, lang));
   const dayWord = Number.isFinite(target) ? dayWordFor(target) : "";
@@ -473,18 +463,19 @@ function TrainForm({ onDone, preset, accountId, onEditTimes }) {
     });
     success();
     const sum = restartSummary(list, at);
-    notify([`✓ ${restart ? t("campsRestarted", { n: list.length }) : t("trainingStartedN", { n: list.length })}`,
+    notify([`✓ ${changing ? t("trUpdated") : t("trainingStartedN", { n: list.length })}`,
       sum.together ? t("finishAround", { time: formatTime(sum.finishAt, tz, lang) }) : t("finishDifferent")]);
     onDone();
   }
 
-  /** Every start goes through the compact summary, except editing a single camp's time with
-   *  nothing to replace or learn (that stays a one-tap correction). */
+  /** The form already says what will happen (duration + finish under the button, or the plan card),
+   *  so the summary step only appears when there is something to decide: a running camp would be
+   *  replaced, or a stored maximum would change. */
   function withReview(list, extraPlan, chain = null) {
-    const busy = busyCamps(data.timers, list.map((e) => e.camp), now);
+    const busy = changing ? [] : busyCamps(data.timers, list.map((e) => e.camp), now);
     const increases = capOn ? [] : maxIncreases(data, list); // capacity runs never change the normal maximum
-    if (list.length === 1 && !busy.length && !increases.length && !restart && !chain) return commit(list, extraPlan);
-    setReview({ list, extraPlan, busy, increases, at: Date.now(), restart, chain });
+    if (!busy.length && !increases.length) return commit(list, extraPlan);
+    setReview({ list, extraPlan, busy, increases, at: Date.now(), change: changing, chain });
   }
   function confirmReview(a) { answerReview(review, setReview, a, commit); }
   function keepOld(items) { keepOldMaxes(review, setReview, items); }
@@ -548,57 +539,73 @@ function TrainForm({ onDone, preset, accountId, onEditTimes }) {
     setTgtKind("edu"); setResetOff(null); setEduNote(false); setLongOk(false);
   };
 
-  const title = restart ? t("restartAllCampsTitle") : null;
+  const title = t(changing ? "trChangeTitle" : "trStartTitle");
+  const cta = t(changing ? "trUpdate" : "trStart");
   if (review) {
     return (
-      <div className="th-form">
-        <ReviewCard title={restart ? t("restartAllCampsTitle") : t("startTrainingTitle")} review={review} onConfirm={confirmReview} onKeepOld={keepOld} onBack={() => setReview(null)} />
+      <div className="th-form th-tf">
+        <ReviewCard title={title} review={review} onConfirm={confirmReview} onKeepOld={keepOld} onBack={() => setReview(null)} />
       </div>
     );
   }
 
-  const modeTabs = (
-    <>
-      {title && <b className="th-restart-title">{title}</b>}
-      <Seg value={mode} onChange={(v) => { setMode(v); setError(null); }} label={t("trainingMode")} options={[
-        { value: "finish", label: t("modeFinishShort") },
-        { value: "custom", label: t("modeDurationShort") },
-        { value: "max", label: t("modeMaxShort") },
-      ]} />
-      <p className="th-hint th-mode-note">{t(mode === "finish" ? "modeFinishHelp" : mode === "custom" ? "modeDurationHelp" : "modeMaxHelp")}</p>
-    </>
+  /* ---------- shared pieces of the three ways to say how long ---------- */
+  const head = (
+    <div className="th-tf-head">
+      <b>{title}</b>
+      <button type="button" className="th-tf-close" aria-label={t("close")} onClick={onDone}>✕</button>
+    </div>
   );
-  // the large calibration form: only the first time, or after "Edit maximums"
-  const capCal = capOn && (calibrate || capMissing.length > 0) && capRows.length > 0 && (
-    <CapCalibration key={capRows.map((r) => r.key).join()} accountId={accountId} rows={capRows}
-      onDone={() => setCalibrate(false)} onCancel={() => { setCalibrate(false); if (capMissing.length) toggleCap(false); }} />
+  const backLink = (
+    <button type="button" className="th-link th-tf-back" onClick={() => { setMode("finish"); setError(null); }}>
+      <span className="th-tf-chev" aria-hidden="true">‹</span> {t("trBackToFinish")}
+    </button>
   );
-  const modeBar = (
+  // Training Capacity: one checkbox. The large calibration form only the first time, or after "Edit".
+  const capBox = (
     <>
-      {modeTabs}
-      <div className="th-cap">
+      <div className="th-cap th-tf-cap">
         <label className="th-check">
           <input type="checkbox" checked={capOn} onChange={(e) => toggleCap(e.target.checked)} />
-          <span><b>{t("capLabel")}</b><small>{t("capSub")}</small></span>
+          <span>
+            <b>{t("capLabel")}</b>
+            {capOn && !capMissing.length && planCamps.length > 0
+              ? <small>{t("trCapMax", { max: new Set(planCamps.map((c) => maxOf(c))).size === 1 ? span(maxOf(planCamps[0])) : `${span(Math.min(...planCamps.map((c) => maxOf(c))))} – ${span(Math.max(...planCamps.map((c) => maxOf(c))))}` })}</small>
+              : !capOn && <small>{t("trCapSub")}</small>}
+          </span>
         </label>
         {capOn && !capMissing.length && !calibrate && planCamps.length > 0 && (
-          <span className="th-cap-max">
-            {t("capMaxLine", { list: [...new Set(planCamps.map((c) => formatSpan(maxOf(c), lang)))].length === 1
-              ? formatSpan(maxOf(planCamps[0]), lang)
-              : planCamps.map((c) => `${t(`short_${c}`)} ${formatSpan(maxOf(c), lang)}`).join(" · ") })}{" "}
-            <button type="button" className="th-link" onClick={() => setCalibrate(true)}>{t("bkEditMax")}</button>
-          </span>
+          <button type="button" className="th-link" onClick={() => setCalibrate(true)}>{t("edit")}</button>
         )}
       </div>
-      {capCal}
+      {capOn && (calibrate || capMissing.length > 0) && capRows.length > 0 && (
+        <CapCalibration key={capRows.map((r) => r.key).join()} accountId={accountId} rows={capRows}
+          onDone={() => setCalibrate(false)} onCancel={() => { setCalibrate(false); if (capMissing.length) toggleCap(false); }} />
+      )}
     </>
+  );
+  // which camps: tap to include / leave out (Normal / Helios beside a camp that has both)
+  const campChips = (
+    <div className="th-tf-camps" role="group" aria-label={t("whichCamps")}>
+      {TRAINING_CAMPS.map((c) => (
+        <span key={c} className="th-tf-camp">
+          <button type="button" className="th-chip-btn small" aria-pressed={ticked[c]} onClick={() => { setTicked({ ...ticked, [c]: !ticked[c] }); setError(null); }}>
+            {ticked[c] && <span aria-hidden="true">✓ </span>}{t(`short_${c}`)}
+          </button>
+          {ticked[c] && troopToggle(c)}
+        </span>
+      ))}
+    </div>
   );
 
   if (mode === "max") {
     return (
-      <div className="th-form">
-        {modeBar}
-        {campChecks}
+      <div className="th-form th-tf">
+        {head}
+        {backLink}
+        <span className="th-finish-q">{t("trOptMax")}</span>
+        <p className="th-hint th-mode-note">{t("modeMaxHelp")}</p>
+        {campChips}
         {maxKnown.length > 0 && (
           <ul className="th-max-list">
             {maxKnown.map((x) => (
@@ -610,26 +617,27 @@ function TrainForm({ onDone, preset, accountId, onEditTimes }) {
           </ul>
         )}
         {!maxKnown.length && <p className="th-note">{t("noMaxNote")}</p>}
+        {capBox}
         <EduAdvice advice={advice} onUse={useAdvice} />
         {error && <span className="th-error" role="alert">{error}</span>}
         <Btn tone={advice ? "ghost" : "gold"} block onClick={startMax} disabled={!maxKnown.length}>
-          {advice ? t("startMaxAnyway") : t("startMaxTraining")}
+          {advice ? t("startMaxAnyway") : t("trStartMax")}
         </Btn>
-        <button type="button" className="th-link" onClick={onDone}>{t("cancel")}</button>
       </div>
     );
   }
   if (mode === "custom") {
     return (
-      <div className="th-form">
-        {modeBar}
+      <div className="th-form th-tf">
+        {head}
+        {backLink}
+        <span className="th-finish-q">{t("trOptDuration")}</span>
         <label className="th-check th-same-check">
           <input type="checkbox" checked={share === "same"} onChange={(e) => switchShare(e.target.checked ? "same" : "each")} />
           {t("trainSameDurationQ")}
         </label>
         {share === "each" && <p className="th-hint">{t("syncSomeHint")}</p>}
-        {share === "same" && (<><DurationFields value={shared} onChange={setShared} label={t("trainAllFor")} />{campChecks}</>)}
-        <FinishPreview entries={entries} now={now} />
+        {share === "same" && (<><DurationFields value={shared} onChange={setShared} label={t("trainAllFor")} />{campChips}</>)}
         {share === "each" && (
           <div className="th-camp-rows">
             {TRAINING_CAMPS.map((c) => (
@@ -641,28 +649,39 @@ function TrainForm({ onDone, preset, accountId, onEditTimes }) {
             <p className="th-note">{t("emptyRowNote")}</p>
           </div>
         )}
+        {capBox}
         {error && <span className="th-error" role="alert">{error}</span>}
-        <FormActions onSave={saveLeft} onCancel={onDone} saveLabel={restart ? t("restartAllCampsBtn") : t("startTimers")} />
+        <Btn tone="gold" block onClick={saveLeft}>{cta}</Btn>
+        <FinishPreview entries={entries} now={now} />
       </div>
     );
   }
 
+  /* ---------- Finish at a time (the default): the goal first, the arithmetic behind it ---------- */
   const utcDay = targetOk && ymdAt(target, tz) !== ymdAt(target, "UTC") ? ` (${formatDate(target, "UTC", lang)})` : "";
   const showCamps = !!back && (back.groups.length > 1 || back.rows.length < planCamps.length);
-  const primaryLabel = missed.length && !calm ? t("bkUseMostFits")
-    : eduGoal ? t("useThisPlan")
-    : later.length ? t("bkStartCampsNow", { camps: campNames(nowG.flatMap((g) => g.camps)) })
-    : calm ? t(restart ? "restartFinishing" : "startFinishing", { time: formatTime(target, tz, lang) })
-    : t(restart ? "restartAllCampsBtn" : "startTimers");
+  const oneGo = longOk && tooLong.length > 0; // "my camps can train this long in one batch"
+  // the common case: everything starts now and ends on the target — a button and one line, no plan
+  const simple = !!back && later.length === 0 && (missed.length === 0 || calm);
+  const underLine = (durMs, end) => (
+    <>{t("bkTrainFor")} <b>{span(durMs)}</b> · {t("finishes")} <b>{clock(end)}</b>{localDayRange(now, tz, 0).end > end ? "" : ` ${dayWordFor(end)}`} · {utcOf(end)}</>
+  );
+  const sleepNotes = (
+    <>
+      {isAdvice && sAdvice.kind === "bed" && <p className="th-note">{t("trOvernight", { end: formatTime(sAdvice.overnightEnd, tz, lang) })}</p>}
+      {!isAdvice && sAdvice && tgtKind === "time" && inSleepWindow(target, tz, sleep) && <p className="th-note">🌙 {t("trFinishAsleep")}</p>}
+    </>
+  );
+  const eduThen = eduGoal && <p className="th-bk-then">{t("trEduThen", { time: formatTime(eduWin.start, tz, lang) })}</p>;
 
   return (
-    <div className="th-form th-finishform">
-      {modeTabs}
-      {/* 1. The target comes first: "I want it finished then" */}
+    <div className="th-form th-finishform th-tf">
+      {head}
+      {/* 1. the goal */}
       <label className="th-finish">
-        <span className="th-finish-q">{t("finishAtQ")}</span>
+        <span className="th-finish-q">{t("trWhenFinish")}</span>
         <input ref={timeRef} className="th-finish-input" inputMode="numeric" autoComplete="off" placeholder="2200" maxLength={5}
-          aria-describedby="th-finish-read" value={raw} onChange={(e) => { setRaw(e.target.value.replace(/[^\d:.]/g, "")); setError(null); setLongOk(false); setDayAdd(0); pickTime(); }} />
+          aria-describedby="th-finish-read" value={eduGoal ? digitsAt(eduWin.start, tz) : raw} onChange={(e) => { setRaw(e.target.value.replace(/[^\d:.]/g, "")); setError(null); setLongOk(false); setDayAdd(0); pickTime(); }} />
         <span id="th-finish-read" className="th-finish-read">
           {eduGoal ? <>🎓 <b>{t("eduWord")}</b> {dayWordFor(eduWin.start)} {clock(eduWin.start)}–{clock(eduWin.end)} · <Ltr>{formatTime(eduWin.start, "UTC", lang)}–{formatTime(eduWin.end, "UTC", lang)}</Ltr> UTC</>
             : hhmm && Number.isFinite(target) ? (targetOk
@@ -673,169 +692,147 @@ function TrainForm({ onDone, preset, accountId, onEditTimes }) {
             : raw ? t("finishInvalid") : t("finishHint")}
         </span>
       </label>
-      {/* which day: the next time the clock shows this, the following days, or any date */}
       {hhmm && !eduGoal && (
         <div className="th-todos-filter th-dayadd" role="group" aria-label={t("finishDay")}>
-          {[0, 1, 2, 3].map((n) => (
+          {[0, 1].map((n) => (
             <button key={n} type="button" className={`th-chip-btn small ${!customDate && dayAdd === n ? "on" : ""}`} aria-pressed={!customDate && dayAdd === n}
               onClick={() => { setDayAdd(n); setCustomDate(""); setDateOpen(false); setLongOk(false); }}>{dayWordFor(dayTarget(n))}</button>
           ))}
           <button type="button" className={`th-chip-btn small ${customDate ? "on" : ""}`} aria-pressed={!!customDate} aria-expanded={dateOpen} onClick={() => setDateOpen(!dateOpen)}>
-            {customDate && Number.isFinite(customTarget) ? formatDate(customTarget, tz, lang) : t("bkCustomDate")}
+            {customDate && Number.isFinite(customTarget) ? formatDate(customTarget, tz, lang) : t("trChooseDate")}
           </button>
         </div>
       )}
       {dateOpen && !eduGoal && (
-        <input className="th-input th-bk-date" type="date" aria-label={t("bkCustomDate")} min={ymdAt(now, tz)} value={customDate}
+        <input className="th-input th-bk-date" type="date" aria-label={t("trChooseDate")} min={ymdAt(now, tz)} value={customDate}
           onChange={(e) => { setCustomDate(e.target.value); setLongOk(false); }} />
       )}
-      {/* target shortcuts: just after reset (the player picks how long after), or the Education booking */}
-      <div className="th-todos-filter th-dayadd" role="group" aria-label={t("bkShortcuts")}>
-        <button type="button" className={`th-chip-btn small ${tgtKind === "reset" ? "on" : ""}`} aria-pressed={tgtKind === "reset"} aria-expanded={resetOpen} onClick={() => setResetOpen(!resetOpen)}>
-          {t("bkJustAfterReset")}{tgtKind === "reset" && resetOff != null && <>&nbsp;· <Ltr>00:{String(resetOff).padStart(2, "0")} UTC</Ltr></>}
-        </button>
-        <button type="button" className={`th-chip-btn small ${eduGoal ? "on" : ""}`} aria-pressed={eduGoal} onClick={pickEdu}>🎓 {t("kind_booking")}</button>
-      </div>
-      {resetOpen && (
-        <div className="th-bk-offsets" role="group" aria-label={t("bkResetOffsetQ")}>
-          <span className="th-hint">{t("bkResetOffsetQ")}</span>
-          <span className="th-todos-filter">
-            {RESET_OFFSETS.map((off) => (
-              <button key={off} type="button" className={`th-chip-btn small ${tgtKind === "reset" && resetOff === off ? "on" : ""}`} aria-pressed={tgtKind === "reset" && resetOff === off}
-                onClick={() => pickReset(off)}><Ltr>00:{String(off).padStart(2, "0")} UTC</Ltr></button>
-            ))}
+      {/* an Education booking is offered as the thing to finish for */}
+      {eduWin && eduWin.start - now >= MINUTE && (
+        <div className="th-bk-opt">
+          <span className="th-bk-optlabel">{t("trFinishFor")}</span>
+          <span className="th-todos-filter th-dayadd" role="group" aria-label={t("trFinishFor")}>
+            <button type="button" className={`th-chip-btn small ${!eduGoal ? "on" : ""}`} aria-pressed={!eduGoal} onClick={() => eduGoal && pickEdu()}>{t("trCustomTime")}</button>
+            <button type="button" className={`th-chip-btn small ${eduGoal ? "on" : ""}`} aria-pressed={eduGoal} onClick={() => !eduGoal && pickEdu()}>🎓 {t("eduWord")} · {whenShort(eduWin.start)}</button>
           </span>
         </div>
       )}
-      {eduNote && !eduGoal && <p className="th-note" role="status">{eduNote === "active" ? t("bkEduActive") : t("bkNoEdu", { position: t("minister_education"), where: t("secBookings") })}</p>}
-      {/* troop type per camp stays visible here: Helios and normal troops have different times */}
-      {TRAINING_CAMPS.some((c) => ticked[c] && hasHelios(data, c)) && campChecks}
-
-      {sAdvice && !isAdvice && !eduGoal && tgtKind === "time" && !customDate && (sAdvice.kind === "bed" || !capOn) && (
+      {sAdvice && sAdvice.kind === "bed" && !isAdvice && !eduGoal && !capOn && !changing && tgtKind === "time" && !customDate && (
         <button type="button" className="th-suggest-btn" onClick={() => { setRaw(digitsAt(sAdvice.finishAt, tz)); setDayAdd(0); }}>
-          {t(sAdvice.kind === "bed" ? "suggestBed" : "suggestFull", { time: formatTime(sAdvice.finishAt, tz, lang) })}
+          {t("suggestBed", { time: formatTime(sAdvice.finishAt, tz, lang) })}
         </button>
       )}
 
-      {/* 2. Train with: Normal capacity or Training Capacity ×3 (its own confirmed maximums) */}
-      <div className="th-bk-opt">
-        <span className="th-bk-optlabel">{t("bkTrainWith")}</span>
-        <Seg value={capOn ? "cap" : "normal"} onChange={(v) => toggleCap(v === "cap")} label={t("bkTrainWith")} options={[
-          { value: "normal", label: t("bkNormalCap") },
-          { value: "cap", label: t("bkCapX3") },
-        ]} />
-        {capOn && !capMissing.length && !calibrate && planCamps.length > 0 && (
-          <div className="th-bk-capsum">
-            <span><b>✓ {t("capLabel")}</b> · {t("bkCapSub")}</span>
-            <span className="th-bk-maxes">{t("bkMaximums")}: {planCamps.map((c) => (
-              <span key={c}>{t(`short_${c}`)}{troopOf(c) === "helios" ? ` ${t("helios")}` : ""} · <b>{span(maxOf(c))}</b></span>
-            ))}</span>
-            <button type="button" className="th-link" onClick={() => setCalibrate(true)}>{t("bkEditMax")}</button>
+      {/* 2. the two things that change the answer */}
+      {capBox}
+      {campChips}
+
+      {/* 3. the answer */}
+      {simple && !oneGo && (
+        <>
+          {error && <span className="th-error" role="alert">{error}</span>}
+          <Btn tone="gold" block onClick={() => startBack(eduGoal)}>{cta}</Btn>
+          <div className="th-tf-under">
+            {back.groups.map((g) => (
+              <span key={`${g.camps[0]}|${g.end}`}>{back.groups.length > 1 && <b>{campNames(g.camps)}: </b>}{underLine(g.durMs, g.end)}</span>
+            ))}
           </div>
-        )}
-      </div>
-      {capCal}
-
-      {/* 3. Batch: each camp's maximum, or one duration */}
-      <div className="th-bk-opt">
-        <span className="th-bk-optlabel">{t("bkBatch")}</span>
-        <Seg value={batch} onChange={(v) => { setBatch(v); setLongOk(false); }} label={t("bkBatch")} options={[
-          { value: "max", label: t("bpModeMax") },
-          { value: "custom", label: t("bkCustomDur") },
-        ]} />
-        {batch === "custom" && <div data-bk-dur=""><DurationFields value={bdur} onChange={setBdur} label={t("bkCustomDurQ")} /></div>}
-      </div>
-
-      {/* camps with different batch lengths: each its own start (finish together), or one start */}
-      {new Set(rowsIn.filter((r) => r.durMs > 0).map((r) => r.durMs)).size > 1 && (
-        <div className="th-bk-opt">
-          <span className="th-bk-optlabel">{t("bkPlanCampsTo")}</span>
-          <Seg value={sync} onChange={setSync} label={t("bkPlanCampsTo")} options={[
-            { value: "finish", label: t("bkFinishTogether") },
-            { value: "start", label: t("bkStartTogether") },
-          ]} />
-          <span className="th-hint">{t(sync === "finish" ? "bkFinishTogetherHelp" : "bkStartTogetherHelp")}</span>
-        </div>
+          {eduThen}
+          {sleepNotes}
+        </>
+      )}
+      {oneGo && (
+        <>
+          {error && <span className="th-error" role="alert">{error}</span>}
+          <Btn tone="gold" block onClick={startPlanNow}>{cta}</Btn>
+          <div className="th-tf-under"><span>{underLine(need, target)}</span></div>
+          <p className="th-note">{t("oneGoNote", { dur: span(need) })} <button type="button" className="th-link" onClick={() => setLongOk(false)}>{t("bpShowPlan")}</button></p>
+        </>
       )}
 
-      {/* 4. THE ANSWER: when to press Train */}
-      {back && (
-        <div className={`th-bk ${back.state}`} role="group" aria-label={t("bkResult")}>
-          <div className="th-bk-kicker">{capOn ? t("bkCapX3") : t("bkNormalCap")} · {batch === "max" ? t("bpModeMax") : t("bkCustomDur")}</div>
-          {eduGoal && (
-            <p className="th-bk-edu">
-              🎓 <b>{t("bkEduPlan")}</b> · {dayWordFor(eduWin.start)} {clock(eduWin.start)}–{clock(eduWin.end)} <small className="th-utc"><Ltr>{formatTime(eduWin.start, "UTC", lang)}–{formatTime(eduWin.end, "UTC", lang)}</Ltr> UTC</small>
-              <br />{t("bkEduFree")}
-            </p>
-          )}
-          {missed.length > 0 && !calm && (
-            <div className="th-bk-miss" role="status">
-              <b>{t(batch === "custom" ? "bkNoFitCustom" : `bkNoFit${capOn ? "Cap" : "Full"}${eduGoal ? "Edu" : ""}`, { dur: span(missed[0].fullMs) })}</b>
-              <span>{t("bkNeededStart", { time: whenDay(missed[0].ideal) })} {utcOf(missed[0].ideal)}</span>
-              <span>{t("bkWindowLeft", { time: whenShort(target), left: back.windowMs >= DAY ? `${hoursSpan(back.windowMs, lang)} (${span(back.windowMs)})` : span(back.windowMs) })}</span>
-            </div>
-          )}
-          <ul className="th-bk-starts">
-            {back.groups.map((g) => (
-              <li key={`${g.camps[0]}|${g.start}`} className={g.state}>
-                {showCamps && <span className="th-bk-camps">{campNames(g.camps)}</span>}
-                {(g.state === "future" || (g.state === "passed" && !calm)) && <span className="th-bk-label">{g.state === "future" ? t("bpStartTraining") : t("bkMostFits")}</span>}
-                <b className="th-bk-when">{g.state === "future" ? <>{weekdayOf(g.start, tz, lang)} {clock(g.start)}</> : t("startNow")}</b>
-                {g.state === "future" && (
-                  <span className="th-bk-sub">{dayWordFor(g.start)} · {utcOf(g.start)} · <b>{t("bkStartsIn", { time: span(g.start - now) })}</b>
-                    {inSleepWindow(g.start, tz, sleep) && <span className="th-bplan-sleep"> · 🌙 {t("bpAsleep")}</span>}</span>
-                )}
-                <span className="th-bk-fact">{t("bkTrainFor")} <b>{g.state === "passed" && !calm && g.durMs >= DAY ? hoursSpan(g.durMs, lang) : span(g.durMs)}</b>
-                  {g.state === "passed" && !calm && g.durMs >= DAY && <span className="th-bk-alt"> ({span(g.durMs)})</span>}{endsDiffer && <> → {whenShort(g.end)}</>}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="th-bk-finish">
-            {t(endsDiffer ? "bkLastFinish" : "bkFinishes")} <b>{weekdayOf(target, tz, lang)} {clock(target)}</b> {utcOf(target)}
-            {tgtKind === "reset" && resetOff != null && !eduGoal && <> · <span className="th-reset-tag">{t("bkAfterResetN", { n: resetOff })}</span></>}
-          </p>
-          {eduGoal && <p className="th-bk-then"><b>{t("bkThen")}</b> {clock(eduWin.start)} — {t("bkRestartWithEdu")}</p>}
-
-          {busyPast.length > 0 && (
-            <p className="th-bk-busy">{t("bkBusy", { camps: campNames(busyPast.map((x) => x.category)), time: whenShort(Math.max(...busyPast.map((x) => x.endAt))) })}</p>
-          )}
-          {error && <span className="th-error" role="alert">{error}</span>}
-
-          {/* a start that is still ahead never gets a Start button: starting now would finish too early */}
-          <div className="th-bk-actions">
-            {nowG.length > 0
-              ? <Btn tone="gold" block onClick={() => startBack(eduGoal)}>{primaryLabel}</Btn>
-              : <Btn tone="gold" block onClick={() => addStartReminder(eduGoal)}>{eduGoal ? t("useThisPlan") : t("bkAddReminder")}</Btn>}
-            {eduGoal && later.length > 0 && nowG.length === 0 && <Btn block onClick={() => addStartReminder(false)}>{t("bkAddReminder")}</Btn>}
-          </div>
-          {eduGoal && <p className="th-note">{t("bkEduPlanNote")}</p>}
-          {!eduGoal && nowG.length === 0 && <p className="th-note">{t("bkReminderNote")}</p>}
-          {nowG.length > 0 && later.map((g) => (
-            <p key={g.start} className="th-note">{t("bkLaterReminder", { camps: campNames(g.camps), time: whenShort(g.start) })}</p>
-          ))}
-          {nowG.length === 0 && later.length > 0 && (
-            <p className="th-note">{t("bkIfNow", { time: whenShort(now + later[0].durMs) })}</p>
-          )}
-          {calm && !isAdvice && <p className="th-note">{t("bkFullNeeded", { dur: span(missed[0].fullMs), time: whenShort(missed[0].ideal) })}</p>}
-          {isAdvice && sAdvice.kind === "bed" && nowG.length > 0 && <p className="th-note">{t("outcomeOvernight", { end: formatTime(sAdvice.overnightEnd, tz, lang) })}</p>}
-          {!isAdvice && sAdvice && tgtKind === "time" && nowG.length > 0 && inSleepWindow(target, tz, sleep) && <p className="th-note">{t("outcomeAsleep")}</p>}
-
-          {/* the full batch no longer fits: other ways out, each one tap */}
-          {missed.length > 0 && !calm && (
+      {/* a target that needs planning: the first sentence says what matters; detail stays folded */}
+      {back && !simple && !oneGo && (
+        <div className={`th-bk ${back.state}`} role="group" aria-label={t("bpTitle")}>
+          <div className="th-bk-kicker">{t("bpTitle")}</div>
+          {planStyle === "nonstop" ? (
             <>
-              <div className="th-item-actions th-bk-alts">
-                {!eduGoal && <Btn small onClick={() => { timeRef.current?.focus(); timeRef.current?.select?.(); }}>{t("bkChooseLater")}</Btn>}
-                {batch === "max" && <Btn small onClick={() => { setBatch("custom"); requestAnimationFrame(() => document.querySelector("[data-bk-dur] input")?.focus()); }}>{t("bkUseCustom")}</Btn>}
-                {capOn && <Btn small onClick={() => toggleCap(false)}>{t("bkNormalInstead")}</Btn>}
-              </div>
-              {!eduGoal && (
-                <p className="th-note">{t("bkFullFromNow", { time: whenShort(now + missed[0].fullMs) })}{" "}
-                  <button type="button" className="th-link" onClick={() => setTargetAt(now + missed[0].fullMs)}>{t("bkUseThatTime")}</button></p>
+              <p className="th-bk-lead">{t("trMoreThanOne")}</p>
+              <b className="th-bk-head">{t("trHeadNonstop", { n: bplan.checkIns.length })}</b>
+              <p className="th-bk-finish">{t("bpFinal")} <b>{whenShort(bplan.end)}</b> {utcOf(bplan.end)}</p>
+              {bplan.usesEdu && <p className="th-bk-sub">🎓 {t("bpUsesEdu")}</p>}
+              {pmode === "fewest" && bplan.idleMs > 0 && <p className="th-bk-sub">{t("trIdle", { time: span(bplan.idleMs) })}</p>}
+              {/* sleep: not just a warning — an easier plan to switch to */}
+              {rested && easier ? (
+                <p className="th-bk-rest on">✓ {t("trUsingEasier")} <button type="button" className="th-link" onClick={() => setRested(false)}>{t("trBackToMax")}</button></p>
+              ) : easier ? (
+                <div className="th-bk-rest">
+                  <span>🌙 {asleepN > 1 ? t("trSleepN", { n: asleepN }) : t("trSleepNeed", { time: whenShort(easier.moved) })}</span>
+                  <span>{t("trEasier")} {easier.lostMs > 0 ? t("trEasierLost", { time: span(easier.lostMs) }) : easier.extra > 0 ? t("trEasierExtra", { n: easier.extra }) : t("trEasierFree")}</span>
+                  <Btn small onClick={() => setRested(true)}>{t("trUseEasier")}</Btn>
+                </div>
+              ) : asleepN > 0 && <p className="th-bk-sub">🌙 {t("trSleepN", { n: asleepN })}</p>}
+              <button type="button" className="th-link th-bk-toggle" aria-expanded={planOpen} onClick={() => setPlanOpen(!planOpen)}>{t(planOpen ? "trHidePlan" : "trViewPlan")}</button>
+              {planOpen && (
+                <>
+                  {showModes && !(rested && easier) && (
+                    <>
+                      <Seg value={pmode} onChange={setPmode} label={t("bpModeQ")} options={[{ value: "max", label: t("bpModeMax") }, { value: "fewest", label: t("bpModeFewest") }]} />
+                      <p className="th-hint">{t(pmode === "max" ? "trModeMaxHelp" : "trModeFewHelp")}</p>
+                    </>
+                  )}
+                  <PlanSteps plan={bplan} />
+                </>
               )}
+              {error && <span className="th-error" role="alert">{error}</span>}
+              <div className="th-bk-actions"><Btn tone="gold" block onClick={startPlanNow}>{cta}</Btn></div>
+              <button type="button" className="th-link th-bk-alt" onClick={() => setStyle("back")}>{t("trOrOneBatch", { time: whenShort(later[0].start) })}</button>
             </>
-          )}
-          {nowG.length === 0 && !eduGoal && (
-            <button type="button" className="th-link th-onego" onClick={() => { timeRef.current?.focus(); timeRef.current?.select?.(); }}>{t("bkChangeTarget")}</button>
+          ) : (
+            <>
+              {eduGoal && <p className="th-bk-lead">🎓 {t("bkEduFree")}</p>}
+              {missed.length > 0 && !calm && (
+                <div className="th-bk-miss" role="status">
+                  <b>{t(batch === "custom" ? "bkNoFitCustom" : `bkNoFit${capOn ? "Cap" : "Full"}${eduGoal ? "Edu" : ""}`, { dur: span(missed[0].fullMs) })}</b>
+                  <span>{t("trMostFits", { dur: missed[0].durMs >= DAY ? `${hoursSpan(missed[0].durMs, lang)} (${span(missed[0].durMs)})` : span(missed[0].durMs) })}</span>
+                </div>
+              )}
+              <ul className="th-bk-starts">
+                {back.groups.map((g) => (
+                  <li key={`${g.camps[0]}|${g.start}`} className={g.state}>
+                    <b className="th-bk-head">
+                      {g.state === "future"
+                        ? t(showCamps ? "trHeadStartCamps" : "trHeadStart", { camps: campNames(g.camps), day: weekdayOf(g.start, tz, lang), time: formatTime(g.start, tz, lang) })
+                        : t(showCamps ? "trHeadNowCamps" : "trHeadNow", { camps: campNames(g.camps) })}
+                    </b>
+                    {g.state === "future" && (
+                      <span className="th-bk-sub">{dayWordFor(g.start)} · {utcOf(g.start)} · <b>{t("bkStartsIn", { time: span(g.start - now) })}</b>
+                        {inSleepWindow(g.start, tz, sleep) && <> · 🌙 {t("trUsuallyAsleep")}</>}</span>
+                    )}
+                    <span className="th-bk-fact">{t("bkTrainFor")} <b>{span(g.durMs)}</b>{endsDiffer && <> → {whenShort(g.end)}</>}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="th-bk-finish">{t("finishes")} <b>{whenShort(target)}</b> {utcOf(target)}</p>
+              {eduThen}
+              {busyPast.length > 0 && (
+                <p className="th-bk-busy">{t("bkBusy", { camps: campNames(busyPast.map((x) => x.category)), time: whenShort(Math.max(...busyPast.map((x) => x.endAt))) })}</p>
+              )}
+              {error && <span className="th-error" role="alert">{error}</span>}
+              {/* a start that is still ahead never gets a Start button: starting now would finish too early */}
+              <div className="th-bk-actions">
+                {nowG.length > 0
+                  ? <Btn tone="gold" block onClick={() => startBack(eduGoal)}>{cta}</Btn>
+                  : <Btn tone="gold" block onClick={() => addStartReminder(eduGoal)}>{t("bkAddReminder")}</Btn>}
+              </div>
+              {nowG.length > 0 && later.length > 0 && <p className="th-note">{t("trLaterReminder")}</p>}
+              {missed.length > 0 && !calm && (
+                <span className="th-bk-links">
+                  {capOn && <button type="button" className="th-link" onClick={() => toggleCap(false)}>{t("bkNormalInstead")}</button>}
+                  {!eduGoal && <button type="button" className="th-link" onClick={() => setTargetAt(now + missed[0].fullMs)}>{t("trFullInstead", { time: whenShort(now + missed[0].fullMs) })}</button>}
+                </span>
+              )}
+              {nonstop && <button type="button" className="th-link th-bk-alt" onClick={() => setStyle("nonstop")}>{t("bkNonstop")}</button>}
+            </>
           )}
         </div>
       )}
@@ -844,83 +841,90 @@ function TrainForm({ onDone, preset, accountId, onEditTimes }) {
           {targetOk && !capMissing.length && batch === "custom" && !customMs && <p className="th-note">{t("bkEnterDuration")}</p>}
           {targetOk && batch === "max" && !known.length && planCamps.length > 0 && <p className="th-note">{t("noMaxNote")}</p>}
           {error && <span className="th-error" role="alert">{error}</span>}
-          <Btn tone="gold" block disabled onClick={() => {}}>{t(restart ? "restartAllCampsBtn" : "startTimers")}</Btn>
+          <Btn tone="gold" block disabled onClick={() => {}}>{cta}</Btn>
         </>
       )}
 
-      {/* Normal vs Training Capacity for this target (confirmed maximums only) */}
-      {cmp && back && (
-        <div className="th-bk-cmp" role="group" aria-label={t("bkCompare", { time: whenShort(target) })}>
-          <span className="th-bk-optlabel">{t("bkCompare", { time: whenShort(target) })}</span>
-          {[["normal", cmp.normal], ["cap", cmp.cap]].map(([k, p]) => {
-            const g = p.groups[0];
-            return (
-              <div key={k} className={`th-bk-cmprow ${(k === "cap") === capOn ? "on" : ""}`}>
-                <b>{t(k === "cap" ? "capLabel" : "bkNormalCap")}</b>
-                <span>{g.state === "future" ? t("bkCmpStart", { time: whenShort(g.start) }) : g.state === "passed" ? t("bkCmpNoFit", { dur: span(g.durMs) }) : t("startNow")}</span>
-                <span className="th-bk-cmpdur">{span(g.fullMs)}</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* waiting isn't the only way: keep the camps busy until the target (batches + check-ins) */}
-      {nonstop && (
-        <details className="th-secondary th-bk-nonstop">
-          <summary>{t("bkNonstop")}</summary>
-          {!longOk && <JourneyPlan plan={bplan} mode={pmode} setMode={setPmode} showModes={showModes} win={eduGoal ? null : eduWin}
-            minMax={Math.min(...specs.filter((x) => x.maxMs > 0).map((x) => x.maxMs))} other={pmode === "max" ? jFew : jMax} />}
-          {/* The stored maximum may be out of date: the player can say ONE batch really is this long
-              (the review then offers to update the normal maximum). Never assumed from a long target. */}
-          {multi && !capOn && (
+      {/* everything else: there when wanted, out of the way otherwise */}
+      <details className="th-secondary th-tf-more" open={moreOpen} onToggle={(e) => setMoreOpen(e.currentTarget.open)}>
+        <summary>{t("trMoreOptions")}</summary>
+        <div className="th-tf-morebody">
+          <button type="button" className="th-tf-opt" onClick={() => { setMode("custom"); setError(null); }}>{t("trOptDuration")}<span className="th-tf-chev" aria-hidden="true">›</span></button>
+          <button type="button" className="th-tf-opt" onClick={() => { setMode("max"); setError(null); }}>{t("trOptMax")}<span className="th-tf-chev" aria-hidden="true">›</span></button>
+          {onPerCamp && <button type="button" className="th-tf-opt" onClick={onPerCamp}>{t("trOptPerCamp")}<span className="th-tf-chev" aria-hidden="true">›</span></button>}
+          {/* just after reset: the player picks how long after — none is assumed */}
+          <div className="th-bk-opt">
+            <span className="th-bk-optlabel">{t("bkJustAfterReset")}</span>
+            <span className="th-todos-filter th-dayadd" role="group" aria-label={t("bkJustAfterReset")}>
+              {RESET_OFFSETS.map((off) => (
+                <button key={off} type="button" className={`th-chip-btn small ${tgtKind === "reset" && resetOff === off ? "on" : ""}`} aria-pressed={tgtKind === "reset" && resetOff === off}
+                  onClick={() => pickReset(off)}><Ltr>00:{String(off).padStart(2, "0")} UTC</Ltr></button>
+              ))}
+            </span>
+          </div>
+          <div className="th-bk-opt">
+            <span className="th-bk-optlabel">{t("bkBatch")}</span>
+            <Seg value={batch} onChange={(v) => { setBatch(v); setLongOk(false); }} label={t("bkBatch")} options={[
+              { value: "max", label: t("bpModeMax") },
+              { value: "custom", label: t("bkCustomDur") },
+            ]} />
+            {batch === "custom" && <div data-bk-dur=""><DurationFields value={bdur} onChange={setBdur} label={t("bkCustomDurQ")} /></div>}
+          </div>
+          {/* camps with different batch lengths: each its own start (finish together), or one start */}
+          {new Set(rowsIn.filter((r) => r.durMs > 0).map((r) => r.durMs)).size > 1 && (
+            <div className="th-bk-opt">
+              <span className="th-bk-optlabel">{t("bkPlanCampsTo")}</span>
+              <Seg value={sync} onChange={setSync} label={t("bkPlanCampsTo")} options={[
+                { value: "finish", label: t("bkFinishTogether") },
+                { value: "start", label: t("bkStartTogether") },
+              ]} />
+              <span className="th-hint">{t(sync === "finish" ? "bkFinishTogetherHelp" : "bkStartTogetherHelp")}</span>
+            </div>
+          )}
+          {/* the stored maximum may be out of date: the player can say ONE batch really is this long */}
+          {multi && !capOn && batch === "max" && (
             <button type="button" className="th-link th-onego" onClick={() => setLongOk(true)}>{t("canTrainLonger", { dur: formatSpan(need, lang) })}</button>
           )}
-          {longOk && tooLong.length > 0 && (
-            <p className="th-note">{t("oneGoNote", { dur: formatSpan(need, lang) })} <button type="button" className="th-link" onClick={() => setLongOk(false)}>{t("bpShowPlan")}</button></p>
+          {/* Normal vs Training Capacity for this target (confirmed maximums only) */}
+          {cmp && back && (
+            <div className="th-bk-cmp" role="group" aria-label={t("bkCompare", { time: whenShort(target) })}>
+              <span className="th-bk-optlabel">{t("bkCompare", { time: whenShort(target) })}</span>
+              {[["normal", cmp.normal], ["cap", cmp.cap]].map(([k, p]) => {
+                const g = p.groups[0];
+                return (
+                  <div key={k} className={`th-bk-cmprow ${(k === "cap") === capOn ? "on" : ""}`}>
+                    <b>{t(k === "cap" ? "capLabel" : "bkNormalCap")}</b>
+                    <span>{g.state === "future" ? t("bkCmpStart", { time: whenShort(g.start) }) : g.state === "passed" ? t("bkCmpNoFit", { dur: span(g.durMs) }) : t("startNow")}</span>
+                    <span className="th-bk-cmpdur">{span(g.fullMs)}</span>
+                  </div>
+                );
+              })}
+            </div>
           )}
-          <Btn block onClick={startPlanNow}>{multi ? t("bpUse") : t(restart ? "restartFinishing" : "startFinishing", { time: formatTime(target, tz, lang) })}</Btn>
-          {multi && (
-            <p className="th-bplan-foot">
-              <span>{t("bpFirstCheckin")}: <b><Ltr>{formatTime(bplan.checkIns[0].at, tz, lang)}</Ltr></b> <small className="th-utc"><Ltr>{formatTime(bplan.checkIns[0].at, "UTC", lang)}</Ltr> UTC</small></span>
-              <span>{t("bpFinal")}: <b><Ltr>{formatTime(bplan.end, tz, lang)}</Ltr> {dayWordFor(bplan.end).toLocaleLowerCase(lang)}</b> <small className="th-utc"><Ltr>{formatTime(bplan.end, "UTC", lang)}</Ltr> UTC</small></span>
-            </p>
+          {/* per-camp maximums, troop type and troop counts */}
+          {planCamps.length > 0 && (
+            <div className="th-bk-opt">
+              <span className="th-bk-optlabel">{t("trainingDetails")}</span>
+              <ul className="th-bk-details">
+                {planCamps.map((c) => {
+                  const r = back?.rows.find((x) => x.camp === c);
+                  const n = campTroopsFor(data, c);
+                  return (
+                    <li key={c}>
+                      <b>{t(c)}</b>
+                      <span>{maxOf(c) > 0 ? t("maxLabel", { time: span(maxOf(c)) }) : "—"} · {t(troopOf(c) === "helios" ? "helios" : "normalTroops")}</span>
+                      {r && n > 0 && maxOf(c) > 0 && r.durMs <= maxOf(c) && (
+                        <span>{t("troopsToTrain")}: {troopsForDuration(r.durMs, maxOf(c), n * (capOn ? CAPACITY_FACTOR : 1)).toLocaleString(lang)}</span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           )}
-        </details>
-      )}
-
-      {/* per-camp maximums, troop type and troop counts: there when wanted, out of the way otherwise */}
-      {planCamps.length > 0 && (
-        <details className="th-secondary">
-          <summary>{t("trainingDetails")}</summary>
-          <ul className="th-bk-details">
-            {planCamps.map((c) => {
-              const r = back?.rows.find((x) => x.camp === c);
-              const n = campTroopsFor(data, c);
-              return (
-                <li key={c}>
-                  <b>{t(c)}</b>
-                  <span>{maxOf(c) > 0 ? t("maxLabel", { time: span(maxOf(c)) }) : "—"} · {t(troopOf(c) === "helios" ? "helios" : "normalTroops")}</span>
-                  {r && n > 0 && maxOf(c) > 0 && r.durMs <= maxOf(c) && (
-                    <span>{t("troopsToTrain")}: {troopsForDuration(r.durMs, maxOf(c), n * (capOn ? CAPACITY_FACTOR : 1)).toLocaleString(lang)}</span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-          {capOn ? (!calibrate && !capMissing.length && <button type="button" className="th-link" onClick={() => setCalibrate(true)}>{t("bkEditMax")}</button>)
-            : onEditTimes && <button type="button" className="th-link" onClick={onEditTimes}>{t("bkEditMax")}</button>}
-        </details>
-      )}
-
-      {/* Secondary */}
-      {!TRAINING_CAMPS.some((c) => ticked[c] && hasHelios(data, c)) && (
-        <details className="th-secondary">
-          <summary>{t("whichCamps")}</summary>
-          {campChecks}
-        </details>
-      )}
-      <button type="button" className="th-link" onClick={onDone}>{t("cancel")}</button>
+          {onEditTimes && <button type="button" className="th-tf-opt" onClick={onEditTimes}>{t("trSettings")}<span className="th-tf-chev" aria-hidden="true">›</span></button>}
+        </div>
+      </details>
     </div>
   );
 }
@@ -1125,7 +1129,9 @@ function RestartAll({ acc, onDone }) {
   }
   function go() {
     const list2 = valid.map(({ c, ms }) => ({ camp: c.camp, troop: c.troop, durationMs: ms, mode: ms >= c.fullMs ? "max" : "custom" }));
-    setReview({ list: list2, busy: [], increases: maxIncreases(data, list2), at: Date.now(), restart: true, extraPlan: plan });
+    const increases = maxIncreases(data, list2);
+    if (!increases.length) return commit(list2, plan, []); // nothing to decide: just start
+    setReview({ list: list2, busy: [], increases, at: Date.now(), extraPlan: plan });
   }
   function commit(list2, extraPlan, accepted) {
     const at = Date.now();
@@ -1136,13 +1142,13 @@ function RestartAll({ acc, onDone }) {
     }));
     success();
     const sum = restartSummary(list2, at);
-    notify([`✓ ${t("campsRestarted", { n: list2.length })}`, sum.together ? t("finishAround", { time: formatTime(sum.finishAt, tz, lang) }) : t("finishDifferent")]);
+    notify([`✓ ${t("trainingStartedN", { n: list2.length })}`, sum.together ? t("finishAround", { time: formatTime(sum.finishAt, tz, lang) }) : t("finishDifferent")]);
     onDone();
   }
   if (review) {
     return (
       <div className="th-form th-restart">
-        <ReviewCard title={t("restartAllCampsTitle")} review={review} onBack={() => setReview(null)}
+        <ReviewCard title={t("trStartTitle")} review={review} onBack={() => setReview(null)}
           onConfirm={(a) => answerReview(review, setReview, a, commit)}
           onKeepOld={(items) => keepOldMaxes(review, setReview, items)} />
       </div>
@@ -1150,11 +1156,15 @@ function RestartAll({ acc, onDone }) {
   }
   return (
     <div className="th-form th-restart">
-      <b className="th-restart-title">{t("restartAllTitle")}</b>
+      <div className="th-tf-head">
+        <b>{t("trStartTitle")}</b>
+        <button type="button" className="th-tf-close" aria-label={t("close")} onClick={onDone}>✕</button>
+      </div>
+      <span className="th-finish-q">{t("trOptPerCamp")}</span>
       {!plan && <EduAdvice advice={advice} onUse={useAdvice} />}
-      {plan && <p className="th-note">✓ {t("eduPlanSet", { time: formatTime(plan.startAt, tz, lang) })}</p>}
+      {plan && <p className="th-note">✓ {t("trEduPlanSet", { time: formatTime(plan.startAt, tz, lang) })}</p>}
       {rows.some((c) => c.check?.suggestion) && (
-        <MoonNote>{t("timingSuggestionShort", { n: rows.filter((c) => c.check?.suggestion).length, finish: formatTime(rows.find((c) => c.check?.suggestion).check.suggestion.finishAt, tz, lang) })}</MoonNote>
+        <MoonNote>{t("trTimingShort", { n: rows.filter((c) => c.check?.suggestion).length, finish: formatTime(rows.find((c) => c.check?.suggestion).check.suggestion.finishAt, tz, lang) })}</MoonNote>
       )}
       {troopsKnown
         ? <Seg value={unit} onChange={setUnit} label={t("enterAs")} options={[{ value: "troops", label: t("byTroops") }, { value: "time", label: t("byTime") }]} />
@@ -1206,11 +1216,7 @@ function RestartAll({ acc, onDone }) {
           </div>
         );
       })}
-      <p className="th-note">💡 {t("tip247")}</p>
-      <div className="th-form-actions">
-        <Btn tone="gold" onClick={go} disabled={!valid.length || values.some((x) => x.ms && x.ms.over)}>{t("restartNCamps", { n: valid.length })}</Btn>
-        <Btn onClick={onDone}>{t("cancel")}</Btn>
-      </div>
+      <Btn tone="gold" block onClick={go} disabled={!valid.length || values.some((x) => x.ms && x.ms.over)}>{t("trStart")}</Btn>
     </div>
   );
 }
@@ -1246,91 +1252,269 @@ function NextCycleNotes({ acc, timers }) {
   return notes;
 }
 
-/** What an account's camps are doing now: running (grouped when they finish together), ready, idle. */
+/** What an account's camps are doing now: running (grouped by when they finish), and idle. */
 function campState(data, now) {
   const timers = (data.timers || []).filter((x) => x.kind === "training");
   const running = timers.filter((x) => x.endAt > now).sort((a, b) => a.endAt - b.endAt || TRAINING_CAMPS.indexOf(a.category) - TRAINING_CAMPS.indexOf(b.category));
   const groups = finishTogether(running);
   const together = groups.length === 1 && groups[0].timers.length === running.length && running.length > 1 ? groups[0] : null;
   const idle = restartable(data, now);
-  return { timers, running, together, idle, next: running[0] || null };
+  // one row per finish time: camps that end in the same minute are one thing to the player
+  const byEnd = new Map();
+  for (const x of running) {
+    const k = Math.floor(x.endAt / MINUTE);
+    byEnd.set(k, [...(byEnd.get(k) || []), x]);
+  }
+  const rows = [...byEnd.entries()].map(([k, list]) => ({ key: String(k), endAt: list[0].endAt, timers: list }));
+  return { timers, running, together, idle, next: running[0] || null, rows };
 }
 
+/** Everything about training that used to sit behind several links, in one place:
+ *  full-batch times (per camp, Helios, with Education), batch sizes, and Training Capacity maximums. */
+function TrainingSettings({ accountId, focusEdu, onClose }) {
+  const { t, lang, dataFor } = useTimeHub();
+  const data = dataFor(accountId);
+  const [editCap, setEditCap] = useState(false);
+  const rows = TRAINING_CAMPS.flatMap((c) => (hasHelios(data, c) ? ["normal", "helios"] : ["normal"]).map((troop) => ({
+    camp: c, troop, key: capKey(c, troop), normal: campMaxFor(data, c, troop), est: capEstimate(data, c, troop), cur: capMaxFor(data, c, troop),
+  })));
+  const set = rows.filter((r) => r.cur > 0);
+  const name = (r) => `${t(`short_${r.camp}`)}${r.troop === "helios" ? ` ${t("helios")}` : ""}`;
+  return (
+    <div className="th-form th-tf th-tset">
+      <div className="th-tf-head">
+        <b>{t("trSettings")}</b>
+        <button type="button" className="th-tf-close" aria-label={t("close")} onClick={onClose}>✕</button>
+      </div>
+      <CampTimes accountId={accountId} focusEdu={focusEdu} />
+      {editCap ? (
+        <CapCalibration key={rows.map((r) => r.key).join()} accountId={accountId} rows={rows} turnOn={false} onDone={() => setEditCap(false)} onCancel={() => setEditCap(false)} />
+      ) : (
+        <div className="th-camptimes closed">
+          <div>
+            <span className="th-label">{t("capLabel")}</span>
+            <div className="th-camptimes-sum">
+              {set.length
+                ? (new Set(set.map((r) => r.cur)).size === 1 && set.length === rows.length ? t("trCapMax", { max: formatSpan(set[0].cur, lang) }) : set.map((r) => `${name(r)} ${formatSpan(r.cur, lang)}`).join(" · "))
+                : t("trCapSub")}
+            </div>
+          </div>
+          <span className="th-item-actions"><Btn small onClick={() => setEditCap(true)}>{t("edit")}</Btn></span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** A row with one action tucked behind its trailing edge. Swipe toward the start (left; right in
+ *  right-to-left languages) to reveal it, then tap it — or swipe all the way across. A short swipe
+ *  never does anything by itself, and tapping the row again closes it. */
+const SWIPE_W = 92;
+function SwipeRow({ label, onAction, onFull, children }) {
+  const ref = React.useRef(null);
+  const g = React.useRef(null); // the gesture in progress
+  const moved = React.useRef(false); // a drag just ended: swallow the click it produces
+  const [dx, setDx] = useState(0); // how far the row is pulled open (px)
+  const [drag, setDrag] = useState(false);
+  const down = (e) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    const rtl = getComputedStyle(ref.current).direction === "rtl";
+    g.current = { x: e.clientX, y: e.clientY, base: dx, dx, sign: rtl ? 1 : -1, on: false, id: e.pointerId, w: ref.current.offsetWidth };
+  };
+  const move = (e) => {
+    const s = g.current;
+    if (!s) return;
+    const mx = e.clientX - s.x;
+    const my = e.clientY - s.y;
+    if (!s.on) {
+      if (Math.abs(mx) < 10) return;
+      if (Math.abs(my) > Math.abs(mx)) { g.current = null; return; } // scrolling the page, not swiping the row
+      s.on = true;
+      setDrag(true);
+      try { ref.current.setPointerCapture(s.id); } catch { /* not capturable: the gesture still works */ }
+    }
+    s.dx = Math.max(0, Math.min(s.w, s.base + mx * s.sign));
+    setDx(s.dx);
+  };
+  const end = (full) => () => {
+    const s = g.current;
+    g.current = null;
+    if (!s || !s.on) return;
+    setDrag(false);
+    moved.current = true;
+    setTimeout(() => { moved.current = false; }, 300);
+    if (full && s.dx > s.w * 0.6) { setDx(0); (onFull || onAction)(); } else setDx(s.dx > SWIPE_W / 2 ? SWIPE_W : 0);
+  };
+  const click = (e) => {
+    if (moved.current) { e.preventDefault(); e.stopPropagation(); moved.current = false; return; }
+    if (dx > 0 && !e.target.closest(".th-swipe-act")) { e.preventDefault(); e.stopPropagation(); setDx(0); }
+  };
+  return (
+    <div ref={ref} className={`th-swipe ${drag ? "drag" : ""} ${dx > 0 ? "open" : ""}`}
+      onPointerDown={down} onPointerMove={move} onPointerUp={end(true)} onPointerCancel={end(false)} onClickCapture={click}>
+      <button type="button" className="th-swipe-act" style={{ width: Math.max(dx, SWIPE_W) }} tabIndex={dx > 0 ? 0 : -1} aria-hidden={dx === 0}
+        onClick={() => { setDx(0); onAction(); }}>{label}</button>
+      <div className="th-swipe-body" style={{ insetInlineStart: -dx }}>{children}</div>
+    </div>
+  );
+}
+
+/** How long the "Training removed · Undo" line stays. */
+const UNDO_MS = 10000;
+
 function TrainGroup({ acc, showName, open, setOpen }) {
-  const { t, tz, lang, dataFor, updateAccount } = useTimeHub();
+  const { t, tz, lang, dataFor, updateAccount, accountById } = useTimeHub();
   const data = dataFor(acc);
   const trainTimes = data.timers.filter((x) => x.kind === "training").map((x) => x.endAt);
-  const plans = (data.plans || []).filter((p) => p.target > Date.now());
+  const plans = (data.plans || []).filter((p) => p.target > Date.now()).sort((a, b) => a.startAt - b.startAt);
   const now = useClockFor([...trainTimes, ...plans.map((p) => p.startAt)]);
   const when = useWhenLocal();
   const st = campState(data, now);
   const campsSet = TRAINING_CAMPS.some((c) => data.campMax?.[c]);
-  const lab = (x) => (x.troop === "helios" ? t("heliosCamp", { camp: t(x.category) }) : t(x.category));
-  const shortLab = (x) => (x.troop === "helios" ? t("heliosCamp", { camp: t(`short_${x.category}`) }) : t(`short_${x.category}`));
-  const edit = (x) => () => setOpen({ acc, kind: "finish", preset: { accountId: acc, camp: x.category, troop: x.troop, ms: x.endAt - Date.now() }, key: Date.now() });
   const kind = open?.kind;
-  const hero = st.together || st.next;
+  const [menu, setMenu] = useState(null); // row key whose ⋯ menu is open
+  const [details, setDetails] = useState(null); // row key showing its details
+  const [confirm, setConfirm] = useState(null); // row key being asked "Remove training?"
+  const [undo, setUndo] = useState(null); // { timers, lastEnded } of the training just removed
+  const [morePlans, setMorePlans] = useState(false);
+  const undoTimer = React.useRef(null);
+  React.useEffect(() => () => clearTimeout(undoTimer.current), []);
+
+  const nm = (x) => `${t(`short_${x.category}`)}${x.troop === "helios" ? ` · ${t("helios")}` : ""}`;
+  const allTogether = st.rows.length === 1 && st.rows[0].timers.length === TRAINING_CAMPS.length;
+  const rowTitle = (r) => (allTogether ? t("trAllTraining") : t("trCampsTraining", { camps: r.timers.map(nm).join(" + ") }));
+  const startTraining = (camps) => setOpen({ acc, kind: "finish", preset: { accountId: acc, camps }, key: Date.now() });
+  const change = (r) => setOpen({
+    acc, kind: "finish", key: Date.now(),
+    preset: { accountId: acc, change: true, camps: r.timers.map((x) => x.category), endAt: r.endAt, troops: Object.fromEntries(r.timers.map((x) => [x.category, x.troop === "helios" ? "helios" : "normal"])) },
+  });
+
+  /** Removes the app's timer only — the game keeps training. Always undoable for a moment. */
+  function remove(r) {
+    const at = Date.now();
+    setUndo({ timers: r.timers, lastEnded: data.lastEnded || {} });
+    updateAccount(acc, (d) => r.timers.reduce((dd, x) => rememberEnd(dd, x, at), { ...d, timers: d.timers.filter((y) => !r.timers.some((x) => x.id === y.id)) }));
+    setConfirm(null); setMenu(null); setDetails(null);
+    clearTimeout(undoTimer.current);
+    undoTimer.current = setTimeout(() => setUndo(null), UNDO_MS);
+  }
+  function undoRemove() {
+    const u = undo;
+    clearTimeout(undoTimer.current);
+    setUndo(null);
+    if (!u) return;
+    updateAccount(acc, (d) => {
+      // a camp that has been started again in the meantime keeps its new training
+      const back = u.timers.filter((x) => !d.timers.some((y) => y.kind === "training" && y.category === x.category && y.endAt > Date.now()));
+      const lastEnded = { ...(d.lastEnded || {}) };
+      for (const x of back) { if (u.lastEnded[x.category] != null) lastEnded[x.category] = u.lastEnded[x.category]; else delete lastEnded[x.category]; }
+      return { ...d, timers: [...d.timers.filter((y) => !back.some((x) => x.id === y.id)), ...back], lastEnded };
+    });
+  }
+  const dropPlan = (p) => updateAccount(acc, (d) => ({ ...d, plans: d.plans.filter((x) => x.id !== p.id) }));
+  const [leftA, leftB] = t("trLeft", { time: "\u0001" }).split("\u0001");
+  const acct = accountById(acc);
+  const shownPlans = morePlans ? plans : plans.slice(0, 1);
 
   return (
     <div className="th-group th-train-group">
       {showName && <GroupName accountId={acc} />}
-      {!campsSet && kind !== "times" && <CampTimes accountId={acc} />}
 
-      {/* primary: the countdown */}
-      {hero ? (
-        <div className="th-hero">
-          <div className="th-hero-label">
-            {st.together
-              ? (st.together.timers.length === TRAINING_CAMPS.length ? t("allCampsCaps") : st.together.timers.map(shortLab).join(" · "))
-              : <>{t("nextCaps")} · {lab(st.next)}</>}
-            {(() => {
-              const grp = st.together ? st.together.timers : st.next ? [st.next] : [];
-              const modes = new Set(grp.map((x) => x.mode).filter(Boolean));
-              return modes.size === 1 ? <span className="th-mode-tag">{t(`modeTag_${[...modes][0]}`)}</span> : null;
-            })()}
-          </div>
-          <div className="th-hero-count" role="timer"><Remaining to={hero.endAt} fmt="clock" /></div>
-          <div className="th-hero-when">{t("finishWord")} <Ltr>{when(hero.endAt)}</Ltr> · <Ltr>{formatTime(hero.endAt, "UTC", lang)}</Ltr> UTC</div>
+      {/* what is happening → when it finishes → how long is left. Tap to change, swipe to remove. */}
+      {st.rows.map((r) => (
+        <React.Fragment key={r.key}>
+          <SwipeRow label={t("trRemove")} onAction={() => { setConfirm(r.key); setMenu(null); }} onFull={() => remove(r)}>
+            <div className="th-tc-row">
+              <button type="button" className="th-tc-card" onClick={() => change(r)} aria-label={`${rowTitle(r)}. ${t("trTapToChange")}`}>
+                <span className="th-tc-title">{rowTitle(r)}</span>
+                <span className="th-tc-when">{t("finishes")} <b><Ltr>{when(r.endAt)}</Ltr></b> <small className="th-utc">· <Ltr>{formatTime(r.endAt, "UTC", lang)}</Ltr> UTC</small></span>
+                <span className="th-tc-left" role="timer">{leftA}<Remaining to={r.endAt} />{leftB}</span>
+                {allTogether && <span className="th-tc-camps">{r.timers.map(nm).join(" · ")}</span>}
+              </button>
+              <button type="button" className="th-more" aria-expanded={menu === r.key} aria-label={`${t("options")}: ${rowTitle(r)}`} onClick={() => setMenu(menu === r.key ? null : r.key)}>⋯</button>
+            </div>
+          </SwipeRow>
+          {menu === r.key && confirm !== r.key && (
+            <div className="th-item-actions th-tc-menu">
+              <Btn small onClick={() => { setDetails(details === r.key ? null : r.key); setMenu(null); }}>{t(details === r.key ? "trHideDetails" : "trViewDetails")}</Btn>
+              <Btn small tone="danger" onClick={() => { setConfirm(r.key); setMenu(null); }}>{t("trRemoveFromHub")}</Btn>
+            </div>
+          )}
+          {confirm === r.key && (
+            <div className="th-tc-confirm" role="alertdialog" aria-label={t("trRemoveQ")}>
+              <b>{t("trRemoveQ")}</b>
+              <p>{t("trRemoveBody")}</p>
+              <div className="th-item-actions">
+                <Btn small tone="danger" onClick={() => remove(r)}>{t("trRemove")}</Btn>
+                <Btn small onClick={() => setConfirm(null)}>{t("trKeep")}</Btn>
+              </div>
+            </div>
+          )}
+          {details === r.key && (
+            <div className="th-tc-details">
+              <ul>
+                {r.timers.map((x) => (
+                  <li key={x.id}>
+                    <b>{t(x.category)}</b>
+                    <span>{t(x.troop === "helios" ? "helios" : "normalTroops")} · {formatSpan(x.durationMs, lang)}</span>
+                  </li>
+                ))}
+              </ul>
+              <NextCycleNotes acc={acc} timers={r.timers} />
+              <CalendarButtons items={[{ uid: `tm:${r.timers[0].id}`, start: r.endAt, title: `${rowTitle(r)}${acct ? ` (${acct.name})` : ""}` }]} filename={`training-${r.key}`} />
+            </div>
+          )}
+        </React.Fragment>
+      ))}
+      {st.rows.length > 0 && !kind && !undo && <p className="th-tc-hint">{t("trGestures")}</p>}
+      {undo && (
+        <div className="th-tc-undo" role="status">
+          <span>{t("trRemoved")}</span>
+          <button type="button" className="th-link" onClick={undoRemove}>{t("trUndo")}</button>
         </div>
-      ) : null}
-      {/* every camp, always visible (the earlier layout): slim rows under a shared countdown, full
-          rows (each with its own countdown, local + UTC finish, ✎) when they finish apart */}
-      {hero ? (
-        <div className={`th-camp-rows-live ${st.together ? "together" : ""}`}>
-          {st.timers.filter((x) => x.endAt > now).map((x) => <TimerRow key={x.id} timer={x} accountId={acc} onEdit={edit(x)} label={x.troop === "helios" ? lab(x) : undefined} slim={!!st.together} />)}
-        </div>
-      ) : (
-        !st.idle.length && <div className="th-empty">{t("emptyTraining")}</div>
       )}
 
-      {/* secondary: what's waiting */}
+      {/* camps with nothing running */}
       {st.idle.length > 0 && (
-        <div className="th-idle-line">{t("campsIdleNow", { camps: st.idle.map((c) => (c.troop === "helios" ? t("heliosCamp", { camp: t(`short_${c.camp}`) }) : t(`short_${c.camp}`))).join(", ") })}</div>
+        <div className="th-tc-ready">
+          {st.idle.length === TRAINING_CAMPS.length ? t("trCampsReady", { n: st.idle.length }) : t("trNamesReady", { camps: st.idle.map((c) => t(`short_${c.camp}`)).join(", ") })}
+        </div>
       )}
-      {plans.map((p) => (
-        <div key={p.id} className="th-plan-row reminder">
-          <span>{t("startTrainingAt", { camps: p.camps.map((c) => t(c)).join(", ") })} · <b><Ltr>{when(p.startAt)}</Ltr></b>
-            {p.startAt > now && <> · <Remaining to={p.startAt} /></>}</span>
-          <Btn small onClick={() => updateAccount(acc, (d) => ({ ...d, plans: d.plans.filter((x) => x.id !== p.id) }))}>{t("dismiss")}</Btn>
+
+      {/* planned starts: the next one; the rest behind "+N more" */}
+      {shownPlans.map((p) => (
+        <div key={p.id} className="th-tc-plan">
+          <span>{p.edu ? "🎓" : "⏰"} {t(p.edu ? "trPlanEdu" : "trPlanStart", { camps: p.camps.length === TRAINING_CAMPS.length ? t("eduCampsAll") : p.camps.map((c) => t(`short_${c}`)).join(", ") })} · <b><Ltr>{when(p.startAt)}</Ltr></b>
+            {p.startAt > now && <small> · <Remaining to={p.startAt} /></small>}</span>
+          <button type="button" className="th-tc-x" aria-label={t("trRemoveReminder")} onClick={() => dropPlan(p)}>✕</button>
         </div>
       ))}
-      <NextCycleNotes acc={acc} timers={st.running} />
+      {plans.length > 1 && (
+        <button type="button" className="th-link th-tc-moreplans" aria-expanded={morePlans} onClick={() => setMorePlans(!morePlans)}>
+          {morePlans ? t("trFewer") : t("trMoreN", { n: plans.length - 1 })}
+        </button>
+      )}
 
-      {/* Ministry of Education: the booking (or a quiet hint) with a way into the plan */}
+      {/* Education: a short prompt, not a standing box */}
       {(!kind || kind === "edu" || kind === "edufind") && <EducationStrip acc={acc} open={open} setOpen={setOpen} hasCamps={campsSet}
-        onAddTime={() => setOpen({ acc, kind: "times", focusEdu: true })} onRestart={() => setOpen({ acc, kind: "restart" })} />}
+        onAddTime={() => setOpen({ acc, kind: "times", focusEdu: true })} onRestart={() => startTraining(st.idle.map((c) => c.camp))}
+        onPlan={() => setOpen({ acc, kind: "finish", preset: { accountId: acc, eduTarget: true, ...(st.rows.length ? { change: true } : {}) }, key: Date.now() })} />}
 
-
-      {/* tertiary: editing */}
-      {kind === "finish" && <TrainForm key={open.key} accountId={acc} preset={open.preset} onDone={() => setOpen(null)} onEditTimes={() => setOpen({ acc, kind: "times" })} />}
+      {/* one editor at a time */}
+      {kind === "finish" && <TrainForm key={open.key} accountId={acc} preset={open.preset} onDone={() => setOpen(null)}
+        onEditTimes={() => setOpen({ acc, kind: "times" })} onPerCamp={st.idle.some((c) => c.fullMs) ? () => setOpen({ acc, kind: "restart" }) : null} />}
       {kind === "restart" && <RestartAll acc={acc} onDone={() => setOpen(null)} />}
-      {kind === "times" && <CampTimes accountId={acc} focusEdu={!!open.focusEdu} onClose={() => setOpen(null)} />}
+      {kind === "times" && <TrainingSettings accountId={acc} focusEdu={!!open.focusEdu} onClose={() => setOpen(null)} />}
+
+      {/* ONE primary action: start what's ready, otherwise change what's running */}
       {!kind && (
-        <div className="th-group-actions">
-          <Btn small onClick={() => setOpen({ acc, kind: "finish", key: Date.now() })}>{t("setFinishTime")}</Btn>
-          {st.idle.length > 0 && <Btn small tone="gold" onClick={() => setOpen({ acc, kind: "finish", preset: { accountId: acc, restart: true, camps: st.idle.map((c) => c.camp) }, key: Date.now() })}>↻ {st.idle.length === TRAINING_CAMPS.length ? t("restartAllCampsBtn") : t("restartAll", { n: st.idle.length })}</Btn>}
-          {st.idle.some((c) => c.fullMs) && <button type="button" className="th-link" onClick={() => setOpen({ acc, kind: "restart" })}>{t("restartPerCamp")}</button>}
-          {campsSet && <button type="button" className="th-link" onClick={() => setOpen({ acc, kind: "times" })}>{t("trainingTimes")}</button>}
+        <div className="th-tc-actions">
+          {st.idle.length > 0
+            ? <Btn tone="gold" block onClick={() => startTraining(st.idle.map((c) => c.camp))}>{t("trStart")}</Btn>
+            : st.rows.length > 0 && <Btn block onClick={() => change(st.rows[0])}>{t("trChange")}</Btn>}
+          <button type="button" className="th-tc-settings" onClick={() => setOpen({ acc, kind: "times" })}>
+            {t("trSettings")}<span className="th-tf-chev" aria-hidden="true">›</span>
+          </button>
         </div>
       )}
     </div>
