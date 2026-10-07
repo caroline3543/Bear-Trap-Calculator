@@ -1682,3 +1682,20 @@ html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
 .th-bplan-sleep { color: var(--sub); }
 .th-bplan-final { font-weight: 700; }
 .th-onego { justify-self: start; font-size: 13px; }
+
+/* ---------- Round 29: Finish-at keeps the target; plan as a short sequence ---------- */
+.th-bplan-edu { margin: 0; padding: 8px 10px; border-radius: 10px; background: var(--goldBg); }
+.th-bplan-ok { color: var(--teal, #2F5D53); font-weight: 700; }
+.th-bplan-skip { color: var(--sub); }
+.th-bplan-modesub { margin: -2px 0 0; font-weight: 700; }
+.th-seq { list-style: none; margin: 0; padding: 0; display: grid; }
+.th-seq-pt { display: grid; grid-template-columns: minmax(96px, auto) 1fr; gap: 2px 10px; align-items: baseline; padding: 6px 10px; border-radius: 10px; background: var(--goldBg); }
+.th-seq-pt.edu { box-shadow: inset 3px 0 0 var(--gold); }
+[dir="rtl"] .th-seq-pt.edu { box-shadow: inset -3px 0 0 var(--gold); }
+.th-seq-pt.end { font-weight: 800; }
+.th-seq-time { display: grid; }
+.th-seq-time .th-utc, .th-bplan-foot .th-utc { font-size: 12px; color: var(--sub); }
+.th-seq-gap { padding: 2px 0 2px 22px; font: 700 12.5px 'Nunito Sans', sans-serif; color: var(--sub); }
+[dir="rtl"] .th-seq-gap { padding: 2px 22px 2px 0; }
+.th-bplan-count { margin: 0; font-weight: 800; }
+.th-bplan-foot { margin: -2px 2px 0; display: grid; gap: 2px; font: 600 13px 'Nunito Sans', sans-serif; color: var(--ink); }

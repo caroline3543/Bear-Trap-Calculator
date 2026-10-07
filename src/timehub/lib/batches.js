@@ -101,7 +101,54 @@ export const crossesReset = (now, target) => Number.isFinite(target) && target >
  *  the Training card show them with no changes). Each one's target is the end of the batch it starts. */
 export function checkInPlans(plan, newId) {
   return plan.checkIns.map((ci) => ({
-    id: newId(), camps: ci.camps, startAt: ci.at,
+    id: newId(), camps: ci.camps, startAt: ci.at, ...(ci.edu ? { edu: true } : {}),
     target: Math.max(...plan.camps.filter((c) => ci.camps.includes(c.camp)).map((c) => c.batches.find((b) => b.start === ci.at).end)),
   }));
+}
+
+/* ---------- Education inside the journey ----------
+   The typed finish time is ALWAYS the final target. An Education booking between now and then is an
+   opportunity, never a replacement target: the plan gets a check-in inside the window (camps finish
+   a few minutes after it opens, the player collects and restarts with the buff), then continues to
+   the target. The buff's speed effect isn't modelled (no formula exists) — durations are as planned. */
+
+/** Is this Education window part of the journey from now to the target? */
+export function eduInJourney(now, target, win) {
+  return !!win && win.end > now && win.start < target && target > win.latest;
+}
+
+/**
+ * The plan for a Finish-at target.
+ *   mode "max"    — maximum troops: continuous, and uses Education when it's in the journey
+ *   mode "fewest" — fewer check-ins: skips Education, fewest restarts (may leave idle time, reported)
+ * eduAt — when the in-window restart happens (insideFinishTarget(win)); only used with win.
+ * → planBatches' shape + { usesEdu, eduAt, eduIn }
+ */
+export function planJourney(now, target, camps, { win = null, eduAt = null, mode = "max" } = {}) {
+  const eduIn = eduInJourney(now, target, win);
+  const plain = (m) => ({ ...planBatches(now, target, camps, m), usesEdu: eduIn && now >= win.start, eduAt: null, eduIn });
+  // already inside the window: starting now uses it — nothing to add
+  if (!eduIn || now >= win.start || mode === "fewest") return plain(mode === "fewest" ? "fewest" : "max");
+  const e = Math.min(Math.max(eduAt ?? win.start, win.start), win.latest);
+  if (e - now < MINUTE || target - e < MINUTE) return plain("max");
+  const A = planBatches(now, e, camps, "max");
+  const B = planBatches(e, target, camps, "max");
+  if (!A.ok || !B.ok) return plain("max");
+  const out = A.camps.map((a, i) => {
+    const b = B.camps[i];
+    return { ...a, batches: [...a.batches, ...b.batches], trainedMs: a.trainedMs + b.trainedMs, idleMs: a.idleMs + b.idleMs };
+  });
+  const all = out.map((c) => c.camp);
+  const checkIns = [...A.checkIns, { at: e, camps: all, edu: true }, ...B.checkIns];
+  return {
+    ok: true, mode, windowMs: A.windowMs + B.windowMs, multi: true, start: now, end: B.end, checkIns, camps: out,
+    trainedMs: Math.min(...out.map((c) => c.trainedMs)), idleMs: Math.max(...out.map((c) => c.idleMs)),
+    sameBatches: out.every((c) => c.batches.length === out[0].batches.length && c.batches.every((b, i) => b.ms === out[0].batches[i].ms)),
+    usesEdu: true, eduAt: e, eduIn,
+  };
+}
+
+/** Are "Maximum troops" and "Fewer check-ins" actually different here? */
+export function modesDiffer(a, b) {
+  return !!(a?.ok && b?.ok) && (a.checkIns.length !== b.checkIns.length || a.usesEdu !== b.usesEdu || a.idleMs !== b.idleMs);
 }

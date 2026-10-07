@@ -43,7 +43,7 @@ function defaultSettings() {
     displayTz: null, compact: false, collapsed: {}, showArchived: false,
     layout: sanitizeLayout([]), accountFilter: ALL, calendarAlarmMin: 10, setupDismissed: false,
     knownTemplates: Object.keys(TEMPLATES), timeOptionsRev: TIME_OPTIONS_REV, tab: "today", haptics: true, showSpeed: false, tour: null, eduPri: "checkins", eduFinish: null, eduBufferMin: 5, eduDismiss: {},
-    timelineFilter: "all", todoView: "list", todoFilter: "all", homeReadyOpen: false, ministerMute: { accounts: [], combat: false }, minDay: null, energy: null, taskSuggest: "balanced", focus: null, todoHistory: false, todoOpen: { game: true, personal: true, work: true }, prioOpen: { next: true, plan: true, quick: true, later: true },
+    timelineFilter: "all", todoView: "list", todoFilter: "all", homeReadyOpen: false, trainPlanMode: null, ministerMute: { accounts: [], combat: false }, minDay: null, energy: null, taskSuggest: "balanced", focus: null, todoHistory: false, todoOpen: { game: true, personal: true, work: true }, prioOpen: { next: true, plan: true, quick: true, later: true },
     track: { reset: true, store: true, trek: true, stamina: true, contrib: true, intel: true }, sleep: { ...DEFAULT_SLEEP },
     champ: { leader: null, anchor: null },
   };
@@ -303,6 +303,7 @@ export function sanitizeState(raw, now = Date.now(), makeId = newId) {
       todoView: s.todoView === "priority" ? "priority" : "list",
       todoFilter: ["all", "game", "personal", "work"].includes(s.todoFilter) ? s.todoFilter : "all",
       homeReadyOpen: s.homeReadyOpen === true,
+      trainPlanMode: s.trainPlanMode === "max" || s.trainPlanMode === "fewest" ? s.trainPlanMode : null,
       ministerMute: { accounts: Array.isArray(s.ministerMute?.accounts) ? [...new Set(s.ministerMute.accounts.filter((a) => typeof a === "string"))].slice(0, 50) : [], combat: s.ministerMute?.combat === true },
       minDay: /^\d{4}-\d{2}-\d{2}$/.test(s.minDay || "") ? s.minDay : null,
       energy: s.energy && /^\d{4}-\d{2}-\d{2}$/.test(s.energy.day || "") && ENERGY.includes(s.energy.level) ? { day: s.energy.day, level: s.energy.level } : null,

@@ -124,3 +124,60 @@ test("a target in the past or under a minute is rejected", () => {
   assert.equal(one(12 * HOUR, 30 * 1000).ok, false);
   assert.equal(planBatches(NOW, NOW + HOUR, [{ camp: "infantry_camp", maxMs: null }]).error, "noMax");
 });
+
+/* ---------- Round 29: the typed target stays the target; Education fits into the plan ---------- */
+import { planJourney, eduInJourney, modesDiffer } from "../lib/batches.js";
+import { eduWindow, insideFinishTarget } from "../lib/education.js";
+
+// The screenshot: 11:05 PM now, Education 11:30 PM–12:00 AM, target 12:47 PM tomorrow (13h 42m away)
+const N2 = Date.UTC(2026, 9, 7, 10, 5); // Wed 7 Oct 23:05 NZDT
+const EDU = { id: "e", position: "minister_education", startAt: Date.UTC(2026, 9, 7, 10, 30) };
+const WIN = eduWindow(EDU, 5 * MINUTE);
+const TGT = Date.UTC(2026, 9, 7, 23, 47); // Thu 12:47 PM NZDT
+const inf = (maxMs) => [{ camp: "infantry_camp", troop: "normal", maxMs }];
+const opt = { win: WIN, eduAt: insideFinishTarget(WIN) };
+
+test("screenshot scenario, max 12h: target kept; Education used; 2 check-ins vs 1 when skipping it", () => {
+  assert.equal(eduInJourney(N2, TGT, WIN), true);
+  const max = planJourney(N2, TGT, inf(12 * HOUR), { ...opt, mode: "max" });
+  assert.equal(max.end, TGT); // the typed finish time is the final target — never replaced
+  assert.equal(max.usesEdu, true);
+  assert.deepEqual(max.checkIns.map((c) => [new Date(c.at).toISOString().slice(11, 16), !!c.edu]), [["10:33", true], ["22:33", false]]);
+  assert.deepEqual(max.camps[0].batches.map((b) => b.ms / MINUTE), [28, 720, 74]);
+  const few = planJourney(N2, TGT, inf(12 * HOUR), { ...opt, mode: "fewest" });
+  assert.equal(few.end, TGT);
+  assert.equal(few.usesEdu, false);
+  assert.equal(few.checkIns.length, 1);
+  assert.equal(modesDiffer(max, few), true);
+});
+
+test("one batch could reach the target: Maximum troops adds one Education check-in; Fewer check-ins is a single batch", () => {
+  const max = planJourney(N2, TGT, inf(14 * HOUR), { ...opt, mode: "max" });
+  assert.equal(max.checkIns.length, 1);
+  assert.equal(max.checkIns[0].edu, true);
+  const few = planJourney(N2, TGT, inf(14 * HOUR), { ...opt, mode: "fewest" });
+  assert.equal(few.checkIns.length, 0);
+  assert.deepEqual(few.camps[0].batches.map((b) => b.ms / MINUTE), [822]); // 13h 42m
+});
+
+test("Training Capacity 36h: still one batch when skipping Education", () => {
+  assert.equal(planJourney(N2, TGT, inf(36 * HOUR), { ...opt, mode: "fewest" }).multi, false);
+});
+
+test("Education already running: starting now uses it, no extra check-in", () => {
+  const p = planJourney(WIN.start + 5 * MINUTE, TGT, inf(14 * HOUR), { ...opt, mode: "max" });
+  assert.equal(p.usesEdu, true);
+  assert.equal(p.checkIns.length, 0);
+});
+
+test("Education after the target, or no booking: plain plan", () => {
+  assert.equal(eduInJourney(N2, WIN.start - MINUTE, WIN), false);
+  assert.equal(planJourney(N2, TGT, inf(14 * HOUR), { mode: "max" }).usesEdu, false);
+});
+
+test("the Education check-in becomes an Education restart reminder", () => {
+  let n = 0;
+  const plans = checkInPlans(planJourney(N2, TGT, inf(12 * HOUR), { ...opt, mode: "max" }), () => `x${++n}`);
+  assert.equal(plans[0].edu, true);
+  assert.equal(plans[1].edu, undefined);
+});
