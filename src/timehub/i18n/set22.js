@@ -378,7 +378,19 @@ export const en = {
  "trEduPlanSet": "Education reminder set for {time}.",
  "trTimingShort": "{n} of these would finish during the night. Train a little less to finish around {finish} and start the next batch before bed.",
  "trGestures": "Tap to change · swipe to remove",
- "trEduAsk": "Plan with Education?"
+ "trEduAsk": "Plan with Education?",
+ "tlCamps": "{name} camps finish",
+ "tlSome": "{camps} finish",
+ "tlSomeNamed": "{name} {camps} finish",
+ "tlOneNamed": "{name} {camp} finishes",
+ "tlResearchNamed": "{name} {place} finishes",
+ "trHowLong": "How long should training run?",
+ "trFinishForEdu": "Finish for Education",
+ "trPerCampDur": "Different time for each camp",
+ "trWhy": "Why?",
+ "trWhyCap": "Your Training Capacity batch lasts {dur}, so starting then finishes at your selected target.",
+ "trWhyFull": "Your full batch lasts {dur}, so starting then finishes at your selected target.",
+ "trWhyCustom": "Your batch lasts {dur}, so starting then finishes at your selected target."
 };
 export const it = {
  "bpEduMiss": "La prenotazione di Istruzione ({start}–{end}) non coincide con un accesso: questo piano non ne usa il bonus.",
@@ -752,7 +764,19 @@ export const it = {
  "trEduPlanSet": "Promemoria Istruzione impostato alle {time}.",
  "trTimingShort": "{n} di questi finirebbero di notte. Addestra un po’ meno per finire verso le {finish} e avviare il prossimo lotto prima di dormire.",
  "trGestures": "Tocca per modificare · scorri per rimuovere",
- "trEduAsk": "Pianificare con Istruzione?"
+ "trEduAsk": "Pianificare con Istruzione?",
+ "tlCamps": "{name}: i campi finiscono",
+ "tlSome": "{camps} finiscono",
+ "tlSomeNamed": "{name}: {camps} finiscono",
+ "tlOneNamed": "{name}: {camp} finisce",
+ "tlResearchNamed": "{name}: ricerca {place} finisce",
+ "trHowLong": "Per quanto deve durare l’addestramento?",
+ "trFinishForEdu": "Finire per Istruzione",
+ "trPerCampDur": "Tempo diverso per ogni campo",
+ "trWhy": "Perché?",
+ "trWhyCap": "Il tuo lotto con Capacità di addestramento dura {dur}: iniziando a quell’ora finisce all’obiettivo scelto.",
+ "trWhyFull": "Il tuo lotto completo dura {dur}: iniziando a quell’ora finisce all’obiettivo scelto.",
+ "trWhyCustom": "Il tuo lotto dura {dur}: iniziando a quell’ora finisce all’obiettivo scelto."
 };
 export const es = {
  "bpEduMiss": "Tu reserva de Educación ({start}–{end}) no coincide con una conexión: este plan no usa su mejora.",
@@ -1126,7 +1150,19 @@ export const es = {
  "trEduPlanSet": "Recordatorio de Educación a las {time}.",
  "trTimingShort": "{n} de estos terminarían de noche. Entrena un poco menos para terminar hacia las {finish} e iniciar el siguiente lote antes de dormir.",
  "trGestures": "Toca para cambiar · desliza para quitar",
- "trEduAsk": "¿Planificar con Educación?"
+ "trEduAsk": "¿Planificar con Educación?",
+ "tlCamps": "{name}: los campos terminan",
+ "tlSome": "{camps} terminan",
+ "tlSomeNamed": "{name}: {camps} terminan",
+ "tlOneNamed": "{name}: {camp} termina",
+ "tlResearchNamed": "{name}: investigación de {place} termina",
+ "trHowLong": "¿Cuánto debe durar el entrenamiento?",
+ "trFinishForEdu": "Terminar para Educación",
+ "trPerCampDur": "Tiempo distinto para cada campo",
+ "trWhy": "¿Por qué?",
+ "trWhyCap": "Tu lote con Capacidad de entrenamiento dura {dur}: si empiezas a esa hora, termina en tu objetivo.",
+ "trWhyFull": "Tu lote completo dura {dur}: si empiezas a esa hora, termina en tu objetivo.",
+ "trWhyCustom": "Tu lote dura {dur}: si empiezas a esa hora, termina en tu objetivo."
 };
 export const ko = {
  "bpEduMiss": "교육 예약({start}–{end})이 접속 시간과 겹치지 않아 이 계획은 버프를 쓰지 않아요.",
@@ -1491,7 +1527,19 @@ export const ko = {
  "trEduPlanSet": "{time} 교육 알림 설정됨.",
  "trTimingShort": "이 중 {n}곳은 밤중에 끝나요. 조금 짧게 훈련하면 {finish}쯤 끝나서 자기 전에 다음 훈련을 시작할 수 있어요.",
  "trGestures": "눌러서 변경 · 밀어서 삭제",
- "trEduAsk": "교육에 맞춰 계획할까요?"
+ "trEduAsk": "교육에 맞춰 계획할까요?",
+ "tlCamps": "{name} 훈련소 완료",
+ "tlSome": "{camps} 완료",
+ "tlSomeNamed": "{name} {camps} 완료",
+ "tlOneNamed": "{name} {camp} 완료",
+ "tlResearchNamed": "{name} {place} 연구 완료",
+ "trHowLong": "훈련을 얼마나 할까요?",
+ "trFinishForEdu": "교육에 맞춰 완료",
+ "trPerCampDur": "훈련소마다 다른 시간",
+ "trWhy": "왜요?",
+ "trWhyCap": "훈련 용량 훈련은 {dur} 걸려서, 그때 시작하면 정한 목표 시각에 끝나요.",
+ "trWhyFull": "최대 훈련은 {dur} 걸려서, 그때 시작하면 정한 목표 시각에 끝나요.",
+ "trWhyCustom": "이 훈련은 {dur} 걸려서, 그때 시작하면 정한 목표 시각에 끝나요."
 };
 export const de = {
  "bpEduMiss": "Deine Bildungsbuchung ({start}–{end}) fällt auf keinen Check-in – dieser Plan nutzt den Bonus nicht.",
@@ -1865,7 +1913,19 @@ export const de = {
  "trEduPlanSet": "Bildungs-Erinnerung für {time} gesetzt.",
  "trTimingShort": "{n} davon würden nachts fertig. Etwas kürzer trainieren, dann sind sie gegen {finish} fertig und der nächste Durchgang startet vor dem Schlafen.",
  "trGestures": "Tippen zum Ändern · wischen zum Entfernen",
- "trEduAsk": "Mit Bildung planen?"
+ "trEduAsk": "Mit Bildung planen?",
+ "tlCamps": "{name}: Lager fertig",
+ "tlSome": "{camps} fertig",
+ "tlSomeNamed": "{name}: {camps} fertig",
+ "tlOneNamed": "{name}: {camp} fertig",
+ "tlResearchNamed": "{name}: Forschung {place} fertig",
+ "trHowLong": "Wie lange soll trainiert werden?",
+ "trFinishForEdu": "Fertig zur Bildung",
+ "trPerCampDur": "Für jedes Lager eine eigene Zeit",
+ "trWhy": "Warum?",
+ "trWhyCap": "Dein Durchgang mit Trainingskapazität dauert {dur}. Startest du dann, ist er genau zum gewählten Ziel fertig.",
+ "trWhyFull": "Dein voller Durchgang dauert {dur}. Startest du dann, ist er genau zum gewählten Ziel fertig.",
+ "trWhyCustom": "Dein Durchgang dauert {dur}. Startest du dann, ist er genau zum gewählten Ziel fertig."
 };
 export const ru = {
  "bpEduMiss": "Бронь Образования ({start}–{end}) не совпадает с заходом — этот план не использует бонус.",
@@ -2237,7 +2297,19 @@ export const ru = {
  "trEduPlanSet": "Напоминание об Образовании на {time}.",
  "trTimingShort": "Из них ночью закончат: {n}. Обучайте чуть меньше, чтобы закончить около {finish} и начать следующую партию перед сном.",
  "trGestures": "Нажмите, чтобы изменить · смахните, чтобы убрать",
- "trEduAsk": "Спланировать с Образованием?"
+ "trEduAsk": "Спланировать с Образованием?",
+ "tlCamps": "{name}: лагеря завершают",
+ "tlSome": "{camps}: завершение",
+ "tlSomeNamed": "{name}: {camps} — завершение",
+ "tlOneNamed": "{name}: {camp} — завершение",
+ "tlResearchNamed": "{name}: {place} — исследование завершится",
+ "trHowLong": "Сколько должно длиться обучение?",
+ "trFinishForEdu": "Закончить к Образованию",
+ "trPerCampDur": "Разное время для каждого лагеря",
+ "trWhy": "Почему?",
+ "trWhyCap": "Партия с Ёмкостью обучения длится {dur}, поэтому старт в это время закончится точно к выбранной цели.",
+ "trWhyFull": "Полная партия длится {dur}, поэтому старт в это время закончится точно к выбранной цели.",
+ "trWhyCustom": "Партия длится {dur}, поэтому старт в это время закончится точно к выбранной цели."
 };
 export const pl = {
  "bpEduMiss": "Rezerwacja Edukacji ({start}–{end}) nie wypada przy logowaniu — ten plan nie użyje bonusu.",
@@ -2609,7 +2681,19 @@ export const pl = {
  "trEduPlanSet": "Przypomnienie o Edukacji na {time}.",
  "trTimingShort": "Z tych w nocy skończy się: {n}. Szkol trochę krócej, by skończyć około {finish} i zacząć kolejną partię przed snem.",
  "trGestures": "Dotknij, aby zmienić · przesuń, aby usunąć",
- "trEduAsk": "Zaplanować z Edukacją?"
+ "trEduAsk": "Zaplanować z Edukacją?",
+ "tlCamps": "{name}: obozy kończą",
+ "tlSome": "{camps} kończą",
+ "tlSomeNamed": "{name}: {camps} kończą",
+ "tlOneNamed": "{name}: {camp} kończy",
+ "tlResearchNamed": "{name}: {place} — koniec badania",
+ "trHowLong": "Jak długo ma trwać szkolenie?",
+ "trFinishForEdu": "Skończ na Edukację",
+ "trPerCampDur": "Inny czas dla każdego obozu",
+ "trWhy": "Dlaczego?",
+ "trWhyCap": "Partia z Pojemnością szkolenia trwa {dur}, więc start o tej porze kończy się dokładnie w wybranym celu.",
+ "trWhyFull": "Pełna partia trwa {dur}, więc start o tej porze kończy się dokładnie w wybranym celu.",
+ "trWhyCustom": "Partia trwa {dur}, więc start o tej porze kończy się dokładnie w wybranym celu."
 };
 export const tr = {
  "bpEduMiss": "Eğitim rezervasyonun ({start}–{end}) bir girişe denk gelmiyor; bu plan bonusu kullanmaz.",
@@ -2981,7 +3065,19 @@ export const tr = {
  "trEduPlanSet": "{time} için Eğitim hatırlatıcısı kuruldu.",
  "trTimingShort": "Bunlardan {n} tanesi gece biter. Biraz daha az eğit; {finish} civarında biter ve sonraki partiyi yatmadan başlatırsın.",
  "trGestures": "Değiştirmek için dokun · kaldırmak için kaydır",
- "trEduAsk": "Eğitim ile planlansın mı?"
+ "trEduAsk": "Eğitim ile planlansın mı?",
+ "tlCamps": "{name} kampları bitiyor",
+ "tlSome": "{camps} bitiyor",
+ "tlSomeNamed": "{name} {camps} bitiyor",
+ "tlOneNamed": "{name} {camp} bitiyor",
+ "tlResearchNamed": "{name} {place} araştırması bitiyor",
+ "trHowLong": "Eğitim ne kadar sürsün?",
+ "trFinishForEdu": "Eğitim için bitir",
+ "trPerCampDur": "Her kamp için farklı süre",
+ "trWhy": "Neden?",
+ "trWhyCap": "Eğitim Kapasitesi partin {dur} sürüyor; o saatte başlarsan seçtiğin hedefte biter.",
+ "trWhyFull": "Tam partin {dur} sürüyor; o saatte başlarsan seçtiğin hedefte biter.",
+ "trWhyCustom": "Partin {dur} sürüyor; o saatte başlarsan seçtiğin hedefte biter."
 };
 export const ar = {
  "bpEduMiss": "حجز التعليم ({start}–{end}) لا يوافق موعد دخول، لذا لن تستفيد هذه الخطة من التعزيز.",
@@ -3354,5 +3450,17 @@ export const ar = {
  "trEduPlanSet": "تم ضبط تذكير التعليم عند {time}.",
  "trTimingShort": "{n} من هذه ستنتهي أثناء الليل. درّب أقل قليلًا لتنتهي قرابة {finish} وتبدأ الدفعة التالية قبل النوم.",
  "trGestures": "اضغط للتغيير · اسحب للإزالة",
- "trEduAsk": "هل تخطّط مع التعليم؟"
+ "trEduAsk": "هل تخطّط مع التعليم؟",
+ "tlCamps": "{name}: تنتهي المعسكرات",
+ "tlSome": "ينتهي {camps}",
+ "tlSomeNamed": "{name}: ينتهي {camps}",
+ "tlOneNamed": "{name}: ينتهي {camp}",
+ "tlResearchNamed": "{name}: ينتهي بحث {place}",
+ "trHowLong": "كم يجب أن يستمر التدريب؟",
+ "trFinishForEdu": "الانتهاء من أجل التعليم",
+ "trPerCampDur": "وقت مختلف لكل معسكر",
+ "trWhy": "لماذا؟",
+ "trWhyCap": "تستغرق دفعة سعة التدريب {dur}، لذا فالبدء حينها ينتهي عند الهدف الذي اخترته.",
+ "trWhyFull": "تستغرق دفعتك الكاملة {dur}، لذا فالبدء حينها ينتهي عند الهدف الذي اخترته.",
+ "trWhyCustom": "تستغرق دفعتك {dur}، لذا فالبدء حينها ينتهي عند الهدف الذي اخترته."
 };

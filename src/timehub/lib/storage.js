@@ -166,6 +166,8 @@ function cleanAccountData(a) {
     campMax: cleanCampMax(a.campMax), helios: cleanHelios(a.helios), plans: list(a.plans, cleanPlan),
     lastEnded: Object.fromEntries(TRAINING_CAMPS.filter((c) => isNum(a.lastEnded?.[c])).map((c) => [c, a.lastEnded[c]])),
     campMaxEdu: cleanCampMax(a.campMaxEdu),
+    // how this account last said how long to train: "finish" (Finish at) or "custom" (Duration)
+    ...(a.trainMode === "finish" || a.trainMode === "custom" ? { trainMode: a.trainMode } : {}),
     trainCap: {
       on: a.trainCap?.on === true,
       max: Object.fromEntries(Object.entries(a.trainCap?.max && typeof a.trainCap.max === "object" ? a.trainCap.max : {})

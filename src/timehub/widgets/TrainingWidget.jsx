@@ -258,9 +258,12 @@ function TrainForm({ onDone, preset, accountId, onEditTimes, onPerCamp }) {
   const data = dataFor(accountId);
   const restart = !!preset?.restart;
   const changing = !!preset?.change; // opened from a running training: "Change", not "Start"
-  const [mode, setMode] = useState(preset?.ms && !restart ? "custom" : "finish"); // finish (default) | custom (Duration) | max
+  // finish (Finish at) | custom (Duration) | max — the first two are equal choices; each account
+  // remembers the one it used last
+  const [mode, setMode] = useState(preset?.ms && !restart ? "custom" : data.trainMode === "custom" ? "custom" : "finish");
   const [share, setShare] = useState(preset?.camp ? "each" : "same");
-  const [shared, setShared] = useState(preset?.camps && preset.ms ? durFrom(preset.ms) : EMPTY_DUR);
+  const [shared, setShared] = useState(preset?.camps && preset.ms ? durFrom(preset.ms)
+    : preset?.endAt > now ? durFrom(Math.floor((preset.endAt - now) / MINUTE) * MINUTE) : EMPTY_DUR);
   const [each, setEach] = useState(() => Object.fromEntries(TRAINING_CAMPS.map((c) => [c, preset?.camp === c ? durFrom(preset.ms) : EMPTY_DUR])));
   // Opened at (or after) a start reminder: carry on with that reminder's target and camps.
   const [duePlan] = useState(() => {
@@ -301,6 +304,7 @@ function TrainForm({ onDone, preset, accountId, onEditTimes, onPerCamp }) {
   const [planOpen, setPlanOpen] = useState(false); // the full sequence stays folded until asked for
   const [rested, setRested] = useState(false); // the easier plan: no check-ins during sleep
   const [moreOpen, setMoreOpen] = useState(false);
+  const [why, setWhy] = useState(false);
   // planning goal: the player's last choice (remembered); first time it depends on the target
   const [pmodeRaw, setPmodeRaw] = useState(state.settings.trainPlanMode || null);
   const setPmode = (v) => { setPmodeRaw(v); dispatch({ type: "settings", patch: { trainPlanMode: v } }); };
@@ -556,10 +560,23 @@ function TrainForm({ onDone, preset, accountId, onEditTimes, onPerCamp }) {
       <button type="button" className="th-tf-close" aria-label={t("close")} onClick={onDone}>✕</button>
     </div>
   );
-  const backLink = (
-    <button type="button" className="th-link th-tf-back" onClick={() => { setMode("finish"); setError(null); }}>
-      <span className="th-tf-chev" aria-hidden="true">‹</span> {t("trBackToFinish")}
-    </button>
+  const switchMode = (v) => {
+    setMode(v);
+    setError(null);
+    if (v === "finish" || v === "custom") updateAccount(accountId, (d) => (d.trainMode === v ? d : { ...d, trainMode: v }));
+  };
+  const modeSeg = (
+    <Seg value={mode} onChange={switchMode} label={t("trainingMode")} options={[
+      { value: "finish", label: t("modeFinishShort") },
+      { value: "custom", label: t("modeDurationShort") },
+    ]} />
+  );
+  // the summary under the button reads the same whichever way the time was given
+  const underLines = (durMs, end) => (
+    <>
+      <span>{t("bkTrainFor")} <b>{span(durMs)}</b></span>
+      <span>{t("finishes")} <b>{clock(end)}</b>{localDayRange(now, tz, 0).end > end ? "" : ` ${dayWordFor(end)}`} · {utcOf(end)}</span>
+    </>
   );
   // Training Capacity: one checkbox. The large calibration form only the first time, or after "Edit".
   const capBox = (
@@ -602,7 +619,7 @@ function TrainForm({ onDone, preset, accountId, onEditTimes, onPerCamp }) {
     return (
       <div className="th-form th-tf">
         {head}
-        {backLink}
+        {modeSeg}
         <span className="th-finish-q">{t("trOptMax")}</span>
         <p className="th-hint th-mode-note">{t("modeMaxHelp")}</p>
         {campChips}
@@ -627,18 +644,19 @@ function TrainForm({ onDone, preset, accountId, onEditTimes, onPerCamp }) {
     );
   }
   if (mode === "custom") {
+    const one = share === "same" ? durParse(shared) : null;
+    const ok = one && !one.error && one.ms > 0;
     return (
       <div className="th-form th-tf">
         {head}
-        {backLink}
-        <span className="th-finish-q">{t("trOptDuration")}</span>
-        <label className="th-check th-same-check">
-          <input type="checkbox" checked={share === "same"} onChange={(e) => switchShare(e.target.checked ? "same" : "each")} />
-          {t("trainSameDurationQ")}
-        </label>
-        {share === "each" && <p className="th-hint">{t("syncSomeHint")}</p>}
-        {share === "same" && (<><DurationFields value={shared} onChange={setShared} label={t("trainAllFor")} />{campChips}</>)}
-        {share === "each" && (
+        {modeSeg}
+        <span className="th-finish-q">{t("trHowLong")}</span>
+        {share === "same" ? (
+          <>
+            <DurationFields value={shared} onChange={setShared} label={t("trainAllFor")} />
+            {ok && <span className="th-finish-read">{t("finishes")} <b>{clock(now + one.ms)}</b> {dayWordFor(now + one.ms)} · <Ltr>{formatTime(now + one.ms, "UTC", lang)}</Ltr> UTC</span>}
+          </>
+        ) : (
           <div className="th-camp-rows">
             {TRAINING_CAMPS.map((c) => (
               <div key={c} className="th-camp-each">
@@ -650,9 +668,23 @@ function TrainForm({ onDone, preset, accountId, onEditTimes, onPerCamp }) {
           </div>
         )}
         {capBox}
+        {share === "same" && campChips}
         {error && <span className="th-error" role="alert">{error}</span>}
         <Btn tone="gold" block onClick={saveLeft}>{cta}</Btn>
-        <FinishPreview entries={entries} now={now} />
+        {ok ? <div className="th-tf-under">{underLines(one.ms, now + one.ms)}</div> : share === "each" && <FinishPreview entries={entries} now={now} />}
+        <details className="th-secondary th-tf-more" open={moreOpen} onToggle={(e) => setMoreOpen(e.currentTarget.open)}>
+          <summary>{t("trMoreOptions")}</summary>
+          <div className="th-tf-morebody">
+            <label className="th-check">
+              <input type="checkbox" checked={share === "each"} onChange={(e) => switchShare(e.target.checked ? "each" : "same")} />
+              {t("trPerCampDur")}
+            </label>
+            {share === "each" && <p className="th-hint">{t("syncSomeHint")}</p>}
+            <button type="button" className="th-tf-opt" onClick={() => switchMode("max")}>{t("trOptMax")}<span className="th-tf-chev" aria-hidden="true">›</span></button>
+            {onPerCamp && <button type="button" className="th-tf-opt" onClick={onPerCamp}>{t("trOptPerCamp")}<span className="th-tf-chev" aria-hidden="true">›</span></button>}
+            {onEditTimes && <button type="button" className="th-tf-opt" onClick={onEditTimes}>{t("trSettings")}<span className="th-tf-chev" aria-hidden="true">›</span></button>}
+          </div>
+        </details>
       </div>
     );
   }
@@ -666,6 +698,7 @@ function TrainForm({ onDone, preset, accountId, onEditTimes, onPerCamp }) {
   const underLine = (durMs, end) => (
     <>{t("bkTrainFor")} <b>{span(durMs)}</b> · {t("finishes")} <b>{clock(end)}</b>{localDayRange(now, tz, 0).end > end ? "" : ` ${dayWordFor(end)}`} · {utcOf(end)}</>
   );
+  const eduAvail = !!eduWin && eduWin.start - now >= MINUTE;
   const sleepNotes = (
     <>
       {isAdvice && sAdvice.kind === "bed" && <p className="th-note">{t("trOvernight", { end: formatTime(sAdvice.overnightEnd, tz, lang) })}</p>}
@@ -677,6 +710,7 @@ function TrainForm({ onDone, preset, accountId, onEditTimes, onPerCamp }) {
   return (
     <div className="th-form th-finishform th-tf">
       {head}
+      {modeSeg}
       {/* 1. the goal */}
       <label className="th-finish">
         <span className="th-finish-q">{t("trWhenFinish")}</span>
@@ -707,14 +741,27 @@ function TrainForm({ onDone, preset, accountId, onEditTimes, onPerCamp }) {
         <input className="th-input th-bk-date" type="date" aria-label={t("trChooseDate")} min={ymdAt(now, tz)} value={customDate}
           onChange={(e) => { setCustomDate(e.target.value); setLongOk(false); }} />
       )}
-      {/* an Education booking is offered as the thing to finish for */}
-      {eduWin && eduWin.start - now >= MINUTE && (
-        <div className="th-bk-opt">
-          <span className="th-bk-optlabel">{t("trFinishFor")}</span>
-          <span className="th-todos-filter th-dayadd" role="group" aria-label={t("trFinishFor")}>
-            <button type="button" className={`th-chip-btn small ${!eduGoal ? "on" : ""}`} aria-pressed={!eduGoal} onClick={() => eduGoal && pickEdu()}>{t("trCustomTime")}</button>
-            <button type="button" className={`th-chip-btn small ${eduGoal ? "on" : ""}`} aria-pressed={eduGoal} onClick={() => !eduGoal && pickEdu()}>🎓 {t("eduWord")} · {whenShort(eduWin.start)}</button>
-          </span>
+      {/* contextual shortcuts: just after reset (SvS / capacity planning), Education (only with a booking) */}
+      {(eduAvail || capOn || tgtKind === "reset") && (
+        <div className="th-todos-filter th-dayadd" role="group" aria-label={t("bkShortcuts")}>
+          {(capOn || tgtKind === "reset") && (
+            <button type="button" className={`th-chip-btn small ${tgtKind === "reset" ? "on" : ""}`} aria-pressed={tgtKind === "reset"} aria-expanded={resetOpen} onClick={() => setResetOpen(!resetOpen)}>
+              {t("bkJustAfterReset")}{tgtKind === "reset" && resetOff != null && <>&nbsp;· <Ltr>00:{String(resetOff).padStart(2, "0")} UTC</Ltr></>}
+            </button>
+          )}
+          {eduAvail && (
+            <button type="button" className={`th-chip-btn small ${eduGoal ? "on" : ""}`} aria-pressed={eduGoal} onClick={pickEdu}>
+              🎓 {t("trFinishForEdu")} · <Ltr>{formatTime(eduWin.start, tz, lang)}</Ltr>
+            </button>
+          )}
+        </div>
+      )}
+      {resetOpen && (
+        <div className="th-todos-filter th-dayadd" role="group" aria-label={t("bkResetOffsetQ")}>
+          {RESET_OFFSETS.map((off) => (
+            <button key={off} type="button" className={`th-chip-btn small ${tgtKind === "reset" && resetOff === off ? "on" : ""}`} aria-pressed={tgtKind === "reset" && resetOff === off}
+              onClick={() => pickReset(off)}><Ltr>00:{String(off).padStart(2, "0")} UTC</Ltr></button>
+          ))}
         </div>
       )}
       {sAdvice && sAdvice.kind === "bed" && !isAdvice && !eduGoal && !capOn && !changing && tgtKind === "time" && !customDate && (
@@ -733,8 +780,8 @@ function TrainForm({ onDone, preset, accountId, onEditTimes, onPerCamp }) {
           {error && <span className="th-error" role="alert">{error}</span>}
           <Btn tone="gold" block onClick={() => startBack(eduGoal)}>{cta}</Btn>
           <div className="th-tf-under">
-            {back.groups.map((g) => (
-              <span key={`${g.camps[0]}|${g.end}`}>{back.groups.length > 1 && <b>{campNames(g.camps)}: </b>}{underLine(g.durMs, g.end)}</span>
+            {back.groups.length === 1 ? underLines(back.groups[0].durMs, back.groups[0].end) : back.groups.map((g) => (
+              <span key={`${g.camps[0]}|${g.end}`}><b>{campNames(g.camps)}: </b>{underLine(g.durMs, g.end)}</span>
             ))}
           </div>
           {eduThen}
@@ -745,7 +792,7 @@ function TrainForm({ onDone, preset, accountId, onEditTimes, onPerCamp }) {
         <>
           {error && <span className="th-error" role="alert">{error}</span>}
           <Btn tone="gold" block onClick={startPlanNow}>{cta}</Btn>
-          <div className="th-tf-under"><span>{underLine(need, target)}</span></div>
+          <div className="th-tf-under">{underLines(need, target)}</div>
           <p className="th-note">{t("oneGoNote", { dur: span(need) })} <button type="button" className="th-link" onClick={() => setLongOk(false)}>{t("bpShowPlan")}</button></p>
         </>
       )}
@@ -806,7 +853,11 @@ function TrainForm({ onDone, preset, accountId, onEditTimes, onPerCamp }) {
                     </b>
                     {g.state === "future" && (
                       <span className="th-bk-sub">{dayWordFor(g.start)} · {utcOf(g.start)} · <b>{t("bkStartsIn", { time: span(g.start - now) })}</b>
-                        {inSleepWindow(g.start, tz, sleep) && <> · 🌙 {t("trUsuallyAsleep")}</>}</span>
+                        {inSleepWindow(g.start, tz, sleep) && <> · 🌙 {t("trUsuallyAsleep")}</>}
+                        {g === later[0] && <> · <button type="button" className="th-link th-bk-why" aria-expanded={why} onClick={() => setWhy(!why)}>{t("trWhy")}</button></>}</span>
+                    )}
+                    {g.state === "future" && g === later[0] && why && (
+                      <span className="th-bk-whytext">{t(batch === "custom" ? "trWhyCustom" : capOn ? "trWhyCap" : "trWhyFull", { dur: span(g.durMs) })}</span>
                     )}
                     <span className="th-bk-fact">{t("bkTrainFor")} <b>{span(g.durMs)}</b>{endsDiffer && <> → {whenShort(g.end)}</>}</span>
                   </li>
@@ -849,8 +900,7 @@ function TrainForm({ onDone, preset, accountId, onEditTimes, onPerCamp }) {
       <details className="th-secondary th-tf-more" open={moreOpen} onToggle={(e) => setMoreOpen(e.currentTarget.open)}>
         <summary>{t("trMoreOptions")}</summary>
         <div className="th-tf-morebody">
-          <button type="button" className="th-tf-opt" onClick={() => { setMode("custom"); setError(null); }}>{t("trOptDuration")}<span className="th-tf-chev" aria-hidden="true">›</span></button>
-          <button type="button" className="th-tf-opt" onClick={() => { setMode("max"); setError(null); }}>{t("trOptMax")}<span className="th-tf-chev" aria-hidden="true">›</span></button>
+          <button type="button" className="th-tf-opt" onClick={() => switchMode("max")}>{t("trOptMax")}<span className="th-tf-chev" aria-hidden="true">›</span></button>
           {onPerCamp && <button type="button" className="th-tf-opt" onClick={onPerCamp}>{t("trOptPerCamp")}<span className="th-tf-chev" aria-hidden="true">›</span></button>}
           {/* just after reset: the player picks how long after — none is assumed */}
           <div className="th-bk-opt">

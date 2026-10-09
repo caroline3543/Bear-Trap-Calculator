@@ -76,14 +76,50 @@ function Clock({ to }) {
   return <span className="th-nextup-clock" role="timer"><Remaining to={to} /></span>;
 }
 
-function titleOf(i, t, templates) {
-  if (i.group) return i.group.length === 3 ? t("allCampsFinish") : t("nCampsFinish", { n: i.group.length });
+/** Kinds whose title names the account when several accounts are shown ("Chaz camps finish"):
+ *  the account is what decides where to log in, so it leads. One account shown → the short form. */
+const NAMED = new Set(["training", "research"]);
+
+/** Says which camps: all three → "camps", one → that camp, two → "Infantry + Lancer". Never "all"
+ *  when it isn't. `name` is the account (only when several accounts are shown). */
+function titleOf(i, t, templates, name) {
+  if (i.kind === "training" && i.status !== "done") {
+    const camps = i.group || [i.ref];
+    if (camps.length >= 3) return name ? t("tlCamps", { name }) : t("allCampsFinish");
+    if (camps.length === 2) {
+      const list = camps.map((c) => t(`short_${c.category}`)).join(" + ");
+      return name ? t("tlSomeNamed", { name, camps: list }) : t("tlSome", { camps: list });
+    }
+    return name ? t("tlOneNamed", { name, camp: t(i.ref.category) }) : itemTitle(i, t, templates);
+  }
+  if (i.kind === "research" && i.status !== "done" && name) return t("tlResearchNamed", { name, place: t(i.ref.category) });
   return itemTitle(i, t, templates);
+}
+
+/** The account name for a title — only in the All-accounts view (one account selected: context is obvious). */
+function useNameFor() {
+  const { accountIds, accountById } = useTimeHub();
+  return (i) => (accountIds.length > 1 && NAMED.has(i.kind) && i.accountId ? accountById(i.accountId)?.name || null : null);
 }
 
 function SmallLine({ label, i }) {
   const { t, tz, lang, templates, accountById, multi } = useTimeHub();
   const now = useMinute();
+  const nameFor = useNameFor();
+  // timers: "Chaz camps finish in 8h 58m" / "Tomorrow 8:22 AM · 19:22 UTC" — the account and the
+  // countdown first, the clock times underneath
+  if (FINISHES.has(i.kind) && i.kind !== "stamina") {
+    const title = titleOf(i, t, templates, nameFor(i));
+    return (
+      <li className="th-nextup-line">
+        <span className="th-nextup-lbl">{label}</span>
+        <b className="th-nextup-ltitle">{i.start > now ? `${title} ${t("inTime", { time: formatSpan(i.start - now, lang) })}` : title}</b>
+        <span className="th-nextup-lwhen">
+          {localDayRange(now, tz, 0).end <= i.start && <>{t("tomorrow")} </>}<Ltr>{formatTime(i.start, tz, lang)}</Ltr> · <Ltr>{formatTime(i.start, "UTC", lang)}</Ltr> UTC
+        </span>
+      </li>
+    );
+  }
   return (
     <li className="th-nextup-line">
       <span className="th-nextup-lbl">{label}</span>
@@ -157,16 +193,22 @@ export function ReadyNow() {
 
 export function NextUp({ data }) {
   const { t, tz, lang, templates } = useTimeHub();
+  const now = useMinute();
+  const nameFor = useNameFor();
   if (!data) return null;
   const { primary: p, small, ministers } = data;
+  const name = nameFor(p); // in the title, so the chip underneath would only repeat it
   const live = p.status === "now" && p.end;
   const bear = p.kind === "event" && String(p.ref?.ev?.templateId || "").startsWith("bear_trap");
   return (
     <section className={`th-nextup ${bear ? "bear" : ""}`} aria-label={t("nextUp")}>
       {bear && <img className="th-nextup-art" src={pool} alt="" aria-hidden="true" decoding="async" />}
       <span className="th-nextup-eyebrow">{live ? t("happeningNow") : t("nextUp")} · {t(`kind_${p.kind}`)}</span>
-      <h2 className="th-nextup-title">{titleOf(p, t, templates)}</h2>
-      <div className="th-nextup-when"><Ltr>{formatTime(p.start, tz, lang)}</Ltr> · <Ltr>{formatTime(p.start, "UTC", lang)}</Ltr> UTC {p.accountId && <AccountTag accountId={p.accountId} />}</div>
+      <h2 className="th-nextup-title">{titleOf(p, t, templates, name)}</h2>
+      <div className="th-nextup-when">
+        {FINISHES.has(p.kind) && localDayRange(now, tz, 0).end <= p.start && <>{t("tomorrow")} </>}
+        <Ltr>{formatTime(p.start, tz, lang)}</Ltr> · <Ltr>{formatTime(p.start, "UTC", lang)}</Ltr> UTC {p.accountId && !name && <AccountTag accountId={p.accountId} />}
+      </div>
       <div className="th-nextup-count">
         <span className="th-nextup-countlbl">{live ? t("endsIn") : FINISHES.has(p.kind) ? t("finishesIn") : t("startsIn")}</span>
         <Clock to={live ? p.end : p.start} />

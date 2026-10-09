@@ -1823,3 +1823,7 @@ html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
 .th-tf-cap .th-link { flex-shrink: 0; padding: 0 2px; }
 .th-tc-hint { margin: -2px 2px 0; font: 600 12px 'Nunito Sans', sans-serif; color: var(--sub); }
 .th-steps li > * { min-width: 0; overflow-wrap: anywhere; }
+.th-bk-why { padding: 0; min-height: 0; font-size: 12.5px; }
+.th-bk-whytext { display: block; margin-top: 2px; color: var(--sub); font-weight: 600; font-size: 12.5px; }
+.th-train-group { grid-template-columns: minmax(0, 1fr); }
+.th-finishform .th-dayadd .th-chip-btn { white-space: normal; text-align: start; line-height: 1.25; padding-block: 6px; }
