@@ -1,3 +1,4 @@
+import { troopCards } from './troop-scan.js';
 const TYPES = ['infantry', 'lancer', 'marksman'];
 export function loadTroopTiers(accountId, saved, storage = globalThis.localStorage) {
   let legacy = {};
@@ -12,7 +13,7 @@ export function loadTroopTiers(accountId, saved, storage = globalThis.localStora
 export function mergeScannedTiers(previous, readings = {}) {
   return TYPES.map((type, i) => {
     const value = readings[type];
-    if (!value || !Number.isInteger(value.fc) || value.fc < 0 || value.fc > 10 || ![9, 10, 11].includes(value.level)) return previous[i];
+    if (!value || value.uncertain || !Number.isInteger(value.fc) || value.fc < 0 || value.fc > 10 || ![9, 10, 11].includes(value.level)) return previous[i];
     return { fc: value.fc, level: value.level };
   });
 }
@@ -40,26 +41,10 @@ export function confirmFcReadings(readings) {
 }
 // Badge is just left of the troop name, above the icon. Use each name's own
 // geometry, not a fixed screenshot position or the account's furnace level.
-export function locateFcBadges(words, values = {}) {
-  const tiers = { helios: 11, apex: 10, avex: 10, supreme: 9 };
-  const labels = words.filter(w => TYPES.some(t => w.text.toLowerCase().includes(t)));
-  const heights = labels.map(w => w.bbox.y1 - w.bbox.y0).sort((a, b) => a - b);
-  const h = heights[Math.floor(heights.length / 2)] || 0;
-  if (!h) return [];
-  const results = [];
-  for (const label of labels) {
-    const type = TYPES.find(t => label.text.toLowerCase().includes(t));
-    const nearby = words.filter(w => Math.abs((w.bbox.y0 + w.bbox.y1 - label.bbox.y0 - label.bbox.y1) / 2) < h * 1.2 && w.bbox.x0 <= label.bbox.x1 && w.bbox.x0 >= label.bbox.x0 - h * 7);
-    const tierWord = nearby.find(w => Object.keys(tiers).some(t => w.text.toLowerCase().includes(t)));
-    const cap = type[0].toUpperCase() + type.slice(1);
-    const level = tierWord ? tiers[Object.keys(tiers).find(t => tierWord.text.toLowerCase().includes(t))]
-      : [11, 10, 9].find(n => values[`t${n}${cap}`] > 0);
-    if (!level) continue;
-    // Median text height avoids noisy boxes that also include an icon.
-    const prefixWidths = { 9: 6.1, 10: 4.35, 11: 4.6 };
-    const x = level === 9 && tierWord ? tierWord.bbox.x0 - h * 1.05 : label.bbox.x0 - h * prefixWidths[level];
-    const y = label.bbox.y0 - h * .2;
-    results.push({ type, level, sx: x - h * .4, sy: y - h * .55, sw: h * .8, sh: h * 1.1 });
-  }
-  return results;
+export function locateFcBadges(words, values = {}, verifiedCards) {
+  return (verifiedCards || troopCards(words)).filter(c => c.level && c.prefixKnown !== false).map(card => {
+    const { h, prefix, label, type, level } = card;
+    const x = prefix - h * 1.05;
+    return { type, level, sx: x-h*.4, sy: label.bbox.y0-h*.75, sw:h*.8, sh:h*1.1 };
+  });
 }

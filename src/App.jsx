@@ -1,3 +1,4 @@
+import { flattenWords, parseScanText, resolveCardLabel, mergeBadgeReadings, confirmAmountReadings } from "./bear/troop-scan.js";
 import { loadTesseract } from "./bear/ocr-runtime.js";
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import TimeHub from "./timehub/TimeHub.jsx";
@@ -127,7 +128,7 @@ const TRANSLATIONS = {
     scanErrorMsg: "Couldn't read that image — try a clearer screenshot, or enter the numbers by hand below.",
     scanHint: "Works best with a clear, uncropped shot of the Troops Preview screen.", whatScannerRead: "What the scanner read",
     notAnImage: "That doesn't look like an image — try a screenshot (PNG or JPG).",
-    scanInstructions: "In-game, tap your profile picture (top-left) → Troops → that screen shows your troop counts. Screenshot it, then upload it below.",
+    scanInstructions: "Profile → Troops. Choose a screenshot with troop names, amounts and FC badges.",
     scanRetryLangHint: "Try a different screenshot language above and scan again.", rescanBtn: "🔁 Scan again",
     scanTotalFailure: "Every language we tried came up empty on this screenshot. Try a clearer or less-compressed screenshot, or enter the numbers by hand in the fields below.",
     scanCropHint: "Scanning only reads what's visible above — scroll to frame just the numbers you want, or scan a section, scroll, and scan again to fill in the rest.",
@@ -1034,7 +1035,7 @@ function Card({ children, style }) {
 function TroopLevelField({ label, ariaLabel, value, onChange, min = 0, max = 10, allowBlank = false }) {
   const valid = (allowBlank && value === '') || value !== '' && Number.isInteger(Number(value)) && Number(value) >= min && Number(value) <= max;
   return <label style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: 1, minWidth: 0 }}>
-    <span style={{ fontSize: 12, fontWeight: 700, color: C.gold }}>{label}</span>
+    <span style={{ fontSize: 16, fontWeight: 700, color: C.gold }}>{label}</span>
     <input className="calc-input" type="text" inputMode="numeric" aria-label={ariaLabel} aria-invalid={!valid || undefined}
       value={value} onFocus={e => e.target.select()} onChange={e => onChange(e.target.value === '' ? '' : /^\d{1,2}$/.test(e.target.value) ? Number(e.target.value) : '')} />
     {!valid && <small style={{ color: C.amber }}>Enter {min}–{max}.</small>}
@@ -1062,7 +1063,7 @@ function NumField({ label, ariaLabel, value, onChange }) {
 
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1, minWidth: 0 }}>
-      <span style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 12, fontWeight: 800, color: C.gold }}>{label}</span>
+      <span style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 16, fontWeight: 800, color: C.gold }}>{label}</span>
       <input
         type="text"
         inputMode="numeric"
@@ -1082,12 +1083,12 @@ function NumField({ label, ariaLabel, value, onChange }) {
 function TroopFcLabel({ type, name, fc, onChange }) {
   const valid = fc !== '' && Number.isInteger(Number(fc)) && Number(fc) >= 0 && Number(fc) <= 10;
   return <div style={{ minWidth: 0 }}>
-    <label style={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap', color: C.gold, fontWeight: 800, fontSize: 13 }}>
+    <label style={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap', color: C.gold, fontWeight: 800, fontSize: 16 }}>
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>FC
         <input type="text" inputMode="numeric" aria-label={`${type} FC`} aria-invalid={!valid || undefined}
           value={fc} onFocus={e => e.target.select()}
           onChange={e => onChange(e.target.value === '' ? '' : /^\d{1,2}$/.test(e.target.value) ? Number(e.target.value) : '')}
-          style={{ width: 30, minHeight: 36, padding: '3px 2px', borderRadius: 7, border: `1px solid ${C.cardBorder}`, background: 'transparent', color: 'inherit', font: 'inherit', textAlign: 'center' }} />
+          style={{ width: 30, minHeight: 44, padding: '3px 2px', borderRadius: 7, border: `1px solid ${C.cardBorder}`, background: 'transparent', color: 'inherit', font: 'inherit', textAlign: 'center' }} />
       </span>
       <span>{name}</span>
     </label>
@@ -1607,309 +1608,15 @@ const SCAN_FIELDS = [
 // step — auto-detect here means running a full OCR pass with each of these
 // languages in turn and keeping whichever one scores highest by total
 // confidence across all 6 fields (so a language that reads everything
-// cleanly beats one that also finds everything but shakily). Kept short on
-// purpose: every entry is a full pass (plus its own language data download
-// the first time), so a long list would make "auto" feel slow.
-// chi_sim is tried FIRST deliberately, not because the game text is
-// Chinese — it's an English-language game — but because Tesseract's
-// Chinese Simplified model has empirically read this game's bold,
-// stylized custom font (numbers included) more reliably than its own
-// English model does. This is about which trained model best tolerates
-// the font rendering, not about matching the game's actual UI language.
-const AUTO_DETECT_SEQUENCE = ["chi_sim", "eng", "ara", "rus"];
+// Compare English and Chinese models for this game’s stylized font.
+const AUTO_DETECT_SEQUENCE = ["eng", "chi_sim"];
 
-// Pull every OCR *word* (not line) out of the blocks→paragraphs→lines tree,
-// with its bounding box and Tesseract's own confidence. Word level matters
-// because two on-screen columns often get merged into one wide OCR line —
-// word boxes stay accurate even when the line grouping doesn't.
-// A word's overall confidence is an average across its characters — which
-// means ONE misread digit inside an otherwise-clean number can hide behind
-// a perfectly decent word-level score. Tesseract.js exposes per-character
-// ("symbol") confidence too; using the LOWEST symbol confidence in the word
-// (when available) instead of the averaged word confidence means a single
-// bad digit correctly drags the whole field down to "needs review," rather
-// than a confidently-wrong number slipping through untouched.
-function flattenWords(data) {
-  const words = [];
-  function collect(lines) {
-    (lines || []).forEach((line) => {
-      (line.words || []).forEach((w) => {
-        if (w.text && w.bbox) {
-          let conf = typeof w.confidence === "number" ? w.confidence : 100;
-          if (w.symbols && w.symbols.length) {
-            w.symbols.forEach((s) => {
-              if (typeof s.confidence === "number" && s.confidence < conf) conf = s.confidence;
-            });
-          }
-          words.push({ text: w.text.trim(), bbox: w.bbox, confidence: conf });
-        }
-      });
-    });
-  }
-  if (data.blocks && data.blocks.length) {
-    data.blocks.forEach((block) => (block.paragraphs || []).forEach((para) => collect(para.lines)));
-  }
-  if (!words.length && data.lines) collect(data.lines);
-  if (!words.length && data.paragraphs) data.paragraphs.forEach((p) => collect(p.lines));
-  return words.filter((w) => w.text);
-}
-
-// Pulls a usable digit run out of a word even when OCR glued noise onto it
-// ("P6615") or misread a comma as a period ("6.615") — separators are
-// always stripped rather than trusted. Minimum 3 digits (not 4): high
-// enough to reject the small badge/star numbers (e.g. a "6" star-rating
-// icon) that appear throughout these cards, while not silently ignoring a
-// smaller-but-real troop count on a tier someone's only just unlocked.
-// True single/double-digit counts (including a genuine 0) still can't be
-// distinguished from badge noise this way — see the note on confirmed-zero
-// detection further down.
-function extractDigits(text) {
-  const matches = text.match(/\d[\d.,]*\d|\d{2,}/g);
-  if (!matches) return null;
-  const candidates = matches.map((m) => ({ raw: m, digits: m.replace(/[.,]/g, "") })).filter((c) => c.digits.length >= 3);
-  if (!candidates.length) return null;
-  candidates.sort((a, b) => b.digits.length - a.digits.length);
-  return candidates[0];
-}
-function isNumberWord(text) {
-  return extractDigits(text) !== null;
-}
-function ocrCenterX(b) { return (b.x0 + b.x1) / 2; }
-function ocrCenterY(b) { return (b.y0 + b.y1) / 2; }
-
-// "Helios"/"Apex"/"Supreme" precede the type word on the same card ("Apex
-// Infantry", "Helios Marksman") and — contrary to earlier assumption — CAN
-// read cleanly; real scans have shown "Helios Marksman" recognized as
-// legible text. Looks for one of these words on the same row, at or before
-// the type word's own position, AND within this card's own column bounds —
-// without that column check, the tier word from a NEIGHBORING card in the
-// same row (e.g. "Helios" from the left card) can get picked up as if it
-// belonged to this card, exactly the cross-card leak the column boundary
-// exists to prevent for numbers too.
-const TIER_KEYWORDS = { helios: "t11", apex: "t10", supreme: "t9" };
-function findTierKeywordNear(card, words) {
-  const labelWord = card.labelWord;
-  // Check the label word's own text first — Tesseract sometimes glues
-  // "Helios Marksman" into a single token rather than two separate ones,
-  // in which case there's no separate neighboring word to find at all.
-  const ownLower = labelWord.text.toLowerCase();
-  for (const kw of Object.keys(TIER_KEYWORDS)) {
-    if (ownLower.indexOf(kw) !== -1) return TIER_KEYWORDS[kw];
-  }
-  for (const w of words) {
-    if (w === labelWord) continue;
-    const sameRow = Math.abs(ocrCenterY(w.bbox) - ocrCenterY(labelWord.bbox)) < 18;
-    const inColumn = ocrCenterX(w.bbox) >= card.xMin && ocrCenterX(w.bbox) <= card.xMax;
-    if (!sameRow || !inColumn || w.bbox.x0 > labelWord.bbox.x1) continue;
-    const lower = w.text.toLowerCase();
-    for (const kw of Object.keys(TIER_KEYWORDS)) {
-      if (lower.indexOf(kw) !== -1) return TIER_KEYWORDS[kw];
-    }
-  }
-  return null;
-}
-
-// --- Card-region reconstruction -----------------------------------------
-// Tesseract has no concept of "cards" — it only returns recognized words
-// with bounding boxes. A true vision-based approach (detecting each card's
-// icon and visual boundary) isn't available with this library; this is the
-// closest achievable equivalent using text geometry alone: cluster every
-// troop-type word (Infantry/Lancer/Marksman, regardless of tier) into rows
-// by Y-position, then into left/right columns within each row by X-position.
-// Each (row, column) cell becomes a "card" with a hard X boundary — the
-// midpoint between it and its row-neighbor(s) — that a number search is
-// never allowed to cross. This is what makes one card's number leaking into
-// a neighboring card's field structurally impossible, not just unlikely:
-// the earlier approach searched the WHOLE image for "the nearest number,"
-// with no boundary stopping it from preferring a neighboring card's number
-// when the correct one wasn't cleanly recognized that pass.
-function buildCardRegions(words) {
-  const typeMatches = [];
-  TYPES.forEach((type) => {
-    words.forEach((w) => {
-      if (w.text.toLowerCase().indexOf(type) !== -1) typeMatches.push({ word: w, type });
-    });
-  });
-  // Same overlapping-box problem as before (Tesseract occasionally reads
-  // the same physical label twice at slightly different confidences),
-  // deduped across all types together this time.
-  const deduped = [];
-  typeMatches.forEach((m) => {
-    const dupeIdx = deduped.findIndex(
-      (d) => Math.abs(ocrCenterY(d.word.bbox) - ocrCenterY(m.word.bbox)) < 12 && Math.abs(ocrCenterX(d.word.bbox) - ocrCenterX(m.word.bbox)) < 40
-    );
-    if (dupeIdx === -1) deduped.push(m);
-    else if (m.word.confidence > deduped[dupeIdx].word.confidence) deduped[dupeIdx] = m;
-  });
-  const rows = [];
-  deduped
-    .slice()
-    .sort((a, b) => ocrCenterY(a.word.bbox) - ocrCenterY(b.word.bbox))
-    .forEach((m) => {
-      const row = rows.find((r) => Math.abs(ocrCenterY(r[0].word.bbox) - ocrCenterY(m.word.bbox)) < 20);
-      if (row) row.push(m);
-      else rows.push([m]);
-    });
-  const cards = [];
-  rows.forEach((row) => {
-    row.sort((a, b) => ocrCenterX(a.word.bbox) - ocrCenterX(b.word.bbox));
-    row.forEach((m, i) => {
-      const xMin = i === 0 ? -Infinity : (ocrCenterX(row[i - 1].word.bbox) + ocrCenterX(m.word.bbox)) / 2;
-      const xMax = i === row.length - 1 ? Infinity : (ocrCenterX(m.word.bbox) + ocrCenterX(row[i + 1].word.bbox)) / 2;
-      cards.push({ labelWord: m.word, type: m.type, xMin, xMax, y: ocrCenterY(m.word.bbox) });
-    });
-  });
-  cards.sort((a, b) => (Math.abs(a.y - b.y) > 20 ? a.y - b.y : a.xMin - b.xMin));
-  return cards;
-}
-
-// Finds this card's number — strictly within its own column boundary and
-// below its label — and excludes any number-word already claimed by
-// another card. A number is claimed the moment it's chosen, so the same
-// physical digits can never populate two different fields.
-function numberForCard(card, numberWords, claimed) {
-  const candidates = numberWords.filter(
-    (n) => !claimed.has(n) && n.bbox.y0 >= card.labelWord.bbox.y1 - 10 && ocrCenterX(n.bbox) >= card.xMin && ocrCenterX(n.bbox) <= card.xMax
-  );
-  if (!candidates.length) return null;
-  candidates.sort((a, b) => a.bbox.y0 - b.bbox.y0);
-  const best = candidates[0];
-  const d = extractDigits(best.text);
-  claimed.add(best);
-  return { value: parseInt(d.digits, 10), confidence: best.confidence, raw: best.text };
-}
-
-// Each type's cards (however many are visible — a cropped/scrolled scan
-// may only show one or two of the three possible tiers) get their tier
-// resolved two ways: first by actually reading the tier word next to them,
-// when it's legible; anything still unresolved falls back to assuming
-// cards run strongest-to-weakest top-to-bottom among whichever tier slots
-// the keyword pass didn't already claim. The keyword pass is what lets a
-// genuinely partial crop still get tiers right — position-counting alone
-// can't tell a partial crop from a complete one.
-function assignByPosition(words) {
-  const numberWords = words.filter((w) => isNumberWord(w.text));
-  const claimed = new Set();
-  const cards = buildCardRegions(words);
-  const result = {};
-  const rowCounts = { infantry: 0, lancer: 0, marksman: 0 };
-  const byType = { infantry: [], lancer: [], marksman: [] };
-
-  cards.forEach((card) => {
-    const numberResult = numberForCard(card, numberWords, claimed);
-    // A card with no plausible number in its own column at all is far
-    // more likely OCR noise (a hallucinated repeat of a type word) than a
-    // genuine row — doesn't count toward the row total either.
-    if (!numberResult) return;
-    rowCounts[card.type]++;
-    byType[card.type].push({ card, numberResult });
-  });
-
-  const tiersForCount = { 1: ["t10"], 2: ["t10", "t9"], 3: ["t11", "t10", "t9"] };
-  TYPES.forEach((type) => {
-    const cap = type.charAt(0).toUpperCase() + type.slice(1);
-    const unresolved = [];
-    byType[type].forEach(({ card, numberResult }) => {
-      const tier = findTierKeywordNear(card, words);
-      if (tier && !result[tier + cap]) {
-        result[tier + cap] = numberResult;
-      } else {
-        unresolved.push(numberResult);
-      }
-    });
-    const remainingTiers = (tiersForCount[Math.min(byType[type].length, 3)] || []).filter((t) => !result[t + cap]);
-    unresolved.slice(0, remainingTiers.length).forEach((numberResult, idx) => {
-      result[remainingTiers[idx] + cap] = numberResult;
-    });
-  });
-
-  return { result, rowCounts };
-}
-
-function lineHasKeywords(text, keywords) {
-  const lower = text.toLowerCase();
-  return keywords.every((kw) => lower.indexOf(kw) !== -1);
-}
-
-// Fallback for when a field wasn't found by word position: plain sequential
-// text search. Lower confidence, since it skips the position cross-check.
-function findValueForFieldFallback(rawText, keywords) {
-  const lines = rawText.split("\n").map((l) => l.trim()).filter(Boolean);
-  for (let i = 0; i < lines.length; i++) {
-    if (lineHasKeywords(lines[i], keywords)) {
-      for (let j = i; j <= Math.min(i + 2, lines.length - 1); j++) {
-        const d = extractDigits(lines[j]);
-        if (d) return parseInt(d.digits, 10);
-      }
-    }
-  }
-  return null;
-}
-
-function parseScanText(data) {
-  const words = flattenWords(data);
-  const { result: assigned, rowCounts } = words.length ? assignByPosition(words) : { result: {}, rowCounts: {} };
-  const values = {};
-  const confidence = {};
-  SCAN_FIELDS.forEach((f) => {
-    const r = assigned[f.key];
-    if (r) {
-      values[f.key] = r.value;
-      confidence[f.key] = r.confidence;
-    } else if (f.tier === "t11" && (rowCounts[f.type] || 0) < 3) {
-      // Position-matching only found 0–2 rows for this type — Helios
-      // genuinely isn't there. Report it as not-applicable rather than
-      // running the fallback, which has no concept of "tier" and would
-      // just grab whatever T10/T9 number happens to sit near the keyword.
-      values[f.key] = null;
-      confidence[f.key] = null;
-    } else {
-      const fb = findValueForFieldFallback(data.text || "", [f.type]);
-      values[f.key] = fb;
-      confidence[f.key] = fb === null ? null : 50;
-    }
-  });
-  // Anything at or below 50% confidence gets treated as not found at all,
-  // rather than silently shown as a real (but likely wrong) number.
-  // Empirically, across every real test so far, every incorrect value has
-  // come in at exactly 50% or below (the crude fallback above always
-  // stamps exactly 50%, having no real confidence signal of its own; every
-  // genuinely low-confidence position match has also turned out wrong) —
-  // while every correct value has been well above it. Better to say
-  // "couldn't read this" than confidently show the wrong number.
-  SCAN_FIELDS.forEach((f) => {
-    if (confidence[f.key] !== null && confidence[f.key] !== undefined && confidence[f.key] <= 50) {
-      values[f.key] = null;
-      confidence[f.key] = null;
-    }
-  });
-  return { values, confidence, rawText: data.text || "" };
-}
-
-// Crops to nothing (whole image) but upscales before handing it to
-// Tesseract — small, compressed screenshot text reads far more reliably at
-// 2x than at native resolution.
-//
-// Tried and reverted: a grayscale + contrast-boost canvas filter before OCR
-// (a standard preprocessing trick) and a 3x upscale. Real test against this
-// game's actual UI made results measurably WORSE — a scan that previously
-// still extracted digit-like text (even if some digits were wrong) came
-// back with no numbers found at all after that change. Whatever's specific
-// to this font/background combination, flattening color and boosting
-// contrast apparently destroys information the OCR model needs rather than
-// removing noise. Leaving this note so a future "let's try preprocessing
-// again" doesn't repeat the same regression blind.
+// Upscale the entire screenshot while keeping memory bounded.
 const OCR_UPSCALE_FACTOR = 2;
 const OCR_MAX_DIMENSION = 3200;
-// `crop` (in the source image's own natural pixel coordinates) lets a
-// caller OCR only part of the image — used so the scanner reads only
-// whatever's actually scrolled into view in the preview, not the whole
-// screenshot every time.
-function buildOcrCanvas(imgEl, crop) {
-  const sx = crop ? crop.sx : 0;
-  const sy = crop ? crop.sy : 0;
-  const sw = crop ? crop.sw : imgEl.naturalWidth;
-  const sh = crop ? crop.sh : imgEl.naturalHeight;
+function buildOcrCanvas(imgEl) {
+  const sx = 0, sy = 0;
+  const sw = imgEl.naturalWidth, sh = imgEl.naturalHeight;
   let destW = sw * OCR_UPSCALE_FACTOR, destH = sh * OCR_UPSCALE_FACTOR;
   if (Math.max(destW, destH) > OCR_MAX_DIMENSION) {
     const shrink = OCR_MAX_DIMENSION / Math.max(destW, destH);
@@ -1926,9 +1633,50 @@ function buildOcrCanvas(imgEl, crop) {
   return canvas;
 }
 
+// A small, bounded crop reads just this troop card's amount. Multiple
+// offsets must agree, so a clipped digit cannot silently become a count.
+async function scanTroopAmounts(Tesseract, canvas, parsed) {
+  const verified = { ...parsed, values: { ...parsed.values }, confidence: { ...parsed.confidence }, cards: [] };
+  if (!parsed.cards.length) return verified;
+  let worker;
+  try {
+    worker = await Tesseract.createWorker('eng', 1, { workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js', corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5' });
+    for (const original of parsed.cards) {
+      let card = { ...original, amountRegion: { ...original.amountRegion } };
+      if (!card.level) {
+        await worker.setParameters({ tessedit_pageseg_mode: '7', tessedit_char_whitelist: '' });
+        const label = buildRegionCanvas(canvas, card.labelRegion);
+        const { data } = await worker.recognize(label);
+        card = resolveCardLabel(card, data);
+      }
+      if (!card.level) continue;
+      verified.cards.push(card);
+      await worker.setParameters({ tessedit_pageseg_mode: '7', tessedit_char_whitelist: '0123456789,.' });
+      const readings = [];
+      for (const pad of [0, .08, .16]) {
+        const region = { ...card.amountRegion, sy: card.amountRegion.sy-card.h*pad, sh: card.amountRegion.sh+card.h*pad };
+        const { data } = await worker.recognize(buildRegionCanvas(canvas, region));
+        readings.push({ text: data.text, confidence: data.confidence });
+      }
+      const key = 't'+card.level+card.type[0].toUpperCase()+card.type.slice(1);
+      const result = confirmAmountReadings(readings, { value: verified.values[key], confidence: verified.confidence[key] });
+      if (result) { verified.values[key] = result.value; verified.confidence[key] = Math.min(result.confidence, card.tierConfidence); }
+      else if (verified.values[key] !== undefined) verified.confidence[key] = Math.min(60, verified.confidence[key]);
+    }
+  } catch { /* Full-image readings remain available for manual review. */ }
+  finally { if (worker) await worker.terminate().catch(() => {}); }
+  return verified;
+}
+function buildRegionCanvas(source, region) {
+  const sx = Math.max(0, region.sx), sy = Math.max(0, region.sy);
+  const sw = Math.max(1, Math.min(region.sw, source.width-sx)), sh = Math.max(1, Math.min(region.sh, source.height-sy));
+  const crop = document.createElement('canvas'); crop.width = Math.round(sw*3); crop.height = Math.round(sh*3);
+  crop.getContext('2d').drawImage(source, sx, sy, sw, sh, 0, 0, crop.width, crop.height); return crop;
+}
+
 // FC badges need their own close-up digit pass: full-screen OCR often skips them.
 async function scanFcBadges(Tesseract, source, words, parsed) {
-  const regions = locateFcBadges(words, parsed.values);
+  const regions = locateFcBadges(words, parsed.values, parsed.cards);
   if (!regions.length) return {};
   let worker;
   const badges = [];
@@ -1937,10 +1685,12 @@ async function scanFcBadges(Tesseract, source, words, parsed) {
       workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
       corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5',
     });
-    await worker.setParameters({ tessedit_pageseg_mode: '10', tessedit_char_whitelist: '0123456789' });
+    await worker.setParameters({ tessedit_pageseg_mode: '13', tessedit_char_whitelist: '0123456789' });
     for (const region of regions) {
       if (region.sx < 0 || region.sy < 0 || region.sx + region.sw > source.width || region.sy + region.sh > source.height) continue;
       const readings = [];
+      for (const mode of ['13', '10']) {
+        await worker.setParameters({ tessedit_pageseg_mode: mode, tessedit_char_whitelist: '0123456789' });
       for (const shift of [-.12, 0, .12]) {
         const badge = document.createElement('canvas'); badge.width = Math.round(region.sw * 6); badge.height = Math.round(region.sh * 6);
         const ctx = badge.getContext('2d');
@@ -1956,16 +1706,26 @@ async function scanFcBadges(Tesseract, source, words, parsed) {
         const { data } = await worker.recognize(badge);
         readings.push({ text: data.text, confidence: data.confidence });
       }
+        const candidate = confirmFcReadings(readings);
+        if (candidate?.confidence >= 85) break;
+      }
       const confirmed = confirmFcReadings(readings);
       if (confirmed) badges.push({ ...region, ...confirmed });
     }
   } catch { /* Counts still work if a badge is unreadable or digit OCR fails. */ }
   finally { if (worker) await worker.terminate().catch(() => {}); }
-  return selectScannedTiers(badges);
+  const selected = selectScannedTiers(badges);
+  for (const [type, tier] of Object.entries(selected)) {
+    const sameTier = badges.filter(b => b.type === type && b.level === tier.level);
+    const confidence = Math.max(...sameTier.filter(b => b.fc === tier.fc).map(b => b.confidence));
+    selected[type] = { ...tier, confidence, uncertain: confidence < 85 || new Set(sameTier.map(b => b.fc)).size > 1 };
+  }
+  return selected;
 }
 
 function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
   const [open, setOpen] = useState(false);
+  const [targetAccount, setTargetAccount] = useState(activeAccountId);
   const [autoDetect, setAutoDetect] = useState(true);
   const [scanLang, setScanLang] = useState("chi_sim"); // default guess — Tesseract's Chinese Simplified model has proven the most reliable reader of this game's font, even for English screenshots; easy to change and rescan if it misreads
   const [imgSrc, setImgSrc] = useState(null);
@@ -1991,21 +1751,8 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
       const urls = await Promise.all(selected.map(file => new Promise((resolve, reject) => {
         const reader = new FileReader(); reader.onload = e => resolve(e.target.result); reader.onerror = reject; reader.readAsDataURL(file);
       })));
-      setScanImages(p => append ? [...p, ...urls] : urls); if (!append || !imgSrc) setImgSrc(urls[0]);
+      setScanImages(p => append ? [...p, ...urls] : urls); if (!append || !imgSrc) { setEdited(null); setConfidence({}); setHasScanned(false); setImgSrc(urls[0]); }
     } catch { setFileError(tWord('notAnImage', lang)); }
-  }
-
-  // OCR reads only whatever's currently scrolled into view in the preview,
-  // not the whole screenshot — computed here in the source image's own
-  // natural pixel coordinates from the scroll wrapper's current position.
-  function computeVisibleCrop() {
-    const wrap = scrollWrapRef.current;
-    const imgEl = imgRef.current;
-    if (!wrap || !imgEl || !imgEl.naturalWidth || !wrap.clientWidth) return null;
-    const scale = imgEl.naturalWidth / wrap.clientWidth; // image is width:100% of wrap, so this is the display→natural scale factor
-    const sy = Math.max(0, wrap.scrollTop * scale);
-    const sh = Math.max(1, Math.min(imgEl.naturalHeight - sy, wrap.clientHeight * scale));
-    return { sx: 0, sy, sw: imgEl.naturalWidth, sh };
   }
 
   // Tesseract has no real "detect the language" pass — auto-detect instead
@@ -2026,8 +1773,7 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
       if (scanImages.length > 1) {
         source = await new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve(img); img.onerror = reject; img.src = scanImages[photoIndex]; });
       }
-      const crop = scanImages.length > 1 ? null : computeVisibleCrop();
-      const ocrCanvas = buildOcrCanvas(source, crop);
+      const ocrCanvas = buildOcrCanvas(source);
       const candidates = autoDetect ? AUTO_DETECT_SEQUENCE : [scanLang];
       let best = null;
       for (let i = 0; i < candidates.length; i++) {
@@ -2053,7 +1799,7 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
         // one that also finds everything but shakily. Every candidate in
         // the list gets a full pass; auto-detect picks the best afterward
         // instead of stopping at the first "found everything."
-        let score = 0;
+        let score = parsed.cards.length * 200;
         SCAN_FIELDS.forEach((f) => {
           const c = parsed.confidence[f.key];
           score += c === null || c === undefined ? 0 : c;
@@ -2065,6 +1811,8 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
       // didn't find might simply be outside the current view (already
       // found correctly by an earlier scan of a different region), not
       // actually missing. Only a field THIS pass did find gets replaced.
+      setScanStatus('Checking troop amounts…');
+      best.parsed = await scanTroopAmounts(Tesseract, ocrCanvas, best.parsed);
       SCAN_FIELDS.forEach(f => {
         const found = best.parsed.values[f.key];
         const c = best.parsed.confidence[f.key];
@@ -2075,7 +1823,7 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
         }
       });
       setScanStatus('Reading FC badges…');
-      values.troopTiers = { ...values.troopTiers, ...await scanFcBadges(Tesseract, ocrCanvas, best.words, best.parsed) };
+      values.troopTiers = mergeBadgeReadings(values.troopTiers, await scanFcBadges(Tesseract, ocrCanvas, best.words, best.parsed));
       rawParts.push(best.parsed.rawText);
       setEdited({ ...values }); setScannedValues({ ...values }); setConfidence({ ...mergedConfidence }); setRawText(rawParts.join('\n\n')); setHasScanned(true);
       setScanLang(best.langUsed);
@@ -2145,27 +1893,28 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
   }
 
   if (!open) {
-    return (
-      <Btn tone="gold" onClick={() => setOpen(true)}>
-        {tWord("scanScreenshotBtn", lang)}
-      </Btn>
-    );
+    return <label style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 48, padding: '12px 16px', borderRadius: 12, background: C.goldStrong, color: C.cocoaDark, fontSize: 16, fontWeight: 800, cursor: 'pointer' }}>
+      Scan troop screenshot
+      <input type="file" accept="image/*" multiple aria-label="Choose troop screenshots" style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }}
+        onChange={e => { if (e.target.files?.length) { setOpen(true); handleFiles(e.target.files); } }} />
+    </label>;
   }
 
   return (
     <div style={{ background: C.inputBg, border: `1px solid ${C.inputBorder}`, borderRadius: 14, padding: 12, marginBottom: 14 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <span style={{ fontSize: 12.5, fontWeight: 800, color: C.gold }}>{tWord("scanScreenshotBtn", lang)}</span>
-        <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: C.sub, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+        <span style={{ fontSize: 16, fontWeight: 800, color: C.gold }}>{tWord("scanScreenshotBtn", lang)}</span>
+        <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: C.sub, fontSize: 16, fontWeight: 600, cursor: "pointer" }}>
           {tWord("scanScreenshotHide", lang)}
         </button>
       </div>
 
-      <div style={{ fontSize: 12, color: C.ink, lineHeight: 1.5, marginBottom: 12, background: C.goldBg, border: `1px solid ${C.goldBorder}`, borderRadius: 10, padding: "8px 10px" }}>
+      <div style={{ fontSize: 16, color: C.ink, lineHeight: 1.5, marginBottom: 12, background: C.goldBg, border: `1px solid ${C.goldBorder}`, borderRadius: 10, padding: "8px 10px" }}>
         {tWord("scanInstructions", lang)}
       </div>
 
-      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 10, cursor: "pointer" }}>
+      <details style={{ marginBottom: 12 }}><summary style={{ fontSize: 16, color: C.sub, cursor: 'pointer' }}>Screenshot language</summary>
+      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 16, color: C.ink, fontWeight: 600, marginBottom: 10, cursor: "pointer" }}>
         <input
           type="checkbox"
           checked={autoDetect}
@@ -2177,7 +1926,7 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
 
       {!autoDetect && (
         <div>
-          <label style={{ display: "block", fontSize: 11.5, color: C.sub, marginBottom: 5 }}>{tWord("screenshotLangLabel", lang)}</label>
+          <label style={{ display: "block", fontSize: 16, color: C.sub, marginBottom: 5 }}>{tWord("screenshotLangLabel", lang)}</label>
           <select value={scanLang} onChange={(e) => setScanLang(e.target.value)} className="lang-select" style={{ width: "100%", marginBottom: 12 }}>
             {OCR_LANGUAGES.map((l) => (
               <option key={l.code} value={l.code}>{l.label}</option>
@@ -2186,11 +1935,12 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
         </div>
       )}
       {autoDetect && detectedLang && !scanning && (
-        <div style={{ fontSize: 11.5, color: C.sub, marginBottom: 10 }}>
+        <div style={{ fontSize: 16, color: C.sub, marginBottom: 10 }}>
           {tFmt("detectedLangNote", lang, { a: (OCR_LANGUAGES.find((l) => l.code === detectedLang) || {}).label || detectedLang })}
         </div>
       )}
 
+      </details>
       {!imgSrc ? (
         <label
           style={{
@@ -2201,12 +1951,12 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
             borderRadius: 12,
             padding: "22px 14px",
             textAlign: "center",
-            fontSize: 13,
+            fontSize: 16,
             color: C.sub,
             cursor: "pointer",
           }}
         >
-          Choose troop screenshots (one or more)
+          Choose troop screenshot
           <input
             type="file"
             accept="image/*"
@@ -2222,12 +1972,12 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
               screenshot's height so the top (where troop counts sit) reads
               clearly instead of being shrunk to fit — scrollable so an
               iPhone user can drag down through the rest of the image.
-              Scanning reads ONLY whatever's scrolled into view here, not
-              the whole screenshot — this doubles as the crop tool. */}
+              The preview scroll never changes the full-image scan. */}
           <div
             ref={scrollWrapRef}
             style={{
               width: "100%",
+              position: "sticky", top: 12, zIndex: 2,
               maxHeight: "34vh",
               overflowY: "auto",
               overflowX: "hidden",
@@ -2239,10 +1989,10 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
               background: C.surface,
             }}
           >
-            <img ref={imgRef} src={imgSrc} alt="" style={{ display: "block", width: "100%", height: "auto" }} />
+            <img ref={imgRef} src={imgSrc} alt="Your troop screenshot" onLoad={() => { if (!hasScanned && !scanning) runScan(); }} style={{ display: "block", width: "100%", height: "auto" }} />
           </div>
-          <p style={{ fontSize: 12, color: C.sub }}>{scanImages.length > 1 ? `${scanImages.length} screenshots selected. The scanner reads all of them and combines the results.` : tWord('scanCropHint', lang)}</p>
-          <label style={{ color: C.gold, fontSize: 12 }}>Choose more screenshots<input type="file" accept="image/*" multiple disabled={scanning} onChange={e => { handleFiles(e.target.files, true); e.target.value = ''; }} /></label>
+          <p style={{ fontSize: 16, color: C.sub }}>Reads the whole image. Scroll the preview to check.</p>
+          <label style={{ color: C.gold, fontSize: 16 }}>Choose more screenshots<input type="file" accept="image/*" multiple disabled={scanning} onChange={e => { handleFiles(e.target.files, true); e.target.value = ''; }} /></label>
           <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
             <Btn tone="gold" small disabled={scanning} onClick={runScan}>
               {scanning ? scanStatus : hasScanned ? tWord("rescanBtn", lang) : tWord("scanBtn", lang)}
@@ -2253,20 +2003,20 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
         </div>
       )}
 
-      {fileError && <div style={{ fontSize: 12, color: C.red, fontWeight: 600, marginTop: 8 }}>{fileError}</div>}
+      {fileError && <div style={{ fontSize: 16, color: C.red, fontWeight: 600, marginTop: 8 }}>{fileError}</div>}
 
       {edited && (
         <div style={{ marginTop: 12 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6, flexWrap: "wrap", gap: 6 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: C.gold }}>{tWord("scanResultsHeading", lang)}</div>
-            <div style={{ fontSize: 11, color: C.sub, fontWeight: 600 }}>{tFmt("foundCountSummary", lang, { a: relevantFields.length - missingCount, b: relevantFields.length })}</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: C.gold }}>{tWord("scanResultsHeading", lang)}</div>
+            <div style={{ fontSize: 16, color: C.sub, fontWeight: 600 }}>{tFmt("foundCountSummary", lang, { a: relevantFields.length - missingCount, b: relevantFields.length })}</div>
           </div>
-          <p style={{ fontSize: 12, color: C.sub }}>Only uncertain readings are highlighted. Fields not detected keep their saved amounts.</p>
+          <p style={{ fontSize: 16, color: C.sub }}>Check highlighted readings. Missing amounts stay unchanged.</p>
           {["t11", "t10", "t9"]
             .filter((tier) => SCAN_FIELDS.some((f) => f.tier === tier && !isMissing(f.key)))
             .map((tier) => (
             <div key={tier} style={{ marginBottom: 10 }}>
-              <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 13, fontWeight: 800, color: C.gold, marginBottom: 6 }}>{tier.toUpperCase()}{tier === "t11" ? " (Helios)" : ""}</div>
+              <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 16, fontWeight: 800, color: C.gold, marginBottom: 6 }}>{tier.toUpperCase()}{tier === "t11" ? " (Helios)" : ""}</div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 {SCAN_FIELDS.filter((f) => f.tier === tier).map((f) => (
                   <div key={f.key} style={{ flex: 1, minWidth: 90, padding: 6, borderRadius: 8, background: !isMissing(f.key) && confidence[f.key] < 85 ? C.amberBg : 'transparent', border: !isMissing(f.key) && confidence[f.key] < 85 ? `1px solid ${C.amber}` : '1px solid transparent' }}>
@@ -2275,7 +2025,8 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
                       value={edited[f.key]}
                       onChange={v => { setEdited(p => ({ ...p, [f.key]: v })); setConfidence(p => ({ ...p, [f.key]: 100 })); }}
                     />
-                    <small style={{ color: C.sub }}>{isMissing(f.key) ? 'Not detected; saved amount kept.' : confidence[f.key] < 85 ? 'Check this reading.' : ''}</small>
+                    <small style={{ color: C.sub }}>{isMissing(f.key) ? 'Unchanged' : confidence[f.key] < 85 ? 'Check the preview.' : ''}</small>
+                    {!isMissing(f.key) && confidence[f.key] < 85 && <button type="button" aria-label={`${tType(f.type, lang)} ${f.tier.toUpperCase()} reading is correct`} onClick={() => setConfidence(p => ({ ...p, [f.key]: 100 }))} style={{ fontSize: 16, color: C.gold, background: 'transparent', border: `1px solid ${C.cardBorder}`, borderRadius: 8, minHeight: 44 }}>Correct</button>}
                   </div>
                 ))}
               </div>
@@ -2283,17 +2034,18 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
           ))}
 
           <div style={{ marginTop: 12 }}>
-            <strong style={{ fontSize: 13, color: C.gold }}>FC badge readings</strong>
-            <p style={{ fontSize: 12, color: C.sub }}>Check each badge before applying. A blank reading keeps that account’s saved level. These are troop levels, not a confirmed furnace level.</p>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{TYPES.map(type => <div key={type} style={{ flex: 1, minWidth: 100 }}>
+            <strong style={{ fontSize: 16, color: C.gold }}>FC badge readings</strong>
+            <p style={{ fontSize: 16, color: C.sub }}>Use the FC number on each troop badge. Blank = unchanged.</p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{TYPES.map(type => <div key={type} style={{ flex: 1, minWidth: 100, borderRadius: 8, padding: 6, background: edited.troopTiers?.[type]?.uncertain ? C.amberBg : 'transparent' }}>
               <TroopLevelField label={`${tType(type, lang)} FC`} ariaLabel={`Scanned ${type} FC`} allowBlank value={edited.troopTiers?.[type]?.fc ?? ''} max={10}
-                onChange={fc => setEdited(p => ({ ...p, troopTiers: { ...p.troopTiers, [type]: { fc, level: p.troopTiers?.[type]?.level || (p['t11' + type[0].toUpperCase() + type.slice(1)] > 0 ? 11 : 10) } } }))} />
+                onChange={fc => setEdited(p => ({ ...p, troopTiers: { ...p.troopTiers, [type]: { fc, uncertain: false, level: p.troopTiers?.[type]?.level || (p['t11' + type[0].toUpperCase() + type.slice(1)] > 0 ? 11 : 10) } } }))} />
               {edited.troopTiers?.[type]?.level && <small style={{ color: C.sub }}>T{edited.troopTiers[type].level}</small>}
+              {edited.troopTiers?.[type]?.uncertain && <button type="button" onClick={() => setEdited(p => ({ ...p, troopTiers: { ...p.troopTiers, [type]: { ...p.troopTiers[type], uncertain: false } } }))} style={{ color: C.gold, background: 'transparent', border: `1px solid ${C.cardBorder}`, borderRadius: 8, minHeight: 44, fontSize: 16 }}>FC is correct</button>}
             </div>)}</div>
           </div>
           <details style={{ marginTop: 8 }}>
-            <summary style={{ cursor: "pointer", fontSize: 11.5, color: C.sub }}>{tWord("whatScannerRead", lang)}</summary>
-            <pre style={{ whiteSpace: "pre-wrap", fontSize: 10.5, color: C.sub, background: C.surface, border: `1px solid ${C.cardBorder}`, borderRadius: 8, padding: 8, marginTop: 6, maxHeight: 200, overflow: "auto" }}>
+            <summary style={{ cursor: "pointer", fontSize: 16, color: C.sub }}>{tWord("whatScannerRead", lang)}</summary>
+            <pre style={{ whiteSpace: "pre-wrap", fontSize: 16, color: C.sub, background: C.surface, border: `1px solid ${C.cardBorder}`, borderRadius: 8, padding: 8, marginTop: 6, maxHeight: 200, overflow: "auto" }}>
               {buildDebugSummary()}
             </pre>
           </details>
@@ -2301,11 +2053,12 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
           {/* Apply straight to either account — no need to switch the
               active account first just to drop a scan into it. */}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
-            {accounts.map((acc) => (
-              <Btn key={acc.id} tone="gold" small disabled={scanning || !SCAN_FIELDS.some(f => edited[f.key] !== undefined)} onClick={() => handleApply(acc.id)}>
-                {tWord("applyToPoolBtn", lang)} — {acc.name}{acc.id === activeAccountId ? " ✓" : ""}
-              </Btn>
-            ))}
+            {accounts.length > 1 && <label style={{ fontSize: 16, color: C.sub, width: '100%' }}>Save to
+              <select aria-label="Save scanned troops to account" className="lang-select" style={{ width: '100%', fontSize: 16, minHeight: 44 }} value={targetAccount} onChange={e => setTargetAccount(e.target.value)}>
+                {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
+              </select>
+            </label>}
+            <Btn tone="gold" disabled={scanning || !SCAN_FIELDS.some(f => edited[f.key] !== undefined) || SCAN_FIELDS.some(f => edited[f.key] !== undefined && confidence[f.key] < 85) || TYPES.some(type => edited.troopTiers?.[type]?.uncertain)} onClick={() => handleApply(accounts.some(a => a.id === targetAccount) ? targetAccount : activeAccountId)}>Use these troops</Btn>
           </div>
         </div>
       )}
@@ -3191,7 +2944,7 @@ export default function App() {
                       <Card>
                       <SectionHeader step={1} title={tr("troopPool")} sub={tr("troopPoolSub")} />
                       {noTroopsEntered && (
-                        <div style={{ background: C.amberBg, color: C.amber, borderRadius: 12, padding: "8px 10px", fontSize: 12, fontWeight: 500, marginBottom: 10 }}>
+                        <div style={{ background: C.amberBg, color: C.amber, borderRadius: 12, padding: "8px 10px", fontSize: 16, fontWeight: 500, marginBottom: 10 }}>
                           {tr("noTroops")}
                         </div>
                       )}
@@ -3204,15 +2957,15 @@ export default function App() {
                         />
                       </div>
                       {!troopsEditing && <div style={{ color: C.ink, marginBottom: 12 }}>
-                        <p style={{ fontSize: 13, fontWeight: 700 }}>{TYPES.map((type, i) => `${tType(type, lang)} FC${troopTiers[i].fc === '' ? '—' : troopTiers[i].fc}`).join(' · ')}</p>
-                        <p style={{ color: C.sub, fontSize: 12 }}>{fmt(totalAvailable)} troops available · saved on this device</p>
+                        <p style={{ fontSize: 16, fontWeight: 700 }}>{TYPES.map((type, i) => `${tType(type, lang)} FC${troopTiers[i].fc === '' ? '—' : troopTiers[i].fc}`).join(' · ')}</p>
+                        <p style={{ color: C.sub, fontSize: 16 }}>{fmt(totalAvailable)} troops available · saved on this device</p>
                       </div>}
                       <Btn tone="ghost" small onClick={() => setTroopsEditing(v => !v)}>{troopsEditing ? 'Close troop editor' : 'Edit troops'}</Btn>
                       {troopsEditing && <div style={{ marginTop: 12 }}>
-                      <details style={{ color: C.sub, fontSize: 12, marginBottom: 14 }}>
+                      <details style={{ color: C.sub, fontSize: 16, marginBottom: 14 }}>
                         <summary style={{ cursor: 'pointer', color: C.gold, fontWeight: 700 }}>Where do I find this?</summary>
-                        <p style={{ lineHeight: 1.6 }}>Open Troops Preview in the game. Copy the available troop amounts and the FC number on each troop’s badge. Each type can have a different FC level. FC0 means no Fire Crystal.</p>
-                        <p style={{ lineHeight: 1.6 }}>The leader recommendation uses the highest tier you have for each type. Troops are allocated in order: T11 Helios, T10 Apex, then T9 Supreme.</p>
+                        <p style={{ lineHeight: 1.6 }}>Profile → Troops. Copy each amount and its FC badge. FC0 means no Fire Crystal.</p>
+                        <p style={{ lineHeight: 1.6 }}>Strongest troops first: T11 Helios → T10 Apex → T9 Supreme.</p>
                       </details>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8, marginBottom: 8 }}>
                         {TYPES.map((type, i) => <TroopFcLabel key={type} type={type} name={tType(type, lang)} fc={troopTiers[i].fc}
@@ -3220,7 +2973,7 @@ export default function App() {
                       </div>
                       <Btn tone="ghost" small disabled={troopTiers[0].fc === '' || troopTiers[0].fc > 10}
                         onClick={() => setTroopTiers(p => p.map(t => ({ ...t, fc: p[0].fc })))}>Same FC for all</Btn>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 9, color: C.ink, fontSize: 13, margin: '16px 0', cursor: 'pointer' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 9, color: C.ink, fontSize: 16, margin: '16px 0', cursor: 'pointer' }}>
                         <input type="checkbox" aria-label="Show T11 Helios troops" checked={hasHelios || TYPES.some(t => t11[t] > 0)}
                           onChange={e => { setHasHelios(e.target.checked); if (!e.target.checked) { const previous = t11; setT11(EMPTY); showToast('T11 troops removed.', tr('undoAction'), () => { setT11(previous); setHasHelios(true); dismissToast(); }); } }}
                           style={{ width: 18, height: 18, accentColor: C.goldStrong }} />

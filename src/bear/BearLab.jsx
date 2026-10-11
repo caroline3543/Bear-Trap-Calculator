@@ -143,33 +143,32 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
     </button>
     {!open && applied && <p className="bl-status">{dirty ? 'Setup changed. Open and recalculate to update your squad.' : `${applied.heroes.join(' · ')} · ${fmt(applied.capacity)} troops before inventory limits`}</p>}
     {open && <form id={panelId} className="bl-panel" onSubmit={e => { e.preventDefault(); apply(); }}>
-      <p className="bl-help">Saved for {accountName}. Uses the FC levels and troop tiers from your inventory, and your rally leader capacity above. Assumes two Jessie and two Seo-yoon joiners with level-5 skills, active pets, and a 25% trap attack buff.</p>
-      <p className="bl-help">Use account bonuses from <strong>Power → Bonus Overview</strong>. Rally-screen stats include your selected heroes, which this calculator adds separately.</p>
+      <p className="bl-help">Saved for {accountName}. Uses your troop levels and leader capacity.</p>
+      <details className="bl-details"><summary>Calculation assumptions</summary><p className="bl-help">Two Jessie and two Seo-yoon joiners, level-5 skills. Pets active. Trap attack +25%.</p></details>
       <BonusScanner onApply={readings => { setDraft(p => applyBonusReadings(p, readings)); setDirty(true); setNotice('Account bonuses updated from reviewed screenshots.'); }} />
       <div className="bl-grid two">
         <NumberField label="All troops attack (%)" value={draft.allAttack} onChange={v => edit({ allAttack: v })} />
         <NumberField label="All troops lethality (%)" value={draft.allLethality} onChange={v => edit({ allLethality: v })} />
       </div>
       <fieldset className="bl-class-bonuses"><legend>Extra bonuses by troop type</legend>
-        <p className="bl-help">Copy each troop type’s own bonus from Bonus Overview. Enter the all-troops bonus above only once; do not add it to these values.</p>
+        <p className="bl-help">Use each class’s listed bonuses. Do not add the all-troops bonus.</p>
         {CLASSES.map((c, i) => <div className="bl-grid two" key={c}>{['attack', 'lethality'].map(kind => <NumberField key={kind}
           label={`${c} base ${kind} (%)`} value={draft.stats[i][kind]} onChange={v => editAt('stats', i, { [kind]: v })} />)}</div>)}
       </fieldset>
       <details className="bl-details bl-guide"><summary>Where to find your account bonuses</summary>
-        <ol><li>On the game’s home screen, tap your <strong>Power</strong> number beside your profile picture, then open <strong>Bonus Overview</strong>.</li><li>Copy <strong>Troops’ Attack</strong> and <strong>Troops’ Lethality</strong> into the all-troops fields.</li><li>Copy <strong>Infantry</strong>, <strong>Lancer</strong> and <strong>Marksman Attack / Lethality</strong> into the matching fields above. Copy the listed values without adding the all-troops bonus.</li></ol>
-        <figure><a href={bonusOverviewPhoto} target="_blank" rel="noreferrer"><img src={bonusOverviewPhoto} loading="lazy" alt="Bonus Overview example highlighting Troops’ Attack 216.77%, Troops’ Lethality 62.33%, and Infantry and Lancer bonuses" /></a><figcaption>Enter the highlighted attack and lethality percentages. Marksman is farther down the list; take another screenshot to include it. Tap to enlarge.</figcaption></figure>
-        <p className="bl-help"><strong>Use base readings before activating temporary pet skills.</strong> Enter pet skill bonuses below. The calculator adds the selected heroes, gear differences, widgets and pet skills separately.</p>
-        <p className="bl-help">If you previously copied these bonuses from the rally deployment popup, replace them here. Those readings depend on the heroes selected for that march.</p>
+        <ol><li>Open <strong>Power → Bonus Overview</strong>.</li><li>Copy <strong>Attack</strong> and <strong>Lethality</strong> for all troops and each troop type.</li><li>Use readings before pet skills. Enter pet bonuses separately below.</li></ol>
+        <p className="bl-help">Use Bonus Overview; rally stats include your heroes.</p>
+        <figure><a href={bonusOverviewPhoto} target="_blank" rel="noreferrer"><img src={bonusOverviewPhoto} loading="lazy" alt="Bonus Overview example highlighting Troops’ Attack 216.77%, Troops’ Lethality 62.33%, and Infantry and Lancer bonuses" /></a><figcaption>Enter the highlighted fields. Tap to enlarge.</figcaption></figure>
       </details>
       <details className="bl-details bl-guide"><summary>Where to find deployment capacity</summary>
-        <ol><li>Open a Polar Terror rally’s troop deployment screen with your intended rally leader heroes selected.</li><li>Tap the <strong>!</strong> beside the troop count and find <strong>Deployment Capacity</strong>. This is the number your own march can carry.</li><li>Use it in the rally leader capacity controls above. Add a capacity buff there only if it is not already included in the number you copied.</li></ol>
-        <p className="bl-help"><strong>Rally Capacity</strong> is the limit for everyone in the rally combined. Use Deployment Capacity for your own squad.</p>
+        <ol><li>Start a Polar Terror rally with your leader heroes.</li><li>Tap <strong>!</strong> beside the troop count → <strong>Deployment Capacity</strong>.</li><li>Enter that capacity above. Add only buffs not already included.</li></ol>
+        <p className="bl-help">Deployment Capacity = your march. Rally Capacity = the whole rally.</p>
       </details>
       <p className="bl-help">You can type or paste numbers with commas and % signs.</p>
       <details className="bl-details bl-guide"><summary>Where to find gear-on and gear-off stats</summary>
-        <ol><li>Open the hero you selected below. On their <strong>Stats</strong> screen, tap the <strong>menu button in the lower right</strong>.</li><li>In <strong>Hero Overall Stats → Expedition</strong>, read the troop class’s <strong>Attack</strong> and <strong>Lethality</strong> percentages; use these, rather than Exploration attack.</li><li>Record both readings with hero gear equipped, then remove that hero’s gear and record them again.</li><li>Enter the two readings in that hero’s <strong>Gear on / off</strong> fields. The calculator subtracts gear off from gear on. This counts only the gear’s added bonus; stars and widgets are calculated separately.</li></ol>
-        <p className="bl-help">Keep the hero’s stars, widget and skills unchanged between readings, and restore the gear before your rally.</p>
-        <figure><a href={heroStatsPhoto} target="_blank" rel="noreferrer"><img src={heroStatsPhoto} loading="lazy" alt="Hector’s lower-right menu and highlighted Expedition Infantry Attack and Lethality" /></a><figcaption>Use the highlighted Expedition percentages. Tap to enlarge.</figcaption></figure>
+        <ol><li>Open <strong>Hero → Stats → lower-right menu → Expedition</strong>.</li><li>Read <strong>Attack</strong> and <strong>Lethality</strong> with gear on, then off.</li><li>Keep stars, widget and skills unchanged. Restore your gear afterward.</li></ol>
+        <p className="bl-help">Only gear on − gear off is added. Hero bonuses are calculated separately.</p>
+        <figure><a href={heroStatsPhoto} target="_blank" rel="noreferrer"><img src={heroStatsPhoto} loading="lazy" alt="Hector’s lower-right menu and highlighted Expedition Infantry Attack and Lethality" /></a><figcaption>Use the Expedition percentages. Tap to enlarge.</figcaption></figure>
       </details>
       {CLASSES.map((c, i) => <fieldset className="bl-class" key={c}><legend>{c}</legend>
         <p className="bl-help">Uses FC {tiers[i].fc === '' ? '—' : tiers[i].fc} · T{tiers[i].level === '' ? '—' : tiers[i].level} from your troop inventory above.</p>
@@ -201,7 +200,7 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
         {applied && !dirty && <div key={applied.revision} ref={resultRef} tabIndex={-1} className="bl-ideal-result rally-result-update" aria-label="Ideal rally leader squad" role="region"><h3>Ideal rally leader squad</h3><div className="bl-grid three">{CLASSES.map((c, i) => <div key={c}><small>{c} · {(applied.ratios[i] * 100).toFixed(2)}%</small><strong>{fmt(applied.counts[i])}</strong></div>)}</div><p className="bl-help">Total: {fmt(applied.capacity)} troops. Amounts are rounded to whole troops while keeping your capacity total.</p><p className="bl-model-score">WOS Nerds optimal boost: <strong>{applied.sourceBoost.toFixed(4)}</strong></p><p className="bl-help">A comparison score, not a prediction of Bear Trap damage points.</p></div>}
         {assessment.errors.length > 0 && <p className="bl-help" role="status">{assessment.errors[0]}{assessment.errors.length > 1 ? ` (${assessment.errors.length - 1} more to complete)` : ''}</p>}
         <button type="submit" className="bl-apply" disabled={!assessment.result}>{applied && !dirty ? 'Calculate again' : 'Calculate & use recommended squad'}</button>
-        <p className="bl-help">Updates the percentages and troop amounts below. The final squad is limited by the troops in your inventory.</p>
+        <p className="bl-help">Updates the squad below, limited by your available troops.</p>
       </div>
       <details className="bl-details"><summary>Formula reference</summary><p className="bl-help">Proportions use the theoretical WOS Nerds comparison model: each class’s D² ÷ sum(D²), with source ratios retained at full precision and whole troops rounded to capacity. The displayed optimal boost uses WOS Nerds’ normalization (raw boost × Chameleon × 1.3 ÷ 23,400), including its 10% display fallback when Chameleon is zero. This does not establish an in-game damage prediction. Explicit skill levels are honored here; WOS Nerds infers them from stars. <a href="https://wosnerds.com/bear-calc/" target="_blank" rel="noreferrer">WOS Nerds formula reference</a>.</p></details>
     </form>}

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { loadTesseract } from './ocr-runtime.js';
 import { BONUS_FIELDS, parseBonusScan, mergeBonusScans } from './bonus-scan.js';
 // Remove colored marker backgrounds while retaining the game's dark text.
@@ -15,79 +15,88 @@ async function contrastCanvas(file, threshold) {
   ctx.putImageData(pixels, 0, 0); return canvas;
 }
 export default function BonusScanner({ onApply }) {
-  const [files, setFiles] = useState([]);
+  const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState('');
+  const [zoom, setZoom] = useState(false);
   const [readings, setReadings] = useState({});
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const generation = useRef(0);
+  useEffect(() => () => { generation.current++; }, []);
   const fields = BONUS_FIELDS.filter(f => readings[f.key]);
   const uncertain = fields.some(f => readings[f.key].uncertain);
-  async function scan() {
-    if (busy || !files.length) return;
+  async function scan(selected = file) {
+    if (busy || !selected) return;
     const revision = ++generation.current;
-    setBusy(true); setError('');
-    let merged = { ...readings };
-    let failed = 0;
+    setBusy(true); setError(''); setReadings({}); setStatus('Reading screenshot…');
+    let merged = {};
     try {
       const engine = await loadTesseract();
-      for (let i = 0; i < files.length; i++) {
-        setStatus(`Reading bonus screenshot ${i + 1} of ${files.length}…`);
-        try {
-          const result = await engine.recognize(files[i], 'eng', {
-            workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
-            corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5',
-          });
-          merged = mergeBonusScans(merged, parseBonusScan(result.data));
-          // Two contrast passes cross-check digits obscured by colored highlights.
-          if (typeof createImageBitmap === 'function') for (const threshold of [155, 170]) {
-            const enhanced = await engine.recognize(await contrastCanvas(files[i], threshold), 'eng', {
-              workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
-              corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5',
-            });
-            merged = mergeBonusScans(merged, parseBonusScan({ ...enhanced.data, text: result.data.text + '\n' + enhanced.data.text }));
-          }
-        } catch { failed++; }
+      const options = { workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js', corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5' };
+      // Read the file itself, never the visible part of the preview.
+      const result = await engine.recognize(selected, 'eng', options);
+      merged = parseBonusScan(result.data);
+      if (typeof createImageBitmap === 'function') for (const threshold of [155, 170]) {
+        const enhanced = await engine.recognize(await contrastCanvas(selected, threshold), 'eng', options);
+        merged = mergeBonusScans(merged, parseBonusScan({ ...enhanced.data, text: result.data.text + '\n' + enhanced.data.text }));
       }
       if (generation.current !== revision) return;
       setReadings(merged);
-      setStatus(Object.keys(merged).length ? 'Review detected account bonuses' : 'No account bonuses found.');
-      if (failed || !Object.keys(merged).length) setError(failed ? `${failed} screenshot(s) could not be read. Your successful readings are kept.` : 'Use English Bonus Overview screenshots with the labels and percentages visible. You can also enter the bonuses below.');
-    } catch { setError('Could not load the scanner. Check your connection or enter the bonuses below.'); }
-    finally { setBusy(false); }
+      setStatus(Object.keys(merged).length ? 'Review bonuses' : 'No bonuses found.');
+      if (!Object.keys(merged).length) setError('Use an English Bonus Overview screenshot, or enter the values below.');
+    } catch {
+      if (generation.current === revision) {
+        setReadings(merged); setStatus(Object.keys(merged).length ? 'Review bonuses' : '');
+        setError('Some readings failed. Check the preview or enter the values below.');
+      }
+    } finally { if (generation.current === revision) setBusy(false); }
+  }
+  function choose(selected) {
+    if (!selected?.type.startsWith('image/')) { setError('Choose an image.'); return; }
+    setFile(selected); setPreview(''); setZoom(false);
+    const reader = new FileReader();
+    reader.onload = e => setPreview(e.target.result);
+    reader.onerror = () => setError('The preview could not load. Try another image.');
+    reader.readAsDataURL(selected);
+    scan(selected);
   }
   function confirm(key, value, text) {
     setReadings(p => ({ ...p, [key]: { value, text, confidence: 100, uncertain: false, alternatives: [] } }));
   }
   return <section className="bl-bonus-scanner" aria-label="Account bonus scanner">
-    <label className="bl-launch" style={{ cursor: busy ? 'wait' : 'pointer' }}>
-      <span>Scan account bonus screenshots</span>
-      <input type="file" accept="image/*" multiple disabled={busy} aria-label="Choose account bonus screenshots"
-        onChange={e => {
-          const images = Array.from(e.target.files || []).filter(f => f.type.startsWith('image/'));
-          setFiles(p => [...p, ...images]); setError(images.length ? '' : 'Choose image files.'); e.target.value = '';
-        }} style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }} />
+    <label className="bl-launch bl-upload">
+      <span>{file ? 'Replace screenshot' : 'Scan bonus screenshot'}</span>
+      <input type="file" accept="image/*" disabled={busy} aria-label="Choose account bonus screenshot"
+        onChange={e => { if (e.target.files?.[0]) choose(e.target.files[0]); e.target.value = ''; }} />
     </label>
-    <p className="bl-help">Choose one or more screenshots from Power → Bonus Overview. Scroll the game’s list and capture the rest. Missing fields keep your saved values. Scanning currently reads English bonus labels. For best results, use screenshots without marker highlights.</p>
-    {files.length > 0 && <><ul className="bl-scan-files">{files.map((file, i) => <li key={`${file.name}:${i}`}>{file.name} <button type="button" disabled={busy} aria-label={`Remove screenshot ${i + 1}`} onClick={() => setFiles(p => p.filter((_, n) => n !== i))}>Remove</button></li>)}</ul><button type="button" className="bl-apply" disabled={busy} onClick={scan}>{busy ? status : `Read ${files.length} screenshot${files.length === 1 ? '' : 's'}`}</button></>}
-    {status && <p className="bl-status" role="status">{status}</p>}
+    {!file && <p className="bl-help">Power → Bonus Overview. Choose one screenshot.</p>}
+    {preview && <div className="bl-preview-sticky">
+      <div className="bl-screenshot-preview" aria-label="Bonus screenshot preview">
+        <img src={preview} alt="Your account bonus screenshot" style={{ width: zoom ? '200%' : '100%', maxWidth: 'none' }} />
+      </div>
+      <div className="bl-preview-tools"><span>Reads the whole image.</span><button type="button" aria-pressed={zoom} onClick={() => setZoom(v => !v)}>{zoom ? 'Fit preview' : 'Enlarge preview'}</button></div>
+    </div>}
+    {busy && <p className="bl-status" role="status">Reading screenshot…</p>}
     {error && <p className="bl-error" role="alert">{error}</p>}
-    {fields.length > 0 && <>
-      <p className="bl-help">Only uncertain or conflicting readings are highlighted. Confirm those before applying.</p>
+    {!busy && fields.length > 0 && <>
+      <h3 className="bl-review-title">Review bonuses</h3>
+      <p className="bl-help">{fields.length} of 8 found. Missing values stay unchanged.</p>
       <div className="bl-grid two">{fields.map(field => {
         const reading = readings[field.key];
         return <div key={field.key} className={reading.uncertain ? 'bl-scan-uncertain' : undefined}>
           <label className="bl-field"><span>{field.label}</span><input type="text" inputMode="decimal" className="calc-input" aria-label={`Scanned ${field.label}`} value={reading.text ?? reading.value}
-            disabled={busy} onChange={e => {
-              const raw = e.target.value.replace(/[%\s,]/g, '');
-              const n = Number(raw);
+            onFocus={e => e.target.select()} onChange={e => {
+              const raw = e.target.value.replace(/[%\s,]/g, ''), n = Number(raw);
               if (raw !== '' && Number.isFinite(n) && n >= 0 && n <= 10000) confirm(field.key, n, e.target.value);
               else setReadings(p => ({ ...p, [field.key]: { ...p[field.key], value: e.target.value, text: e.target.value, uncertain: true } }));
             }} /></label>
-          {reading.uncertain && <><small className="bl-error">Check this reading{reading.alternatives.length ? `; also read ${reading.alternatives.join(', ')}` : ''}.</small><button type="button" disabled={busy || !Number.isFinite(reading.value)} onClick={() => confirm(field.key, reading.value)}>Confirm reading</button>{reading.alternatives.map(value => <button type="button" key={value} disabled={busy} onClick={() => confirm(field.key, value)}>Use {value}%</button>)}</>}
+          {reading.uncertain && <><span className="bl-error">Check against the preview.</span><button type="button" disabled={!Number.isFinite(reading.value)} onClick={() => confirm(field.key, reading.value)}>Correct</button>{reading.alternatives.map(value => <button type="button" key={value} onClick={() => confirm(field.key, value)}>Use {value}%</button>)}</>}
         </div>;
       })}</div>
-      <button type="button" className="bl-apply" disabled={busy || uncertain} onClick={() => { onApply(readings); setReadings({}); setFiles([]); setStatus('Account bonuses updated.'); }}>Use reviewed bonuses</button>
+      <button type="button" className="bl-apply" disabled={uncertain} onClick={() => { onApply(readings); setReadings({}); setFile(null); setPreview(''); setStatus('Bonuses saved.'); }}>Use these bonuses</button>
     </>}
+    {file && !busy && <button type="button" onClick={() => scan()}>Scan again</button>}
+    {!file && status && <p className="bl-status" role="status">{status}</p>}
   </section>;
 }

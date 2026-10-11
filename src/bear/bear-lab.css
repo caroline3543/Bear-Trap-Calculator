@@ -57,3 +57,18 @@
 .bl-scan-files { padding-left: 18px; font-size: 12px; overflow-wrap: anywhere; }
 .bl-scan-uncertain { padding: 8px; border: 1px solid var(--amber, #d5a55d); border-radius: 10px; background: var(--amberBg, rgba(213,165,93,.08)); }
 .bl-bonus-scanner button:not(.bl-apply) { color: inherit; font: inherit; background: transparent; border: 1px solid currentColor; border-radius: 8px; padding: 6px; margin: 4px; cursor: pointer; }
+
+/* One reading size for instructions, captions, field labels and review. */
+.bear-leader-helper { font-size: 16px; }
+.bear-leader-helper :is(.bl-help, .bl-status, .bl-error, .bl-field > span, small, figcaption, summary, .bl-details p, .bl-guide ol) { font-size: 16px; line-height: 1.5; }
+.bl-upload { position: relative; margin-bottom: 12px; }
+.bear-leader-helper .bl-upload input { position: absolute; width: 1px; height: 1px; min-height: 0; padding: 0; border: 0; opacity: 0; }
+.bl-upload:focus-within { outline: 3px solid var(--teal); outline-offset: 2px; }
+.bl-preview-sticky { position: sticky; top: 12px; z-index: 2; background: var(--surface); margin: 12px 0; border-radius: 10px; }
+.bl-screenshot-preview { max-height: 32vh; overflow: auto; border: 1px solid var(--cardBorder); border-radius: 10px; touch-action: pan-x pan-y; -webkit-overflow-scrolling: touch; }
+.bl-screenshot-preview img { display: block; height: auto; }
+.bl-preview-tools { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 6px 0; font-size: 16px; color: var(--sub); }
+.bl-review-title { font: 800 18px 'Nunito Sans', sans-serif; color: var(--gold); margin: 12px 0; }
+.bear-leader-helper .bl-bonus-scanner .bl-grid.two { grid-template-columns: 1fr; }
+.bear-leader-helper .bl-bonus-scanner .bl-field { display: grid; grid-template-columns: minmax(0,1fr) minmax(100px,.65fr); align-items: center; gap: 12px; }
+.bl-bonus-scanner button:not(.bl-apply) { min-height: 44px; }
