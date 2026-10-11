@@ -1,5 +1,7 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import TimeHub from "./timehub/TimeHub.jsx";
+import { loadState } from "./timehub/lib/storage.js";
+import { primaryAccount } from "./timehub/lib/accounts.js";
 import paperGrainTile from "./paper-grain.png";
 const BearLab = React.lazy(() => import("./bear/BearLab.jsx"));
 import { detectLanguage } from "./timehub/lib/language.js";
@@ -2258,18 +2260,6 @@ const EMPTY = { infantry: 0, lancer: 0, marksman: 0 };
 
 const STORAGE_KEY = "bearTrapCalculator:v1";
 const ACTIVE_ACCOUNT_KEY = "bearTrapCalculator:activeAccount";
-const ACCOUNT_NAMES_KEY = "bearTrapCalculator:accountNames";
-
-function loadAccountNames() {
-  try {
-    const raw = localStorage.getItem(ACCOUNT_NAMES_KEY);
-    const parsed = raw ? JSON.parse(raw) : null;
-    return { A: (parsed && parsed.A) || "Main Account", B: (parsed && parsed.B) || "Farm Account" };
-  } catch {
-    return { A: "Main Account", B: "Farm Account" };
-  }
-}
-
 function accountStorageKey(id) {
   return `${STORAGE_KEY}:${id}`;
 }
@@ -2301,12 +2291,15 @@ function loadSavedForAccount(id) {
 }
 
 export default function App() {
-  // Which of the two accounts is currently active, and that account's saved
-  // data — both loaded once on first render. Every piece of state below
-  // falls back to its normal default if nothing was saved for it.
-  const [activeAccount, setActiveAccount] = useState(readActiveAccount);
+  // The tracker owns account identities and names. Calculator data stays keyed by ID.
+  const [trackedAccounts, setTrackedAccounts] = useState(() => loadState().accounts);
+  const onAccountsChange = useCallback((accounts) => setTrackedAccounts(accounts), []);
+  const accountNames = useMemo(() => Object.fromEntries(trackedAccounts.map((a) => [a.id, a.name])), [trackedAccounts]);
+  const [activeAccount, setActiveAccount] = useState(() => {
+    const previous = readActiveAccount();
+    return trackedAccounts.some((a) => a.id === previous) ? previous : primaryAccount(trackedAccounts).id;
+  });
   const [saved] = useState(() => loadSavedForAccount(activeAccount));
-  const [accountNames, setAccountNames] = useState(loadAccountNames);
 
   const [capacity, setCapacity] = useState(saved?.capacity ?? 110000);
   const [numSquads, setNumSquads] = useState(saved?.numSquads ?? 6);
@@ -2370,9 +2363,10 @@ export default function App() {
 
   // Auto-save everything the player has entered so it survives a refresh —
   // scoped to whichever account is currently active, so switching accounts
-  // never mixes the two troop pools together.
+  // never mixes troop pools together.
   useEffect(() => {
     try {
+      localStorage.setItem(ACTIVE_ACCOUNT_KEY, activeAccount);
       localStorage.setItem(
         accountStorageKey(activeAccount),
         JSON.stringify({
@@ -2523,6 +2517,7 @@ export default function App() {
   // T11 (Helios) only comes along, and only auto-switches that account's
   // Helios toggle on, if the scan actually found a T11 row — never assumed.
   function handleApplyScan(scanned, targetId) {
+    if (!trackedAccounts.some((a) => a.id === targetId)) return;
     const t11Vals = { infantry: scanned.t11Infantry ?? 0, lancer: scanned.t11Lancer ?? 0, marksman: scanned.t11Marksman ?? 0 };
     const t10Vals = { infantry: scanned.t10Infantry, lancer: scanned.t10Lancer, marksman: scanned.t10Marksman };
     const t9Vals = { infantry: scanned.t9Infantry, lancer: scanned.t9Lancer, marksman: scanned.t9Marksman };
@@ -2620,7 +2615,7 @@ export default function App() {
     });
   }
   // The full shape of "one account's setup" — used when switching between
-  // Account A/B, so each keeps its own independent troop pool and settings.
+  // tracked accounts, so each keeps its own independent troop pool and settings.
   function buildAccountSnapshot() {
     return {
       capacity, numSquads, t10, t9, t11, hasHelios,
@@ -2655,12 +2650,12 @@ export default function App() {
     setFlashSignal((n) => n + 1);
   }
 
-  // Two accounts, two independent troop pools — switching saves whatever
+  // Independent troop pools — switching saves whatever
   // the player was just looking at under the account they're leaving, then
   // loads the other account's own saved setup (or clean defaults, the
   // first time it's used).
   function switchAccount(target) {
-    if (target === activeAccount) return;
+    if (target === activeAccount || !trackedAccounts.some((a) => a.id === target)) return;
     try {
       localStorage.setItem(accountStorageKey(activeAccount), JSON.stringify(buildAccountSnapshot()));
       localStorage.setItem(ACTIVE_ACCOUNT_KEY, target);
@@ -2672,18 +2667,13 @@ export default function App() {
     showToast(tr("switchedAccountToast"), null, null, 2000);
   }
 
-  function handleRenameAccount(id) {
-    const current = accountNames[id];
-    const name = typeof window !== "undefined" ? window.prompt(tr("renameAccountPrompt"), current) : null;
-    if (!name || !name.trim()) return;
-    const updated = { ...accountNames, [id]: name.trim() };
-    setAccountNames(updated);
-    try {
-      localStorage.setItem(ACCOUNT_NAMES_KEY, JSON.stringify(updated));
-    } catch {
-      // storage unavailable — name still applies for this session
+  // Account deletion/import may invalidate the selection. Switch using the same
+  // snapshot path as a tap, so the replacement never inherits the removed pool.
+  useEffect(() => {
+    if (!trackedAccounts.some((a) => a.id === activeAccount)) {
+      switchAccount(primaryAccount(trackedAccounts).id);
     }
-  }
+  }, [trackedAccounts, activeAccount]);
 
   function applyRecommendedToManual() {
     setStrategy("manual");
@@ -3029,6 +3019,7 @@ export default function App() {
         {/* TIME HUB — bottom tabs: Today · Timers · Events · BT Calculator.
             The whole calculator below becomes the "BT Calculator" tab. */}
         <TimeHub
+          onAccountsChange={onAccountsChange}
           lang={lang}
           headerExtra={<>{langPicker}{themeButton}</>}
           calculator={
@@ -3059,17 +3050,16 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* ACCOUNT SWITCHER — its own prominent bar, not squeezed into the
-                        header, since many players run two separate Bear Traps. */}
-                    <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-                      {[
-                        { id: "A", accent: C.goldStrong },
-                        { id: "B", accent: TYPE_COLOR.lancer },
-                      ].map((acc) => {
+                    {/* Same accounts as the tracker; wrap comfortably on small screens. */}
+                    <div role="group" aria-label="BT calculator accounts" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(140px, 100%), 1fr))", gap: 10, marginBottom: 16 }}>
+                      {trackedAccounts.map((acc) => {
+                        const accent = acc.isPrimary ? C.goldStrong : TYPE_COLOR.lancer;
                         const selected = activeAccount === acc.id;
                         return (
                           <button
                             key={acc.id}
+                            aria-pressed={selected}
+                            title={acc.name}
                             onClick={() => switchAccount(acc.id)}
                             style={{
                               flex: 1,
@@ -3077,8 +3067,8 @@ export default function App() {
                               alignItems: "center",
                               justifyContent: "center",
                               gap: 8,
-                              border: `2px solid ${selected ? acc.accent : C.cardBorder}`,
-                              background: selected ? acc.accent : C.surface,
+                              border: `2px solid ${selected ? accent : C.cardBorder}`,
+                              background: selected ? accent : C.surface,
                               borderRadius: 16,
                               padding: "12px 14px",
                               cursor: "pointer",
@@ -3097,19 +3087,6 @@ export default function App() {
                             >
                               {accountNames[acc.id]}
                             </span>
-                            {selected && (
-                              <span
-                                role="button"
-                                aria-label={tr("renameAccountPrompt")}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRenameAccount(acc.id);
-                                }}
-                                style={{ fontSize: 14, cursor: "pointer", flexShrink: 0, opacity: 0.85 }}
-                              >
-                                ✏️
-                              </span>
-                            )}
                           </button>
                         );
                       })}
@@ -3143,7 +3120,7 @@ export default function App() {
                       <div style={{ marginBottom: 12 }}>
                         <ScreenshotScanner
                           lang={lang}
-                          accounts={[{ id: "A", name: accountNames.A }, { id: "B", name: accountNames.B }]}
+                          accounts={trackedAccounts}
                           activeAccountId={activeAccount}
                           onApply={handleApplyScan}
                         />

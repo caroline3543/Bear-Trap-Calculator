@@ -39,3 +39,9 @@ The zip contains only files changed in this update, using repository-relative pa
 ## Screenshot-guided stat entry
 
 The supplied rally screenshot shows the ! button beside the deployed troop total. Two popup screenshots show troop/class bonuses and Deployment Capacity; these are referenced beside the base fields. The hero screenshot shows the lower-right Stats menu and highlighted Expedition attack/lethality. Read equipped and unequipped hero stats and apply only their difference. The navigation examples are not prefilled player data. Read base bonuses without the chosen heroes and temporary pet skills; avoid including buffs twice. Deployment Capacity is the player march limit, distinct from total Rally Capacity.
+
+## Shared tracked accounts
+
+The BT account switcher and screenshot scan destinations use the Time Hub tracked account list (one to six accounts), including names and order. Adding, renaming, or deleting an account updates the calculator immediately. If its selected account is removed, the calculator switches to the primary account and loads that account’s own setup. Troop pools, leader squads, and recommendation inputs remain scoped by stable account ID. The previous fixed Farm button and separate calculator rename prompt have been removed; account management stays in Settings. Existing calculator data remains stored under its original ID.
+
+Account integration check: `BT_TEST_DEPS=/path/to/test-deps NODE_PATH=/path/to/test-deps/node_modules node scripts/check-bt-accounts.cjs` (requires React, esbuild, jsdom). Covers 1/3/6 accounts, immediate rename/reorder/delete updates, stale saved selections, and isolated capacity/rally snapshots.

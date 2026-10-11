@@ -425,9 +425,9 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
  *   calculator — your existing Bear Trap calculator element. When given, it becomes the
  *   "BT Calculator" tab and the whole app shares one bottom tab bar.
  */
-export default function TimeHub({ lang = "en", showHeader = true, headerExtra = null, calculator = null }) {
+export default function TimeHub({ lang = "en", showHeader = true, headerExtra = null, calculator = null, onAccountsChange }) {
   return (
-    <TimeHubProvider lang={lang}>
+    <TimeHubProvider lang={lang} onAccountsChange={onAccountsChange}>
       <TimeHubBody showHeader={showHeader} headerExtra={headerExtra} calculator={calculator} />
     </TimeHubProvider>
   );

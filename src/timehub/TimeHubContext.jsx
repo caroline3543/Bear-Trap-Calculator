@@ -49,8 +49,10 @@ function reducer(state, action) {
   }
 }
 
-export function TimeHubProvider({ lang = "en", children }) {
+export function TimeHubProvider({ lang = "en", onAccountsChange, children }) {
   const [state, dispatch] = useReducer(reducer, undefined, () => loadState());
+  // Notify the calculator immediately, without waiting for the debounced storage write.
+  useEffect(() => { onAccountsChange?.(state.accounts); }, [state.accounts, onAccountsChange]);
   // UI-only state (not saved): rearrange mode and a booking to prefill from a reminder
   const [rearrange, setRearrange] = useState(false);
   const [bookingDraft, setBookingDraft] = useState(null);
