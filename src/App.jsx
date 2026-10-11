@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import TimeHub from "./timehub/TimeHub.jsx";
 import paperGrainTile from "./paper-grain.png";
+const BearLab = React.lazy(() => import("./bear/BearLab.jsx"));
 import { detectLanguage } from "./timehub/lib/language.js";
 
 /* ============================================================
@@ -3111,6 +3112,33 @@ export default function App() {
                         );
                       })}
                     </div>
+
+                    <React.Suspense fallback={<div className="calc-card" style={{ padding: 20 }}>Loading Bear Lab…</div>}>
+                      <BearLab
+                        key={activeAccount}
+                        accountId={activeAccount}
+                        accountName={accountNames[activeAccount]}
+                        leaderCapacity={rallyCapacity}
+                        joinerCapacity={capacity}
+                        squads={computation.squads}
+                        leaderResult={rallyComputation.result}
+                        onApplyLeader={(counts, total) => {
+                          setRallyCapacity(total);
+                          setCyrilleBoost(0);
+                          setSnowApeBoost(0);
+                          setMinisterBoost(0);
+                          setRallyMode("exact");
+                          setRallyExact(Object.fromEntries(TYPES.map((t, i) => [t, counts[i]])));
+                          setFills({});
+                        }}
+                        onApplyJoiners={(counts) => {
+                          setStrategy("manual");
+                          setMode("exact");
+                          setExact(Object.fromEntries(TYPES.map((t, i) => [t, counts[i]])));
+                          setFills(prev => prev.rally ? { rally: prev.rally } : {});
+                        }}
+                      />
+                    </React.Suspense>
 
                     <div style={{ position: "sticky", top: 0, zIndex: 10, marginBottom: 16 }} className="calc-card">
                       <div style={{ display: "flex", gap: 0, overflowX: "auto" }}>
