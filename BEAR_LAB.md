@@ -38,10 +38,14 @@ The zip contains only files changed in this update, using repository-relative pa
 
 ## Screenshot-guided stat entry
 
-The supplied rally screenshot shows the ! button beside the deployed troop total. Two popup screenshots show troop/class bonuses and Deployment Capacity; these are referenced beside the base fields. The hero screenshot shows the lower-right Stats menu and highlighted Expedition attack/lethality. Read equipped and unequipped hero stats and apply only their difference. The navigation examples are not prefilled player data. Read base bonuses without the chosen heroes and temporary pet skills; avoid including buffs twice. Deployment Capacity is the player march limit, distinct from total Rally Capacity.
+The retained hero screenshot shows the lower-right Stats menu and highlighted Expedition attack/lethality. Read equipped and unequipped stats on the same selected hero and apply only their difference. The reference is a navigation example, not prefilled player data. Rally screenshots were removed: base bonuses now come from Power → Bonus Overview. See the corrected stat-source guidance below.
 
 ## Shared tracked accounts
 
 The BT account switcher and screenshot scan destinations use the Time Hub tracked account list (one to six accounts), including names and order. Adding, renaming, or deleting an account updates the calculator immediately. If its selected account is removed, the calculator switches to the primary account and loads that account’s own setup. Troop pools, leader squads, and recommendation inputs remain scoped by stable account ID. The previous fixed Farm button and separate calculator rename prompt have been removed; account management stays in Settings. Existing calculator data remains stored under its original ID.
 
 Account integration check: `BT_TEST_DEPS=/path/to/test-deps NODE_PATH=/path/to/test-deps/node_modules node scripts/check-bt-accounts.cjs` (requires React, esbuild, jsdom). Covers 1/3/6 accounts, immediate rename/reorder/delete updates, stale saved selections, and isolated capacity/rally snapshots.
+
+## Corrected stat sources and readability
+
+Use Power → Bonus Overview for the separate account-wide and class-specific base bonuses. Do not paste hero-inclusive rally preview values into base fields: heroes, widgets and gear are added by the model. Read base values before activating temporary pet skills, which are entered separately. Keep deployment preview guidance in its own section for capacity only, with a warning about buffs already included and the distinction from total rally capacity. Removed the three rally preview screenshots to avoid implying their troop-stat readings are valid base inputs; retained the correctly labelled hero gear reference. Simplified input instructions and results copy; the formula reference explains rounding rather than cluttering the recommendation card.
