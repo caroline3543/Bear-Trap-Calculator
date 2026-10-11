@@ -1066,12 +1066,12 @@ function NumField({ label, value, onChange }) {
    while typing; the total-must-equal-100% check happens separately below.
    Same local-text pattern as NumField so backspacing to empty works. */
 function PctField({ label, value, onChange, colorDot }) {
-  const [text, setText] = useState(() => String(value));
+  const [text, setText] = useState(() => String(Number(Number(value).toFixed(2))));
   const lastEmitted = useRef(value);
 
   useEffect(() => {
     if (value !== lastEmitted.current) {
-      setText(String(value));
+      setText(String(Number(Number(value).toFixed(2))));
       lastEmitted.current = value;
     }
   }, [value]);
@@ -1099,7 +1099,7 @@ function PctField({ label, value, onChange, colorDot }) {
           value={text}
           onFocus={(e) => e.target.select()}
           onChange={handleChange}
-          onBlur={() => setText(String(value))}
+          onBlur={() => setText(String(Number(Number(value).toFixed(2))))}
           className="calc-input"
           style={{ paddingRight: 30 }}
         />
@@ -1473,7 +1473,7 @@ function SquadCard({ index, squadKey, result, invalid, onAcceptFill, onRemoveFil
 /* ============================================================
    MANUAL COMPOSITION INPUTS (sliders / exact, reused for rally leader)
    ============================================================ */
-function CompositionInputs({ capacity, mode, setMode, ratio, setRatio, exact, setExact, target, lang }) {
+function CompositionInputs({ animateUpdates = false, capacity, mode, setMode, ratio, setRatio, exact, setExact, target, lang }) {
   const dots = TYPE_COLOR;
   const ratioSum = ratio.infantry + ratio.lancer + ratio.marksman;
 
@@ -1524,7 +1524,7 @@ function CompositionInputs({ capacity, mode, setMode, ratio, setRatio, exact, se
 
       {target.valid && (
         <div style={{ marginTop: 12, background: C.goldBg, border: `1.5px solid ${C.goldBorder}`, borderRadius: 14, padding: 10 }}>
-          <TargetPreview target={target} lang={lang} />
+          <div key={JSON.stringify([target.infantry, target.lancer, target.marksman])} className={animateUpdates ? "rally-result-update" : undefined}><TargetPreview target={target} lang={lang} /></div>
         </div>
       )}
     </div>
@@ -3244,7 +3244,7 @@ export default function App() {
                               }}
                             />
                           </React.Suspense>
-                          <CompositionInputs capacity={effectiveRallyCapacity} mode={rallyMode} setMode={setRallyMode} ratio={rallyRatio} setRatio={setRallyRatio} exact={rallyExact} setExact={setRallyExact} target={rallyTarget} lang={lang} />
+                          <CompositionInputs animateUpdates capacity={effectiveRallyCapacity} mode={rallyMode} setMode={setRallyMode} ratio={rallyRatio} setRatio={setRallyRatio} exact={rallyExact} setExact={setRallyExact} target={rallyTarget} lang={lang} />
                           {rallyComputation.result && (
                             <div style={{ marginTop: 10 }}>
                               <SquadCard index="Leader" squadKey="rally" result={rallyComputation.result} invalid={false} onAcceptFill={acceptFill} onRemoveFill={removeFill} lang={lang} />

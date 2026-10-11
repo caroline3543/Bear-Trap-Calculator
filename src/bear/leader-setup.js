@@ -27,7 +27,7 @@ export function migrateSetup(old = {}) {
       const match = /FC(\d+) T(\d+)/.exec(old.tiers?.[i] || 'FC6 T10');
       return { fc: Number(match?.[1] ?? 6), level: Number(match?.[2] ?? 10) };
     })()),
-    joiners: JOINERS.map((h, i) => old.joiners?.[i] || h),
+    joiners: ['Jessie', 'Jessie', 'Seo-yoon', 'Seo-yoon'],
   };
 }
 export function heroNamesForClass(db, i) {

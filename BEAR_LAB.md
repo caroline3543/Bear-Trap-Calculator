@@ -6,15 +6,15 @@ Embed a compact, optional recommendation form inside the existing Rally leader s
 
 Use class-specific hero-name autocomplete with keyboard navigation, one-decimal stars capped at 5, whole widget levels 0–10 and skill levels 1–5. Show FC beside a numeric entry and a separate typed troop level for every troop class. Validate supported source-data star steps and troop tiers; never silently calculate an unknown hero or coefficient.
 
-Keep the main form focused on the three leaders. Put gear-on/off comparisons, four contributing joiner names, active pet percentages and extra class bonuses in optional disclosures. Gear bonus is equipped minus unequipped; incomplete or reversed readings block calculation. Restrict the four contributing joiners to Seo-yoon, Reina, Norah and Jessie, with level-5 skills. Assume pets active and trap attack bonus fixed at 25%.
+Keep the main form focused on the three leaders. Place class bonuses directly under the all-troops fields. Put gear-on/off comparisons, active pet percentages and extra class bonuses in optional disclosures. Gear bonus is equipped minus unequipped; incomplete or reversed readings block calculation. Hide joiner entry and always use two Jessie and two Seo-yoon with level-5 skills. Assume pets active and trap attack bonus fixed at 25%.
 
-Calculate only on explicit submission. Apply recommended percentages rounded to two decimals (conserving 100%) and whole troop amounts to the existing composition controls, collapse the form, return focus to its launcher and show confirmation. Preserve capacity/buffs and inventory allocation. If capacity changes after application, show a recalculate hint instead of silently overwriting manual edits.
+Calculate only on explicit submission. Apply full-precision recommended percentages and whole troop amounts to the existing composition controls. Format percentages to two decimals without discarding internal precision. Keep the form open; show the ideal squad in the calculation area and focus it with preventScroll so the page does not jump. Briefly highlight updated ideal and lower squad numbers, respecting reduced-motion preferences. Preserve capacity/buffs and inventory allocation. If capacity changes after application, show a recalculate hint instead of silently overwriting manual edits.
 
 Remove the standalone planner shell, tabs, joining planner, damage-target scenarios, reports/calibration, available roster and hero-combination search interface. Remove the unused optimizer worker. Existing joiner squad allocation elsewhere in the original calculator remains intact.
 
 ## Data and calculation
 
-The public WOS Nerds coefficient tables are a snapshot from 11 October 2026, covering the imported hero and troop-tier data. The recommendation uses the independently implemented class-damage coefficients D and proportions D² / sum(D²). Whole counts use largest fractional remainders to conserve the existing effective capacity exactly. The UI retains a compact source attribution; it does not expose damage predictions or comparison-score panels.
+The public WOS Nerds coefficient tables are a snapshot from 11 October 2026, covering the imported hero and troop-tier data. The recommendation uses the independently implemented class-damage coefficients D and proportions D² / sum(D²). Whole counts use largest fractional remainders to conserve the existing effective capacity exactly. The result shows WOS Nerds normalized optimal boost (matching its zero-Chameleon display fallback), source fractional ideal counts and sendable whole counts. No undocumented conversion to game damage is introduced.
 
 Supported star substeps in the source tables are .0 through .5 for stars 0–4, then 5.0. The form accepts one decimal place and rejects missing coefficients. FC values are 0–10, with 0 meaning no Fire Crystal; troop levels are 1–11. All field bounds reflect the imported tables.
 
@@ -26,11 +26,16 @@ The focused form saves per-account setup only under `bearLeader:v2:<account>`. P
 
 ## Verification
 
-- 222 model, entry, migration and existing TimeHub tests pass.
-- DOM simulation verifies the single embedded step-2 placement, expand/collapse, keyboard hero suggestions, decimal percentages, numeric bounds, FC/troop level, gear pairs, explicit application of percentages/counts, focus, capacity changes, storage migration and account isolation.
-- Vite production build passes with temporary Linux dependencies; no package dependencies changed. The unused optimizer worker no longer appears in the build.
+- 294 model, entry, migration, source-parity and existing TimeHub tests pass.
+- Current live source equations independently executed for 72 configurations: ratios match at two decimals, fractional ideal counts at one decimal, normalized boost at four decimals. Maximum raw-score floating-point difference 9.313225746154785e-10; ratio difference 3.33e-16. All six downloaded live tables match repository tables. Fixtures are retained for regression checks. Explicit caller skill levels match source results when set to the source’s star-inferred level; this app intentionally supports other actual skill levels. Whole counts conserve capacity and may differ by one troop from source independent rounding.
+- DOM simulation verifies the single embedded step-2 placement, expand, no-collapse result placement, four screenshot references, fixed joiners, update animation, keyboard hero suggestions, decimal percentages, numeric bounds, FC/troop level, gear pairs, explicit application of percentages/counts, focus, capacity changes, storage migration and account isolation.
+- Vite production build passes with temporary Linux dependencies; no package dependencies changed. The screenshots are lazy-loaded WebP assets. The unused optimizer worker no longer appears in the build.
 - Visual browser QA was unavailable. The existing large-main-chunk warning remains.
 
 ## Changed-files package
 
-The zip contains only files changed in this update, using repository-relative paths. Excludes node_modules and dist. Delete `src/bear/optimizer.worker.js` if installing the zip manually; GitHub publication records that deletion directly.
+The zip contains only files changed in this update, using repository-relative paths. Excludes node_modules and dist. Keep repository-relative paths when installing.
+
+## Screenshot-guided stat entry
+
+The supplied rally screenshot shows the ! button beside the deployed troop total. Two popup screenshots show troop/class bonuses and Deployment Capacity; these are referenced beside the base fields. The hero screenshot shows the lower-right Stats menu and highlighted Expedition attack/lethality. Read equipped and unequipped hero stats and apply only their difference. The navigation examples are not prefilled player data. Read base bonuses without the chosen heroes and temporary pet skills; avoid including buffs twice. Deployment Capacity is the player march limit, distinct from total Rally Capacity.

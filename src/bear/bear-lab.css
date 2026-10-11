@@ -36,3 +36,19 @@
 .bear-leader-helper a { color:var(--teal); }
 @media(max-width:380px) { .bear-leader-helper .bl-class { padding:10px; } .bear-leader-helper .bl-grid { gap:7px; } .bear-leader-helper .bl-field>span { font-size:11px; } }
 .bear-leader-helper .bl-stat-title { text-transform:capitalize; font-size:12px; font-weight:800; margin:8px 0; color:var(--ink); }
+.bear-leader-helper .bl-class-bonuses { margin:0 0 12px; border:0; border-top:1px solid var(--cardBorder); padding:10px 0 0; min-width:0; }
+.bear-leader-helper .bl-class-bonuses legend { font:800 13px 'Nunito Sans',sans-serif; padding:0 6px 0 0; }
+.bear-leader-helper .bl-guide ol { padding-left:20px; line-height:1.7; font-size:13px; }
+.bear-leader-helper figure { margin:12px 0; }
+.bear-leader-helper .bl-guide img { display:block; width:100%; max-width:260px; height:auto; border-radius:12px; border:1px solid var(--cardBorder); }
+.bear-leader-helper figcaption { margin:6px 0; font-size:11px; color:var(--sub); line-height:1.5; }
+.bear-leader-helper .bl-reference-gallery { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; }
+.bear-leader-helper .bl-ideal-result { padding:14px; background:var(--goldBg); border:1px solid var(--goldBorder); border-radius:12px; margin-bottom:12px; }
+.bear-leader-helper .bl-ideal-result h3 { font:500 20px 'Fredoka',sans-serif; margin:0 0 12px; }
+.bear-leader-helper .bl-ideal-result strong { display:block; font-size:20px; font-variant-numeric:tabular-nums; }
+.bear-leader-helper .bl-ideal-result small { display:block; }
+.bear-leader-helper .bl-ideal-result .bl-help { margin-top:10px; }
+.bear-leader-helper .bl-model-score strong { display:inline; font-size:16px; }
+.rally-result-update { animation:rally-squad-update 850ms ease-out; }
+@keyframes rally-squad-update { 0%,35% { box-shadow:0 0 0 4px var(--goldBorder); filter:brightness(1.04); } 100% { box-shadow:0 0 0 0 transparent; filter:none; } }
+@media(prefers-reduced-motion:reduce) { .rally-result-update { animation:none; outline:2px solid var(--goldBorder); outline-offset:2px; } }

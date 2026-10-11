@@ -23,6 +23,6 @@ test('migrating a saved planner preserves setup but drops reports, targets and r
   assert.deepEqual(setup.heroInfo[0], { stars: 4.3, widget: 8, skill: 4 });
   assert.deepEqual(setup.tierInputs[0], { fc: 9, level: 11 });
   assert.equal(setup.stats[0].attackOn, 120); assert.equal(setup.stats[0].attackOff, 0);
-  assert.deepEqual(setup.joiners, JOINERS);
+  assert.deepEqual(setup.joiners, ['Jessie', 'Jessie', 'Seo-yoon', 'Seo-yoon']);
   for (const removed of ['baseline', 'target', 'roster', 'trap']) assert.ok(!(removed in setup));
 });

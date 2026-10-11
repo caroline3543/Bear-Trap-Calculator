@@ -79,7 +79,8 @@ export function calculate(profile, db) {
   const ratios = damage.map(d => sum > 0 ? d * d / sum : 1 / 3);
   const raw = Math.sqrt(sum * capacity) * (1 + widgetL) * (1 + widgetA);
   const normalization = (pets ? 1 + nonnegative(profile.chameleon) / 100 : 1) * 1.3 / 23400;
-  return { raw, boost: raw * normalization, capacity, ratios, counts: integerCounts(ratios, capacity), damage, widgetL, widgetA, normalization };
+  const sourceBoost = raw * (pets ? 1 + (nonnegative(profile.chameleon) || 10) / 100 : 1) * 1.3 / 23400;
+  return { sourceBoost, raw, boost: raw * normalization, capacity, ratios, counts: integerCounts(ratios, capacity), damage, widgetL, widgetA, normalization };
 }
 // Extension inferred from the source's squared-ratio optimum, not extracted game logic.
 // sum(D_c sqrt(n_c)) gives exactly sqrt(sum(D_c²) N) at the optimal ratio.
