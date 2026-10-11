@@ -4,9 +4,9 @@ Bear Lab is integrated inside the existing BT Calculator tab, above the troop al
 
 ## Modes
 
-- **Lead a rally:** set base stats, class and gear differences, actual common expedition skill level, heroes, widgets, tiers, pets and buffs. Choose four contributing joiner skills. Get whole troop counts and apply them to the existing leader allocator. Search unlocked hero combinations in a cancelable worker.
+- **Lead a rally:** set base stats, heroes, widgets and tiers. Enter each class’s attack/lethality with gear on and off; the app adds only the difference. Pets are always active. Four level-5 contributing joiner slots offer only Seo-yoon, Reina, Norah and Jessie. Valid recommendations automatically default whole counts into the existing leader allocator. Search unlocked starters and the four supported joiner heroes in a cancelable worker.
 - **Join rallies:** use the receiving leader's setup for recommended ratios, apply the split to all outgoing marches, and choose unique first-slot heroes from the account's unlocked level-5 roster. Existing inventory allocation uses strongest troops first and shows shortages. The suggestion ranks individual first-slot skill contributions; it does not optimize the entire alliance or guarantee which skills enter a particular rally.
-- **Reach my target:** calibrate with one comparable, single-march battle report. Save an immutable setup snapshot and actual damage. Explore stat and capacity sliders, individual hero upgrades, and alternative attack/lethality paths. Whole-event estimates multiply a comparable march estimate by the entered number of successful attacks.
+- **Reach my target:** calibrate with one comparable, single-march battle report. Save an immutable setup snapshot and actual damage. Explore stat sliders, individual hero upgrades, and alternative attack/lethality paths. Whole-event estimates multiply a comparable march estimate by the entered number of successful attacks.
 
 Both existing calculator accounts have separate saved Bear Lab profiles, assignments and calibration snapshots under `bearLab:v1:<account>`.
 
@@ -18,20 +18,25 @@ The independently implemented source model calculates theoretical class damage D
 
 Estimated damage = saved report damage × scenario boost / saved report boost. This is an approximate proportional calibration, not a validated official game formula. Calibration is best with the recommended troop split and a consistent single tier per class. Different rally conditions, mixed tiers, different contributing skills, attack cadence and attendance can invalidate it. One report cannot establish uncertainty or forecast accuracy.
 
-Inverse paths use bounded binary search for an additional 0–3000 percentage points of all-troops attack or lethality. They show independent alternatives, not resource-cost advice. Hero upgrade comparisons simulate widgets, 5-star bonuses and common expedition skill levels. No resource-cost database is assumed. Capacity sliders are scenarios and do not validate a player's actual unlock limits.
+Inverse paths use bounded binary search for an additional 0–3000 percentage points of all-troops attack or lethality. They show independent alternatives, not resource-cost advice. Hero upgrade comparisons simulate widgets, 5-star bonuses and common expedition skill levels. No resource-cost database is assumed. Effective capacity and minister bonuses come from the existing allocator controls; capacity is never added twice.
 
-The source hero-combination search is unconstrained by inventory. Applying its result updates the existing allocator, which limits actual counts to the troop pool. The search is limited to 250,000 combinations and can be narrowed through the unlocked roster and joiner pool.
+The source hero-combination search is unconstrained by inventory. Applying its result updates the existing allocator, which limits actual counts to the troop pool. The search is limited to 250,000 combinations and can be narrowed through the unlocked starter roster. All searches use four contributing slots and the four supported joiner heroes.
+
+## UX implementation brief
+
+Match the existing journal palette, Fredoka headings and calculator inputs. Use large touch targets and decimal keypads, select text on focus, permit blank edits, accept pasted commas/percent signs, and format on blur. Show paired gear readings with a calculated percentage-point bonus, and block recommendations for incomplete or reversed pairs. Preserve old saved gear differences as on=old difference/off=0 so existing setups retain their bonuses.
+
+The existing Rally leader squad is the single place for capacity, Cyrille/Snow ape/minister capacity buffs, troop counts, inventory and shortages. Automatically update its composition when a valid leader recommendation changes; preserve its capacity and buffs. Leave a manually edited lower composition in place until the recommendation changes. Joining and target exploration do not overwrite the leader composition until returning to Lead a rally. Unsupported saved joiner choices migrate to the four supported heroes. Remove Rosarion mode from the interface and model.
+
+Target calibration retains immutable report snapshots. Restoring a report restores stats/heroes while keeping the existing capacity and minister controls; the UI says to match those separately.
 
 ## Validation
 
-- `node --test src/bear/model.test.js src/timehub/__tests__/*.test.js`: 216 tests pass, including nine new model tests.
-- 20 configurations compared with extracted source equations: largest absolute raw-score discrepancy 4.66e-10 (floating point).
-- DOM simulation: leader apply, joiner apply, unique hero suggestions, report calibration, target inverse route, report setup restoration, account isolation and optimizer worker passed.
-- Vite production build passes. The checkout contains committed platform-specific node_modules; a clean temporary install was used to avoid altering those files. No package dependencies were added.
-- Visual browser QA was unavailable. Existing main chunk-size warning remains; the new Bear Lab and its data are in a separate lazy chunk. No live GitHub or Vercel publication was performed.
+- 219 model/number-entry/TimeHub tests pass.
+- DOM simulation covers automatic lower counts, effective-capacity changes without update loops, the fixed four joiner options, comma/decimal/% entry, clearing and reversed gear pairs, active pets and persistence.
+- Vite production build passes using temporary Linux dependencies; no repository dependencies were changed.
+- Visual browser QA was unavailable. The existing large-main-chunk warning remains.
 
-## Install changed files
+## Changed-files package
 
-Copy the zip's files into the existing repository, keeping paths exactly as shown. It contains src/App.jsx, src/bear/ (component, styles, model, worker and tables), and this document. It does not contain node_modules or dist. Commit the changes; the project's existing GitHub-to-Vercel deployment should rebuild them.
-
-The parent integration resets accepted manual fills when applying a leader split, and resets joiner fills when applying a joiner split. Applying the leader uses the calculated effective capacity as the allocator's capacity and clears its separate capacity buffs to avoid double counting.
+The UX update zip contains only changed source files and this document, with repository-relative paths. It excludes node_modules and dist. The changes are published through the repository’s existing GitHub-to-Vercel integration.

@@ -45,3 +45,9 @@ test('joiner combinations enumerate repeats without permutations', () => {
 test('derived fixed-count equation equals source optimum at fractional ideal counts', () => {
   const r = calculate(profile, db); assert.ok(Math.abs(scoreCounts(r, r.ratios.map(v => v * r.capacity)) - r.boost) < 1e-10);
 });
+test('linked effective capacity never reapplies Snow ape, minister or deployment capacity', () => {
+  const linked = calculate({ ...profile, capacityIsEffective: true, petsActive: true, ape: 10000, deploy: 20, minister: 'Strategy (supreme)' }, db);
+  assert.equal(linked.capacity, profile.capacity);
+  assert.equal(linked.counts.reduce((a, b) => a + b), profile.capacity);
+  assert.ok(linked.boost > calculate(profile, db).boost); // Minister's attack bonus still applies.
+});

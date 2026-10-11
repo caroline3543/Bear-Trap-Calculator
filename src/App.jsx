@@ -3118,15 +3118,12 @@ export default function App() {
                         key={activeAccount}
                         accountId={activeAccount}
                         accountName={accountNames[activeAccount]}
-                        leaderCapacity={rallyCapacity}
+                        leaderCapacity={effectiveRallyCapacity}
+                        leaderMinister={ministerBoost === 3750 ? "Strategy (supreme)" : ministerBoost ? "Strategy (normal)" : "None"}
                         joinerCapacity={capacity}
                         squads={computation.squads}
-                        leaderResult={rallyComputation.result}
-                        onApplyLeader={(counts, total) => {
-                          setRallyCapacity(total);
-                          setCyrilleBoost(0);
-                          setSnowApeBoost(0);
-                          setMinisterBoost(0);
+                        onApplyLeader={(counts) => {
+                          setAdvancedOpen(true);
                           setRallyMode("exact");
                           setRallyExact(Object.fromEntries(TYPES.map((t, i) => [t, counts[i]])));
                           setFills({});

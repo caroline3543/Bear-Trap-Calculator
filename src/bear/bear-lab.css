@@ -56,3 +56,16 @@
 .bear-lab progress { width:100%; height:12px; accent-color:var(--teal); }
 .bear-lab a { color:var(--teal); }
 @media(max-width:620px) { .bear-lab .bl-header { padding:18px; } .bear-lab .bl-badge { display:none; } .bear-lab h2 { font-size:23px; } .bear-lab .bl-grid.three:not(.bl-result .bl-grid) { grid-template-columns:1fr; } .bear-lab .bl-grid.two { grid-template-columns:1fr; } .bear-lab .bl-pad { padding:16px; } .bear-lab .bl-march { grid-template-columns:1fr; } .bear-lab .bl-actions button { flex:1; } }
+/* Use the calculator's journal palette, headings and touch targets. */
+.bear-lab { font-family:'Nunito Sans',sans-serif; box-shadow:0 4px 16px #51453506; }
+.bear-lab .bl-header { background:transparent; border-bottom:1px solid var(--cardBorder); padding:20px; }
+.bear-lab h2, .bear-lab h3, .bear-lab h4 { font-family:'Fredoka',sans-serif; font-weight:500; }
+.bear-lab .bl-field>span { color:var(--gold); font-weight:800; }
+.bear-lab input { font-variant-numeric:tabular-nums; font-size:16px; }
+.bear-lab .bl-gear-pair { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.bear-lab .bl-gear-pair .bl-field>span { font-size:11px; }
+.bear-lab .bl-difference { color:var(--teal); background:var(--surface); border-radius:9px; padding:8px 10px; font-size:12px; font-weight:800; margin:0 0 16px; }
+.bear-lab .bl-error { color:var(--red, #a33d35); font-size:12px; }
+.bear-lab input[aria-invalid=true] { border-color:var(--red, #a33d35); }
+.bear-lab .bl-linked { padding:10px 12px; background:var(--inputBg); border-radius:10px; }
+@media(max-width:620px) { .bear-lab .bl-tabs button { font-size:12px; } .bear-lab .bl-gear-pair { gap:8px; } }

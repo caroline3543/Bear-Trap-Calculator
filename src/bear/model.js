@@ -34,7 +34,7 @@ export function integerCounts(ratios, capacity) {
 export function calculate(profile, db) {
   const minister = MINISTERS[profile.minister] || MINISTERS.None;
   const pets = profile.petsActive;
-  const capacity = Math.round((nonnegative(profile.capacity) + (pets ? nonnegative(profile.ape) : 0) + minister.troops) * (1 + nonnegative(profile.deploy) / 100));
+  const capacity = profile.capacityIsEffective ? Math.round(nonnegative(profile.capacity)) : Math.round((nonnegative(profile.capacity) + (pets ? nonnegative(profile.ape) : 0) + minister.troops) * (1 + nonnegative(profile.deploy) / 100));
   const starters = profile.starters || ['', '', ''];
   const roster = profile.roster || {};
   let widgetL = 0, widgetA = 0;
@@ -48,7 +48,7 @@ export function calculate(profile, db) {
     const level = Math.min(5, Math.max(1, Number(info.skill) || Math.floor(Number.parseFloat(info.stars) || 0) + 1));
     for (let c = 0; c < 3; c++) for (let s = 0; s < CATEGORIES.length; s++) caller[c][s] += Number(skills.caller?.[String(level)]?.[PREFIXES[c] + CATEGORIES[s]]) || 0;
     if (skills.stacks !== 1) seen.add(findName(hero, db.heroSkills, 'skill'));
-    if (!profile.rosarion) {
+    {
       widgetL += (meta.rally_widget_lethality || 0) * widgetStep(nonnegative(info.widget));
       widgetA += (meta.rally_widget_attack || 0) * widgetStep(nonnegative(info.widget));
     }
@@ -78,7 +78,7 @@ export function calculate(profile, db) {
   const sum = damage.reduce((s, d) => s + d * d, 0);
   const ratios = damage.map(d => sum > 0 ? d * d / sum : 1 / 3);
   const raw = Math.sqrt(sum * capacity) * (1 + widgetL) * (1 + widgetA);
-  const normalization = (pets ? 1 + nonnegative(profile.chameleon) / 100 : 1) * (profile.rosarion ? 1 : 1.3) / 23400;
+  const normalization = (pets ? 1 + nonnegative(profile.chameleon) / 100 : 1) * 1.3 / 23400;
   return { raw, boost: raw * normalization, capacity, ratios, counts: integerCounts(ratios, capacity), damage, widgetL, widgetA, normalization };
 }
 // Extension inferred from the source's squared-ratio optimum, not extracted game logic.
