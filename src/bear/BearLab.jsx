@@ -1,142 +1,196 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import db from './database.js';
-import { CLASSES, calculate, estimatedDamage, integerCounts, joinerCandidates, metaFor, nonnegative, starterPools, statPath, upgradeOptions } from './model.js';
-import './bear-lab.css';
+import { CLASSES, calculate, integerCounts } from './model.js';
 import { parseEntry, gearDifference, withGearDifferences } from './number-entry.js';
-const JOINERS = ['Seo-yoon', 'Reina', 'Norah', 'Jessie'];
-const TYPES = ['infantry', 'lancer', 'marksman'];
-const fmt = n => Math.round(n || 0).toLocaleString();
-const STARS = [...Array(5)].flatMap((_, i) => [...Array(6)].map((__, j) => j ? `${i}.${j}*` : `${i}*`)).concat('5*');
-function fresh(capacity) {
-  return { capacity, allAttack: 0, allLethality: 0, trap: 25, stats: CLASSES.map(() => ({ attack: 0, lethality: 0, gearAttack: 0, gearLethality: 0, attackOn: 0, attackOff: 0, lethalityOn: 0, lethalityOff: 0 })), petsActive: true, chameleon: 0, tiger: 0, lion: 0, ape: 0, deploy: 0, minister: 'None', tiers: ['FC6 T10', 'FC6 T10', 'FC6 T10'], starters: ['', '', ''], joiners: [...JOINERS], roster: Object.fromEntries(db.heroesList.map(h => [h, { unlocked: false, stars: '0*', widget: 0, skill: 1 }])) };
-}
-function load(key, capacity) {
-  const defaults = { profile: fresh(capacity), baseline: null, assigned: [], target: '', scope: 'march', attacks: 1 };
+import { JOINERS, heroNamesForClass, migrateSetup, resolveHero, starKey } from './leader-setup.js';
+import './bear-lab.css';
+
+const fmt = n => Number(n || 0).toLocaleString('en-US');
+const HERO_NAMES = CLASSES.map((_, i) => heroNamesForClass(db, i));
+function loadSetup(accountId) {
   try {
-    const saved = JSON.parse(localStorage.getItem(key));
-    if (!saved?.profile) return defaults;
-    const base = fresh(capacity);
-    return { ...defaults, ...saved, profile: { ...base, ...saved.profile, stats: base.stats.map((s, i) => { const old = saved.profile.stats?.[i] || {}; return { ...s, ...old, attackOn: old.attackOn ?? old.gearAttack ?? 0, attackOff: old.attackOff ?? 0, lethalityOn: old.lethalityOn ?? old.gearLethality ?? 0, lethalityOff: old.lethalityOff ?? 0 }; }), joiners: JOINERS.map((h, i) => JOINERS.includes(saved.profile.joiners?.[i]) ? saved.profile.joiners[i] : h), roster: { ...base.roster, ...saved.profile.roster } } };
-  } catch { return defaults; }
+    const current = localStorage.getItem(`bearLeader:v2:${accountId}`);
+    const previous = localStorage.getItem(`bearLab:v1:${accountId}`);
+    return migrateSetup(JSON.parse(current || previous || '{}').profile);
+  } catch { return migrateSetup(); }
 }
-function NumberField({ label, value, onChange, max = 10000000, step = 1, help }) {
-  const display = v => v === '' || v == null ? '' : Number(v).toLocaleString('en-US', { maximumFractionDigits: 4 });
+function NumberField({ label, ariaLabel, value, onChange, min = 0, max = 10000, decimal = true, fixed, validate, help }) {
+  const id = useId();
+  const display = v => v === '' || v == null ? '' : Number(v).toLocaleString('en-US', { minimumFractionDigits: fixed ?? 0, maximumFractionDigits: fixed ?? 4 });
   const [text, setText] = useState(() => display(value));
-  const [invalid, setInvalid] = useState(false);
+  const [error, setError] = useState('');
   const emitted = useRef(value);
-  useEffect(() => { if (value !== emitted.current) { emitted.current = value; setText(display(value)); setInvalid(false); } }, [value]);
-  return <label className="bl-field"><span>{label}</span><input className="calc-input" type="text" inputMode={step < 1 ? 'decimal' : 'numeric'} aria-label={label} aria-invalid={invalid || undefined} value={text} onFocus={e => e.target.select()} onChange={e => {
-    setText(e.target.value); const n = parseEntry(e.target.value, max); setInvalid(n === undefined);
-    if (n !== undefined) { emitted.current = n ?? ''; onChange(n ?? ''); }
-  }} onBlur={() => { if (!invalid) setText(display(emitted.current)); }} />{invalid ? <small className="bl-error">Enter a number from 0 to {display(max)}.</small> : help && <small>{help}</small>}</label>;
+  useEffect(() => {
+    if (value !== emitted.current) { emitted.current = value; setText(display(value)); setError(''); }
+  }, [value]);
+  function change(raw) {
+    setText(raw);
+    const n = parseEntry(raw, max);
+    const message = n === undefined || (n !== null && (n < min || (!decimal && !Number.isInteger(n))))
+      ? `Enter ${decimal ? 'a number' : 'a whole number'} from ${min} to ${max}.`
+      : n !== null && validate ? validate(n) : '';
+    setError(message);
+    emitted.current = message || n === null ? '' : n;
+    onChange(emitted.current);
+  }
+  return <label className="bl-field">
+    <span>{label}</span>
+    <input className="calc-input" type="text" inputMode={decimal ? 'decimal' : 'numeric'}
+      aria-label={ariaLabel || label} aria-invalid={Boolean(error) || undefined} aria-describedby={error || help ? id : undefined}
+      value={text} onFocus={e => e.target.select()} onChange={e => change(e.target.value)}
+      onBlur={() => { if (!error) setText(display(emitted.current)); }} />
+    {(error || help) && <small id={id} className={error ? 'bl-error' : undefined}>{error || help}</small>}
+  </label>;
 }
-function Slider({ label, value, onChange, max, step = 1, unit = '%' }) {
-  return <div className="bl-slider"><NumberField label={label} value={value} onChange={onChange} max={max} step={step} /><input aria-label={`${label} slider`} type="range" min="0" max={max} step={step} value={value} onChange={e => onChange(Number(e.target.value))} /><small>{unit === '%' ? 'Percentage points' : unit}</small></div>;
+function HeroNameField({ label, ariaLabel, value, names, onChange }) {
+  const id = useId();
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(-1);
+  const suggestions = names.filter(h => h.toLowerCase().includes(String(value).trim().toLowerCase()) || h.toLowerCase().replace(/[^a-z0-9]/g, '').includes(String(value).toLowerCase().replace(/[^a-z0-9]/g, ''))).slice(0, 8);
+  const resolved = resolveHero(value, names);
+  function choose(name) { onChange(name); setOpen(false); setActive(-1); }
+  return <div className="bl-autocomplete">
+    <label className="bl-field"><span>{label}</span>
+      <input className="calc-input" type="text" role="combobox" autoComplete="off" spellCheck="false"
+        aria-label={ariaLabel || label} aria-autocomplete="list" aria-expanded={open && suggestions.length > 0}
+        aria-controls={`${id}-list`} aria-activedescendant={open && active >= 0 ? `${id}-${active}` : undefined}
+        aria-invalid={Boolean(value && !resolved) || undefined} aria-describedby={`${id}-help`}
+        placeholder="Start typing a hero name" value={value}
+        onFocus={() => { setOpen(true); setActive(-1); }}
+        onChange={e => { onChange(e.target.value); setOpen(true); setActive(-1); }}
+        onBlur={() => { setOpen(false); if (resolved) onChange(resolved); }}
+        onKeyDown={e => {
+          if (e.key === 'Escape') { setOpen(false); setActive(-1); }
+          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault(); setOpen(true);
+            setActive(a => suggestions.length ? (e.key === 'ArrowDown' ? (a + 1) % suggestions.length : (a <= 0 ? suggestions.length - 1 : a - 1)) : -1);
+          }
+          if (e.key === 'Enter' && open && active >= 0 && suggestions[active]) { e.preventDefault(); choose(suggestions[active]); }
+        }} />
+      <small id={`${id}-help`}>{value && !resolved ? 'Choose a matching hero suggestion.' : resolved ? `✓ ${resolved}` : 'Type a name or choose a suggestion.'}</small>
+    </label>
+    {open && suggestions.length > 0 && <ul id={`${id}-list`} role="listbox" aria-label={`${label} suggestions`} className="bl-suggestions">
+      {suggestions.map((hero, i) => <li role="option" aria-selected={active === i} id={`${id}-${i}`} key={hero}
+        onMouseDown={e => e.preventDefault()} onClick={() => choose(hero)} onMouseEnter={() => setActive(i)}>{hero}</li>)}
+    </ul>}
+  </div>;
 }
-export default function BearLab({ accountId, accountName, leaderCapacity, leaderMinister = 'None', joinerCapacity, squads, onApplyLeader, onApplyJoiners }) {
-  const storageKey = `bearLab:v1:${accountId}`;
-  const [initial] = useState(() => load(storageKey, leaderCapacity));
-  const [savedProfile, setProfile] = useState(initial.profile);
-  const profile = useMemo(() => withGearDifferences({ ...savedProfile, capacity: leaderCapacity, capacityIsEffective: true, minister: leaderMinister, petsActive: true, ape: 0, deploy: 0, joiners: JOINERS.map((h, i) => JOINERS.includes(savedProfile.joiners?.[i]) ? savedProfile.joiners[i] : h) }), [savedProfile, leaderCapacity, leaderMinister]);
-  const gearValid = profile.stats.every(s => ['attack', 'lethality'].every(k => gearDifference(s, k) !== null && gearDifference(s, k) >= 0));
-  const applyRef = useRef(onApplyLeader); applyRef.current = onApplyLeader;
-  const appliedRecipe = useRef('');
-  const [baseline, setBaseline] = useState(initial.baseline);
-  const [assigned, setAssigned] = useState(initial.assigned);
-  const [target, setTarget] = useState(initial.target);
-  const [scope, setScope] = useState(initial.scope);
-  const [attacks, setAttacks] = useState(initial.attacks);
-  const [reportDamage, setReportDamage] = useState('');
-  const [view, setView] = useState('lead');
-  const [query, setQuery] = useState('');
-  const [generation, setGeneration] = useState('all');
-  const [reserve, setReserve] = useState(true);
-  const slots = 4;
-  const [running, setRunning] = useState(false);
-  const [evaluated, setEvaluated] = useState(0);
-  const [best, setBest] = useState(null);
+export default function BearLab({ accountId, accountName, leaderCapacity, leaderMinister = 'None', onApplyLeader }) {
+  const [draft, setDraft] = useState(() => loadSetup(accountId));
+  const [open, setOpen] = useState(false);
   const [notice, setNotice] = useState('');
-  const worker = useRef(null);
-  useEffect(() => { try { localStorage.setItem(storageKey, JSON.stringify({ profile, baseline, assigned, target, scope, attacks })); } catch { setNotice('Browser storage is unavailable. This setup cannot be saved.'); } }, [storageKey, profile, baseline, assigned, target, scope, attacks]);
-  useEffect(() => () => worker.current?.terminate(), []);
-  useEffect(() => { worker.current?.terminate(); worker.current = null; setRunning(false); setBest(null); }, [leaderCapacity, leaderMinister]);
-  function cancel() { worker.current?.terminate(); worker.current = null; setRunning(false); }
-  function edit(next) { cancel(); setBest(null); setProfile(p => typeof next === 'function' ? next(p) : { ...p, ...next }); }
-  function heroEdit(hero, fields) { edit(p => ({ ...p, roster: { ...p.roster, [hero]: { ...p.roster[hero], ...fields } } })); }
-  function setStarter(i, hero) { edit(p => ({ ...p, starters: p.starters.map((h, j) => j === i ? hero : h), roster: hero ? { ...p.roster, [hero]: { ...p.roster[hero], unlocked: view === 'join' ? Boolean(p.roster[hero]?.unlocked) : true } } : p.roster })); }
-  const result = useMemo(() => { try { return calculate(profile, db); } catch { return null; } }, [profile]);
-  const ready = Boolean(gearValid && result && profile.starters.every(Boolean) && result.capacity > 0);
-  const eligible = useMemo(() => joinerCandidates(profile, db).filter(h => JOINERS.includes(h)).filter(h => Number(profile.roster[h]?.skill) === 5), [profile]);
-  const selectedPool = JOINERS;
-  const ownJoiners = useMemo(() => eligible.filter(h => !reserve || !profile.starters.includes(h)).map(h => ({ hero: h, boost: calculate({ ...profile, joiners: [h] }, db).boost })).sort((a, b) => b.boost - a.boost), [eligible, reserve, profile]);
-  const outgoingHeroes = assigned.slice(0, squads.length);
-  const assignmentsValid = outgoingHeroes.every(h => !h || ownJoiners.some(o => o.hero === h)) && new Set(outgoingHeroes.filter(Boolean)).size === outgoingHeroes.filter(Boolean).length;
-  const requiredBoost = baseline && nonnegative(target) > 0 ? nonnegative(target) / Math.max(1, scope === 'event' ? nonnegative(attacks) : 1) * baseline.boost / baseline.damage : null;
-  const paths = useMemo(() => ready && requiredBoost ? ['allAttack', 'allLethality'].map(field => ({ field, path: statPath(profile, db, field, requiredBoost) })) : [], [profile, ready, requiredBoost]);
-  const recipe = ready ? JSON.stringify(result.counts) : '';
-  useEffect(() => { if (view === 'lead' && recipe && appliedRecipe.current !== recipe) { appliedRecipe.current = recipe; applyRef.current(result.counts); } }, [view, recipe]);
-  const upgrades = useMemo(() => ready ? upgradeOptions(profile, db).slice(0, 5) : [], [profile, ready]);
-  const prediction = ready ? estimatedDamage(result.boost, baseline, scope === 'event' ? Math.max(1, nonnegative(attacks)) : 1) : null;
-  const generations = [...new Set(db.heroesList.map(h => metaFor(h, db).gen))].sort((a, b) => a - b);
-  const visibleHeroes = db.heroesList.filter(h => h.toLowerCase().includes(query.toLowerCase()) && (generation === 'all' || String(metaFor(h, db).gen) === generation));
-  const countOptions = starterPools(profile, db).reduce((n, a) => n * Math.max(1, a.length), 1);
-  let joinerOptions = 1;
-  for (let i = 1; i <= slots; i++) joinerOptions *= (selectedPool.length + i - 1) / i;
-  const branches = Math.round(countOptions * joinerOptions);
-  function optimize() {
-    cancel(); setBest(null); setNotice(''); setEvaluated(0);
-    if (!starterPools(profile, db).every(a => a.length)) return setNotice('Unlock at least one hero in each class in your roster.');
-    if (branches > 250000) return setNotice('This search is large. Narrow your unlocked roster or contributing joiner pool to 250,000 combinations or fewer.');
-    const w = new Worker(new URL('./optimizer.worker.js', import.meta.url), { type: 'module' });
-    worker.current = w; setRunning(true);
-    w.onmessage = ({ data }) => {
-      if (data.type === 'progress') setEvaluated(data.evaluated);
-      if (data.type === 'error') { setNotice(data.message); cancel(); }
-      if (data.type === 'result') { setBest(data.best); setEvaluated(data.evaluated); cancel(); }
-    };
-    w.onerror = () => { setNotice('The search could not finish. Try a smaller candidate pool.'); cancel(); };
-    w.postMessage({ profile, pool: selectedPool, slots });
+  const [applied, setApplied] = useState(null);
+  const [dirty, setDirty] = useState(false);
+  const panelId = useId();
+  const launchRef = useRef(null);
+  const mounted = useRef(false);
+  useEffect(() => {
+    try {
+      localStorage.setItem(`bearLeader:v2:${accountId}`, JSON.stringify({ profile: draft }));
+      localStorage.removeItem(`bearLab:v1:${accountId}`);
+    } catch { setNotice('Your browser could not save this setup. You can still calculate.'); }
+  }, [accountId, draft]);
+  useEffect(() => {
+    if (mounted.current) setDirty(true);
+    mounted.current = true;
+  }, [leaderCapacity, leaderMinister]);
+  function edit(fields) { setDraft(p => ({ ...p, ...fields })); setDirty(true); setNotice(''); }
+  function editAt(field, i, fields) {
+    setDraft(p => ({ ...p, [field]: p[field].map((v, j) => i === j ? { ...v, ...fields } : v) }));
+    setDirty(true); setNotice('');
   }
-  function applyJoiners() {
-    if (!ready) return;
-    const counts = integerCounts(result.ratios, joinerCapacity);
-    onApplyJoiners(counts); setNotice('Leader-based proportions applied to every outgoing march below. The shared inventory still limits what can be sent.');
+  const assessment = useMemo(() => {
+    const errors = [];
+    const starters = draft.starters.map((h, i) => resolveHero(h, HERO_NAMES[i]));
+    const joiners = draft.joiners.map(h => resolveHero(h, JOINERS));
+    const roster = {};
+    CLASSES.forEach((c, i) => {
+      if (!starters[i]) errors.push(`${c}: choose a matching leader hero.`);
+      const info = draft.heroInfo[i];
+      const key = starKey(info.stars);
+      const starTable = db.starLevelStats[Object.keys(db.starLevelStats).find(h => h.toLowerCase().replace(/[^a-z0-9]/g, '') === starters[i].toLowerCase().replace(/[^a-z0-9]/g, ''))];
+      if (!key || (starTable && !(key in starTable))) errors.push(`${c}: enter a supported star step (e.g. 4.3 or 5.0).`);
+      if (info.widget === '' || !Number.isInteger(Number(info.widget)) || info.widget < 0 || info.widget > 10) errors.push(`${c}: widget must be a whole number from 0 to 10.`);
+      if (info.skill === '' || !Number.isInteger(Number(info.skill)) || info.skill < 1 || info.skill > 5) errors.push(`${c}: skill must be a whole number from 1 to 5.`);
+      roster[starters[i]] = { stars: key, widget: info.widget, skill: info.skill };
+      const tier = draft.tierInputs[i];
+      if (tier.fc === '' || tier.level === '' || !db.troopDamageStats[`FC${tier.fc} T${tier.level}`]) errors.push(`${c}: FC must be 0–10 and troop level 1–11, using whole numbers.`);
+      if (!['attack', 'lethality'].every(k => gearDifference(draft.stats[i], k) !== null && gearDifference(draft.stats[i], k) >= 0)) errors.push(`${c}: complete both gear readings; gear on must be at least gear off.`);
+      if (draft.stats[i].attack === '' || draft.stats[i].lethality === '') errors.push(`${c}: complete the extra base bonuses or enter 0.`);
+    });
+    if (joiners.some(h => !h)) errors.push('Choose four joiner heroes from Seo-yoon, Reina, Norah and Jessie.');
+    if (['allAttack', 'allLethality', 'chameleon', 'tiger', 'lion'].some(k => draft[k] === '')) errors.push('Complete the attack, lethality and pet bonuses, or enter 0.');
+    if (!(leaderCapacity > 0)) errors.push('Enter a positive rally capacity above.');
+    const profile = withGearDifferences({ ...draft, capacity: leaderCapacity, capacityIsEffective: true,
+      starters, joiners, roster, tiers: draft.tierInputs.map(t => `FC${t.fc} T${t.level}`),
+      minister: leaderMinister, petsActive: true, trap: 25 });
+    return { errors, profile, result: errors.length ? null : calculate(profile, db) };
+  }, [draft, leaderCapacity, leaderMinister]);
+  function apply() {
+    if (!assessment.result) return;
+    onApplyLeader(assessment.result.counts, integerCounts(assessment.result.ratios, 10000).map(n => n / 100));
+    setApplied({ capacity: leaderCapacity, heroes: assessment.profile.starters });
+    setDirty(false); setOpen(false); setNotice('Recommended percentages and troop amounts applied below.');
+    launchRef.current?.focus();
   }
-  async function copy() {
-    const lines = [`Bear plan: ${accountName}`, `Starters: ${profile.starters.join(' / ')}`, `Contributing joiner skills: ${profile.joiners.filter(Boolean).join(' / ') || 'None'}`, ...CLASSES.map((c, i) => `${c}: ${fmt(result.counts[i])} (${(result.ratios[i] * 100).toFixed(1)}%)`), `Model boost: ${result.boost.toFixed(4)} (not game points)`];
-    if (view === 'join') { if (!assignmentsValid) return setNotice('Replace unavailable or duplicate march heroes before copying.'); squads.forEach((s, i) => { lines.push(`March ${i + 1}: ${outgoingHeroes[i] || 'Choose hero'} | ${TYPES.map(t => fmt(s?.breakdown?.[t]?.total)).join(' / ')}`); }); }
-    try { await navigator.clipboard.writeText(lines.join('\n')); setNotice('Plan copied.'); } catch { setNotice('Clipboard unavailable. Select and copy the troop counts on screen.'); }
-  }
-  return <section className="bear-lab calc-card" lang="en" aria-label="Bear damage planner">
-    <header className="bl-header"><div><span className="bl-eyebrow">BT CALCULATOR · {accountName}</span><h2>Rally planner</h2><p>Choose your heroes, compare gear, and plan your next upgrade.</p></div></header>
-    <div className="bl-tabs" role="tablist" aria-label="Bear planning mode">{[['lead', 'Lead a rally'], ['join', 'Join rallies'], ['target', 'Reach my target']].map(([id, text]) => <button key={id} id={`bl-tab-${id}`} role="tab" aria-selected={view === id} aria-controls="bl-panel" onClick={() => setView(id)}>{text}</button>)}</div>
-    <div id="bl-panel" role="tabpanel" aria-labelledby={`bl-tab-${view}`}>
-    <details className="bl-details" open={!ready}><summary>Your rally leader setup <span>{ready ? 'Edit saved stats & heroes' : 'Start here'}</span></summary><div className="bl-pad">
-      <p className="bl-help">{view === 'join' ? 'Enter the receiving rally leader’s setup here. Their stats and heroes determine the comparison ratios. Your outgoing heroes are chosen separately below.' : 'Enter your own setup when leading a rally.'} Saved separately for {accountName}.</p>
-      <p className="bl-help bl-linked">Using {fmt(leaderCapacity)} effective troops from Rally leader squad below. Change capacity and capacity buffs there.</p>
-      <div className="bl-grid two"><NumberField label="All troops attack (%)" value={profile.allAttack} onChange={v => edit({ allAttack: v })} max={10000} step={.1} /><NumberField label="All troops lethality (%)" value={profile.allLethality} onChange={v => edit({ allLethality: v })} max={10000} step={.1} /></div>
-      <p className="bl-help">Use base stats before selected heroes, gear, pets and temporary buffs. Enter 800 for 800%. Commas and pasted % signs are accepted.</p>
-      <div className="bl-grid three">{CLASSES.map((c, i) => <div className="bl-tile" key={c}><label className="bl-field"><span>{c} starter</span><select value={profile.starters[i]} onChange={e => setStarter(i, e.target.value)}><option value="">Choose hero</option>{db.heroesList.filter(h => metaFor(h, db).class === c).map(h => <option key={h}>{h}</option>)}</select></label>{profile.starters[i] && <HeroControls hero={profile.starters[i]} info={profile.roster[profile.starters[i]]} onChange={fields => heroEdit(profile.starters[i], fields)} />}<label className="bl-field"><span>{c} troop tier</span><select value={profile.tiers[i]} onChange={e => edit(p => ({ ...p, tiers: p.tiers.map((t, j) => i === j ? e.target.value : t) }))}>{Object.keys(db.troopDamageStats).map(t => <option key={t}>{t}</option>)}</select></label></div>)}</div>
-      <details className="bl-details" open><summary>Gear on / gear off <span>We calculate the bonus</span></summary><div className="bl-pad"><p className="bl-help">Copy each troop class’s attack and lethality with gear equipped, then with gear removed. Keep heroes, pets and other buffs the same. Only the difference is added to your base stats above.</p><div className="bl-grid three">{CLASSES.map((c, i) => <div className="bl-tile" key={c}><h4>{c}</h4>{['attack', 'lethality'].map(kind => <div key={kind}><div className="bl-gear-pair">{[['On', 'Gear on'], ['Off', 'Gear off']].map(([suffix, text]) => <NumberField key={suffix} label={`${c} ${kind} · ${text} (%)`} value={profile.stats[i][kind + suffix]} max={10000} step={.1} onChange={v => edit(p => ({ ...p, stats: p.stats.map((s, j) => i === j ? { ...s, [kind + suffix]: v } : s) }))} />)}</div><p className={gearDifference(profile.stats[i], kind) < 0 ? 'bl-error' : 'bl-difference'}>{gearDifference(profile.stats[i], kind) === null ? 'Enter both values' : gearDifference(profile.stats[i], kind) < 0 ? 'Gear on must be at least gear off.' : `+${gearDifference(profile.stats[i], kind).toLocaleString()} ${kind} percentage points`}</p></div>)}</div>)}</div></div></details>
-      <details className="bl-details"><summary>Extra class stats <span>Optional base bonuses</span></summary><div className="bl-pad bl-grid three">{CLASSES.map((c, i) => <div key={c}><h4>{c}</h4>{['attack', 'lethality'].map(field => <NumberField key={field} label={`${c} base ${field} (%)`} value={profile.stats[i][field]} max={10000} step={.1} onChange={v => edit(p => ({ ...p, stats: p.stats.map((s, j) => i === j ? { ...s, [field]: v } : s) }))} />)}</div>)}</div></details>
-      <details className="bl-details"><summary>Active pets & trap bonus <span>Pets assumed active</span></summary><div className="bl-pad"><p className="bl-help">Enter your active pet bonus values. Snow ape capacity and minister buffs come from the existing Rally leader squad controls below.</p><div className="bl-grid two">{[['chameleon', 'Chameleon (%)'], ['tiger', 'Sabre-tooth lethality (%)'], ['lion', 'Cave lion attack (%)'], ['trap', 'Trap attack buff (%)']].map(([field, label]) => <NumberField key={field} label={label} value={profile[field]} step={.1} onChange={v => edit({ [field]: v })} max={1000} />)}</div></div></details>
-      <details className="bl-details"><summary>Your available hero roster <span>{Object.values(profile.roster).filter(h => h.unlocked).length} unlocked</span></summary><div className="bl-pad"><div className="bl-grid two"><label className="bl-field"><span>Search heroes</span><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Hero name" /></label><label className="bl-field"><span>Generation</span><select value={generation} onChange={e => setGeneration(e.target.value)}><option value="all">All generations</option>{generations.map(g => <option key={g} value={g}>Generation {g}</option>)}</select></label></div><p className="bl-help">Unlock heroes you own or can use. Actual expedition skill levels override the source’s star-based assumption. Contributing joiner skills currently require level 5.</p><div className="bl-roster">{visibleHeroes.map(h => <div className="bl-roster-row" key={h}><label className="bl-check"><input type="checkbox" checked={Boolean(profile.roster[h]?.unlocked)} onChange={e => heroEdit(h, { unlocked: e.target.checked })} /><span>{h}<small>Gen {metaFor(h, db).gen} · {metaFor(h, db).class}</small></span></label>{profile.roster[h]?.unlocked && <HeroControls hero={h} info={profile.roster[h]} onChange={fields => heroEdit(h, fields)} />}</div>)}</div></div></details>
-    </div></details>
-    {!ready && <p className="bl-empty">Choose three starter heroes, enter valid gear pairs, and set capacity in Rally leader squad below.</p>}
-    {view === 'lead' && <><div className="bl-pad"><h3>Four contributing joiner skills</h3><p className="bl-help">Four contributing players, using Seo-yoon, Reina, Norah or Jessie. Level 5 skills assumed; the same hero may be used by different players.</p><div className="bl-grid two">{[0, 1, 2, 3].map(i => <label className="bl-field" key={i}><span>Contributing skill {i + 1}</span><select value={profile.joiners[i] || ''} onChange={e => edit(p => ({ ...p, joiners: [0, 1, 2, 3].map(j => j === i ? e.target.value : p.joiners[j] || '') }))}>{JOINERS.map(h => <option key={h}>{h}</option>)}</select></label>)}</div></div>{ready && <div className="bl-result"><div className="bl-score"><span>Model boost</span><strong>{result.boost.toFixed(4)}</strong><small>Theoretical comparison, not game points</small></div><p className="bl-help bl-linked">Best proportions automatically default into Rally leader squad below. Review whole troop counts and inventory shortages there.</p><div className="bl-actions"><button className="secondary" onClick={copy}>Copy plan</button></div></div>}
-      <details className="bl-details"><summary>Find a stronger hero combination</summary><div className="bl-pad"><p className="bl-help">Search your unlocked starters and all four contributing joiner slots using the four supported heroes. Results rank the unconstrained source model; check inventory in the allocator.</p><p className="bl-help">{fmt(branches)} combinations. Repeated stackable skills are allowed across different players.</p><div className="bl-actions"><button disabled={running} onClick={optimize}>{running ? `${fmt(evaluated)} checked…` : 'Find best combination'}</button>{running && <button className="secondary" onClick={cancel}>Cancel</button>}</div>{best && <div className="bl-tile"><h4>{best.profile.starters.join(' · ')}</h4><p>{best.profile.joiners.join(' · ') || 'No joiner skills'}</p><p>Model boost {best.result.boost.toFixed(4)}{ready && ` · ${((best.result.boost / result.boost - 1) * 100).toFixed(1)}% change`}</p><button onClick={() => { const next = best.profile; edit(() => next); }}>Try this combination</button></div>}</div></details></>}
-    {view === 'join' && <div className="bl-pad"><h3>Your outgoing marches</h3><p className="bl-help">Use the receiving leader’s recommended proportions, then allocate from your account’s shared troop pool below. Your own gear does not replace the receiving rally leader’s stats.</p>{ready && <><button onClick={applyJoiners}>Use these joining proportions</button></>}<label className="bl-check"><input type="checkbox" checked={reserve} onChange={e => setReserve(e.target.checked)} /> Reserve the three selected leader heroes</label><p className="bl-help">Choose your level 5 joiner heroes in the roster above. Suggested first-slot heroes are ranked by their skill contribution in this receiving leader’s setup. This is not a prediction of your personal damage.</p><div className="bl-actions"><button className="secondary" onClick={() => setAssigned(ownJoiners.slice(0, squads.length).map(h => h.hero))}>Suggest first-slot heroes</button><button className="secondary" disabled={!ready} onClick={copy}>Copy outgoing plan</button></div>{!assignmentsValid && <p className="bl-notice">An assigned hero is duplicated, reserved, locked or below skill level 5. Choose an available hero.</p>}{squads.map((sq, i) => <div className="bl-march" key={i}><div><h4>March {i + 1}</h4></div><label className="bl-field"><span>First-slot joiner hero</span><select value={assigned[i] || ''} onChange={e => setAssigned(prev => Array.from({ length: squads.length }, (_, j) => i === j ? e.target.value : prev[j] || ''))}><option value="">Choose hero</option>{assigned[i] && !ownJoiners.some(h => h.hero === assigned[i]) && <option value={assigned[i]} disabled>{assigned[i]} (unavailable)</option>}{ownJoiners.map(({ hero }) => <option key={hero} disabled={outgoingHeroes.some((h, j) => j !== i && h === hero)}>{hero}</option>)}</select></label></div>)}<p className="bl-help">A hero is assigned only once across your own simultaneous marches. Troop totals and shortages remain in the existing squad cards below.</p></div>}
-    {view === 'target' && <div className="bl-pad"><h3>What would it take?</h3><p className="bl-help">Anchor the model to a real single-march report, then explore changes. Estimates assume comparable rally conditions and the recommended split; they are not guaranteed scores.</p><div className="bl-grid two"><label className="bl-field"><span>Target scope</span><select value={scope} onChange={e => setScope(e.target.value)}><option value="march">One comparable march</option><option value="event">Whole event</option></select></label><NumberField label="Target damage" value={target} onChange={setTarget} max={1000000000000} />{scope === 'event' && <NumberField label="Successful comparable marches" value={attacks} max={1000} onChange={v => setAttacks(Math.max(1, Math.floor(v)))} help="Total successful attacks, not the number of march slots." />}</div>
-      <details className="bl-details" open={!baseline}><summary>Calibrate with a battle report <span>{baseline ? 'Report saved' : 'Needed for damage estimates'}</span></summary><div className="bl-pad"><p className="bl-help">Set the leader stats, heroes, tiers and contributing skills above, and capacity in Rally leader squad below to match a completed single march. The report should use the recommended split applied to Rally leader squad. If it used another split or mixed tiers, this calibration is approximate. Enter that march’s reported damage, then save. Do not use an entire event total here.</p><NumberField label="Actual damage from that march" value={reportDamage} max={1000000000000} onChange={setReportDamage} /><button disabled={!ready || !nonnegative(reportDamage)} onClick={() => { setBaseline({ damage: nonnegative(reportDamage), boost: result.boost, profile: JSON.parse(JSON.stringify(profile)), savedAt: new Date().toISOString() }); setNotice('Report captured. You can now change the setup and compare estimates.'); }}>Save report & current setup</button>{baseline && <div className="bl-tile"><p className="bl-help">Restoring stats keeps the current capacity and minister controls below. Match those to the saved report for a like-for-like comparison.</p><p>Saved report: {fmt(baseline.damage)} damage · model boost {baseline.boost.toFixed(4)}</p><p>{baseline.profile.starters.join(' · ')} · {fmt(calculate(baseline.profile, db).capacity)} troops</p><div className="bl-actions"><button className="secondary" onClick={() => edit(() => JSON.parse(JSON.stringify(baseline.profile)))}>Restore report stats & heroes</button><button className="secondary" onClick={() => setBaseline(null)}>Remove calibration</button></div></div>}</div></details>
-      {ready && <><div className="bl-grid two"><Slider label="All troops attack (%)" value={profile.allAttack} max={Math.max(3000, profile.allAttack)} step={.1} onChange={v => edit({ allAttack: v })} /><Slider label="All troops lethality (%)" value={profile.allLethality} max={Math.max(3000, profile.allLethality)} step={.1} onChange={v => edit({ allLethality: v })} /></div><div className="bl-result" aria-live="polite"><span>{prediction === null ? 'Model boost' : 'Estimated damage under comparable conditions'}</span><strong className="bl-target-number">{prediction === null ? result.boost.toFixed(4) : fmt(prediction)}</strong>{prediction !== null && nonnegative(target) > 0 && <><progress aria-label="Progress toward damage target" value={Math.min(prediction, nonnegative(target))} max={nonnegative(target)} /><p>{prediction >= nonnegative(target) ? 'This scenario reaches the target in the calibrated model.' : `${fmt(nonnegative(target) - prediction)} estimated damage to go.`}</p></>}{!baseline && <p className="bl-help">Save a real report to translate model changes into damage estimates.</p>}{scope === 'event' && <p className="bl-help">Event estimate = comparable march estimate × successful attacks. Different leaders, travel times and rally participation can substantially change your actual total.</p>}</div>
-      {requiredBoost && <><h4>Alternative stat paths</h4><p className="bl-help">Each option changes only that stat, with everything else held fixed. These are required model values, not a shopping list or a resource-cost recommendation.</p><div className="bl-grid two">{paths.map(({ field, path }) => <div className="bl-tile" key={field}><h4>{field === 'allAttack' ? 'Attack route' : 'Lethality route'}</h4>{path ? <><strong>{path.value.toFixed(1)}%</strong><p>{path.increase ? `Add ${path.increase.toFixed(1)} percentage points to all troops.` : 'Current scenario already reaches the model target.'}</p><button className="secondary" onClick={() => edit({ [field]: path.value })}>Try this path</button></> : <p>Not reached within an additional 3,000 percentage points. Explore hero combinations or capacity instead.</p>}</div>)}</div></>}
-      <h4>Hero upgrades to compare</h4><p className="bl-help">Predicted gain within this model. Resource costs and real-game upgrade availability are not included.</p>{upgrades.length ? upgrades.map(o => <div className="bl-upgrade" key={o.label}><div><strong>{o.label}</strong><small>+{o.gain.toFixed(1)}% model boost{baseline ? ` · ${fmt(estimatedDamage(o.boost, baseline, scope === 'event' ? attacks : 1))} estimated damage` : ''}</small></div><button className="secondary" onClick={() => edit(() => o.profile)}>Try</button></div>) : <p className="bl-help">No positive single-step hero upgrades are available for this selection. Try other unlocked heroes in Lead a rally.</p>}</>}
-    </div>}
-    </div>
-    {notice && <p className="bl-notice" role="status">{notice}</p>}
-    <details className="bl-details"><summary>How the estimates work</summary><div className="bl-pad bl-help"><p>The source model computes a theoretical value D for each troop class. Its ideal proportion is D² divided by the sum of all three D² values. The comparison score combines those values with capacity, skills, pets and widgets.</p><p>Game damage estimates here use: saved report damage × new model boost ÷ saved model boost. This assumes comparable conditions and proportional scaling; one report cannot establish prediction accuracy. The source’s zero-Chameleon display inconsistency is corrected, and troop counts are rounded to whole troops.</p><p>Receiving leader setup controls joiner ratios. Your own inventory and the existing allocator determine how many troops you actually send. The model is not an inventory-constrained optimizer and does not simulate mixed tiers or every player in a rally.</p><p>Formula and data reference: <a href="https://wosnerds.com/bear-calc/" target="_blank" rel="noreferrer">WOS Nerds Bear Calculator</a> · snapshot 11 October 2026. New planner interface currently uses English.</p></div></details>
-  </section>;
-}
-function HeroControls({ hero, info = {}, onChange }) {
-  return <div className="bl-hero-controls"><label className="bl-field"><span>Stars</span><select aria-label={`${hero} stars`} value={info.stars || '0*'} onChange={e => onChange({ stars: e.target.value })}>{STARS.map(s => <option key={s}>{s}</option>)}</select></label><NumberField label="Widget level" value={info.widget || 0} max={10} onChange={v => onChange({ widget: Math.floor(v) })} /><label className="bl-field"><span>Expedition skill level</span><select aria-label={`${hero} expedition skill level`} value={info.skill || 1} onChange={e => onChange({ skill: Number(e.target.value) })}>{[1, 2, 3, 4, 5].map(n => <option key={n}>{n}</option>)}</select></label></div>;
+  return <div className="bear-leader-helper">
+    <button type="button" ref={launchRef} className="bl-launch" aria-expanded={open} aria-controls={panelId} onClick={() => setOpen(v => !v)}>
+      <span>Calculate recommended rally leader squad</span><span aria-hidden="true">{open ? '−' : '+'}</span>
+    </button>
+    {!open && applied && <p className="bl-status">{dirty ? 'Setup changed. Open and recalculate to update your squad.' : `${applied.heroes.join(' · ')} · ${fmt(applied.capacity)} troops before inventory limits`}</p>}
+    {open && <form id={panelId} className="bl-panel" onSubmit={e => { e.preventDefault(); apply(); }}>
+      <p className="bl-help">Saved for {accountName}. Uses the capacity above. Four level-5 joiners, active pets and a 25% trap attack buff are assumed.</p>
+      <div className="bl-grid two">
+        <NumberField label="All troops attack (%)" value={draft.allAttack} onChange={v => edit({ allAttack: v })} />
+        <NumberField label="All troops lethality (%)" value={draft.allLethality} onChange={v => edit({ allLethality: v })} />
+      </div>
+      <p className="bl-help">Enter base bonuses before these heroes, gear and pets. Paste commas or % signs; the app handles them.</p>
+      {CLASSES.map((c, i) => <fieldset className="bl-class" key={c}><legend>{c}</legend>
+        <HeroNameField label="Hero name" ariaLabel={`${c} hero`} value={draft.starters[i]} names={HERO_NAMES[i]} onChange={v => edit({ starters: draft.starters.map((h, j) => i === j ? v : h) })} />
+        <div className="bl-grid three">
+          <NumberField label="Stars" ariaLabel={`${c} stars`} value={draft.heroInfo[i].stars} max={5} fixed={1}
+            validate={n => starKey(n) && (n === 5 || Math.round(n * 10) % 10 <= 5) ? '' : 'Use one decimal: .0–.5 steps, or 5.0.'}
+            onChange={v => editAt('heroInfo', i, { stars: v })} help="e.g. 4.3 · max 5.0" />
+          <NumberField label="Widget" ariaLabel={`${c} widget`} value={draft.heroInfo[i].widget} max={10} decimal={false} onChange={v => editAt('heroInfo', i, { widget: v })} help="0–10" />
+          <NumberField label="Skills" ariaLabel={`${c} skill level`} value={draft.heroInfo[i].skill} min={1} max={5} decimal={false} onChange={v => editAt('heroInfo', i, { skill: v })} help="1–5" />
+        </div>
+        <div className="bl-grid two bl-tier-row">
+          <NumberField label="FC" ariaLabel={`${c} FC`} value={draft.tierInputs[i].fc} max={10} decimal={false} onChange={v => editAt('tierInputs', i, { fc: v })} help="0 for no Fire Crystal" />
+          <NumberField label="Troop level" ariaLabel={`${c} troop level`} value={draft.tierInputs[i].level} min={1} max={11} decimal={false} onChange={v => editAt('tierInputs', i, { level: v })} help="1–11" />
+        </div>
+        <details className="bl-details"><summary>Gear on / off <span>{['attack', 'lethality'].map(k => gearDifference(draft.stats[i], k)).every(n => n !== null && n >= 0) ? `+${fmt(gearDifference(draft.stats[i], 'attack'))} attack · +${fmt(gearDifference(draft.stats[i], 'lethality'))} lethality` : 'Complete both readings'}</span></summary>
+          <p className="bl-help">Keep heroes, pets and buffs the same. Only the gear difference is added.</p>
+          {['attack', 'lethality'].map(kind => <div key={kind}>
+            <h4 className="bl-stat-title">{kind}</h4>
+            <div className="bl-grid two">{[['On', 'Gear on'], ['Off', 'Gear off']].map(([suffix, label]) => <NumberField key={suffix}
+              label={`${label} (%)`} ariaLabel={`${c} ${kind} · ${label} (%)`} value={draft.stats[i][kind + suffix]}
+              onChange={v => editAt('stats', i, { [kind + suffix]: v })} />)}</div>
+            <p className={gearDifference(draft.stats[i], kind) < 0 ? 'bl-error' : 'bl-difference'}>{gearDifference(draft.stats[i], kind) === null ? 'Enter both readings.' : gearDifference(draft.stats[i], kind) < 0 ? 'Gear on must be at least gear off.' : `+${fmt(gearDifference(draft.stats[i], kind))} ${kind} percentage points`}</p>
+          </div>)}
+        </details>
+      </fieldset>)}
+      <details className="bl-details"><summary>Joiner heroes <span>4 players · level 5 skills</span></summary>
+        <p className="bl-help">Only Seo-yoon, Reina, Norah and Jessie. Different players can use the same hero.</p>
+        <div className="bl-grid two">{JOINERS.map((_, i) => <HeroNameField key={i} label={`Joiner ${i + 1}`} value={draft.joiners[i]} names={JOINERS}
+          onChange={v => edit({ joiners: draft.joiners.map((h, j) => i === j ? v : h) })} />)}</div>
+      </details>
+      <details className="bl-details"><summary>Active pet bonuses <span>Pets always active</span></summary>
+        <p className="bl-help">Enter your active percentages. Snow ape capacity is already included above.</p>
+        <div className="bl-grid two">{[['chameleon', 'Chameleon (%)'], ['tiger', 'Sabre-tooth lethality (%)'], ['lion', 'Cave lion attack (%)']].map(([field, label]) => <NumberField key={field}
+          label={label} value={draft[field]} max={1000} onChange={v => edit({ [field]: v })} />)}</div>
+      </details>
+      <details className="bl-details"><summary>Extra class bonuses <span>Optional · defaults to 0</span></summary>
+        <p className="bl-help">Separate base bonuses only; gear differences are already counted.</p>
+        {CLASSES.map((c, i) => <div className="bl-grid two" key={c}>{['attack', 'lethality'].map(kind => <NumberField key={kind}
+          label={`${c} base ${kind} (%)`} value={draft.stats[i][kind]} onChange={v => editAt('stats', i, { [kind]: v })} />)}</div>)}
+      </details>
+      <div className="bl-apply-area">
+        {assessment.errors.length > 0 && <p className="bl-help" role="status">{assessment.errors[0]}{assessment.errors.length > 1 ? ` (${assessment.errors.length - 1} more to complete)` : ''}</p>}
+        <button type="submit" className="bl-apply" disabled={!assessment.result}>Calculate & use recommended squad</button>
+        <p className="bl-help">Fills the percentages and amounts below. Your troop pool still limits what can be sent.</p>
+      </div>
+      <details className="bl-details"><summary>Formula reference</summary><p className="bl-help">Proportions use the theoretical WOS Nerds comparison model: each class’s D² ÷ sum(D²), rounded to whole troops. This does not predict game damage. <a href="https://wosnerds.com/bear-calc/" target="_blank" rel="noreferrer">WOS Nerds formula reference</a>.</p></details>
+    </form>}
+    {notice && <p className="bl-status" role="status">{notice}</p>}
+  </div>;
 }

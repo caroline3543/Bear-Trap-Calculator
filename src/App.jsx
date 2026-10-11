@@ -1077,9 +1077,10 @@ function PctField({ label, value, onChange, colorDot }) {
   }, [value]);
 
   function handleChange(e) {
-    const cleaned = e.target.value.replace(/[^0-9]/g, "");
+    const cleaned = e.target.value.replace(/[,\s%]/g, "");
+    if (!/^\d*(?:\.\d*)?$/.test(cleaned)) return;
     setText(cleaned);
-    const parsed = cleaned === "" ? 0 : toNonNegInt(cleaned);
+    const parsed = cleaned === "" || cleaned === "." ? 0 : Number(cleaned);
     lastEmitted.current = parsed;
     onChange(parsed);
   }
@@ -1093,9 +1094,10 @@ function PctField({ label, value, onChange, colorDot }) {
       <div style={{ position: "relative" }}>
         <input
           type="text"
-          inputMode="numeric"
+          inputMode="decimal"
           aria-label={label}
           value={text}
+          onFocus={(e) => e.target.select()}
           onChange={handleChange}
           onBlur={() => setText(String(value))}
           className="calc-input"
@@ -1497,7 +1499,7 @@ function CompositionInputs({ capacity, mode, setMode, ratio, setRatio, exact, se
           </div>
           <CompositionBar segments={TYPES.map((t) => ({ pct: ratio[t], color: dots[t] }))} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-            <span style={{ fontSize: 11.5, color: C.sub, fontWeight: 500 }}>{tWord("remainingToAllocate", lang)}: {Math.max(0, 100 - ratioSum)}%</span>
+            <span style={{ fontSize: 11.5, color: C.sub, fontWeight: 500 }}>{tWord("remainingToAllocate", lang)}: {Number(Math.max(0, 100 - ratioSum).toFixed(2))}%</span>
             {!target.valid ? (
               <span style={{ fontSize: 12, color: C.red, fontWeight: 500 }}>✕ {tWord("totalWord", lang)} {ratioSum.toFixed(0)}% — {tWord("mustEqual100", lang)}</span>
             ) : (
@@ -2907,7 +2909,7 @@ export default function App() {
         button:active { transform: translateY(1px) scale(.98); }
 
         .app-shell { width: min(100% - 32px, 1120px); margin: 0 auto; padding: 20px 0 48px; position: relative; z-index: 1; }
-        .section-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+        .section-grid { align-items: start; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
         @media (max-width: 720px) {
           .app-shell { width: min(100% - 24px, 560px); padding-top: 16px; }
           .section-grid { grid-template-columns: 1fr; }
@@ -3113,30 +3115,6 @@ export default function App() {
                       })}
                     </div>
 
-                    <React.Suspense fallback={<div className="calc-card" style={{ padding: 20 }}>Loading Bear Lab…</div>}>
-                      <BearLab
-                        key={activeAccount}
-                        accountId={activeAccount}
-                        accountName={accountNames[activeAccount]}
-                        leaderCapacity={effectiveRallyCapacity}
-                        leaderMinister={ministerBoost === 3750 ? "Strategy (supreme)" : ministerBoost ? "Strategy (normal)" : "None"}
-                        joinerCapacity={capacity}
-                        squads={computation.squads}
-                        onApplyLeader={(counts) => {
-                          setAdvancedOpen(true);
-                          setRallyMode("exact");
-                          setRallyExact(Object.fromEntries(TYPES.map((t, i) => [t, counts[i]])));
-                          setFills({});
-                        }}
-                        onApplyJoiners={(counts) => {
-                          setStrategy("manual");
-                          setMode("exact");
-                          setExact(Object.fromEntries(TYPES.map((t, i) => [t, counts[i]])));
-                          setFills(prev => prev.rally ? { rally: prev.rally } : {});
-                        }}
-                      />
-                    </React.Suspense>
-
                     <div style={{ position: "sticky", top: 0, zIndex: 10, marginBottom: 16 }} className="calc-card">
                       <div style={{ display: "flex", gap: 0, overflowX: "auto" }}>
                         <SummaryStat label={tr("availableStat")} value={fmt(totalAvailable)} />
@@ -3251,6 +3229,21 @@ export default function App() {
                           <div style={{ marginTop: 12, marginBottom: 10, fontSize: 12, fontWeight: 500, color: C.gold, background: C.goldBg, border: `1px solid ${C.goldBorder}`, borderRadius: 12, padding: "6px 10px" }}>
                             {tr("effectiveCapacity")}: {fmt(rallyCapacity)} + {fmt(cyrilleBoost)} + {fmt(snowApeBoost)} + {fmt(ministerBoost)} = {fmt(effectiveRallyCapacity)}
                           </div>
+                          <React.Suspense fallback={<p style={{ color: C.sub, fontSize: 12 }}>Loading recommendation form…</p>}>
+                            <BearLab
+                              key={activeAccount}
+                              accountId={activeAccount}
+                              accountName={accountNames[activeAccount]}
+                              leaderCapacity={effectiveRallyCapacity}
+                              leaderMinister={ministerBoost === 3750 ? "Strategy (supreme)" : ministerBoost ? "Strategy (normal)" : "None"}
+                              onApplyLeader={(counts, recommendedPercentages) => {
+                                setRallyRatio(Object.fromEntries(TYPES.map((t, i) => [t, recommendedPercentages[i]])));
+                                setRallyExact(Object.fromEntries(TYPES.map((t, i) => [t, counts[i]])));
+                                setRallyMode("exact");
+                                setFills({});
+                              }}
+                            />
+                          </React.Suspense>
                           <CompositionInputs capacity={effectiveRallyCapacity} mode={rallyMode} setMode={setRallyMode} ratio={rallyRatio} setRatio={setRallyRatio} exact={rallyExact} setExact={setRallyExact} target={rallyTarget} lang={lang} />
                           {rallyComputation.result && (
                             <div style={{ marginTop: 10 }}>
