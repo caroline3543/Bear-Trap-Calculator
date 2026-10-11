@@ -1,3 +1,4 @@
+import { loadTesseract } from "./bear/ocr-runtime.js";
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import TimeHub from "./timehub/TimeHub.jsx";
 import { loadTroopTiers, mergeScannedTiers, selectScannedTiers, locateFcBadges, confirmFcReadings } from "./bear/troop-tiers.js";
@@ -64,7 +65,7 @@ const LANGUAGES = [
 
 const TRANSLATIONS = {
   en: {
-    troopPool: "Troop pool", troopPoolSub: "T10 is always used before T9 for the same troop type.",
+    troopPool: "Troop pool", troopPoolSub: "Add the troops available on this account.",
     noTroops: "No troops entered yet — start here.", totalPoolLabel: "Total pool",
     clearAll: "Clear all troops", reset: "Reset",
     settings: "Settings", joinerSquadsLabel: "Joiner Squads", settingsSub: "Capacity applies to every joiner squad.",
@@ -120,8 +121,8 @@ const TRANSLATIONS = {
     copyPlan: "Copy squad plan", copiedToast: "Copied to clipboard!", copyFailedToast: "Couldn't copy — try again.",
     autoLabel: "auto", marksmanBelow60kWarning: "Below the 60,000 minimum",
     infantryStockLimitWarning: "Not enough Infantry in your pool to go higher", lancerStockLimitWarning: "Not enough Lancer in your pool to go higher",
-    scanScreenshotBtn: "📷 Scan a screenshot instead", scanScreenshotHide: "Hide scanner", screenshotLangLabel: "Screenshot language — match your game's UI language",
-    chooseScreenshot: "Choose a screenshot", scanBtn: "Scan screenshot", scanningStatus: "Reading numbers…", scanResultsHeading: "Check the numbers",
+    scanScreenshotBtn: "Scan troop screenshot", scanScreenshotHide: "Hide scanner", screenshotLangLabel: "Screenshot language — match your game's UI language",
+    chooseScreenshot: "Choose a screenshot", scanBtn: "Scan screenshot", scanningStatus: "Reading numbers…", scanResultsHeading: "Review detected troops",
     needsReviewNote: "needs review", applyToPoolBtn: "Apply to Troop Pool", appliedScanToast: "Scanned values applied to Troop Pool.",
     scanErrorMsg: "Couldn't read that image — try a clearer screenshot, or enter the numbers by hand below.",
     scanHint: "Works best with a clear, uncropped shot of the Troops Preview screen.", whatScannerRead: "What the scanner read",
@@ -1040,7 +1041,7 @@ function TroopLevelField({ label, ariaLabel, value, onChange, min = 0, max = 10,
   </label>;
 }
 
-function NumField({ label, value, onChange }) {
+function NumField({ label, ariaLabel, value, onChange }) {
   const [text, setText] = useState(() => fmt(value));
   const lastEmitted = useRef(value);
 
@@ -1060,19 +1061,38 @@ function NumField({ label, value, onChange }) {
   }
 
   return (
-    <label style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1, minWidth: 100 }}>
+    <label style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1, minWidth: 0 }}>
       <span style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 12, fontWeight: 800, color: C.gold }}>{label}</span>
       <input
         type="text"
         inputMode="numeric"
-        aria-label={label}
+        aria-label={ariaLabel || label}
         value={text}
+        onFocus={e => e.target.select()}
         onChange={handleChange}
         onBlur={() => setText(fmt(value))}
+        style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
         className="calc-input"
       />
     </label>
   );
+}
+
+// Compact editable FC labels; quantities remain arranged by tier below.
+function TroopFcLabel({ type, name, fc, onChange }) {
+  const valid = fc !== '' && Number.isInteger(Number(fc)) && Number(fc) >= 0 && Number(fc) <= 10;
+  return <div style={{ minWidth: 0 }}>
+    <label style={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap', color: C.gold, fontWeight: 800, fontSize: 13 }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>FC
+        <input type="text" inputMode="numeric" aria-label={`${type} FC`} aria-invalid={!valid || undefined}
+          value={fc} onFocus={e => e.target.select()}
+          onChange={e => onChange(e.target.value === '' ? '' : /^\d{1,2}$/.test(e.target.value) ? Number(e.target.value) : '')}
+          style={{ width: 30, minHeight: 36, padding: '3px 2px', borderRadius: 7, border: `1px solid ${C.cardBorder}`, background: 'transparent', color: 'inherit', font: 'inherit', textAlign: 'center' }} />
+      </span>
+      <span>{name}</span>
+    </label>
+    {!valid && <small style={{ color: C.amber }}>Enter FC 0–10.</small>}
+  </div>;
 }
 
 /* Typed percentage entry — independent per field, no artificial clamping
@@ -1307,7 +1327,7 @@ function Pill({ children, tone, icon }) {
   );
 }
 
-function Btn({ children, onClick, tone = "primary", small }) {
+function Btn({ children, onClick, tone = "primary", small, disabled = false }) {
   const styles = {
     primary: { background: C.gold, color: C.surface, border: "none", boxShadow: "0 3px 0 var(--btnPrimaryShadow)" }, // pine — selected / confirmation state
     ghost: { background: "var(--btnSecondaryBg)", color: C.gold, border: "1px solid var(--btnSecondaryBorder)", boxShadow: "none" }, // button-secondary
@@ -1316,6 +1336,7 @@ function Btn({ children, onClick, tone = "primary", small }) {
   };
   return (
     <button
+      disabled={disabled}
       onClick={onClick}
       style={{
         ...styles[tone],
@@ -1555,20 +1576,6 @@ function CompositionInputs({ animateUpdates = false, capacity, mode, setMode, ra
    persistence and look — duplicating either would just create two
    competing sources of truth.
    ============================================================ */
-let tesseractLoadPromise = null;
-function loadTesseract() {
-  if (typeof window !== "undefined" && window.Tesseract) return Promise.resolve(window.Tesseract);
-  if (tesseractLoadPromise) return tesseractLoadPromise;
-  tesseractLoadPromise = new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
-    script.onload = () => resolve(window.Tesseract);
-    script.onerror = () => reject(new Error("Failed to load OCR engine"));
-    document.head.appendChild(script);
-  });
-  return tesseractLoadPromise;
-}
-
 // The screenshot's language is independent of the app's display language —
 // the scanner defaults to English and lets the player switch + rescan.
 const OCR_LANGUAGES = [
@@ -1962,6 +1969,7 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
   const [autoDetect, setAutoDetect] = useState(true);
   const [scanLang, setScanLang] = useState("chi_sim"); // default guess — Tesseract's Chinese Simplified model has proven the most reliable reader of this game's font, even for English screenshots; easy to change and rescan if it misreads
   const [imgSrc, setImgSrc] = useState(null);
+  const [scanImages, setScanImages] = useState([]);
   const [fileError, setFileError] = useState(null);
   const [scanning, setScanning] = useState(false);
   const [scanStatus, setScanStatus] = useState("");
@@ -1975,22 +1983,16 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
   const imgRef = useRef(null);
   const scrollWrapRef = useRef(null);
 
-  function handleFile(file) {
+  async function handleFiles(files, append = false) {
     setFileError(null);
-    if (!file.type || file.type.indexOf("image/") !== 0) {
-      setFileError(tWord("notAnImage", lang));
-      return;
-    }
-    setEdited(null);
-    setScannedValues(null);
-    setHasScanned(false);
-    setRawText("");
-    setConfidence({});
-    setDetectedLang(null);
-    const reader = new FileReader();
-    reader.onload = (e) => setImgSrc(e.target.result);
-    reader.onerror = () => setFileError(tWord("notAnImage", lang));
-    reader.readAsDataURL(file);
+    const selected = Array.from(files || []).filter(file => file.type?.startsWith('image/'));
+    if (!selected.length) { setFileError(tWord('notAnImage', lang)); return; }
+    try {
+      const urls = await Promise.all(selected.map(file => new Promise((resolve, reject) => {
+        const reader = new FileReader(); reader.onload = e => resolve(e.target.result); reader.onerror = reject; reader.readAsDataURL(file);
+      })));
+      setScanImages(p => append ? [...p, ...urls] : urls); if (!append || !imgSrc) setImgSrc(urls[0]);
+    } catch { setFileError(tWord('notAnImage', lang)); }
   }
 
   // OCR reads only whatever's currently scrolled into view in the preview,
@@ -2016,14 +2018,22 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
     setScanPct(5);
     try {
       const Tesseract = await loadTesseract();
-      const crop = computeVisibleCrop();
-      const ocrCanvas = buildOcrCanvas(imgRef.current, crop);
+      let values = { ...edited };
+      const mergedConfidence = { ...confidence };
+      const rawParts = [];
+      for (let photoIndex = 0; photoIndex < Math.max(1, scanImages.length); photoIndex++) {
+      let source = imgRef.current;
+      if (scanImages.length > 1) {
+        source = await new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve(img); img.onerror = reject; img.src = scanImages[photoIndex]; });
+      }
+      const crop = scanImages.length > 1 ? null : computeVisibleCrop();
+      const ocrCanvas = buildOcrCanvas(source, crop);
       const candidates = autoDetect ? AUTO_DETECT_SEQUENCE : [scanLang];
       let best = null;
       for (let i = 0; i < candidates.length; i++) {
         const candidateLang = candidates[i];
         const candidateLabel = (OCR_LANGUAGES.find((l) => l.code === candidateLang) || {}).label || candidateLang;
-        setScanStatus(autoDetect ? `${tWord("scanningStatus", lang)} — ${candidateLabel} (${i + 1}/${candidates.length})` : tWord("scanningStatus", lang));
+        setScanStatus(`Screenshot ${photoIndex + 1}/${scanImages.length || 1} — ` + (autoDetect ? `${tWord("scanningStatus", lang)} — ${candidateLabel} (${i + 1}/${candidates.length})` : tWord("scanningStatus", lang)));
         // eslint-disable-next-line no-await-in-loop
         const res = await Tesseract.recognize(ocrCanvas, candidateLang, {
           workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js",
@@ -2055,42 +2065,31 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
       // didn't find might simply be outside the current view (already
       // found correctly by an earlier scan of a different region), not
       // actually missing. Only a field THIS pass did find gets replaced.
-      const values = {};
-      SCAN_FIELDS.forEach((f) => {
+      SCAN_FIELDS.forEach(f => {
         const found = best.parsed.values[f.key];
-        values[f.key] = found === null || found === undefined ? (edited ? edited[f.key] ?? 0 : 0) : found;
-      });
-      setScanStatus("Reading FC badges…");
-      setScanPct(95);
-      values.troopTiers = { ...edited?.troopTiers, ...await scanFcBadges(Tesseract, ocrCanvas, best.words, best.parsed) };
-      const mergedConfidence = { ...confidence };
-      SCAN_FIELDS.forEach((f) => {
         const c = best.parsed.confidence[f.key];
-        if (c !== null && c !== undefined) mergedConfidence[f.key] = c;
+        if (found !== null && found !== undefined) {
+          const conflict = values[f.key] !== undefined && values[f.key] !== found;
+          values[f.key] = found;
+          mergedConfidence[f.key] = conflict ? 60 : c;
+        }
       });
+      setScanStatus('Reading FC badges…');
+      values.troopTiers = { ...values.troopTiers, ...await scanFcBadges(Tesseract, ocrCanvas, best.words, best.parsed) };
+      rawParts.push(best.parsed.rawText);
+      setEdited({ ...values }); setScannedValues({ ...values }); setConfidence({ ...mergedConfidence }); setRawText(rawParts.join('\n\n')); setHasScanned(true);
+      setScanLang(best.langUsed);
+      setDetectedLang(autoDetect ? best.langUsed : null);
+      }
       setEdited(values);
       setScannedValues(values);
       setConfidence(mergedConfidence);
-      setRawText(best.parsed.rawText);
-      setScanLang(best.langUsed);
-      setDetectedLang(autoDetect ? best.langUsed : null);
+      setRawText(rawParts.join("\n\n"));
       setHasScanned(true);
       setScanPct(100);
     } catch {
       setFileError(tWord("scanErrorMsg", lang));
-      // Don't wipe out results a PREVIOUS successful scan (of a different
-      // scrolled region) already found — only seed empty values if this
-      // was the very first attempt.
-      if (!edited) {
-        const empty = {};
-        SCAN_FIELDS.forEach((f) => (empty[f.key] = 0));
-        setEdited(empty);
-        setScannedValues(empty);
-        setConfidence({});
-        setRawText("");
-        setDetectedLang(null);
-      }
-      setHasScanned(true);
+      // Leave existing reviewed data intact when a new scan fails.
     } finally {
       setScanning(false);
     }
@@ -2117,6 +2116,7 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
     onApply(edited, targetId);
     setOpen(false);
     setImgSrc(null);
+    setScanImages([]);
     setEdited(null);
     setScannedValues(null);
     setHasScanned(false);
@@ -2146,7 +2146,7 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
 
   if (!open) {
     return (
-      <Btn tone="ghost" small onClick={() => setOpen(true)}>
+      <Btn tone="gold" onClick={() => setOpen(true)}>
         {tWord("scanScreenshotBtn", lang)}
       </Btn>
     );
@@ -2206,12 +2206,14 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
             cursor: "pointer",
           }}
         >
-          {tWord("chooseScreenshot", lang)}
+          Choose troop screenshots (one or more)
           <input
             type="file"
             accept="image/*"
+            multiple
+            disabled={scanning}
             style={{ display: "none" }}
-            onChange={(e) => e.target.files && e.target.files[0] && handleFile(e.target.files[0])}
+            onChange={e => handleFiles(e.target.files)}
           />
         </label>
       ) : (
@@ -2239,12 +2241,13 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
           >
             <img ref={imgRef} src={imgSrc} alt="" style={{ display: "block", width: "100%", height: "auto" }} />
           </div>
-          <div style={{ fontSize: 11, color: C.sub, marginBottom: 10 }}>{tWord("scanCropHint", lang)}</div>
+          <p style={{ fontSize: 12, color: C.sub }}>{scanImages.length > 1 ? `${scanImages.length} screenshots selected. The scanner reads all of them and combines the results.` : tWord('scanCropHint', lang)}</p>
+          <label style={{ color: C.gold, fontSize: 12 }}>Choose more screenshots<input type="file" accept="image/*" multiple disabled={scanning} onChange={e => { handleFiles(e.target.files, true); e.target.value = ''; }} /></label>
           <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-            <Btn tone="gold" small onClick={runScan}>
+            <Btn tone="gold" small disabled={scanning} onClick={runScan}>
               {scanning ? scanStatus : hasScanned ? tWord("rescanBtn", lang) : tWord("scanBtn", lang)}
             </Btn>
-            <Btn tone="ghost" small onClick={() => { setImgSrc(null); setEdited(null); setScannedValues(null); setConfidence({}); setHasScanned(false); setFileError(null); }}>✕</Btn>
+            <Btn tone="ghost" small disabled={scanning} onClick={() => { setImgSrc(null); setScanImages([]); setEdited(null); setScannedValues(null); setConfidence({}); setHasScanned(false); setFileError(null); }}>✕</Btn>
           </div>
           {scanning && <ProgressBar pct={scanPct} tone="green" />}
         </div>
@@ -2258,9 +2261,7 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
             <div style={{ fontSize: 12, fontWeight: 800, color: C.gold }}>{tWord("scanResultsHeading", lang)}</div>
             <div style={{ fontSize: 11, color: C.sub, fontWeight: 600 }}>{tFmt("foundCountSummary", lang, { a: relevantFields.length - missingCount, b: relevantFields.length })}</div>
           </div>
-          <div style={{ fontSize: 12, color: C.amber, lineHeight: 1.4, marginBottom: 10, background: C.amberBg, borderRadius: 10, padding: "8px 10px" }}>
-            {tWord("scanFriendlyNote", lang)}
-          </div>
+          <p style={{ fontSize: 12, color: C.sub }}>Only uncertain readings are highlighted. Fields not detected keep their saved amounts.</p>
           {["t11", "t10", "t9"]
             .filter((tier) => SCAN_FIELDS.some((f) => f.tier === tier && !isMissing(f.key)))
             .map((tier) => (
@@ -2268,12 +2269,13 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
               <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 13, fontWeight: 800, color: C.gold, marginBottom: 6 }}>{tier.toUpperCase()}{tier === "t11" ? " (Helios)" : ""}</div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 {SCAN_FIELDS.filter((f) => f.tier === tier).map((f) => (
-                  <div key={f.key} style={{ flex: 1, minWidth: 90 }}>
+                  <div key={f.key} style={{ flex: 1, minWidth: 90, padding: 6, borderRadius: 8, background: !isMissing(f.key) && confidence[f.key] < 85 ? C.amberBg : 'transparent', border: !isMissing(f.key) && confidence[f.key] < 85 ? `1px solid ${C.amber}` : '1px solid transparent' }}>
                     <NumField
                       label={tType(f.type, lang)}
                       value={edited[f.key]}
-                      onChange={(v) => setEdited({ ...edited, [f.key]: v })}
+                      onChange={v => { setEdited(p => ({ ...p, [f.key]: v })); setConfidence(p => ({ ...p, [f.key]: 100 })); }}
                     />
+                    <small style={{ color: C.sub }}>{isMissing(f.key) ? 'Not detected; saved amount kept.' : confidence[f.key] < 85 ? 'Check this reading.' : ''}</small>
                   </div>
                 ))}
               </div>
@@ -2300,7 +2302,7 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
               active account first just to drop a scan into it. */}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
             {accounts.map((acc) => (
-              <Btn key={acc.id} tone="gold" small onClick={() => handleApply(acc.id)}>
+              <Btn key={acc.id} tone="gold" small disabled={scanning || !SCAN_FIELDS.some(f => edited[f.key] !== undefined)} onClick={() => handleApply(acc.id)}>
                 {tWord("applyToPoolBtn", lang)} — {acc.name}{acc.id === activeAccountId ? " ✓" : ""}
               </Btn>
             ))}
@@ -2362,6 +2364,7 @@ export default function App() {
     return trackedAccounts.some((a) => a.id === previous) ? previous : primaryAccount(trackedAccounts).id;
   });
   const [saved] = useState(() => loadSavedForAccount(activeAccount));
+  const [troopsEditing, setTroopsEditing] = useState(() => !saved?.t10);
 
   const [capacity, setCapacity] = useState(saved?.capacity ?? 110000);
   const [numSquads, setNumSquads] = useState(saved?.numSquads ?? 6);
@@ -2531,6 +2534,9 @@ export default function App() {
     return { squads, pools };
   }, [rallyComputation, numSquads, strategy, targetManual, recommendedTarget, capacity, fills]);
 
+  const recommendedTroopTiers = useMemo(() => TYPES.map((type, i) => ({
+    ...troopTiers[i], level: t11[type] > 0 ? 11 : t10[type] > 0 ? 10 : t9[type] > 0 ? 9 : troopTiers[i].level,
+  })), [troopTiers, t11, t10, t9]);
   const totalAvailable = TYPES.reduce((s, t) => s + t11[t] + t10[t] + t9[t], 0);
   const rallyAllocated = rallyComputation.result ? rallyComputation.result.totalAllocated : 0;
   const totalAllocated = computation.squads.reduce((s, sq) => s + (sq ? sq.totalAllocated : 0), 0) + rallyAllocated;
@@ -2581,10 +2587,13 @@ export default function App() {
   // Helios toggle on, if the scan actually found a T11 row — never assumed.
   function handleApplyScan(scanned, targetId) {
     if (!trackedAccounts.some((a) => a.id === targetId)) return;
-    const t11Vals = { infantry: scanned.t11Infantry ?? 0, lancer: scanned.t11Lancer ?? 0, marksman: scanned.t11Marksman ?? 0 };
-    const t10Vals = { infantry: scanned.t10Infantry, lancer: scanned.t10Lancer, marksman: scanned.t10Marksman };
-    const t9Vals = { infantry: scanned.t9Infantry, lancer: scanned.t9Lancer, marksman: scanned.t9Marksman };
+    const current = targetId === activeAccount ? { t11, t10, t9 } : loadSavedForAccount(targetId) || {};
+    const mergePool = tier => Object.fromEntries(TYPES.map(type => [type, scanned[tier + type[0].toUpperCase() + type.slice(1)] ?? current[tier]?.[type] ?? 0]));
+    const t11Vals = mergePool('t11');
+    const t10Vals = mergePool('t10');
+    const t9Vals = mergePool('t9');
     const foundHelios = TYPES.some((t) => t11Vals[t] > 0);
+    const hasHeliosReadings = TYPES.some(type => scanned['t11' + type[0].toUpperCase() + type.slice(1)] !== undefined);
     if (targetId === activeAccount) {
       const previousT10 = t10;
       const previousT9 = t9;
@@ -2592,11 +2601,12 @@ export default function App() {
       const previousHasHelios = hasHelios;
       const previousTiers = troopTiers;
       setTroopTiers(mergeScannedTiers(troopTiers, scanned.troopTiers));
+      setTroopsEditing(false);
       setT10(t10Vals);
       setT9(t9Vals);
-      if (foundHelios) {
+      if (foundHelios || hasHeliosReadings) {
         setT11(t11Vals);
-        setHasHelios(true);
+        setHasHelios(foundHelios);
       }
       showToast(tr("appliedScanToast"), tr("undoAction"), () => {
         setT10(previousT10);
@@ -2610,9 +2620,9 @@ export default function App() {
       try {
         const existing = loadSavedForAccount(targetId) || {};
         const merged = { ...existing, t10: t10Vals, t9: t9Vals, troopTiers: mergeScannedTiers(loadTroopTiers(targetId, existing), scanned.troopTiers) };
-        if (foundHelios) {
+        if (foundHelios || hasHeliosReadings) {
           merged.t11 = t11Vals;
-          merged.hasHelios = true;
+          merged.hasHelios = foundHelios;
         }
         localStorage.setItem(accountStorageKey(targetId), JSON.stringify(merged));
         showToast(tFmt("appliedScanToOtherToast", lang, { a: accountNames[targetId] }), null, null, 2500);
@@ -2692,6 +2702,7 @@ export default function App() {
     };
   }
   function applyAccountSnapshot(data, accountId = activeAccount) {
+    setTroopsEditing(!data.t10);
     setTroopTiers(loadTroopTiers(accountId, data));
     setCapacity(data.capacity ?? 110000);
     setNumSquads(data.numSquads ?? 6);
@@ -3185,69 +3196,59 @@ export default function App() {
                         </div>
                       )}
                       <div style={{ marginBottom: 12 }}>
-                        <ScreenshotScanner
+                        <ScreenshotScanner key={activeAccount}
                           lang={lang}
                           accounts={trackedAccounts}
                           activeAccountId={activeAccount}
                           onApply={handleApplyScan}
                         />
                       </div>
-                      <div style={{ marginBottom: 14 }}>
-                        <p style={{ fontSize: 12, color: C.sub, margin: '0 0 8px' }}>Troop levels for your recommended leader squad. Copy the FC number on each troop’s badge; different troop types can have different levels.</p>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
-                          {TYPES.map((type, i) => <div key={type} style={{ padding: 10, borderRadius: 12, background: C.surface, border: `1px solid ${C.cardBorder}` }}>
-                            <strong style={{ fontSize: 13, color: C.gold }}>{tType(type, lang)}</strong>
-                            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                              <TroopLevelField label="FC" ariaLabel={`${type} FC`} value={troopTiers[i].fc} max={10} onChange={v => setTroopTiers(p => p.map((t, j) => j === i ? { ...t, fc: v } : t))} />
-                              <TroopLevelField label="Troop tier" ariaLabel={`${type} troop tier`} value={troopTiers[i].level} min={1} max={11} onChange={v => setTroopTiers(p => p.map((t, j) => j === i ? { ...t, level: v } : t))} />
-                            </div>
-                          </div>)}
-                        </div>
-                        <p style={{ fontSize: 11, color: C.sub, margin: '6px 0 0' }}>FC 0 = no Fire Crystal. Troop tier: T9 Supreme · T10 Apex · T11 Helios. Enter your troop amounts below.</p>
+                      {!troopsEditing && <div style={{ color: C.ink, marginBottom: 12 }}>
+                        <p style={{ fontSize: 13, fontWeight: 700 }}>{TYPES.map((type, i) => `${tType(type, lang)} FC${troopTiers[i].fc === '' ? '—' : troopTiers[i].fc}`).join(' · ')}</p>
+                        <p style={{ color: C.sub, fontSize: 12 }}>{fmt(totalAvailable)} troops available · saved on this device</p>
+                      </div>}
+                      <Btn tone="ghost" small onClick={() => setTroopsEditing(v => !v)}>{troopsEditing ? 'Close troop editor' : 'Edit troops'}</Btn>
+                      {troopsEditing && <div style={{ marginTop: 12 }}>
+                      <details style={{ color: C.sub, fontSize: 12, marginBottom: 14 }}>
+                        <summary style={{ cursor: 'pointer', color: C.gold, fontWeight: 700 }}>Where do I find this?</summary>
+                        <p style={{ lineHeight: 1.6 }}>Open Troops Preview in the game. Copy the available troop amounts and the FC number on each troop’s badge. Each type can have a different FC level. FC0 means no Fire Crystal.</p>
+                        <p style={{ lineHeight: 1.6 }}>The leader recommendation uses the highest tier you have for each type. Troops are allocated in order: T11 Helios, T10 Apex, then T9 Supreme.</p>
+                      </details>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8, marginBottom: 8 }}>
+                        {TYPES.map((type, i) => <TroopFcLabel key={type} type={type} name={tType(type, lang)} fc={troopTiers[i].fc}
+                          onChange={v => setTroopTiers(p => p.map((t, j) => j === i ? { ...t, fc: v } : t))} />)}
                       </div>
-                      <label style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 12.5, fontWeight: 600, color: C.ink, cursor: "pointer", marginBottom: hasHelios ? 10 : 4 }}>
-                        <input
-                          type="checkbox"
-                          checked={hasHelios}
-                          onChange={(e) => setHasHelios(e.target.checked)}
-                          style={{ width: 17, height: 17, accentColor: C.goldStrong, cursor: "pointer" }}
-                        />
-                        {tr("hasHeliosLabel")}
+                      <Btn tone="ghost" small disabled={troopTiers[0].fc === '' || troopTiers[0].fc > 10}
+                        onClick={() => setTroopTiers(p => p.map(t => ({ ...t, fc: p[0].fc })))}>Same FC for all</Btn>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 9, color: C.ink, fontSize: 13, margin: '16px 0', cursor: 'pointer' }}>
+                        <input type="checkbox" aria-label="Show T11 Helios troops" checked={hasHelios || TYPES.some(t => t11[t] > 0)}
+                          onChange={e => { setHasHelios(e.target.checked); if (!e.target.checked) { const previous = t11; setT11(EMPTY); showToast('T11 troops removed.', tr('undoAction'), () => { setT11(previous); setHasHelios(true); dismissToast(); }); } }}
+                          style={{ width: 18, height: 18, accentColor: C.goldStrong }} />
+                        {tr('hasHeliosLabel')}
                       </label>
-                      {hasHelios && (
-                        <div>
-                          <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 15, fontWeight: 800, lineHeight: "20px", color: C.gold, marginBottom: 6 }}>T11 (Helios)</div>
-                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-                            <NumField label={tType("infantry", lang)} value={t11.infantry} onChange={(v) => setT11({ ...t11, infantry: v })} />
-                            <NumField label={tType("lancer", lang)} value={t11.lancer} onChange={(v) => setT11({ ...t11, lancer: v })} />
-                            <NumField label={tType("marksman", lang)} value={t11.marksman} onChange={(v) => setT11({ ...t11, marksman: v })} />
+                      {[...(hasHelios || TYPES.some(t => t11[t] > 0) ? [11] : []), 10, 9].map(tier => {
+                        const pool = tier === 11 ? t11 : tier === 10 ? t10 : t9;
+                        const setPool = tier === 11 ? setT11 : tier === 10 ? setT10 : setT9;
+                        return <section key={tier} aria-label={`T${tier} troop amounts`} style={{ marginBottom: 16 }}>
+                          <h3 style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 17, fontWeight: 800, color: C.gold, margin: '0 0 10px' }}>{tier === 11 ? 'T11 (Helios)' : `T${tier}`}</h3>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
+                            {TYPES.map(type => <NumField key={type} label={tType(type, lang)} ariaLabel={`${tType(type, lang)} T${tier}`} value={pool[type]} onChange={v => setPool(p => ({ ...p, [type]: v }))} />)}
                           </div>
-                        </div>
-                      )}
-                      <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 15, fontWeight: 800, lineHeight: "20px", color: C.gold, marginTop: 4, marginBottom: 6 }}>T10</div>
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-                        <NumField label={tType("infantry", lang)} value={t10.infantry} onChange={(v) => setT10({ ...t10, infantry: v })} />
-                        <NumField label={tType("lancer", lang)} value={t10.lancer} onChange={(v) => setT10({ ...t10, lancer: v })} />
-                        <NumField label={tType("marksman", lang)} value={t10.marksman} onChange={(v) => setT10({ ...t10, marksman: v })} />
-                      </div>
-                      <div style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 15, fontWeight: 800, lineHeight: "20px", color: C.gold, marginBottom: 6 }}>T9</div>
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
-                        <NumField label={tType("infantry", lang)} value={t9.infantry} onChange={(v) => setT9({ ...t9, infantry: v })} />
-                        <NumField label={tType("lancer", lang)} value={t9.lancer} onChange={(v) => setT9({ ...t9, lancer: v })} />
-                        <NumField label={tType("marksman", lang)} value={t9.marksman} onChange={(v) => setT9({ ...t9, marksman: v })} />
-                      </div>
-
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-                        <TroopChip label="Inf" value={t10.infantry + t9.infantry} color={TYPE_COLOR.infantry} />
-                        <TroopChip label="Lan" value={t10.lancer + t9.lancer} color={TYPE_COLOR.lancer} />
-                        <TroopChip label="Mar" value={t10.marksman + t9.marksman} color={TYPE_COLOR.marksman} />
-                        <TroopChip label={tr("totalPoolLabel")} value={totalAvailable} color={C.gold} strong />
+                        </section>;
+                      })}
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+                        <TroopChip label="Inf" value={t11.infantry + t10.infantry + t9.infantry} color={TYPE_COLOR.infantry} />
+                        <TroopChip label="Lan" value={t11.lancer + t10.lancer + t9.lancer} color={TYPE_COLOR.lancer} />
+                        <TroopChip label="Mar" value={t11.marksman + t10.marksman + t9.marksman} color={TYPE_COLOR.marksman} />
+                        <TroopChip label={tr('totalPoolLabel')} value={totalAvailable} color={C.gold} strong />
                       </div>
 
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                         <Btn tone="danger" onClick={clearTroops}>{tr("clearAll")}</Btn>
                         <Btn tone="ghost" onClick={resetAll}>{tr("reset")}</Btn>
+                        <Btn tone="gold" disabled={troopTiers.some(t => t.fc === '' || t.fc < 0 || t.fc > 10)} onClick={() => setTroopsEditing(false)}>Done</Btn>
                       </div>
+                      </div>}
                     </Card>
 
                       {/* RALLY LEADER + JOINER SQUADS — paired side by side on wide screens */}
@@ -3291,7 +3292,7 @@ export default function App() {
                               key={activeAccount}
                               accountId={activeAccount}
                               accountName={accountNames[activeAccount]}
-                              troopTiers={troopTiers}
+                              troopTiers={recommendedTroopTiers}
                               leaderCapacity={effectiveRallyCapacity}
                               leaderMinister={ministerBoost === 3750 ? "Strategy (supreme)" : ministerBoost ? "Strategy (normal)" : "None"}
                               onApplyLeader={(counts, recommendedPercentages) => {

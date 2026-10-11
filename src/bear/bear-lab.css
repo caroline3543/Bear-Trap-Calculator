@@ -52,3 +52,8 @@
 .rally-result-update { animation:rally-squad-update 850ms ease-out; }
 @keyframes rally-squad-update { 0%,35% { box-shadow:0 0 0 4px var(--goldBorder); filter:brightness(1.04); } 100% { box-shadow:0 0 0 0 transparent; filter:none; } }
 @media(prefers-reduced-motion:reduce) { .rally-result-update { animation:none; outline:2px solid var(--goldBorder); outline-offset:2px; } }
+
+.bl-bonus-scanner { padding: 12px; border: 1px solid var(--cardBorder); border-radius: 12px; margin: 12px 0; }
+.bl-scan-files { padding-left: 18px; font-size: 12px; overflow-wrap: anywhere; }
+.bl-scan-uncertain { padding: 8px; border: 1px solid var(--amber, #d5a55d); border-radius: 10px; background: var(--amberBg, rgba(213,165,93,.08)); }
+.bl-bonus-scanner button:not(.bl-apply) { color: inherit; font: inherit; background: transparent; border: 1px solid currentColor; border-radius: 8px; padding: 6px; margin: 4px; cursor: pointer; }

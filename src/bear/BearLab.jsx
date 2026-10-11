@@ -4,6 +4,9 @@ import { CLASSES, calculate } from './model.js';
 import { parseEntry, gearDifference, withGearDifferences } from './number-entry.js';
 import { heroNamesForClass, migrateSetup, resolveHero, starKey } from './leader-setup.js';
 import './bear-lab.css';
+import BonusScanner from './BonusScanner.jsx';
+import { applyBonusReadings } from './bonus-scan.js';
+import bonusOverviewPhoto from './assets/bonus-overview.webp';
 import heroStatsPhoto from './assets/hero-stats.webp';
 
 const fmt = n => Number(n || 0).toLocaleString('en-US');
@@ -142,6 +145,7 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
     {open && <form id={panelId} className="bl-panel" onSubmit={e => { e.preventDefault(); apply(); }}>
       <p className="bl-help">Saved for {accountName}. Uses the FC levels and troop tiers from your inventory, and your rally leader capacity above. Assumes two Jessie and two Seo-yoon joiners with level-5 skills, active pets, and a 25% trap attack buff.</p>
       <p className="bl-help">Use account bonuses from <strong>Power → Bonus Overview</strong>. Rally-screen stats include your selected heroes, which this calculator adds separately.</p>
+      <BonusScanner onApply={readings => { setDraft(p => applyBonusReadings(p, readings)); setDirty(true); setNotice('Account bonuses updated from reviewed screenshots.'); }} />
       <div className="bl-grid two">
         <NumberField label="All troops attack (%)" value={draft.allAttack} onChange={v => edit({ allAttack: v })} />
         <NumberField label="All troops lethality (%)" value={draft.allLethality} onChange={v => edit({ allLethality: v })} />
@@ -153,6 +157,7 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
       </fieldset>
       <details className="bl-details bl-guide"><summary>Where to find your account bonuses</summary>
         <ol><li>On the game’s home screen, tap your <strong>Power</strong> number beside your profile picture, then open <strong>Bonus Overview</strong>.</li><li>Copy <strong>Troops’ Attack</strong> and <strong>Troops’ Lethality</strong> into the all-troops fields.</li><li>Copy <strong>Infantry</strong>, <strong>Lancer</strong> and <strong>Marksman Attack / Lethality</strong> into the matching fields above. Copy the listed values without adding the all-troops bonus.</li></ol>
+        <figure><a href={bonusOverviewPhoto} target="_blank" rel="noreferrer"><img src={bonusOverviewPhoto} loading="lazy" alt="Bonus Overview example highlighting Troops’ Attack 216.77%, Troops’ Lethality 62.33%, and Infantry and Lancer bonuses" /></a><figcaption>Enter the highlighted attack and lethality percentages. Marksman is farther down the list; take another screenshot to include it. Tap to enlarge.</figcaption></figure>
         <p className="bl-help"><strong>Use base readings before activating temporary pet skills.</strong> Enter pet skill bonuses below. The calculator adds the selected heroes, gear differences, widgets and pet skills separately.</p>
         <p className="bl-help">If you previously copied these bonuses from the rally deployment popup, replace them here. Those readings depend on the heroes selected for that march.</p>
       </details>
