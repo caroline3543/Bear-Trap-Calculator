@@ -76,8 +76,9 @@ function HeroNameField({ label, ariaLabel, value, names, onChange }) {
     </ul>}
   </div>;
 }
-export default function BearLab({ accountId, accountName, leaderCapacity, leaderMinister = 'None', onApplyLeader }) {
+export default function BearLab({ accountId, accountName, leaderCapacity, leaderMinister = 'None', troopTiers, onApplyLeader }) {
   const [draft, setDraft] = useState(() => loadSetup(accountId));
+  const tiers = troopTiers || draft.tierInputs;
   const [open, setOpen] = useState(false);
   const [notice, setNotice] = useState('');
   const [applied, setApplied] = useState(null);
@@ -94,7 +95,7 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
   useEffect(() => {
     if (mounted.current) { setDirty(true); setNotice(''); }
     mounted.current = true;
-  }, [leaderCapacity, leaderMinister]);
+  }, [leaderCapacity, leaderMinister, troopTiers]);
   function edit(fields) { setDraft(p => ({ ...p, ...fields })); setDirty(true); setNotice(''); }
   function editAt(field, i, fields) {
     setDraft(p => ({ ...p, [field]: p[field].map((v, j) => i === j ? { ...v, ...fields } : v) }));
@@ -114,18 +115,18 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
       if (info.widget === '' || !Number.isInteger(Number(info.widget)) || info.widget < 0 || info.widget > 10) errors.push(`${c}: widget must be a whole number from 0 to 10.`);
       if (info.skill === '' || !Number.isInteger(Number(info.skill)) || info.skill < 1 || info.skill > 5) errors.push(`${c}: skill must be a whole number from 1 to 5.`);
       roster[starters[i]] = { stars: key, widget: info.widget, skill: info.skill };
-      const tier = draft.tierInputs[i];
-      if (tier.fc === '' || tier.level === '' || !db.troopDamageStats[`FC${tier.fc} T${tier.level}`]) errors.push(`${c}: FC must be 0–10 and troop level 1–11, using whole numbers.`);
+      const tier = tiers[i];
+      if (tier.fc === '' || tier.level === '' || !db.troopDamageStats[`FC${tier.fc} T${tier.level}`]) errors.push(`${c}: check FC (0–10) and troop tier (1–11) in the troop inventory above.`);
       if (!['attack', 'lethality'].every(k => gearDifference(draft.stats[i], k) !== null && gearDifference(draft.stats[i], k) >= 0)) errors.push(`${c}: complete both gear readings; gear on must be at least gear off.`);
       if (draft.stats[i].attack === '' || draft.stats[i].lethality === '') errors.push(`${c}: enter both troop-type bonuses, or use 0 if there is no bonus.`);
     });
     if (['allAttack', 'allLethality', 'chameleon', 'tiger', 'lion'].some(k => draft[k] === '')) errors.push('Complete the attack, lethality and pet bonuses, or enter 0.');
     if (!(leaderCapacity > 0)) errors.push('Enter a positive rally capacity above.');
     const profile = withGearDifferences({ ...draft, capacity: leaderCapacity, capacityIsEffective: true,
-      starters, joiners, roster, tiers: draft.tierInputs.map(t => `FC${t.fc} T${t.level}`),
+      starters, joiners, roster, tiers: tiers.map(t => `FC${t.fc} T${t.level}`),
       minister: leaderMinister, petsActive: true, trap: 25 });
     return { errors, profile, result: errors.length ? null : calculate(profile, db) };
-  }, [draft, leaderCapacity, leaderMinister]);
+  }, [draft, leaderCapacity, leaderMinister, troopTiers]);
   function apply() {
     if (!assessment.result) return;
     onApplyLeader(assessment.result.counts, assessment.result.ratios.map(n => n * 100));
@@ -139,7 +140,7 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
     </button>
     {!open && applied && <p className="bl-status">{dirty ? 'Setup changed. Open and recalculate to update your squad.' : `${applied.heroes.join(' · ')} · ${fmt(applied.capacity)} troops before inventory limits`}</p>}
     {open && <form id={panelId} className="bl-panel" onSubmit={e => { e.preventDefault(); apply(); }}>
-      <p className="bl-help">Saved for {accountName}. Uses your rally leader capacity above. Assumes two Jessie and two Seo-yoon joiners with level-5 skills, active pets, and a 25% trap attack buff.</p>
+      <p className="bl-help">Saved for {accountName}. Uses the FC levels and troop tiers from your inventory, and your rally leader capacity above. Assumes two Jessie and two Seo-yoon joiners with level-5 skills, active pets, and a 25% trap attack buff.</p>
       <p className="bl-help">Use account bonuses from <strong>Power → Bonus Overview</strong>. Rally-screen stats include your selected heroes, which this calculator adds separately.</p>
       <div className="bl-grid two">
         <NumberField label="All troops attack (%)" value={draft.allAttack} onChange={v => edit({ allAttack: v })} />
@@ -166,6 +167,7 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
         <figure><a href={heroStatsPhoto} target="_blank" rel="noreferrer"><img src={heroStatsPhoto} loading="lazy" alt="Hector’s lower-right menu and highlighted Expedition Infantry Attack and Lethality" /></a><figcaption>Use the highlighted Expedition percentages. Tap to enlarge.</figcaption></figure>
       </details>
       {CLASSES.map((c, i) => <fieldset className="bl-class" key={c}><legend>{c}</legend>
+        <p className="bl-help">Uses FC {tiers[i].fc === '' ? '—' : tiers[i].fc} · T{tiers[i].level === '' ? '—' : tiers[i].level} from your troop inventory above.</p>
         <HeroNameField label="Hero name" ariaLabel={`${c} hero`} value={draft.starters[i]} names={HERO_NAMES[i]} onChange={v => edit({ starters: draft.starters.map((h, j) => i === j ? v : h) })} />
         <div className="bl-grid three">
           <NumberField label="Stars" ariaLabel={`${c} stars`} value={draft.heroInfo[i].stars} max={5} fixed={1}
@@ -173,10 +175,6 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
             onChange={v => editAt('heroInfo', i, { stars: v })} help="e.g. 4.3 · max 5.0" />
           <NumberField label="Widget" ariaLabel={`${c} widget`} value={draft.heroInfo[i].widget} max={10} decimal={false} onChange={v => editAt('heroInfo', i, { widget: v })} help="0–10" />
           <NumberField label="Skills" ariaLabel={`${c} skill level`} value={draft.heroInfo[i].skill} min={1} max={5} decimal={false} onChange={v => editAt('heroInfo', i, { skill: v })} help="1–5" />
-        </div>
-        <div className="bl-grid two bl-tier-row">
-          <NumberField label="FC" ariaLabel={`${c} FC`} value={draft.tierInputs[i].fc} max={10} decimal={false} onChange={v => editAt('tierInputs', i, { fc: v })} help="0 for no Fire Crystal" />
-          <NumberField label="Troop level" ariaLabel={`${c} troop level`} value={draft.tierInputs[i].level} min={1} max={11} decimal={false} onChange={v => editAt('tierInputs', i, { level: v })} help="1–11" />
         </div>
         <details className="bl-details"><summary>Gear on / off <span>{['attack', 'lethality'].map(k => gearDifference(draft.stats[i], k)).every(n => n !== null && n >= 0) ? `+${fmt(gearDifference(draft.stats[i], 'attack'))} attack · +${fmt(gearDifference(draft.stats[i], 'lethality'))} lethality` : 'Complete both readings'}</span></summary>
           <p className="bl-help">Read these percentages on this hero’s Stats screen. Change only their gear between readings.</p>

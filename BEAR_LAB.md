@@ -49,3 +49,11 @@ Account integration check: `BT_TEST_DEPS=/path/to/test-deps NODE_PATH=/path/to/t
 ## Corrected stat sources and readability
 
 Use Power → Bonus Overview for the separate account-wide and class-specific base bonuses. Do not paste hero-inclusive rally preview values into base fields: heroes, widgets and gear are added by the model. Read base values before activating temporary pet skills, which are entered separately. Keep deployment preview guidance in its own section for capacity only, with a warning about buffs already included and the distinction from total rally capacity. Removed the three rally preview screenshots to avoid implying their troop-stat readings are valid base inputs; retained the correctly labelled hero gear reference. Simplified input instructions and results copy; the formula reference explains rounding rather than cluttering the recommendation card.
+
+## Troop FC and tier inputs
+
+The troop inventory now owns each class’s FC and troop-tier inputs. The leader recommendation uses them directly; there are no duplicate FC/tier controls in the hero form. Existing per-account helper choices migrate into inventory on first use, and edits invalidate an older recommendation without changing the squad until recalculated.
+
+Screenshot scanning performs a separate, on-device close-up pass on the FC badge beside each recognized troop label. Three offset digit crops must agree (at least two agreeing readings, one with confidence at least 65). FC is independent of troop tier: an FC5 Helios badge is FC5 T11. Each class can have a different FC level. Where multiple tiers are visible, the strongest recognized tier is selected for that class. Review readings before applying; unreadable/invalid badges preserve existing saved FC/tier values. Counts and badge recognition are independent. These badges do not prove a player’s furnace level.
+
+Verification: 299 unit/source parity checks; account DOM check including independent FC values; `scripts/check-bt-fc-form.cjs` checks moved controls and recalculation. Native Tesseract close-up checks on supplied screenshots confirmed readable FC4/5/6 digits; the browser OCR flow could not be visually tested in this environment.

@@ -1,0 +1,40 @@
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+const os = require('node:os');
+const deps = process.env.BT_TEST_DEPS ? require('node:module').createRequire(path.join(process.env.BT_TEST_DEPS,'package.json')) : require;
+(async () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(),'bt-fc-form-'));
+  const repo = path.resolve(__dirname,'..');
+  const { JSDOM } = deps('jsdom');
+  const dom = new JSDOM('<div id="root"></div>',{url:'https://test.example'});
+  Object.assign(global,{window:dom.window,document:dom.window.document,localStorage:dom.window.localStorage,HTMLElement:dom.window.HTMLElement,IS_REACT_ACT_ENVIRONMENT:true});
+  await deps('esbuild').build({entryPoints:[path.join(repo,'src/bear/BearLab.jsx')],outfile:path.join(tmp,'form.cjs'),bundle:true,platform:'node',format:'cjs',external:['react'],loader:{'.css':'empty','.webp':'dataurl'},logLevel:'silent'});
+  const React = deps('react'); const {act} = React;
+  const root = deps('react-dom/client').createRoot(document.getElementById('root'));
+  const Form = require(path.join(tmp,'form.cjs')).default;
+  let tiers = [{fc:5,level:10},{fc:4,level:10},{fc:6,level:10}], applied=[];
+  const render = () => root.render(React.createElement(Form,{accountId:'test',accountName:'Main',leaderCapacity:160010,troopTiers:tiers,onApplyLeader:counts=>applied.push(counts)}));
+  const input = (label,value) => {const el=document.querySelector(`input[aria-label="${label}"]`);Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set.call(el,value);el.dispatchEvent(new window.Event('input',{bubbles:true}));};
+  try {
+    await act(async()=>render());
+    await act(async()=>document.querySelector('.bl-launch').click());
+    assert.equal(document.querySelectorAll('[aria-label$=" FC"]').length,0,'No repeated FC fields in the recommendation form');
+    assert.ok(document.body.textContent.includes('Uses FC 4 · T10'));
+    await act(async()=>{input('Infantry hero','Hector');input('Lancer hero','Mia');input('Marksman hero','Gwen');});
+    await act(async()=>document.querySelector('form').dispatchEvent(new window.Event('submit',{bubbles:true,cancelable:true})));
+    assert.equal(applied.length,1); assert.equal(applied[0].reduce((a,b)=>a+b),160010);
+    tiers=[{fc:6,level:10},{fc:6,level:10},{fc:5,level:11}];
+    await act(async()=>render());
+    assert.equal(document.querySelector('.bl-ideal-result'),null,'Changed inventory invalidates an old recommendation');
+    assert.ok(document.body.textContent.includes('Uses FC 5 · T11'));
+    await act(async()=>document.querySelector('form').dispatchEvent(new window.Event('submit',{bubbles:true,cancelable:true})));
+    assert.equal(applied.length,2);assert.notDeepEqual(applied[0],applied[1]);
+    tiers=[{fc:'',level:10},{fc:6,level:10},{fc:5,level:11}];
+    await act(async()=>render());
+    assert.equal(document.querySelector('button[type="submit"]').disabled,true);
+    assert.ok(document.body.textContent.includes('in the troop inventory above'));
+    await act(async()=>root.unmount());
+    console.log('FC form check passed: no duplicate inputs; per-class inventory tiers drive calculation; edits invalidate results; blank FC blocks calculation.');
+  } finally { dom.window.close();fs.rmSync(tmp,{recursive:true,force:true}); }
+})().catch(error=>{console.error(error);process.exitCode=1;});

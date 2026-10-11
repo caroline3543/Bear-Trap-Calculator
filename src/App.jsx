@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import TimeHub from "./timehub/TimeHub.jsx";
+import { loadTroopTiers, mergeScannedTiers, selectScannedTiers, locateFcBadges, confirmFcReadings } from "./bear/troop-tiers.js";
 import { loadState } from "./timehub/lib/storage.js";
 import { primaryAccount } from "./timehub/lib/accounts.js";
 import paperGrainTile from "./paper-grain.png";
@@ -1029,6 +1030,16 @@ function Card({ children, style }) {
    (e.g. backspacing to clear it) instead of snapping back to "0" on every
    keystroke. Re-syncs from the external value only when that value changed
    for a reason other than this field's own typing (Reset, clamping, etc). */
+function TroopLevelField({ label, ariaLabel, value, onChange, min = 0, max = 10, allowBlank = false }) {
+  const valid = (allowBlank && value === '') || value !== '' && Number.isInteger(Number(value)) && Number(value) >= min && Number(value) <= max;
+  return <label style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: 1, minWidth: 0 }}>
+    <span style={{ fontSize: 12, fontWeight: 700, color: C.gold }}>{label}</span>
+    <input className="calc-input" type="text" inputMode="numeric" aria-label={ariaLabel} aria-invalid={!valid || undefined}
+      value={value} onFocus={e => e.target.select()} onChange={e => onChange(e.target.value === '' ? '' : /^\d{1,2}$/.test(e.target.value) ? Number(e.target.value) : '')} />
+    {!valid && <small style={{ color: C.amber }}>Enter {min}–{max}.</small>}
+  </label>;
+}
+
 function NumField({ label, value, onChange }) {
   const [text, setText] = useState(() => fmt(value));
   const lastEmitted = useRef(value);
@@ -1908,6 +1919,44 @@ function buildOcrCanvas(imgEl, crop) {
   return canvas;
 }
 
+// FC badges need their own close-up digit pass: full-screen OCR often skips them.
+async function scanFcBadges(Tesseract, source, words, parsed) {
+  const regions = locateFcBadges(words, parsed.values);
+  if (!regions.length) return {};
+  let worker;
+  const badges = [];
+  try {
+    worker = await Tesseract.createWorker('eng', 1, {
+      workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
+      corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5',
+    });
+    await worker.setParameters({ tessedit_pageseg_mode: '10', tessedit_char_whitelist: '0123456789' });
+    for (const region of regions) {
+      if (region.sx < 0 || region.sy < 0 || region.sx + region.sw > source.width || region.sy + region.sh > source.height) continue;
+      const readings = [];
+      for (const shift of [-.12, 0, .12]) {
+        const badge = document.createElement('canvas'); badge.width = Math.round(region.sw * 6); badge.height = Math.round(region.sh * 6);
+        const ctx = badge.getContext('2d');
+        ctx.drawImage(source, region.sx + region.sw * shift, region.sy, region.sw, region.sh, 0, 0, badge.width, badge.height);
+        // White digit against a coloured badge becomes black text on white.
+        const pixels = ctx.getImageData(0, 0, badge.width, badge.height);
+        for (let p = 0; p < pixels.data.length; p += 4) {
+          const value = Math.min(pixels.data[p], pixels.data[p + 1], pixels.data[p + 2]) > 190 ? 0 : 255;
+          pixels.data[p] = pixels.data[p + 1] = pixels.data[p + 2] = value;
+          pixels.data[p + 3] = 255;
+        }
+        ctx.putImageData(pixels, 0, 0);
+        const { data } = await worker.recognize(badge);
+        readings.push({ text: data.text, confidence: data.confidence });
+      }
+      const confirmed = confirmFcReadings(readings);
+      if (confirmed) badges.push({ ...region, ...confirmed });
+    }
+  } catch { /* Counts still work if a badge is unreadable or digit OCR fails. */ }
+  finally { if (worker) await worker.terminate().catch(() => {}); }
+  return selectScannedTiers(badges);
+}
+
 function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
   const [open, setOpen] = useState(false);
   const [autoDetect, setAutoDetect] = useState(true);
@@ -1999,7 +2048,7 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
           const c = parsed.confidence[f.key];
           score += c === null || c === undefined ? 0 : c;
         });
-        if (!best || score > best.score) best = { langUsed: candidateLang, parsed, score };
+        if (!best || score > best.score) best = { langUsed: candidateLang, parsed, score, words: flattenWords(res.data) };
       }
       // Merge into whatever's already there instead of overwriting — since
       // a scan now only covers the scrolled-to region, a field this pass
@@ -2011,6 +2060,9 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
         const found = best.parsed.values[f.key];
         values[f.key] = found === null || found === undefined ? (edited ? edited[f.key] ?? 0 : 0) : found;
       });
+      setScanStatus("Reading FC badges…");
+      setScanPct(95);
+      values.troopTiers = { ...edited?.troopTiers, ...await scanFcBadges(Tesseract, ocrCanvas, best.words, best.parsed) };
       const mergedConfidence = { ...confidence };
       SCAN_FIELDS.forEach((f) => {
         const c = best.parsed.confidence[f.key];
@@ -2023,6 +2075,7 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
       setScanLang(best.langUsed);
       setDetectedLang(autoDetect ? best.langUsed : null);
       setHasScanned(true);
+      setScanPct(100);
     } catch {
       setFileError(tWord("scanErrorMsg", lang));
       // Don't wipe out results a PREVIOUS successful scan (of a different
@@ -2227,6 +2280,15 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
             </div>
           ))}
 
+          <div style={{ marginTop: 12 }}>
+            <strong style={{ fontSize: 13, color: C.gold }}>FC badge readings</strong>
+            <p style={{ fontSize: 12, color: C.sub }}>Check each badge before applying. A blank reading keeps that account’s saved level. These are troop levels, not a confirmed furnace level.</p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{TYPES.map(type => <div key={type} style={{ flex: 1, minWidth: 100 }}>
+              <TroopLevelField label={`${tType(type, lang)} FC`} ariaLabel={`Scanned ${type} FC`} allowBlank value={edited.troopTiers?.[type]?.fc ?? ''} max={10}
+                onChange={fc => setEdited(p => ({ ...p, troopTiers: { ...p.troopTiers, [type]: { fc, level: p.troopTiers?.[type]?.level || (p['t11' + type[0].toUpperCase() + type.slice(1)] > 0 ? 11 : 10) } } }))} />
+              {edited.troopTiers?.[type]?.level && <small style={{ color: C.sub }}>T{edited.troopTiers[type].level}</small>}
+            </div>)}</div>
+          </div>
           <details style={{ marginTop: 8 }}>
             <summary style={{ cursor: "pointer", fontSize: 11.5, color: C.sub }}>{tWord("whatScannerRead", lang)}</summary>
             <pre style={{ whiteSpace: "pre-wrap", fontSize: 10.5, color: C.sub, background: C.surface, border: `1px solid ${C.cardBorder}`, borderRadius: 8, padding: 8, marginTop: 6, maxHeight: 200, overflow: "auto" }}>
@@ -2305,6 +2367,7 @@ export default function App() {
   const [numSquads, setNumSquads] = useState(saved?.numSquads ?? 6);
   const [t10, setT10] = useState(saved?.t10 ?? SAMPLE.t10);
   const [t9, setT9] = useState(saved?.t9 ?? SAMPLE.t9);
+  const [troopTiers, setTroopTiers] = useState(() => loadTroopTiers(activeAccount, saved));
   // Helios (T11) — the newest, strongest tier. Optional: most players don't
   // have it yet, so it starts hidden and off, and the fields only appear
   // once the player says they actually have some.
@@ -2370,7 +2433,7 @@ export default function App() {
       localStorage.setItem(
         accountStorageKey(activeAccount),
         JSON.stringify({
-          capacity, numSquads, t10, t9, t11, hasHelios,
+          capacity, numSquads, t10, t9, t11, hasHelios, troopTiers,
           mode, ratio, exact, minMarchMarksman,
           strategy,
           rallyCapacity, cyrilleBoost, snowApeBoost, ministerBoost, rallyMode, rallyRatio, rallyExact,
@@ -2382,7 +2445,7 @@ export default function App() {
     }
   }, [
     activeAccount,
-    capacity, numSquads, t10, t9, t11, hasHelios,
+    capacity, numSquads, t10, t9, t11, hasHelios, troopTiers,
     mode, ratio, exact, minMarchMarksman,
     strategy,
     rallyCapacity, cyrilleBoost, snowApeBoost, ministerBoost, rallyMode, rallyRatio, rallyExact,
@@ -2527,6 +2590,8 @@ export default function App() {
       const previousT9 = t9;
       const previousT11 = t11;
       const previousHasHelios = hasHelios;
+      const previousTiers = troopTiers;
+      setTroopTiers(mergeScannedTiers(troopTiers, scanned.troopTiers));
       setT10(t10Vals);
       setT9(t9Vals);
       if (foundHelios) {
@@ -2538,12 +2603,13 @@ export default function App() {
         setT9(previousT9);
         setT11(previousT11);
         setHasHelios(previousHasHelios);
+        setTroopTiers(previousTiers);
         dismissToast();
       });
     } else {
       try {
         const existing = loadSavedForAccount(targetId) || {};
-        const merged = { ...existing, t10: t10Vals, t9: t9Vals };
+        const merged = { ...existing, t10: t10Vals, t9: t9Vals, troopTiers: mergeScannedTiers(loadTroopTiers(targetId, existing), scanned.troopTiers) };
         if (foundHelios) {
           merged.t11 = t11Vals;
           merged.hasHelios = true;
@@ -2557,7 +2623,7 @@ export default function App() {
   }
   function resetAll() {
     const snapshot = {
-      capacity, numSquads, t10, t9, t11, hasHelios,
+      capacity, numSquads, t10, t9, t11, hasHelios, troopTiers,
       mode, ratio, exact, minMarchMarksman,
       strategy,
       rallyCapacity, cyrilleBoost, snowApeBoost, ministerBoost, rallyMode, rallyRatio, rallyExact,
@@ -2618,14 +2684,15 @@ export default function App() {
   // tracked accounts, so each keeps its own independent troop pool and settings.
   function buildAccountSnapshot() {
     return {
-      capacity, numSquads, t10, t9, t11, hasHelios,
+      capacity, numSquads, t10, t9, t11, hasHelios, troopTiers,
       mode, ratio, exact, minMarchMarksman,
       strategy,
       rallyCapacity, cyrilleBoost, snowApeBoost, ministerBoost, rallyMode, rallyRatio, rallyExact,
       recInfantryPct, recLancerPct, fills,
     };
   }
-  function applyAccountSnapshot(data) {
+  function applyAccountSnapshot(data, accountId = activeAccount) {
+    setTroopTiers(loadTroopTiers(accountId, data));
     setCapacity(data.capacity ?? 110000);
     setNumSquads(data.numSquads ?? 6);
     setT10(data.t10 ?? SAMPLE.t10);
@@ -2662,7 +2729,7 @@ export default function App() {
     } catch {
       // storage unavailable — still switch in memory for this session
     }
-    applyAccountSnapshot(loadSavedForAccount(target) || {});
+    applyAccountSnapshot(loadSavedForAccount(target) || {}, target);
     setActiveAccount(target);
     showToast(tr("switchedAccountToast"), null, null, 2000);
   }
@@ -3125,6 +3192,19 @@ export default function App() {
                           onApply={handleApplyScan}
                         />
                       </div>
+                      <div style={{ marginBottom: 14 }}>
+                        <p style={{ fontSize: 12, color: C.sub, margin: '0 0 8px' }}>Troop levels for your recommended leader squad. Copy the FC number on each troop’s badge; different troop types can have different levels.</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+                          {TYPES.map((type, i) => <div key={type} style={{ padding: 10, borderRadius: 12, background: C.surface, border: `1px solid ${C.cardBorder}` }}>
+                            <strong style={{ fontSize: 13, color: C.gold }}>{tType(type, lang)}</strong>
+                            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                              <TroopLevelField label="FC" ariaLabel={`${type} FC`} value={troopTiers[i].fc} max={10} onChange={v => setTroopTiers(p => p.map((t, j) => j === i ? { ...t, fc: v } : t))} />
+                              <TroopLevelField label="Troop tier" ariaLabel={`${type} troop tier`} value={troopTiers[i].level} min={1} max={11} onChange={v => setTroopTiers(p => p.map((t, j) => j === i ? { ...t, level: v } : t))} />
+                            </div>
+                          </div>)}
+                        </div>
+                        <p style={{ fontSize: 11, color: C.sub, margin: '6px 0 0' }}>FC 0 = no Fire Crystal. Troop tier: T9 Supreme · T10 Apex · T11 Helios. Enter your troop amounts below.</p>
+                      </div>
                       <label style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 12.5, fontWeight: 600, color: C.ink, cursor: "pointer", marginBottom: hasHelios ? 10 : 4 }}>
                         <input
                           type="checkbox"
@@ -3211,6 +3291,7 @@ export default function App() {
                               key={activeAccount}
                               accountId={activeAccount}
                               accountName={accountNames[activeAccount]}
+                              troopTiers={troopTiers}
                               leaderCapacity={effectiveRallyCapacity}
                               leaderMinister={ministerBoost === 3750 ? "Strategy (supreme)" : ministerBoost ? "Strategy (normal)" : "None"}
                               onApplyLeader={(counts, recommendedPercentages) => {
