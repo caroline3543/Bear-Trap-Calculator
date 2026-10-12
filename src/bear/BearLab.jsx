@@ -1,3 +1,4 @@
+import { Chevron } from '../ui/components.jsx';
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import db from './database.js';
 import { CLASSES, calculate } from './model.js';
@@ -139,7 +140,7 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
   useEffect(() => { if (applied && !dirty) resultRef.current?.focus({ preventScroll: true }); }, [applied]);
   return <div className="bear-leader-helper">
     <button type="button" className="bl-launch" aria-expanded={open} aria-controls={panelId} onClick={() => setOpen(v => !v)}>
-      <span>Calculate recommended rally leader squad</span><span aria-hidden="true">{open ? '−' : '+'}</span>
+      <span>Calculate recommended rally leader squad</span><Chevron expanded={open} />
     </button>
     {!open && applied && <p className="bl-status">{dirty ? 'Setup changed. Open and recalculate to update your squad.' : `${applied.heroes.join(' · ')} · ${fmt(applied.capacity)} troops before inventory limits`}</p>}
     {open && <form id={panelId} className="bl-panel" onSubmit={e => { e.preventDefault(); apply(); }}>

@@ -1,0 +1,62 @@
+/* Shared controls inherit the app's existing light/dark journal palette. */
+#root .ui-page-header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px; position:relative; padding:20px; margin-bottom:16px; min-height:112px; border:1px solid var(--headerBorder); border-radius:22px; background:var(--headerBg); }
+#root .ui-page-heading { position:relative; z-index:1; min-width:0; flex:1; }
+#root .ui-page-header h1 { margin:0; font:600 28px/1.2 'Fredoka','Nunito Sans',sans-serif; color:var(--gold); letter-spacing:-.3px; overflow-wrap:anywhere; }
+#root .ui-page-eyebrow { font:600 16px/1.5 'Nunito Sans',sans-serif; color:var(--sub); margin-bottom:4px; }
+#root .ui-header-actions { position:relative; z-index:1; display:flex; gap:8px; align-items:center; }
+#root .ui-header-actions button { width:48px; height:48px; min-height:48px; border-radius:12px; }
+#root .ui-button { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:48px; padding:10px 16px; border:1px solid transparent; border-radius:12px; font:800 16px/1.4 'Nunito Sans',sans-serif; cursor:pointer; text-decoration:none; box-shadow:none; transition:transform .12s ease,background-color .12s ease; }
+#root .ui-button.ui-primary, #root :is(.bl-apply,.bl-launch) { background:var(--goldStrong); color:var(--cocoaDark); border-color:transparent; box-shadow:0 2px 0 var(--btnGoldShadow); }
+#root .ui-button.ui-secondary { background:var(--btnSecondaryBg); color:var(--gold); border-color:var(--btnSecondaryBorder); }
+#root .ui-button.ui-danger { background:var(--redBg); color:var(--red); border-color:var(--red); }
+#root .ui-button.ui-compact { padding-inline:12px; }
+#root .ui-button.icon { width:48px; padding:0; }
+#root .ui-block { width:100%; }
+#root .ui-button:active:not(:disabled) { transform:translateY(1px) scale(.98); }
+#root .ui-button:disabled { opacity:.5; cursor:default; transform:none; }
+#root :is(.ui-button,.ui-input,.ui-account-selector summary,.ui-account-menu button):focus-visible { outline:3px solid var(--teal); outline-offset:3px; }
+#root .ui-field { display:flex; flex-direction:column; gap:8px; min-width:0; flex:1; }
+#root :is(.ui-field-label,.th-label,.bl-field > span) { font:800 16px/1.5 'Nunito Sans',sans-serif; color:var(--gold); }
+#root :is(.ui-input,.th-input,.calc-input,.th-select) { width:100%; min-height:48px; padding:10px 12px; border:1px solid var(--inputBorder); border-radius:12px; background:var(--inputBg); color:var(--ink); font:700 16px/1.5 'Nunito Sans',sans-serif; font-variant-numeric:tabular-nums; box-sizing:border-box; }
+#root textarea.ui-input,#root textarea.th-input { min-height:96px; }
+#root :is(.ui-input,.th-input,.calc-input)[aria-invalid=true],#root .th-input.invalid { border-color:var(--red); }
+#root :is(.ui-field-hint,.ui-field-error,.th-hint,.th-error,.th-note,.th-sec-sub,.bl-help) { font:400 16px/1.5 'Nunito Sans',sans-serif; }
+#root :is(.ui-field-hint,.th-hint) { color:var(--sub); }
+#root :is(.ui-field-error,.th-error) { color:var(--red); }
+#root :is(.th-sec-toggle,.ui-section-title) { font:600 20px/1.3 'Fredoka','Nunito Sans',sans-serif; color:var(--gold); }
+#root .ui-section-sub { font:400 16px/1.5 'Nunito Sans',sans-serif; color:var(--sub); margin:8px 0 0; }
+#root :is(.ui-account-single,.ui-account-selector summary) { display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:48px; padding:10px 16px; border:1px solid var(--selectedBorder); border-radius:12px; background:var(--selectedBg); color:var(--selectedText); font:800 16px/1.5 'Nunito Sans',sans-serif; }
+#root .ui-account-single,#root .ui-account-selector { margin-bottom:16px; max-width:100%; }
+#root .ui-account-selector { position:relative; width:fit-content; min-width:min(240px,100%); z-index:30; }
+#root .ui-account-selector summary { list-style:none; cursor:pointer; }
+#root .ui-account-selector summary::-webkit-details-marker { display:none; }
+#root .ui-account-selector summary span:first-child { overflow-wrap:anywhere; }
+#root .ui-account-menu { position:absolute; inset-inline-start:0; top:calc(100% + 8px); width:min(360px,calc(100vw - 48px)); max-height:60vh; overflow:auto; padding:8px; border:1px solid var(--cardBorder); border-radius:16px; background:var(--surface); box-shadow:0 8px 24px rgba(0,0,0,.18); }
+#root .ui-account-menu > button:not(.ui-button) { display:flex; justify-content:space-between; align-items:center; gap:16px; width:100%; padding:12px; min-height:48px; border:0; border-radius:10px; background:transparent; color:var(--ink); font:700 16px/1.5 'Nunito Sans',sans-serif; text-align:start; cursor:pointer; }
+#root .ui-account-menu > button[aria-pressed=true] { background:var(--selectedBg); color:var(--selectedText); }
+#root .ui-account-single { width:fit-content; }
+@media(max-width:720px) { #root .ui-page-header { padding:16px; } }
+@media(prefers-reduced-motion:reduce) { #root .ui-button { transition:none; } #root .ui-button:active:not(:disabled) { transform:none; } }
+
+#root .th-sec-toggle { min-height:48px; }
+#root .th-sec-toggle[aria-expanded=false] .th-chevron { transform:rotate(-90deg); }
+#root :is(.th-seg,.th-account-checks) button[aria-pressed=true] { background:var(--selectedBg); color:var(--selectedText); border-color:var(--selectedBorder); }
+#root .th-seg button { font-size:16px; min-height:48px; }
+#root :is(.bl-launch,.bl-apply) { border-radius:12px; min-height:48px; font-size:16px; }
+#root .ui-page-header::before { display:none; }
+#root .ui-page-header .th-horizon { display:block; position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.2; pointer-events:none; border-radius:22px; }
+#root .dark .ui-page-header .th-horizon { opacity:.08; }
+#root .ui-header-actions button { background:var(--btnSecondaryBg); color:var(--gold); border:1px solid var(--btnSecondaryBorder); }
+#root .ui-section-title { margin:0; }
+#root .lang-select { min-height:48px; padding:10px 12px; border-radius:12px; font:700 16px/1.5 'Nunito Sans',sans-serif; }
+#root .bl-launch:not(.bl-upload) { background:var(--btnSecondaryBg); color:var(--gold); border:1px solid var(--btnSecondaryBorder); box-shadow:none; }
+#root .bl-launch.bl-upload { background:var(--goldStrong); color:var(--cocoaDark); }
+#root .ui-chevron { width:20px; height:20px; flex-shrink:0; transition:transform .12s ease; }
+#root .ui-chevron[data-open=false] { transform:rotate(-90deg); }
+#root [dir=rtl] .ui-chevron[data-open=false] { transform:rotate(90deg); }
+#root .ui-section-toggle { min-height:48px; }
+#root .ui-section-toggle:focus-visible { outline:3px solid var(--teal); outline-offset:3px; border-radius:12px; }
+@media(prefers-reduced-motion:reduce) { #root .ui-chevron { transition:none; } }
+#root a.th-btn { min-height:48px; border-radius:12px; font:800 16px/1.4 'Nunito Sans',sans-serif; padding:10px 16px; background:var(--btnSecondaryBg); color:var(--gold); border:1px solid var(--btnSecondaryBorder); box-shadow:none; }
+#root a.th-btn.gold { background:var(--goldStrong); color:var(--cocoaDark); border-color:transparent; }
+#root :is(.ui-input,.th-input,.calc-input):disabled { opacity:.6; cursor:default; }

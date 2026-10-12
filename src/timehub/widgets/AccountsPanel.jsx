@@ -1,3 +1,4 @@
+import { AccountSelector } from '../../ui/components.jsx';
 /* Account chips (filter) + account manager: add, rename, colour, type, notes, primary, order, delete. */
 import React, { useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
@@ -6,19 +7,7 @@ import { Btn, Field, Seg, Icon } from "../components/ui.jsx";
 
 export function AccountChips() {
   const { t, accounts, filter, setFilter } = useTimeHub();
-  return (
-    <div className="th-acct-chips" role="group" aria-label={t("showAccounts")}>
-      {accounts.length > 1 && (
-        <button type="button" className="th-chip-btn" aria-pressed={filter === ALL} onClick={() => setFilter(ALL)}>{t("allAccounts")}</button>
-      )}
-      {accounts.map((a) => (
-        <button key={a.id} type="button" className={`th-chip-btn c${a.color}`} aria-pressed={filter === a.id || accounts.length === 1}
-          onClick={() => setFilter(accounts.length === 1 ? ALL : a.id)}>
-          {a.icon ? <b aria-hidden="true">{a.icon}</b> : <i aria-hidden="true" />}{a.name}{a.isPrimary && accounts.length > 1 ? " ★" : ""}
-        </button>
-      ))}
-    </div>
-  );
+  return <AccountSelector accounts={accounts} value={filter} onChange={setFilter} allowAll allValue={ALL} label={t('showAccounts')} allLabel={t('allAccounts')} />;
 }
 
 function AccountEditor({ account, onDone }) {

@@ -23,12 +23,14 @@ const esbuild = deps('esbuild');
         resolveDir: path.join(repo, 'src/timehub'), loader: 'jsx', contents: `
           import React from 'react';
           import { TimeHubProvider, useTimeHub } from './TimeHubContext.jsx';
+          import { AccountSelector } from '../ui/components.jsx';
           function Driver({ calculator }) {
             window.accountDriver = useTimeHub();
-            return calculator;
+            const hub = window.accountDriver;
+            return <><AccountSelector accounts={hub.accounts} value={hub.activeAccountId} onChange={hub.setFilter} label="BT calculator accounts" />{calculator}</>;
           }
-          export default function Hub({ lang, onAccountsChange, calculator }) {
-            return <TimeHubProvider lang={lang} onAccountsChange={onAccountsChange}>
+          export default function Hub({ lang, onAccountsChange, calculator, activeAccountId, onActiveAccountChange }) {
+            return <TimeHubProvider lang={lang} onAccountsChange={onAccountsChange} activeAccountId={activeAccountId} onActiveAccountChange={onActiveAccountChange}>
               <Driver calculator={calculator} />
             </TimeHubProvider>;
           }` }));
@@ -38,8 +40,8 @@ const esbuild = deps('esbuild');
   const { createRoot } = deps('react-dom/client');
   const App = require(path.join(output, 'App.cjs')).default;
   const root = createRoot(document.getElementById('root'));
-  const buttons = () => [...document.querySelectorAll('[aria-label="BT calculator accounts"] button')];
-  const selected = () => buttons().find(b => b.getAttribute('aria-pressed') === 'true')?.textContent;
+  const buttons = () => [...document.querySelectorAll('.ui-account-menu > button:not(.ui-button)')];
+  const selected = () => document.querySelector('.ui-account-selector summary span:first-child, .ui-account-single')?.textContent;
   const accounts = (n) => Array.from({ length: n }, (_, i) => ({ id: i ? `farm-${i}` : 'A',
     name: i ? `Farm ${i}` : 'Main Account', type: i ? 'farm' : 'main', isPrimary: i === 0,
     color: i + 1, order: i, notes: '', icon: 'snow' }));
@@ -49,7 +51,7 @@ const esbuild = deps('esbuild');
   try {
     // A fresh user must have one account, with no artificial Farm Account.
     await act(async () => root.render(React.createElement(App)));
-    assert.equal(buttons().length, 1);
+    assert.equal(buttons().length, 0);
     assert.equal(selected(), 'Main Account');
     assert.equal(document.querySelectorAll('[aria-label$=" FC"]').length, 3);
     const fc = document.querySelector('input[aria-label="infantry FC"]');
@@ -110,13 +112,13 @@ const esbuild = deps('esbuild');
     assert.equal(selected(), 'Main Account');
     assert.equal(JSON.parse(localStorage.getItem('bearTrapCalculator:v1:A')).capacity, 110000);
     await update(accounts(1));
-    assert.equal(buttons().length, 1);
+    assert.equal(buttons().length, 0);
     await act(async () => root.unmount());
     // A removed/stale stored ID must be rejected on a fresh mount too.
     localStorage.setItem('bearTrapCalculator:activeAccount', 'B');
     const root2 = createRoot(document.getElementById('root'));
     await act(async () => root2.render(React.createElement(App)));
-    assert.equal(buttons().length, 1);
+    assert.equal(buttons().length, 0);
     assert.equal(selected(), 'Main Account');
     await act(async () => root2.unmount());
     console.log('BT account integration passed: 1/3/6 accounts, rename, reorder, deletion, stale selection, isolated saved setups.');

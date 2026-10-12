@@ -1,3 +1,4 @@
+import { Button as SharedButton, Field as SharedField, Chevron } from './ui/components.jsx';
 import { flattenWords, parseScanText, resolveCardLabel, mergeBadgeReadings, confirmAmountReadings } from "./bear/troop-scan.js";
 import { loadTesseract } from "./bear/ocr-runtime.js";
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
@@ -1012,12 +1013,12 @@ function SectionHeader({ title, sub, step }) {
             {step}
           </span>
         )}
-        <div style={{ fontSize: 16, fontWeight: 700, color: C.gold, letterSpacing: 0.1 }}>{title}</div>
+        <h2 className="ui-section-title">{title}</h2>
       </div>
       <div style={{ marginTop: 4, marginLeft: step ? 36 : 0 }}>
         <BrushUnderline color={C.goldBorder} />
       </div>
-      {sub && <div style={{ fontSize: 12.5, color: C.sub, marginTop: 6, marginLeft: step ? 36 : 0, fontWeight: 400 }}>{sub}</div>}
+      {sub && <div className="ui-section-sub" style={{ marginLeft: step ? 36 : 0 }}>{sub}</div>}
     </div>
   );
 }
@@ -1062,8 +1063,7 @@ function NumField({ label, ariaLabel, value, onChange }) {
   }
 
   return (
-    <label style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1, minWidth: 0 }}>
-      <span style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 16, fontWeight: 800, color: C.gold }}>{label}</span>
+    <SharedField label={label}>
       <input
         type="text"
         inputMode="numeric"
@@ -1075,7 +1075,7 @@ function NumField({ label, ariaLabel, value, onChange }) {
         style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
         className="calc-input"
       />
-    </label>
+    </SharedField>
   );
 }
 
@@ -1088,7 +1088,7 @@ function TroopFcLabel({ type, name, fc, onChange }) {
         <input type="text" inputMode="numeric" aria-label={`${type} FC`} aria-invalid={!valid || undefined}
           value={fc} onFocus={e => e.target.select()}
           onChange={e => onChange(e.target.value === '' ? '' : /^\d{1,2}$/.test(e.target.value) ? Number(e.target.value) : '')}
-          style={{ width: 30, minHeight: 44, padding: '3px 2px', borderRadius: 7, border: `1px solid ${C.cardBorder}`, background: 'transparent', color: 'inherit', font: 'inherit', textAlign: 'center' }} />
+          style={{ width: 44, minHeight: 48, padding: '3px 2px', borderRadius: 12, border: `1px solid ${C.cardBorder}`, background: 'transparent', color: 'inherit', font: 'inherit', textAlign: 'center' }} />
       </span>
       <span>{name}</span>
     </label>
@@ -1121,7 +1121,7 @@ function PctField({ label, value, onChange, colorDot }) {
 
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1, minWidth: 90 }}>
-      <span style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 12, fontWeight: 800, color: C.gold, display: "flex", alignItems: "center", gap: 6 }}>
+      <span style={{ fontFamily: "'Nunito Sans', sans-serif", fontSize: 16, fontWeight: 800, color: C.gold, display: "flex", alignItems: "center", gap: 6 }}>
         <span style={{ width: 7, height: 7, borderRadius: 999, background: colorDot, display: "inline-block" }} />
         {label}
       </span>
@@ -1137,7 +1137,7 @@ function PctField({ label, value, onChange, colorDot }) {
           className="calc-input"
           style={{ paddingRight: 30 }}
         />
-        <span style={{ position: "absolute", right: 12, top: 13, color: C.sub, fontWeight: 700, fontSize: 13 }}>%</span>
+        <span style={{ position: "absolute", right: 12, top: 13, color: C.sub, fontWeight: 700, fontSize: 16 }}>%</span>
       </div>
     </label>
   );
@@ -1155,19 +1155,19 @@ function RatioSlider({ label, colorDot, value, min, max, step, onChange, suffix 
   return (
     <div style={{ marginBottom: 18 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 9 }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 700, color: C.gold }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 16, fontWeight: 700, color: C.gold }}>
           <span style={{ width: 9, height: 9, borderRadius: 999, background: colorDot, display: "inline-block" }} />
           {label}
         </span>
         <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
           {warningEmoji && (
-            <span title={warningText} style={{ fontSize: 15, cursor: "help" }}>
+            <span title={warningText} style={{ fontSize: 16, cursor: "help" }}>
               {warningEmoji}
             </span>
           )}
           <span
             style={{
-              fontSize: 15,
+              fontSize: 16,
               fontWeight: 800,
               color: C.cocoaDark,
               background: colorDot,
@@ -1193,11 +1193,11 @@ function RatioSlider({ label, colorDot, value, min, max, step, onChange, suffix 
         aria-label={label}
       />
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-        <span style={{ fontSize: 10.5, color: C.sub, fontWeight: 600 }}>{min}{suffix}</span>
-        <span style={{ fontSize: 10.5, color: C.sub, fontWeight: 600 }}>{max}{suffix}</span>
+        <span style={{ fontSize: 16, color: C.sub, fontWeight: 600 }}>{min}{suffix}</span>
+        <span style={{ fontSize: 16, color: C.sub, fontWeight: 600 }}>{max}{suffix}</span>
       </div>
       {warningEmoji && warningText && (
-        <div style={{ fontSize: 11, color: C.amber, fontWeight: 600, marginTop: 5 }}>
+        <div style={{ fontSize: 16, color: C.amber, fontWeight: 600, marginTop: 5 }}>
           {warningEmoji} {warningText}
         </div>
       )}
@@ -1214,7 +1214,7 @@ function AutoRatioBar({ label, colorDot, pct, displayValue, autoLabel, warningEm
   return (
     <div style={{ marginBottom: 18 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 9 }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 700, color: C.gold }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 16, fontWeight: 700, color: C.gold }}>
           <span style={{ width: 9, height: 9, borderRadius: 999, background: colorDot, display: "inline-block" }} />
           {label}
           <span style={{ fontSize: 10, fontWeight: 700, color: C.sub, background: "var(--tierTrackBg)", borderRadius: 999, padding: "2px 8px", textTransform: "uppercase", letterSpacing: 0.4 }}>
@@ -1223,13 +1223,13 @@ function AutoRatioBar({ label, colorDot, pct, displayValue, autoLabel, warningEm
         </span>
         <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
           {warningEmoji && (
-            <span title={warningText} style={{ fontSize: 15, cursor: "help" }}>
+            <span title={warningText} style={{ fontSize: 16, cursor: "help" }}>
               {warningEmoji}
             </span>
           )}
           <span
             style={{
-              fontSize: 15,
+              fontSize: 16,
               fontWeight: 800,
               color: C.cocoaDark,
               background: barColor,
@@ -1250,7 +1250,7 @@ function AutoRatioBar({ label, colorDot, pct, displayValue, autoLabel, warningEm
         <div style={{ height: "100%", width: `${clamped}%`, background: barColor, borderRadius: 999, transition: "width 150ms ease" }} />
       </div>
       {warningEmoji && warningText && (
-        <div style={{ fontSize: 11, color: C.amber, fontWeight: 600, marginTop: 5 }}>
+        <div style={{ fontSize: 16, color: C.amber, fontWeight: 600, marginTop: 5 }}>
           {warningEmoji} {warningText}
         </div>
       )}
@@ -1328,34 +1328,8 @@ function Pill({ children, tone, icon }) {
   );
 }
 
-function Btn({ children, onClick, tone = "primary", small, disabled = false }) {
-  const styles = {
-    primary: { background: C.gold, color: C.surface, border: "none", boxShadow: "0 3px 0 var(--btnPrimaryShadow)" }, // pine — selected / confirmation state
-    ghost: { background: "var(--btnSecondaryBg)", color: C.gold, border: "1px solid var(--btnSecondaryBorder)", boxShadow: "none" }, // button-secondary
-    danger: { background: C.redBg, color: C.red, border: "none", boxShadow: "none" }, // button-danger
-    gold: { background: C.goldStrong, color: C.cocoaDark, border: "none", boxShadow: "0 3px 0 var(--btnGoldShadow)" }, // button-primary (amber) — forward-moving actions
-  };
-  return (
-    <button
-      disabled={disabled}
-      onClick={onClick}
-      style={{
-        ...styles[tone],
-        borderRadius: 12,
-        padding: small ? "9px 14px" : "10px 15px",
-        fontFamily: "'Nunito Sans', sans-serif",
-        fontWeight: 800,
-        fontSize: small ? 12.5 : 14,
-        lineHeight: "18px",
-        letterSpacing: 0.1,
-        cursor: "pointer",
-        flex: small ? "0 0 auto" : "1 1 auto",
-        minHeight: small ? 36 : 42,
-      }}
-    >
-      {children}
-    </button>
-  );
+function Btn({ children, tone = 'primary', small, ...props }) {
+  return <SharedButton tone={tone} small={small} {...props}>{children}</SharedButton>;
 }
 
 /* Small readonly composition chip row, used by Recommended / Tiered cards */
@@ -2113,7 +2087,8 @@ export default function App() {
   const onAccountsChange = useCallback((accounts) => setTrackedAccounts(accounts), []);
   const accountNames = useMemo(() => Object.fromEntries(trackedAccounts.map((a) => [a.id, a.name])), [trackedAccounts]);
   const [activeAccount, setActiveAccount] = useState(() => {
-    const previous = readActiveAccount();
+    const filter = loadState().settings.accountFilter;
+    const previous = trackedAccounts.some(a => a.id === filter) ? filter : readActiveAccount();
     return trackedAccounts.some((a) => a.id === previous) ? previous : primaryAccount(trackedAccounts).id;
   });
   const [saved] = useState(() => loadSavedForAccount(activeAccount));
@@ -2851,78 +2826,12 @@ export default function App() {
             The whole calculator below becomes the "BT Calculator" tab. */}
         <TimeHub
           onAccountsChange={onAccountsChange}
+          activeAccountId={activeAccount}
+          onActiveAccountChange={switchAccount}
           lang={lang}
           headerExtra={<>{langPicker}{themeButton}</>}
           calculator={
             <>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 20,
-                        padding: "20px 22px",
-                        marginBottom: 18,
-                        borderRadius: 22,
-                        background: "var(--headerBg)",
-                        border: "1px solid var(--headerBorder)",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <div>
-                        <div style={{ margin: 0, color: C.gold, fontFamily: "'Fredoka', sans-serif", fontSize: 30, fontWeight: 600, lineHeight: "36px", letterSpacing: -0.3 }}>
-                          Caroline's Bear Trap Squad Calculator
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        {langPicker}
-                        {themeButton}
-                        <BearMascot className="header-bear" />
-                      </div>
-                    </div>
-
-                    {/* Same accounts as the tracker; wrap comfortably on small screens. */}
-                    <div role="group" aria-label="BT calculator accounts" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(140px, 100%), 1fr))", gap: 10, marginBottom: 16 }}>
-                      {trackedAccounts.map((acc) => {
-                        const accent = acc.isPrimary ? C.goldStrong : TYPE_COLOR.lancer;
-                        const selected = activeAccount === acc.id;
-                        return (
-                          <button
-                            key={acc.id}
-                            aria-pressed={selected}
-                            title={acc.name}
-                            onClick={() => switchAccount(acc.id)}
-                            style={{
-                              flex: 1,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              gap: 8,
-                              border: `2px solid ${selected ? accent : C.cardBorder}`,
-                              background: selected ? accent : C.surface,
-                              borderRadius: 16,
-                              padding: "12px 14px",
-                              cursor: "pointer",
-                              boxShadow: selected ? "0 3px 10px rgba(33,70,65,.25)" : "none",
-                            }}
-                          >
-                            <span
-                              style={{
-                                fontWeight: 800,
-                                fontSize: 15,
-                                color: selected ? C.cocoaDark : C.ink,
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              {accountNames[acc.id]}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-
                     <div style={{ position: "sticky", top: 0, zIndex: 10, marginBottom: 16 }} className="calc-card">
                       <div style={{ display: "flex", gap: 0, overflowX: "auto" }}>
                         <SummaryStat label={tr("availableStat")} value={fmt(totalAvailable)} />
@@ -3007,12 +2916,12 @@ export default function App() {
                       {/* RALLY LEADER + JOINER SQUADS — paired side by side on wide screens */}
                       <div className="section-grid">
                     <Card>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => setAdvancedOpen(!advancedOpen)}>
+                      <div className="ui-section-toggle" role="button" tabIndex={0} aria-expanded={advancedOpen} aria-label={tr('rallyLeader')} aria-controls="rally-leader-fields" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => setAdvancedOpen(!advancedOpen)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setAdvancedOpen(v => !v); } }}>
                         <SectionHeader step={2} title={tr("rallyLeader")} sub={tr("rallyLeaderSub")} />
-                        <span style={{ color: C.gold, fontWeight: 600, fontSize: 18, flexShrink: 0, paddingLeft: 10 }}>{advancedOpen ? "−" : "+"}</span>
+                        <Chevron expanded={advancedOpen} />
                       </div>
                       {advancedOpen && (
-                        <div>
+                        <div id="rally-leader-fields">
                           <NumField label={tr("rallyBaseCapacity")} value={rallyCapacity} onChange={setRallyCapacity} />
                           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
                             <NumField label={tr("cyrilleBoostLabel")} value={cyrilleBoost} onChange={setCyrilleBoost} />

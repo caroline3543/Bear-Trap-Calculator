@@ -49,10 +49,22 @@ function reducer(state, action) {
   }
 }
 
-export function TimeHubProvider({ lang = "en", onAccountsChange, children }) {
+export function TimeHubProvider({ lang = "en", onAccountsChange, activeAccountId, onActiveAccountChange, children }) {
   const [state, dispatch] = useReducer(reducer, undefined, () => loadState());
   // Notify the calculator immediately, without waiting for the debounced storage write.
   useEffect(() => { onAccountsChange?.(state.accounts); }, [state.accounts, onAccountsChange]);
+  const activeChange = useRef(onActiveAccountChange);
+  activeChange.current = onActiveAccountChange;
+  const setFilter = useCallback(f => {
+    dispatch({ type: 'settings', patch: { accountFilter: f } });
+    if (f !== ALL) activeChange.current?.(f);
+  }, []);
+  useEffect(() => {
+    if (!activeAccountId || !state.accounts.some(a => a.id === activeAccountId)) return;
+    if (state.settings.accountFilter !== ALL && state.settings.accountFilter !== activeAccountId) {
+      dispatch({ type: 'settings', patch: { accountFilter: activeAccountId } });
+    }
+  }, [activeAccountId, state.accounts]);
   // UI-only state (not saved): rearrange mode and a booking to prefill from a reminder
   const [rearrange, setRearrange] = useState(false);
   const [bookingDraft, setBookingDraft] = useState(null);
@@ -118,20 +130,21 @@ export function TimeHubProvider({ lang = "en", onAccountsChange, children }) {
       dir: RTL_LANGS.has(lang) ? "rtl" : "ltr",
       compact: state.settings.compact,
       accounts: state.accounts, filter, accountIds, primary, accountById,
+      activeAccountId: activeAccountId || (filter !== ALL && accountById(filter) ? filter : primary?.id),
       multi: state.accounts.length > 1,
       /** Where new items go by default: the filtered account, else the primary one. */
       defaultAccountId: filter !== ALL && accountById(filter) ? filter : primary?.id,
       dataFor: (id) => state.accountData[id] || emptyAccountData(),
       update: (fn) => dispatch({ type: "update", fn }),
       updateAccount: (accountId, fn) => dispatch({ type: "accountData", accountId, fn }),
-      setFilter: (f) => dispatch({ type: "settings", patch: { accountFilter: f } }),
+      setFilter,
       rearrange, setRearrange, bookingDraft, setBookingDraft, openBooking,
       trainDraft, setTrainDraft, startTraining, setTab,
       notify,
       // "Start for 5 min" — a small focus timer, no commitment to finish (stopping isn't failure)
       setFocus: (taskId) => { const at = Date.now(); dispatch({ type: "settings", patch: { focus: { taskId, startedAt: at, endsAt: at + 5 * 60000 } } }); },
     };
-  }, [state, lang, rearrange, bookingDraft, openBooking, trainDraft, startTraining, setTab, notify]);
+  }, [state, lang, activeAccountId, setFilter, rearrange, bookingDraft, openBooking, trainDraft, startTraining, setTab, notify]);
   const toastValue = useMemo(() => ({ toast, dismiss: () => setToast(null) }), [toast]);
 
   const tabValue = useMemo(() => ({ tab, setTab }), [tab, setTab]);

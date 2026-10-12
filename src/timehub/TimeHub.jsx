@@ -1,3 +1,4 @@
+import { PageHeader, AccountSelector } from '../ui/components.jsx';
 /* ============================================================
    TIME HUB page (v2): one dashboard for every account.
      <TimeHub lang={lang} />
@@ -57,36 +58,21 @@ function Header({ title, tab, headerExtra, onSettings, settingsOpen, children })
   const now = useMinute();
   const long = formatLongDay(now, tz, lang);
   return (
-    <header className="th-mhdr">
-      <img className="th-horizon" src={horizon} alt="" aria-hidden="true" decoding="async" />
-      <div className="th-mhdr-main">
-        <div className="th-mhdr-eyebrow">{long} · {zoneCity(tz)}</div>
-        <h1 className="th-mhdr-title">{title}</h1>
-      </div>
-      <div className="th-mhdr-tools">
-        <button type="button" className="th-iconbtn" aria-expanded={settingsOpen} aria-label={t("settingsTitle")} title={t("settingsTitle")} onClick={onSettings}><TabIcon name="gear" size={19} /></button>
-      </div>
+    <PageHeader className="th-mhdr" title={title} eyebrow={`${long} · ${zoneCity(tz)}`}
+      decoration={<img className="th-horizon" src={horizon} alt="" aria-hidden="true" decoding="async" />}
+      actions={<button type="button" className="th-iconbtn" aria-expanded={settingsOpen} aria-label={t('settingsTitle')} title={t('settingsTitle')} onClick={onSettings}><TabIcon name="gear" size={19} /></button>}>
       {children}
-    </header>
+    </PageHeader>
   );
 }
-/** Same big account buttons as the calculator (up to 4) plus All. */
-function AccountGrid({ onAdd, compact }) {
-  const { t, accounts, filter, setFilter } = useTimeHub();
-  const multi = accounts.length > 1;
-  return (
-    <div className={`th-accgrid ${compact ? "compact" : ""}`} role="group" aria-label={t("showAccounts")}>
-      {multi && (
-        <button type="button" className="th-accbtn all" aria-pressed={filter === ALL} onClick={() => setFilter(ALL)}>{t("allAccounts")}</button>
-      )}
-      {accounts.map((a) => (
-        <button key={a.id} type="button" className={`th-accbtn c${a.color}`} aria-pressed={filter === a.id || !multi} onClick={() => setFilter(multi ? a.id : ALL)}>
-          {a.icon ? <b aria-hidden="true">{a.icon}</b> : <i aria-hidden="true" />}{a.name}{a.isPrimary && multi ? " ★" : ""}
-        </button>
-      ))}
-      {accounts.length < MAX_ACCOUNTS && <button type="button" className="th-accbtn add" onClick={onAdd}>+ {t("addAccount")}</button>}
-    </div>
-  );
+/** Same compact selector on every tab; aggregate views also offer All. */
+export function AccountGrid({ onAdd }) {
+  const { t, accounts, filter, setFilter, activeAccountId } = useTimeHub();
+  const { tab } = useTab();
+  const calculator = tab === 'calc';
+  return <AccountSelector accounts={accounts} value={calculator ? activeAccountId : filter} onChange={setFilter}
+    label={t('showAccounts')} allLabel={t('allAccounts')} allValue={ALL} allowAll={!calculator}
+    manageLabel={t('settingsTitle')} onManage={onAdd} />;
 }
 
 const TABS = [
@@ -399,13 +385,13 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
   return (
     <div className={`th-root th-app ${active === "calc" ? "is-calc" : ""} ${compact ? "th-compact" : ""} ${tour != null ? "th-touring" : ""}`} dir={dir}
       onPointerDownCapture={(e) => onPress(e.target)}>
-      {active !== "calc" && showHeader && (
+      {showHeader && (
         <Header title={t(`tab_${active}`)} tab={active} headerExtra={headerExtra} settingsOpen={settings} onSettings={() => setSettings(!settings)}>
           {active === "today" && !settings && <StatStrip />}
         </Header>
       )}
-      {active !== "calc" && (settings ? <SettingsPanel headerExtra={headerExtra} hasCalc={!!calculator} closeSettings={() => flushSync(() => setSettings(false))} reopenSettings={() => setSettings(true)} startTour={() => setTour(0)} /> : <AccountGrid compact={active === "timers" || active === "today" || active === "todos"} onAdd={() => setSettings(true)} />)}
-      <main className={settings && active !== "calc" ? "th-hidden" : ""}>
+      {(settings ? <SettingsPanel headerExtra={headerExtra} hasCalc={!!calculator} closeSettings={() => flushSync(() => setSettings(false))} reopenSettings={() => setSettings(true)} startTour={() => setTour(0)} /> : <AccountGrid compact={active === "timers" || active === "today" || active === "todos"} onAdd={() => setSettings(true)} />)}
+      <main className={settings ? "th-hidden" : ""}>
         {panel("today", TODAY_EL)}
         {panel("todos", TODOS_EL)}
         {panel("timers", TIMERS_EL)}
@@ -425,9 +411,9 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
  *   calculator — your existing Bear Trap calculator element. When given, it becomes the
  *   "BT Calculator" tab and the whole app shares one bottom tab bar.
  */
-export default function TimeHub({ lang = "en", showHeader = true, headerExtra = null, calculator = null, onAccountsChange }) {
+export default function TimeHub({ lang = "en", showHeader = true, headerExtra = null, calculator = null, onAccountsChange, activeAccountId, onActiveAccountChange }) {
   return (
-    <TimeHubProvider lang={lang} onAccountsChange={onAccountsChange}>
+    <TimeHubProvider lang={lang} onAccountsChange={onAccountsChange} activeAccountId={activeAccountId} onActiveAccountChange={onActiveAccountChange}>
       <TimeHubBody showHeader={showHeader} headerExtra={headerExtra} calculator={calculator} />
     </TimeHubProvider>
   );

@@ -1,3 +1,4 @@
+import { Button as SharedButton, Field as SharedField, Chevron } from '../../ui/components.jsx';
 import distantBear from "../assets/scene-distant-bear.webp";
 import React, { useId, useMemo, useState } from "react";
 import { useTimeHub } from "../TimeHubContext.jsx";
@@ -49,10 +50,10 @@ export function BrushUnderline() {
 
 export function Btn({ tone = "ghost", small, icon, block, className = "", children, ...rest }) {
   return (
-    <button type="button" className={`th-btn ${tone} ${small ? "small" : ""} ${block ? "block" : ""} ${className}`} {...rest}>
+    <SharedButton tone={tone} small={small} block={block} className={`th-btn ${tone} ${small ? "small" : ""} ${block ? "block" : ""} ${className}`} {...rest}>
       {icon}
       {children}
-    </button>
+    </SharedButton>
   );
 }
 
@@ -86,10 +87,10 @@ export function Section({ id, title, count, action, children, move, icon, sub, s
           title={closed ? t("expand") : t("collapse")}
           onClick={() => dispatch({ type: "setSection", id, closed: !closed })}
         >
-          {!rearrange && <Icon.chevron className={`th-chevron ${closed ? "closed" : ""}`} />}
+          {!rearrange && <Chevron expanded={!closed} />}
           <span className="th-sec-titles">
             <span className="th-sec-titleline">
-              <span className="th-sec-title">{title}</span>
+              <span className="th-sec-title" role="heading" aria-level={2}>{title}</span>
               {count > 0 && <span className="th-count">{count}</span>}
             </span>
             {closed && summary && <span className="th-sec-summary">{summary}</span>}
@@ -355,15 +356,7 @@ export function ProgressFill({ start, end, className = "" }) {
 /* ---------- form fields ---------- */
 export function Field({ label, optional, hint, error, children, as }) {
   const { t } = useTimeHub();
-  const Tag = as || "label";
-  return (
-    <Tag className="th-field">
-      <span className="th-label">{label}{optional && <span className="opt"> ({t("optional")})</span>}</span>
-      {children}
-      {hint && !error && <span className="th-hint">{hint}</span>}
-      {error && <span className="th-error" role="alert">{error}</span>}
-    </Tag>
-  );
+  return <SharedField as={as || 'label'} className="th-field" label={<>{label}{optional && <span className="opt"> ({t('optional')})</span>}</>} hint={hint} error={error}>{children}</SharedField>;
 }
 
 export function Seg({ value, options, onChange, label }) {
