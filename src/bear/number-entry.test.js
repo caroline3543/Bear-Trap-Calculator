@@ -15,3 +15,9 @@ test('gear comparison adds only on-minus-off and detects incomplete or reversed 
   assert.equal(gearDifference({ ...stats, attackOn: 900 }, 'attack'), -100.1);
   assert.deepEqual(withGearDifferences({ stats: [stats] }).stats[0], { ...stats, gearAttack: 234.5, gearLethality: 100 });
 });
+test('non-finite, negative or out-of-range saved gear readings cannot produce a score', () => {
+ for (const value of [NaN, Infinity, 'abc', -1, 10001, null]) {
+  assert.equal(gearDifference({attackOn:value,attackOff:0},'attack'),null);
+  assert.equal(gearDifference({attackOn:100,attackOff:value},'attack'),null);
+ }
+});

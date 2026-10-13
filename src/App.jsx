@@ -8,6 +8,7 @@ import { loadState } from "./timehub/lib/storage.js";
 import { primaryAccount } from "./timehub/lib/accounts.js";
 import paperGrainTile from "./paper-grain.png";
 const BearLab = React.lazy(() => import("./bear/BearLab.jsx"));
+import { computeTarget } from './bear/composition.js';
 import { detectLanguage } from "./timehub/lib/language.js";
 
 /* ============================================================
@@ -68,34 +69,36 @@ const LANGUAGES = [
 const TRANSLATIONS = {
   en: {
     troopPool: "Troop pool", troopPoolSub: "Add the troops available on this account.",
-    noTroops: "No troops entered yet — start here.", totalPoolLabel: "Total pool",
-    clearAll: "Clear all troops", reset: "Reset",
-    settings: "Settings", joinerSquadsLabel: "Joiner Squads", settingsSub: "Capacity applies to every joiner squad.",
+    noTroops: "Scan a screenshot or enter your troops below.", totalPoolLabel: "Total pool",
+    clearAll: "Clear all troops", reset: "Load example setup",
+    settings: "Settings", joinerSquadsLabel: "Joiner squads", settingsSub: "Set the size and number of joiner marches.",
     squadCapacity: "Squad capacity", numSquadsLabel: "Number of squads",
-    rallyLeader: "Rally leader squad", rallyLeaderSub: "Reserves troops first, before the joiner squads are filled. Set your own composition.",
-    rallyBaseCapacity: "Rally leader base capacity", cyrilleBoostLabel: "Cyrille Capacity Boost", snowApeBoostLabel: "Snow Ape Boost",
+    rallyLeader: "Rally leader squad", rallyLeaderSub: "Calculate a split or enter your own. These troops are reserved first.",
+    rallyBaseCapacity: "Leader deployment capacity", cyrilleBoostLabel: "Extra Cyrille capacity", snowApeBoostLabel: "Extra Snow Ape capacity",
     ministerAppointed: "Minister of Strategy appointed", minister2000: "+2,000 capacity", minister3750: "+3,750 capacity",
     effectiveCapacity: "Effective capacity", percentages: "Percentages", exactAmounts: "Exact amounts",
-    squadStrategy: "Squad strategy", squadStrategySub: "How the joiner composition is decided.",
-    manual: "Short on Troops", manualNote: "Not enough troops? Set the exact split yourself.",
-    recommended: "Enough Troops", recommendedNote: "Ton Ton's ratios — sliders adjust for your setup.",
+    squadStrategy: "Squad strategy", squadStrategySub: "Choose how to split the troops left after your leader squad.",
+    manual: "Manual split", manualNote: "Enter percentages or exact amounts.",
+    recommended: "Suggested split", recommendedNote: "Adjusts the split to your remaining troops.",
     remainingAfterLabel: "Left after this squad", presetsLabel: "Saved setups", savePresetBtn: "💾 Save setup", presetNamePrompt: "Name this setup", loadPresetBtn: "Load", deletePresetBtn: "Delete", presetSavedToast: "Setup saved.", noPresetsYet: "No saved setups yet.", accountALabel: "Account A", accountBLabel: "Account B", switchedAccountToast: "Switched account.", renameAccountPrompt: "Rename this account",
-    autoSplitBtn: "⚡ Auto Split", autoSplitApplied: "Auto split applied — fine-tune below.", minMarchMarksmanLabel: "Minimum Marksman per march", minMarchMarksmanHelp: "Auto Split tries to guarantee this much Marksman per march first, stock permitting. Leave at 0 for no minimum.",
-    recPoolWarningShort: "May not work", recPoolWarningBanner: "This option may not work with your current troop pool — Marksman could fall below the 60,000 minimum. Try \u201cShort on Troops\u201d instead if that happens.",
+    autoSplitBtn: "⚡ Auto Split", autoSplitApplied: "Auto split applied — fine-tune below.", minMarchMarksmanLabel: "Minimum Marksman per march", minMarchMarksmanHelp: "Auto Split reserves this amount if available. Use 0 for no minimum.",
+    recPoolWarningShort: "Below 60,000 Marksman", recPoolWarningBanner: "Fewer than 60,000 Marksman per squad. Reduce the number of squads or use Manual split → Auto Split to fill with other troops.",
     tiered: "Tiered", tieredNote: "Stronger squads fill first, Weaker split the rest.",
     squadResults: "Squad results", remainingTroopsHeading: "Remaining troops",
     totalAvailableLabel: "Total available", totalAllocatedLabel: "Total allocated", totalRemainingLabel: "Total remaining",
-    capacityRequiredLabel: "Capacity required (all squads)", fullSquadsLabel: "Full squads", partialSquadsLabel: "Partial squads",
-    unfilledSpacesLabel: "Unfilled squad spaces", savedAutomatically: "Saved automatically in this browser · nothing is ever sent anywhere.",
+    capacityRequiredLabel: "Capacity required (leader + joiners)", fullSquadsLabel: "Full squads", partialSquadsLabel: "Partial squads",
+    unfilledSpacesLabel: "Unfilled squad spaces", savedAutomatically: "Saved on this device.",
     availableStat: "Available", allocatedStat: "Allocated", remainingStat: "Remaining", partialStat: "Partial", unfilledStat: "Unfilled",
     lightToggle: "Light", darkToggle: "Dark", openLabel: "open", atCapacityLabel: "at capacity",
     infantryLabel: "Infantry", lancerLabel: "Lancer", marksmanLabel: "Marksman",
     fullPill: "Full", partialPill: "Partial", usesT9Pill: "Uses T9", addBtn: "Add",
-    invalidTarget: "Invalid target", fixComposition: "Fix the composition above to see squad results.",
+    invalidTarget: "Check your split", fixComposition: "Percentages must total 100%, or amounts must match capacity.",
+    leaderNotReserved: "Leader troops are not reserved until the split matches capacity. Joiners currently use the full pool.",
+    noJoinerSquads: "No joiner squads selected. Only the leader squad will use troops.",
     squadLabel: "Squad", strongerLabel: "Stronger", weakerLabel: "Weaker", leaderLabel: "Rally Leader",
-    recSourceNote: "Ton Ton recommends these joining ratios:", recSourceSub: "A solid baseline for most Rally Leaders.",
-    recHeroNote: "The best ratio depends on your Rally Leader's heroes, hero gear, and chief gear — fine-tune the sliders below to match your own setup.",
-    gen5Note: "This is the recommended ratio for Generation 5.",
+    recSourceNote: "Joiner ratio reference", recSourceSub: "Generation 5 guidance; not a rule for every rally.",
+    recHeroNote: "Use the sliders for the rally you are joining. This does not use your own leader-hero calculation.",
+    gen5Note: "The ranges are alternatives; they do not all apply at once.",
     resetRatios: "Reset to Ton Ton's ratios",
     shortLabel: "short", compLabel: "Comp", infAbbr: "Inf", lanAbbr: "Lan", markAbbr: "Mark",
     addedManually: "added manually", fillRemaining: "Fill remaining", noTroopsLeftPool: "No troops left in any pool to fill this space.",
@@ -105,7 +108,7 @@ const TRANSLATIONS = {
     marksmanFillsRest: "fills whatever's left after Infantry and Lancer, never below {a}.",
     spacesCantBeFilled: "{a} spaces per squad can't be filled — not enough total troops.",
     recShortfallWarning: "Only {a} Marksman available per squad — pool is short of the {b} minimum requested.",
-    useInManual: "Use these numbers in Manual / Exact mode", howThisWorks: "How this works:",
+    useInManual: "Edit this split manually", howThisWorks: "How this works:",
     tieredStep1: "Stronger squads fill first — all identical to each other.",
     tieredStep2: "Weaker squads split whatever's left — also identical to each other.",
     tieredStep3: "Every squad keeps a little Infantry + Lancer, then loads up on Marksman for damage.",
@@ -119,9 +122,9 @@ const TRANSLATIONS = {
     guaranteedWeakerMinimum: "Guaranteed in every Weaker squad — Stronger squads give up Marksman first if needed. Minimum {a}.",
     weakerSquadComposition: "Weaker squad composition",
     onlyMarksmanShortRequestedYield: "Only {a} Marksman available per squad — total pool is short of the {b} requested even after Stronger squads yield.",
-    clearedTroopsToast: "Troops cleared.", resetToast: "Everything reset.", undoAction: "Undo",
+    clearedTroopsToast: "Troops cleared.", resetToast: "Example troops and squad settings loaded.", undoAction: "Undo",
     copyPlan: "Copy squad plan", copiedToast: "Copied to clipboard!", copyFailedToast: "Couldn't copy — try again.",
-    autoLabel: "auto", marksmanBelow60kWarning: "Below the 60,000 minimum",
+    autoLabel: "auto", marksmanBelow60kWarning: "Below the 60,000 guidance level",
     infantryStockLimitWarning: "Not enough Infantry in your pool to go higher", lancerStockLimitWarning: "Not enough Lancer in your pool to go higher",
     scanScreenshotBtn: "Scan troop screenshot", scanScreenshotHide: "Hide scanner", screenshotLangLabel: "Screenshot language — match your game's UI language",
     chooseScreenshot: "Choose a screenshot", scanBtn: "Scan screenshot", scanningStatus: "Reading numbers…", scanResultsHeading: "Review detected troops",
@@ -823,24 +826,9 @@ function CampScene({ width = 110, height = 64, style }) {
 }
 
 /* Manual ratio/exact target (unchanged core logic). */
-function computeTarget(capacity, mode, ratio, exact) {
-  if (mode === "ratio") {
-    const sum = ratio.infantry + ratio.lancer + ratio.marksman;
-    const valid = Math.abs(sum - 100) < 0.001 && capacity > 0;
-    if (!valid) return { valid: false, sum, mode: "ratio", infantry: 0, lancer: 0, marksman: 0 };
-    const infantry = Math.round((capacity * ratio.infantry) / 100);
-    const lancer = Math.round((capacity * ratio.lancer) / 100);
-    const marksman = capacity - infantry - lancer; // remainder absorbs rounding
-    return { valid: true, sum, mode: "ratio", infantry, lancer, marksman: Math.max(0, marksman) };
-  } else {
-    const total = exact.infantry + exact.lancer + exact.marksman;
-    const valid = total === capacity && capacity > 0;
-    return { valid, total, mode: "exact", infantry: exact.infantry, lancer: exact.lancer, marksman: exact.marksman };
-  }
-}
 
 const DIVERSITY_FLOOR = 1; // every squad always carries at least this much of each troop type
-const MIN_JOINER_MARKSMAN = 60000; // Recommended's hard warning threshold — the one non-negotiable floor
+const MIN_JOINER_MARKSMAN = 60000; // Guidance threshold; warns but never blocks allocation.
 const MAX_JOINER_INFANTRY_PCT = 0.03; // Infantry is capped at 3% of squad capacity
 const MIN_JOINER_INFANTRY_PCT = 0.005; // ...and floored at 0.5% of squad capacity, stock permitting
 const MIN_JOINER_LANCER_PCT = 0.10; // Lancer's default/starting slider position (Ton Ton's ratio)
@@ -2239,7 +2227,7 @@ export default function App() {
   // Marksman isn't a slider — it's whatever's left after Infantry and Lancer. This flag
   // drives the one remaining warning: dropping below the hard 60,000 floor.
   const recMarksmanPct = capacity > 0 ? (recommendedTarget.marksman / capacity) * 100 : 100;
-  const recBelow60k = recommendedTarget.marksman < MIN_JOINER_MARKSMAN;
+  const recBelow60k = numSquads > 0 && capacity > 0 && recommendedTarget.marksman < MIN_JOINER_MARKSMAN;
 
   const computation = useMemo(() => {
     const pools = { t11: { ...rallyComputation.pools.t11 }, t10: { ...rallyComputation.pools.t10 }, t9: { ...rallyComputation.pools.t9 } };
@@ -2923,6 +2911,10 @@ export default function App() {
                       {advancedOpen && (
                         <div id="rally-leader-fields">
                           <NumField label={tr("rallyBaseCapacity")} value={rallyCapacity} onChange={setRallyCapacity} />
+                          <details className="bt-capacity-help"><summary>Where to find capacity</summary>
+                            <p>Start a Polar Terror rally with your leader heroes. Tap <strong>!</strong> beside the troop count and copy <strong>Deployment Capacity</strong>.</p>
+                            <p>Use your march capacity, not the whole rally’s capacity. Add the bonuses below only if they are missing from that reading.</p>
+                          </details>
                           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
                             <NumField label={tr("cyrilleBoostLabel")} value={cyrilleBoost} onChange={setCyrilleBoost} />
                             <NumField label={tr("snowApeBoostLabel")} value={snowApeBoost} onChange={setSnowApeBoost} />
@@ -2966,6 +2958,7 @@ export default function App() {
                             />
                           </React.Suspense>
                           <CompositionInputs animateUpdates capacity={effectiveRallyCapacity} mode={rallyMode} setMode={setRallyMode} ratio={rallyRatio} setRatio={setRallyRatio} exact={rallyExact} setExact={setRallyExact} target={rallyTarget} lang={lang} />
+                          {!rallyTarget.valid && <p className="bt-flow-note">{tr('leaderNotReserved')}</p>}
                           {rallyComputation.result && (
                             <div style={{ marginTop: 10 }}>
                               <SquadCard index="Leader" squadKey="rally" result={rallyComputation.result} invalid={false} onAcceptFill={acceptFill} onRemoveFill={removeFill} lang={lang} />
@@ -2982,6 +2975,7 @@ export default function App() {
                         <NumField label={tr("squadCapacity")} value={capacity} onChange={setCapacity} />
                         <NumField label={tr("numSquadsLabel")} value={numSquads} onChange={setNumSquads} />
                       </div>
+                      {numSquads === 0 && <p className="bt-flow-note">{tr('noJoinerSquads')}</p>}
                     </Card>
                       </div>
 
@@ -2997,6 +2991,7 @@ export default function App() {
                           const showPoolWarning = opt.key === "recommended" && recBelow60k;
                           return (
                             <button
+                              aria-pressed={strategy === opt.key}
                               key={opt.key}
                               onClick={() => setStrategy(opt.key)}
                               className={`strategy-card ${selected ? "selected" : "unselected"}`}
@@ -3006,9 +3001,9 @@ export default function App() {
                                 {opt.label}
                                 {opt.star && <span aria-hidden="true" style={{ color: selected ? C.goldStrong : C.goldStrong, fontSize: 13 }}>★</span>}
                               </div>
-                              <div style={{ fontSize: 12, fontWeight: 500, color: selected ? "var(--selectedTextMuted)" : C.sub, marginTop: 4, lineHeight: 1.4 }}>{opt.note}</div>
+                              <div style={{ fontSize: 16, fontWeight: 500, color: selected ? "var(--selectedTextMuted)" : C.sub, marginTop: 4, lineHeight: 1.4 }}>{opt.note}</div>
                               {showPoolWarning && (
-                                <div style={{ fontSize: 11, fontWeight: 700, color: selected ? "#FBD9CE" : C.amber, marginTop: 6 }}>
+                                <div style={{ fontSize: 16, fontWeight: 700, color: selected ? "#FBD9CE" : C.amber, marginTop: 6 }}>
                                   ⚠️ {tr("recPoolWarningShort")}
                                 </div>
                               )}
@@ -3019,9 +3014,9 @@ export default function App() {
 
                       {/* Ton Ton's reference ratios — shown for both strategies, since Manual
                           users benefit from the same guidance even while hand-tuning. */}
-                      <div style={{ background: C.goldBg, border: `1.5px solid ${C.goldBorder}`, borderRadius: 14, padding: 12, marginBottom: 14, fontSize: 12.5, color: C.ink, lineHeight: 1.55 }}>
-                        <div style={{ fontWeight: 800, color: C.gold, marginBottom: 2 }}>🐻 {tr("recSourceNote")}</div>
-                        <div style={{ color: C.sub, fontSize: 11.5, marginBottom: 10 }}>{tr("recSourceSub")}</div>
+                      <details className="bt-ratio-reference">
+                        <summary>{tr("recSourceNote")}</summary>
+                        <div style={{ color: C.sub, fontSize: 16, marginBottom: 10 }}>{tr("recSourceSub")}</div>
 
                         <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 10 }}>
                           {[
@@ -3039,12 +3034,12 @@ export default function App() {
 
                         <div style={{ fontWeight: 700, marginBottom: 6 }}>{tr("gen5Note")}</div>
                         <div>{tr("recHeroNote")}</div>
-                      </div>
+                      </details>
 
                       {strategy === "manual" && (
                         <div>
                           <NumField label={tr("minMarchMarksmanLabel")} value={minMarchMarksman} onChange={setMinMarchMarksman} />
-                          <div style={{ fontSize: 11, color: C.sub, marginTop: 5, marginBottom: 12 }}>{tr("minMarchMarksmanHelp")}</div>
+                          <div style={{ fontSize: 16, color: C.sub, marginTop: 5, marginBottom: 12 }}>{tr("minMarchMarksmanHelp")}</div>
                           <Btn tone="gold" small onClick={handleAutoSplit}>{tr("autoSplitBtn")}</Btn>
                           <div style={{ marginTop: 14 }}>
                             <div key={flashSignal} className="flash-once">
@@ -3057,7 +3052,7 @@ export default function App() {
                       {strategy === "recommended" && (
                         <div>
                           {recBelow60k && (
-                            <div style={{ background: C.redBg, border: `1.5px solid ${C.red}`, borderRadius: 14, padding: 12, marginBottom: 14, fontSize: 12.5, color: C.red, fontWeight: 600, lineHeight: 1.5 }}>
+                            <div style={{ background: C.redBg, border: `1.5px solid ${C.red}`, borderRadius: 14, padding: 12, marginBottom: 14, fontSize: 16, color: C.red, fontWeight: 600, lineHeight: 1.5 }}>
                               ⚠️ {tr("recPoolWarningBanner")}
                             </div>
                           )}
@@ -3093,7 +3088,7 @@ export default function App() {
                             warningEmoji={recBelow60k ? "⚠️" : null}
                             warningText={recBelow60k ? tr("marksmanBelow60kWarning") : null}
                           />
-                          <div style={{ fontSize: 11.5, color: C.sub, marginTop: -6, marginBottom: 14 }}>
+                          <div style={{ fontSize: 16, color: C.sub, marginTop: -6, marginBottom: 14 }}>
                             {tType("marksman", lang)}: {fmt(recommendedTarget.marksman)}
                           </div>
 
@@ -3101,7 +3096,7 @@ export default function App() {
                             <TargetPreview target={recommendedTarget} lang={lang} />
                           </div>
                           {recommendedTarget.shortfall > 0 && (
-                            <div style={{ color: C.amber, fontWeight: 500, fontSize: 12.5, marginBottom: 10 }}>
+                            <div style={{ color: C.amber, fontWeight: 500, fontSize: 16, marginBottom: 10 }}>
                               {tFmt("spacesCantBeFilled", lang, { a: fmt(recommendedTarget.shortfall) })}
                             </div>
                           )}
@@ -3114,7 +3109,7 @@ export default function App() {
 
                     {/* SQUAD RESULTS */}
                     {strategy === "manual" && !targetManual.valid ? (
-                      <div style={{ fontSize: 12.5, color: C.cocoaDark, fontWeight: 700, textAlign: "center", padding: "14px 10px", background: C.amberBg, border: `1.5px solid ${C.goldStrong}`, borderRadius: 14 }}>
+                      <div style={{ fontSize: 16, color: C.cocoaDark, fontWeight: 700, textAlign: "center", padding: "14px 10px", background: C.amberBg, border: `1.5px solid ${C.goldStrong}`, borderRadius: 14 }}>
                         ⚠ {tr("fixComposition")}
                       </div>
                     ) : (

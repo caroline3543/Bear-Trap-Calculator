@@ -77,3 +77,12 @@
 #root .bear-leader-helper .bl-ideal-result .bl-help, #root .bear-leader-helper .bl-ideal-result small { color:var(--selectedTextMuted); }
 #root .bear-leader-helper .bl-ideal-result .bl-grid strong { font-size:24px; }
 @media(prefers-reduced-motion:reduce) { #root .bear-leader-helper .bl-calculate-launch:active { transform:none; } }
+
+#root :is(.bt-capacity-help,.bt-ratio-reference) { margin:12px 0 16px; color:var(--sub); font:400 16px/1.5 'Nunito Sans',sans-serif; }
+#root :is(.bt-capacity-help,.bt-ratio-reference) summary { cursor:pointer; min-height:48px; padding:12px 0; color:var(--teal); font-weight:700; }
+#root .bt-ratio-reference { border-top:1px solid var(--cardBorder); padding-top:4px; }
+#root .bt-capacity-help p { margin:0 0 10px; }
+#root .bl-setup-issues ul { padding-left:24px; margin:0 0 16px; color:var(--sub); font-size:16px; }
+#root .bl-setup-issues li + li { margin-top:8px; }
+
+#root .bt-flow-note { font:400 16px/1.5 'Nunito Sans',sans-serif; color:var(--sub); margin:12px 0; }

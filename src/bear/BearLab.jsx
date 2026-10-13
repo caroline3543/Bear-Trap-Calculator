@@ -74,7 +74,7 @@ function HeroNameField({ label, ariaLabel, value, names, onChange }) {
           }
           if (e.key === 'Enter' && open && active >= 0 && suggestions[active]) { e.preventDefault(); choose(suggestions[active]); }
         }} />
-      <small id={`${id}-help`}>{value && !resolved ? 'Choose a matching hero suggestion.' : resolved ? `✓ ${resolved}` : 'Type a name or choose a suggestion.'}</small>
+      <small id={`${id}-help`} hidden={Boolean(resolved)}>{value && !resolved ? 'Choose a hero from this class.' : resolved ? '' : 'Start typing to see matching heroes.'}</small>
     </label>
     {open && suggestions.length > 0 && <ul id={`${id}-list`} role="listbox" aria-label={`${label} suggestions`} className="bl-suggestions">
       {suggestions.map((hero, i) => <li role="option" aria-selected={active === i} id={`${id}-${i}`} key={hero}
@@ -117,7 +117,7 @@ function HeroComparison({ index, draft, tiers, capacity, minister, onEdit, onUse
   return <details className="bl-details bl-compare" open={open} onToggle={e => setOpen(e.currentTarget.open)}>
     <summary>Compare another {c} hero</summary>
     {open && <>
-      <p className="bl-help">Only this hero changes. Your other heroes, troops, bonuses and capacity stay the same.</p>
+      <p className="bl-help">Same troops, capacity, bonuses and other heroes.</p>
       <HeroFields hero={candidate} names={HERO_NAMES[index]} prefix={`Alternative ${c}`} onChange={onEdit} />
       <Button type="button" onClick={() => onEdit({ ...candidate, gear: Object.fromEntries(['attackOn', 'attackOff', 'lethalityOn', 'lethalityOff'].map(k => [k, draft.stats[index][k]])) })}>Use current hero’s gear readings</Button>
       <p className="bl-help">Use this shortcut only if you will transfer the same gear and its bonus is unchanged.</p>
@@ -127,7 +127,7 @@ function HeroComparison({ index, draft, tiers, capacity, minister, onEdit, onUse
           <span>{comparison.winner === key ? 'Recommended' : comparison.winner === 'tie' ? 'Equal score' : 'Optimal boost'}</span>
         </div>)}</div>
         <p className="bl-help">{comparison.winner === 'tie' ? 'Same score at this precision. Keep your current hero.' : `${best.profile.starters[index]} scores higher${comparison.improvement === null ? '' : ` by ${comparison.improvement.toFixed(2)}%`}.`}</p>
-        <p className="bl-help">Optimal boost compares setups; it is not expected damage. Troop amounts are limited when applied.</p>
+        <p className="bl-help">Optimal boost compares setups, not damage points.</p>
         {comparison.winner !== 'tie' && <Button type="button" tone="primary" onClick={() => onUse(comparison)}>Use {best.profile.starters[index]} & squad</Button>}
       </div>}
     </>}
@@ -172,37 +172,32 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
     <button type="button" className="bl-launch bl-calculate-launch" aria-expanded={open} aria-controls={panelId} onClick={() => setOpen(v => !v)}>
       <span>Calculate rally squad</span><Chevron expanded={open} />
     </button>
-    {!open && applied && <p className="bl-status">{dirty ? 'Setup changed. Open and recalculate to update your squad.' : `${applied.heroes.join(' · ')} · ${fmt(applied.capacity)} troops before inventory limits`}</p>}
+    {!open && applied && <p className="bl-status">{dirty ? 'Setup changed. Recalculate to update your squad.' : `${applied.heroes.join(' · ')} · ${fmt(applied.capacity)} troops before inventory limits`}</p>}
     {open && <form id={panelId} className="bl-panel" onSubmit={e => { e.preventDefault(); apply(); }}>
-      <p className="bl-help">Saved for {accountName}. Uses your troop levels and leader capacity.</p>
+      <p className="bl-help">For {accountName}. Troop levels and capacity come from above.</p>
       <details className="bl-details"><summary>Calculation assumptions</summary><p className="bl-help">Two Jessie and two Seo-yoon joiners, level-5 skills. Pets active. Trap attack +25%.</p></details>
-      <BonusScanner onApply={readings => { setDraft(p => applyBonusReadings(p, readings)); setDirty(true); setNotice('Account bonuses updated from reviewed screenshots.'); }} />
+      <BonusScanner onApply={readings => { setDraft(p => applyBonusReadings(p, readings)); setDirty(true); setNotice('Account bonuses updated.'); }} />
       <div className="bl-grid two">
         <NumberField label="All troops attack (%)" value={draft.allAttack} onChange={v => edit({ allAttack: v })} />
         <NumberField label="All troops lethality (%)" value={draft.allLethality} onChange={v => edit({ allLethality: v })} />
       </div>
-      <fieldset className="bl-class-bonuses"><legend>Extra bonuses by troop type</legend>
-        <p className="bl-help">Use each class’s listed bonuses. Do not add the all-troops bonus.</p>
+      <fieldset className="bl-class-bonuses"><legend>Troop-type bonuses</legend>
+        <p className="bl-help">Copy each troop type’s listed values. Do not add the all-troops bonus.</p>
         {CLASSES.map((c, i) => <div className="bl-grid two" key={c}>{['attack', 'lethality'].map(kind => <NumberField key={kind}
           label={`${c} base ${kind} (%)`} value={draft.stats[i][kind]} onChange={v => editAt('stats', i, { [kind]: v })} />)}</div>)}
       </fieldset>
-      <details className="bl-details bl-guide"><summary>Where to find your account bonuses</summary>
+      <details className="bl-details bl-guide"><summary>Where to find bonuses</summary>
         <ol><li>Open <strong>Power → Bonus Overview</strong>.</li><li>Copy <strong>Attack</strong> and <strong>Lethality</strong> for all troops and each troop type.</li><li>Use readings before pet skills. Enter pet bonuses separately below.</li></ol>
         <p className="bl-help">Use Bonus Overview; rally stats include your heroes.</p>
         <figure><a href={bonusOverviewPhoto} target="_blank" rel="noreferrer"><img src={bonusOverviewPhoto} loading="lazy" alt="Bonus Overview example highlighting Troops’ Attack 216.77%, Troops’ Lethality 62.33%, and Infantry and Lancer bonuses" /></a><figcaption>Enter the highlighted fields. Tap to enlarge.</figcaption></figure>
       </details>
-      <details className="bl-details bl-guide"><summary>Where to find deployment capacity</summary>
-        <ol><li>Start a Polar Terror rally with your leader heroes.</li><li>Tap <strong>!</strong> beside the troop count → <strong>Deployment Capacity</strong>.</li><li>Enter that capacity above. Add only buffs not already included.</li></ol>
-        <p className="bl-help">Deployment Capacity = your march. Rally Capacity = the whole rally.</p>
-      </details>
-      <p className="bl-help">You can type or paste numbers with commas and % signs.</p>
-      <details className="bl-details bl-guide"><summary>Where to find gear-on and gear-off stats</summary>
+      <details className="bl-details bl-guide"><summary>Where to find gear stats</summary>
         <ol><li>Open <strong>Hero → Stats → lower-right menu → Expedition</strong>.</li><li>Read <strong>Attack</strong> and <strong>Lethality</strong> with gear on, then off.</li><li>Keep stars, widget and skills unchanged. Restore your gear afterward.</li></ol>
         <p className="bl-help">Only gear on − gear off is added. Hero bonuses are calculated separately.</p>
         <figure><a href={heroStatsPhoto} target="_blank" rel="noreferrer"><img src={heroStatsPhoto} loading="lazy" alt="Hector’s lower-right menu and highlighted Expedition Infantry Attack and Lethality" /></a><figcaption>Use the Expedition percentages. Tap to enlarge.</figcaption></figure>
       </details>
       {CLASSES.map((c, i) => <fieldset className="bl-class" key={c}><legend>{c}</legend>
-        <p className="bl-help">Uses FC {tiers[i].fc === '' ? '—' : tiers[i].fc} · T{tiers[i].level === '' ? '—' : tiers[i].level} from your troop inventory above.</p>
+        <p className="bl-help">Uses FC {tiers[i].fc === '' ? '—' : tiers[i].fc} · T{tiers[i].level === '' ? '—' : tiers[i].level} from your inventory.</p>
         <HeroFields hero={{ name: draft.starters[i], info: draft.heroInfo[i], gear: draft.stats[i] }} names={HERO_NAMES[i]} prefix={c}
           onChange={hero => edit({ starters: draft.starters.map((v, j) => i === j ? hero.name : v), heroInfo: draft.heroInfo.map((v, j) => i === j ? hero.info : v), stats: draft.stats.map((v, j) => i === j ? hero.gear : v) })} />
         <HeroComparison index={i} draft={draft} tiers={tiers} capacity={leaderCapacity} minister={leaderMinister} onEdit={candidate => { setDraft(p => ({ ...p, alternatives: p.alternatives.map((v, j) => i === j ? candidate : v) })); setNotice(''); }}
@@ -216,16 +211,16 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
             setDirty(false); setNotice(`${chosen.profile.starters[i]} and recommended squad applied.`);
           }} />
       </fieldset>)}
-      <details className="bl-details"><summary>Active pet bonuses <span>Pets always active</span></summary>
-        <p className="bl-help">Enter the pet skill percentages you will activate for Bear Trap. Add Snow Ape’s capacity bonus in the capacity controls above only if your capacity reading excludes it.</p>
+      <details className="bl-details"><summary>Pet bonuses</summary>
+        <p className="bl-help">Enter the pet skill bonuses you will activate. Account bonuses above should exclude these skills.</p>
         <div className="bl-grid two">{[['chameleon', 'Chameleon (%)'], ['tiger', 'Sabre-tooth lethality (%)'], ['lion', 'Cave lion attack (%)']].map(([field, label]) => <NumberField key={field}
           label={label} value={draft[field]} max={1000} onChange={v => edit({ [field]: v })} />)}</div>
       </details>
       <div className="bl-apply-area">
-        {applied && !dirty && <div key={applied.revision} ref={resultRef} tabIndex={-1} className="bl-ideal-result rally-result-update" aria-label="Ideal rally leader squad" role="region"><h3>Ideal rally leader squad</h3><div className="bl-grid three">{CLASSES.map((c, i) => <div key={c}><small>{c} · {(applied.ratios[i] * 100).toFixed(2)}%</small><strong>{fmt(applied.counts[i])}</strong></div>)}</div><p className="bl-help">Total: {fmt(applied.capacity)} troops. Amounts are rounded to whole troops while keeping your capacity total.</p><p className="bl-model-score">WOS Nerds optimal boost: <strong>{applied.sourceBoost.toFixed(4)}</strong></p><p className="bl-help">A comparison score, not a prediction of Bear Trap damage points.</p></div>}
-        {assessment.errors.length > 0 && <p className="bl-help" role="status">{assessment.errors[0]}{assessment.errors.length > 1 ? ` (${assessment.errors.length - 1} more to complete)` : ''}</p>}
-        <button type="submit" className="bl-apply" disabled={!assessment.result}>{applied && !dirty ? 'Calculate again' : 'Calculate & use recommended squad'}</button>
-        <p className="bl-help">Updates the squad below, limited by your available troops.</p>
+        {applied && !dirty && <div key={applied.revision} ref={resultRef} tabIndex={-1} className="bl-ideal-result rally-result-update" aria-label="Ideal rally leader squad" role="region"><h3>Ideal rally leader squad</h3><div className="bl-grid three">{CLASSES.map((c, i) => <div key={c}><small>{c} · {(applied.ratios[i] * 100).toFixed(2)}%</small><strong>{fmt(applied.counts[i])}</strong></div>)}</div><p className="bl-help">Total: {fmt(applied.capacity)} troops before inventory limits.</p><p className="bl-model-score">WOS Nerds optimal boost: <strong>{applied.sourceBoost.toFixed(4)}</strong></p><p className="bl-help">A comparison score, not a prediction of Bear Trap damage points.</p></div>}
+        {assessment.errors.length > 0 && <details className="bl-details bl-setup-issues"><summary>{assessment.errors.length} {assessment.errors.length === 1 ? 'item' : 'items'} to check</summary><ul>{assessment.errors.map(error => <li key={error}>{error}</li>)}</ul></details>}
+        <button type="submit" className="bl-apply" disabled={!assessment.result}>{applied && !dirty ? 'Calculate again' : 'Calculate & apply squad'}</button>
+        <p className="bl-help">Applies the split below. Available troops may limit the final squad.</p>
       </div>
       <details className="bl-details"><summary>Formula reference</summary><p className="bl-help">Proportions use the theoretical WOS Nerds comparison model: each class’s D² ÷ sum(D²), with source ratios retained at full precision and whole troops rounded to capacity. The displayed optimal boost uses WOS Nerds’ normalization (raw boost × Chameleon × 1.3 ÷ 23,400), including its 10% display fallback when Chameleon is zero. This does not establish an in-game damage prediction. Explicit skill levels are honored here; WOS Nerds infers them from stars. <a href="https://wosnerds.com/bear-calc/" target="_blank" rel="noreferrer">WOS Nerds formula reference</a>.</p></details>
     </form>}

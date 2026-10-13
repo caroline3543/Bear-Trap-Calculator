@@ -8,7 +8,7 @@ export function parseEntry(text, max = Infinity) {
 }
 export function gearDifference(stats, kind) {
   const on = stats[`${kind}On`], off = stats[`${kind}Off`];
-  if (on === '' || off === '' || on == null || off == null) return null;
+  if ([on, off].some(v => v === '' || v == null || !Number.isFinite(Number(v)) || Number(v) < 0 || Number(v) > 10000)) return null;
   return Math.round((Number(on) - Number(off)) * 10000) / 10000;
 }
 export function withGearDifferences(profile) {

@@ -3,7 +3,10 @@ import { gearDifference, withGearDifferences } from './number-entry.js';
 import { heroNamesForClass, resolveHero, starKey } from './leader-setup.js';
 
 export function assessSetup(draft, tiers, leaderCapacity, leaderMinister, db) {
+    const validBonus = v => v !== '' && v != null && Number.isFinite(Number(v)) && Number(v) >= 0 && Number(v) <= 10000;
     const errors = [];
+    if (!Number.isSafeInteger(leaderCapacity) || leaderCapacity <= 0) errors.push('Enter a positive, whole-number deployment capacity above.');
+    if (['allAttack', 'allLethality', 'chameleon', 'tiger', 'lion'].some(k => !validBonus(draft[k]))) errors.push('Complete the account and pet bonuses with values from 0 to 10,000. Use 0 for no bonus.');
     const starters = draft.starters.map((h, i) => resolveHero(h, heroNamesForClass(db, i)));
     const joiners = ['Jessie', 'Jessie', 'Seo-yoon', 'Seo-yoon'];
     const roster = {};
@@ -19,10 +22,8 @@ export function assessSetup(draft, tiers, leaderCapacity, leaderMinister, db) {
       const tier = tiers[i];
       if (tier.fc === '' || tier.level === '' || !db.troopDamageStats[`FC${tier.fc} T${tier.level}`]) errors.push(`${c}: check FC (0–10) and troop tier (1–11) in the troop inventory above.`);
       if (!['attack', 'lethality'].every(k => gearDifference(draft.stats[i], k) !== null && gearDifference(draft.stats[i], k) >= 0)) errors.push(`${c}: complete both gear readings; gear on must be at least gear off.`);
-      if (draft.stats[i].attack === '' || draft.stats[i].lethality === '') errors.push(`${c}: enter both troop-type bonuses, or use 0 if there is no bonus.`);
+      if (!validBonus(draft.stats[i].attack) || !validBonus(draft.stats[i].lethality)) errors.push(`${c}: enter both troop-type bonuses, or use 0 if there is no bonus.`);
     });
-    if (['allAttack', 'allLethality', 'chameleon', 'tiger', 'lion'].some(k => draft[k] === '')) errors.push('Complete the attack, lethality and pet bonuses, or enter 0.');
-    if (!(leaderCapacity > 0)) errors.push('Enter a positive rally capacity above.');
     const profile = withGearDifferences({ ...draft, capacity: leaderCapacity, capacityIsEffective: true,
       starters, joiners, roster, tiers: tiers.map(t => `FC${t.fc} T${t.level}`),
       minister: leaderMinister, petsActive: true, trap: 25 });
@@ -39,7 +40,9 @@ export function replaceHero(draft, index, candidate) {
 export function compareHero(draft, index, candidate, tiers, capacity, minister, db) {
   const current = assessSetup(draft, tiers, capacity, minister, db);
   const alternative = assessSetup(replaceHero(draft, index, candidate), tiers, capacity, minister, db);
-  const errors = [...new Set([...current.errors, ...alternative.errors])];
+  const errors = current.errors.length
+    ? current.errors.map(error => `Current setup: ${error}`)
+    : alternative.errors.map(error => `Alternative hero: ${error}`);
   if (current.profile.starters[index] && current.profile.starters[index] === alternative.profile.starters[index]) errors.unshift('Choose a different hero of this class.');
   if (errors.length) return { errors, current, alternative };
   const a = current.result.sourceBoost, b = alternative.result.sourceBoost;

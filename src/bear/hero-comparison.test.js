@@ -42,3 +42,8 @@ test('migration saves independent alternatives and leaves old profiles empty for
  draft.alternatives[0]=candidate();const saved=migrateSetup(JSON.parse(JSON.stringify(draft)));assert.deepEqual(saved.alternatives[0],candidate());
  const swapped=replaceHero(saved,0,saved.alternatives[0]);assert.equal(swapped.heroInfo[0].widget,10);assert.equal(saved.starters[0],'Hector');
 });
+test('invalid saved bonuses and deployment capacity block calculation instead of silently becoming zero', () => {
+ const draft=setup();
+ for (const value of [NaN,Infinity,-1,'abc',null,10001]) assert.equal(assessSetup({...draft,allAttack:value},draft.tierInputs,160010,'None',db).result,null);
+ for (const capacity of [Infinity,-1,0,1.5]) assert.equal(assessSetup(draft,draft.tierInputs,capacity,'None',db).result,null);
+});
