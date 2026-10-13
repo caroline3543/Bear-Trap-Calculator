@@ -1,9 +1,11 @@
 import { Chevron } from '../ui/components.jsx';
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import db from './database.js';
-import { CLASSES, calculate } from './model.js';
-import { parseEntry, gearDifference, withGearDifferences } from './number-entry.js';
+import { CLASSES } from './model.js';
+import { parseEntry, gearDifference } from './number-entry.js';
 import { heroNamesForClass, migrateSetup, resolveHero, starKey } from './leader-setup.js';
+import { assessSetup, compareHero, replaceHero } from './hero-comparison.js';
+import { Button } from '../ui/components.jsx';
 import './bear-lab.css';
 import BonusScanner from './BonusScanner.jsx';
 import { applyBonusReadings } from './bonus-scan.js';
@@ -80,6 +82,57 @@ function HeroNameField({ label, ariaLabel, value, names, onChange }) {
     </ul>}
   </div>;
 }
+
+function HeroFields({ hero, names, prefix, onChange }) {
+  function update(field, values) { onChange({ ...hero, [field]: { ...hero[field], ...values } }); }
+  return <>
+        <HeroNameField label="Hero name" ariaLabel={`${prefix} hero`} value={hero.name} names={names} onChange={v => onChange({ ...hero, name: v })} />
+        <div className="bl-grid three">
+          <NumberField label="Stars" ariaLabel={`${prefix} stars`} value={hero.info.stars} max={5} fixed={1}
+            validate={n => starKey(n) && (n === 5 || Math.round(n * 10) % 10 <= 5) ? '' : 'Use one decimal: .0–.5 steps, or 5.0.'}
+            onChange={v => update('info', { stars: v })} help="e.g. 4.3 · max 5.0" />
+          <NumberField label="Widget" ariaLabel={`${prefix} widget`} value={hero.info.widget} max={10} decimal={false} onChange={v => update('info', { widget: v })} help="0–10" />
+          <NumberField label="Skills" ariaLabel={`${prefix} skill level`} value={hero.info.skill} min={1} max={5} decimal={false} onChange={v => update('info', { skill: v })} help="1–5" />
+        </div>
+        <details className="bl-details"><summary>Gear on / off <span>{['attack', 'lethality'].map(k => gearDifference(hero.gear, k)).every(n => n !== null && n >= 0) ? `+${fmt(gearDifference(hero.gear, 'attack'))} attack · +${fmt(gearDifference(hero.gear, 'lethality'))} lethality` : 'Complete both readings'}</span></summary>
+          <p className="bl-help">Read these percentages on this hero’s Stats screen. Change only their gear between readings.</p>
+          {['attack', 'lethality'].map(kind => <div key={kind}>
+            <h4 className="bl-stat-title">{kind}</h4>
+            <div className="bl-grid two">{[['On', 'Gear on'], ['Off', 'Gear off']].map(([suffix, label]) => <NumberField key={suffix}
+              label={`${label} (%)`} ariaLabel={`${prefix} ${kind} · ${label} (%)`} value={hero.gear[kind + suffix]}
+              onChange={v => update('gear', { [kind + suffix]: v })} />)}</div>
+            <p className={gearDifference(hero.gear, kind) < 0 ? 'bl-error' : 'bl-difference'}>{gearDifference(hero.gear, kind) === null ? 'Enter both readings.' : gearDifference(hero.gear, kind) < 0 ? 'Gear on must be at least gear off.' : `+${fmt(gearDifference(hero.gear, kind))} ${kind} percentage points`}</p>
+          </div>)}
+        </details>
+  </>;
+}
+
+function HeroComparison({ index, draft, tiers, capacity, minister, onEdit, onUse }) {
+  const [open, setOpen] = useState(false);
+  const candidate = draft.alternatives[index];
+  const c = CLASSES[index];
+  const comparison = useMemo(() => open ? compareHero(draft, index, candidate, tiers, capacity, minister, db) : null,
+    [open, draft, index, candidate, tiers, capacity, minister]);
+  const best = comparison?.winner === 'alternative' ? comparison.alternative : comparison?.current;
+  return <details className="bl-details bl-compare" open={open} onToggle={e => setOpen(e.currentTarget.open)}>
+    <summary>Compare another {c} hero</summary>
+    {open && <>
+      <p className="bl-help">Only this hero changes. Your other heroes, troops, bonuses and capacity stay the same.</p>
+      <HeroFields hero={candidate} names={HERO_NAMES[index]} prefix={`Alternative ${c}`} onChange={onEdit} />
+      <Button type="button" onClick={() => onEdit({ ...candidate, gear: Object.fromEntries(['attackOn', 'attackOff', 'lethalityOn', 'lethalityOff'].map(k => [k, draft.stats[index][k]])) })}>Use current hero’s gear readings</Button>
+      <p className="bl-help">Use this shortcut only if you will transfer the same gear and its bonus is unchanged.</p>
+      {comparison.errors.length ? <p className="bl-help" role="status">{comparison.errors[0]}</p> : <div className="bl-comparison-result" aria-live="polite">
+        <div className="bl-grid two">{[['current', comparison.current], ['alternative', comparison.alternative]].map(([key, item]) => <div key={key} className={`bl-score-card ${comparison.winner === key ? 'bl-score-best' : ''}`}>
+          <span>{item.profile.starters[index]}</span><strong>{item.result.sourceBoost.toFixed(4)}</strong>
+          <span>{comparison.winner === key ? 'Recommended' : comparison.winner === 'tie' ? 'Equal score' : 'Optimal boost'}</span>
+        </div>)}</div>
+        <p className="bl-help">{comparison.winner === 'tie' ? 'Same score at this precision. Keep your current hero.' : `${best.profile.starters[index]} scores higher${comparison.improvement === null ? '' : ` by ${comparison.improvement.toFixed(2)}%`}.`}</p>
+        <p className="bl-help">Optimal boost compares setups; it is not expected damage. Troop amounts are limited when applied.</p>
+        {comparison.winner !== 'tie' && <Button type="button" tone="primary" onClick={() => onUse(comparison)}>Use {best.profile.starters[index]} & squad</Button>}
+      </div>}
+    </>}
+  </details>;
+}
 export default function BearLab({ accountId, accountName, leaderCapacity, leaderMinister = 'None', troopTiers, onApplyLeader }) {
   const [draft, setDraft] = useState(() => loadSetup(accountId));
   const tiers = troopTiers || draft.tierInputs;
@@ -106,30 +159,7 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
     setDirty(true); setNotice('');
   }
   const assessment = useMemo(() => {
-    const errors = [];
-    const starters = draft.starters.map((h, i) => resolveHero(h, HERO_NAMES[i]));
-    const joiners = ['Jessie', 'Jessie', 'Seo-yoon', 'Seo-yoon'];
-    const roster = {};
-    CLASSES.forEach((c, i) => {
-      if (!starters[i]) errors.push(`${c}: choose a matching leader hero.`);
-      const info = draft.heroInfo[i];
-      const key = starKey(info.stars);
-      const starTable = db.starLevelStats[Object.keys(db.starLevelStats).find(h => h.toLowerCase().replace(/[^a-z0-9]/g, '') === starters[i].toLowerCase().replace(/[^a-z0-9]/g, ''))];
-      if (!key || (starTable && !(key in starTable))) errors.push(`${c}: enter a supported star step (e.g. 4.3 or 5.0).`);
-      if (info.widget === '' || !Number.isInteger(Number(info.widget)) || info.widget < 0 || info.widget > 10) errors.push(`${c}: widget must be a whole number from 0 to 10.`);
-      if (info.skill === '' || !Number.isInteger(Number(info.skill)) || info.skill < 1 || info.skill > 5) errors.push(`${c}: skill must be a whole number from 1 to 5.`);
-      roster[starters[i]] = { stars: key, widget: info.widget, skill: info.skill };
-      const tier = tiers[i];
-      if (tier.fc === '' || tier.level === '' || !db.troopDamageStats[`FC${tier.fc} T${tier.level}`]) errors.push(`${c}: check FC (0–10) and troop tier (1–11) in the troop inventory above.`);
-      if (!['attack', 'lethality'].every(k => gearDifference(draft.stats[i], k) !== null && gearDifference(draft.stats[i], k) >= 0)) errors.push(`${c}: complete both gear readings; gear on must be at least gear off.`);
-      if (draft.stats[i].attack === '' || draft.stats[i].lethality === '') errors.push(`${c}: enter both troop-type bonuses, or use 0 if there is no bonus.`);
-    });
-    if (['allAttack', 'allLethality', 'chameleon', 'tiger', 'lion'].some(k => draft[k] === '')) errors.push('Complete the attack, lethality and pet bonuses, or enter 0.');
-    if (!(leaderCapacity > 0)) errors.push('Enter a positive rally capacity above.');
-    const profile = withGearDifferences({ ...draft, capacity: leaderCapacity, capacityIsEffective: true,
-      starters, joiners, roster, tiers: tiers.map(t => `FC${t.fc} T${t.level}`),
-      minister: leaderMinister, petsActive: true, trap: 25 });
-    return { errors, profile, result: errors.length ? null : calculate(profile, db) };
+    return assessSetup(draft, tiers, leaderCapacity, leaderMinister, db);
   }, [draft, leaderCapacity, leaderMinister, troopTiers]);
   function apply() {
     if (!assessment.result) return;
@@ -173,24 +203,18 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
       </details>
       {CLASSES.map((c, i) => <fieldset className="bl-class" key={c}><legend>{c}</legend>
         <p className="bl-help">Uses FC {tiers[i].fc === '' ? '—' : tiers[i].fc} · T{tiers[i].level === '' ? '—' : tiers[i].level} from your troop inventory above.</p>
-        <HeroNameField label="Hero name" ariaLabel={`${c} hero`} value={draft.starters[i]} names={HERO_NAMES[i]} onChange={v => edit({ starters: draft.starters.map((h, j) => i === j ? v : h) })} />
-        <div className="bl-grid three">
-          <NumberField label="Stars" ariaLabel={`${c} stars`} value={draft.heroInfo[i].stars} max={5} fixed={1}
-            validate={n => starKey(n) && (n === 5 || Math.round(n * 10) % 10 <= 5) ? '' : 'Use one decimal: .0–.5 steps, or 5.0.'}
-            onChange={v => editAt('heroInfo', i, { stars: v })} help="e.g. 4.3 · max 5.0" />
-          <NumberField label="Widget" ariaLabel={`${c} widget`} value={draft.heroInfo[i].widget} max={10} decimal={false} onChange={v => editAt('heroInfo', i, { widget: v })} help="0–10" />
-          <NumberField label="Skills" ariaLabel={`${c} skill level`} value={draft.heroInfo[i].skill} min={1} max={5} decimal={false} onChange={v => editAt('heroInfo', i, { skill: v })} help="1–5" />
-        </div>
-        <details className="bl-details"><summary>Gear on / off <span>{['attack', 'lethality'].map(k => gearDifference(draft.stats[i], k)).every(n => n !== null && n >= 0) ? `+${fmt(gearDifference(draft.stats[i], 'attack'))} attack · +${fmt(gearDifference(draft.stats[i], 'lethality'))} lethality` : 'Complete both readings'}</span></summary>
-          <p className="bl-help">Read these percentages on this hero’s Stats screen. Change only their gear between readings.</p>
-          {['attack', 'lethality'].map(kind => <div key={kind}>
-            <h4 className="bl-stat-title">{kind}</h4>
-            <div className="bl-grid two">{[['On', 'Gear on'], ['Off', 'Gear off']].map(([suffix, label]) => <NumberField key={suffix}
-              label={`${label} (%)`} ariaLabel={`${c} ${kind} · ${label} (%)`} value={draft.stats[i][kind + suffix]}
-              onChange={v => editAt('stats', i, { [kind + suffix]: v })} />)}</div>
-            <p className={gearDifference(draft.stats[i], kind) < 0 ? 'bl-error' : 'bl-difference'}>{gearDifference(draft.stats[i], kind) === null ? 'Enter both readings.' : gearDifference(draft.stats[i], kind) < 0 ? 'Gear on must be at least gear off.' : `+${fmt(gearDifference(draft.stats[i], kind))} ${kind} percentage points`}</p>
-          </div>)}
-        </details>
+        <HeroFields hero={{ name: draft.starters[i], info: draft.heroInfo[i], gear: draft.stats[i] }} names={HERO_NAMES[i]} prefix={c}
+          onChange={hero => edit({ starters: draft.starters.map((v, j) => i === j ? hero.name : v), heroInfo: draft.heroInfo.map((v, j) => i === j ? hero.info : v), stats: draft.stats.map((v, j) => i === j ? hero.gear : v) })} />
+        <HeroComparison index={i} draft={draft} tiers={tiers} capacity={leaderCapacity} minister={leaderMinister} onEdit={candidate => { setDraft(p => ({ ...p, alternatives: p.alternatives.map((v, j) => i === j ? candidate : v) })); setNotice(''); }}
+          onUse={comparison => {
+            const old = { name: draft.starters[i], info: { ...draft.heroInfo[i] }, gear: Object.fromEntries(['attackOn', 'attackOff', 'lethalityOn', 'lethalityOff'].map(k => [k, draft.stats[i][k]])) };
+            const next = comparison.winner === 'alternative' ? replaceHero(draft, i, draft.alternatives[i]) : draft;
+            const chosen = comparison.winner === 'alternative' ? comparison.alternative : comparison.current;
+            setDraft(comparison.winner === 'alternative' ? { ...next, alternatives: draft.alternatives.map((v, j) => i === j ? old : v) } : next);
+            onApplyLeader(chosen.result.counts, chosen.result.ratios.map(n => n * 100));
+            setApplied({ ...chosen.result, heroes: chosen.profile.starters, revision: (applied?.revision || 0) + 1 });
+            setDirty(false); setNotice(`${chosen.profile.starters[i]} and recommended squad applied.`);
+          }} />
       </fieldset>)}
       <details className="bl-details"><summary>Active pet bonuses <span>Pets always active</span></summary>
         <p className="bl-help">Enter the pet skill percentages you will activate for Bear Trap. Add Snow Ape’s capacity bonus in the capacity controls above only if your capacity reading excludes it.</p>

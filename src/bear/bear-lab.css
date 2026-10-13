@@ -72,3 +72,10 @@
 .bear-leader-helper .bl-bonus-scanner .bl-grid.two { grid-template-columns: 1fr; }
 .bear-leader-helper .bl-bonus-scanner .bl-field { display: grid; grid-template-columns: minmax(0,1fr) minmax(100px,.65fr); align-items: center; gap: 12px; }
 .bl-bonus-scanner button:not(.bl-apply) { min-height: 44px; }
+
+.bl-compare { border-top: 1px solid var(--cardBorder); padding-top: 12px; margin-top: 16px; }
+.bl-comparison-result { margin-top: 16px; }
+.bl-score-card { display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid var(--cardBorder); border-radius: 12px; overflow-wrap: anywhere; }
+.bl-score-card strong { font-size: 24px; font-variant-numeric: tabular-nums; }
+.bl-score-best { border: 2px solid var(--teal); background: var(--selectedBg, var(--surface)); }
+.bl-comparison-result .ui-button { width: 100%; }

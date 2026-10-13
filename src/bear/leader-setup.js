@@ -27,6 +27,11 @@ export function migrateSetup(old = {}) {
       const match = /FC(\d+) T(\d+)/.exec(old.tiers?.[i] || 'FC6 T10');
       return { fc: Number(match?.[1] ?? 6), level: Number(match?.[2] ?? 10) };
     })()),
+    alternatives: CLASSES.map((_, i) => {
+      const a = old.alternatives?.[i] || {};
+      return { name: a.name ?? '', info: { stars: a.info?.stars ?? '', widget: a.info?.widget ?? '', skill: a.info?.skill ?? '' },
+        gear: Object.fromEntries(['attackOn', 'attackOff', 'lethalityOn', 'lethalityOff'].map(k => [k, a.gear?.[k] ?? ''])) };
+    }),
     joiners: ['Jessie', 'Jessie', 'Seo-yoon', 'Seo-yoon'],
   };
 }
