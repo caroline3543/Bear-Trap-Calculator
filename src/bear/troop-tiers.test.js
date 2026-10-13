@@ -46,3 +46,9 @@ test('close-up crops must agree before accepting a badge digit', () => {
   assert.equal(confirmFcReadings([{text:'5',confidence:60},{text:'5',confidence:60}]),null);
   assert.equal(confirmFcReadings([{text:'11',confidence:95},{text:'11',confidence:95}]),null);
 });
+test('FC-by-tier overrides persist through reload and partial scan updates',()=>{
+ const tiers=previous.map((t,i)=>({...t,...(i===2 ? {byTier:{t11:6,t10:5,t9:4}}:{})}));
+ assert.deepEqual(loadTroopTiers('main',{troopTiers:tiers}),tiers);
+ const merged=mergeScannedTiers(tiers,{marksman:{fc:7,level:11}});
+ assert.deepEqual(merged[2].byTier,{t11:7,t10:5,t9:4});
+});

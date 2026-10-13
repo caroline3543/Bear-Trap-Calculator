@@ -6,7 +6,7 @@ export function loadTroopTiers(accountId, saved, storage = globalThis.localStora
   return TYPES.map((_, i) => {
     const previous = saved?.troopTiers?.[i] || legacy.tierInputs?.[i];
     const match = /FC(\d+) T(\d+)/.exec(legacy.tiers?.[i] || '');
-    return { fc: previous?.fc ?? Number(match?.[1] ?? 6), level: previous?.level ?? Number(match?.[2] ?? 10) };
+    return { fc: previous?.fc ?? Number(match?.[1] ?? 6), level: previous?.level ?? Number(match?.[2] ?? 10), ...(previous?.byTier ? { byTier:{...previous.byTier} } : {}) };
   });
 }
 // Keep per-class FC/tier readings together; a missing badge must not change saved data.
@@ -14,7 +14,7 @@ export function mergeScannedTiers(previous, readings = {}) {
   return TYPES.map((type, i) => {
     const value = readings[type];
     if (!value || value.uncertain || !Number.isInteger(value.fc) || value.fc < 0 || value.fc > 10 || ![9, 10, 11].includes(value.level)) return previous[i];
-    return { fc: value.fc, level: value.level };
+    return { fc: value.fc, level: value.level, ...(previous[i].byTier ? { byTier:{...previous[i].byTier,[`t${value.level}`]:value.fc} } : {}) };
   });
 }
 export function selectScannedTiers(badges) {

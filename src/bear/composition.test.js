@@ -17,3 +17,10 @@ test('invalid compositions cannot spend more troops or disguise negative or frac
  for (const exact of [{infantry:-1,lancer:51,marksman:50},{infantry:.5,lancer:49.5,marksman:50},{infantry:1,lancer:2,marksman:3}]) assert.equal(computeTarget(100,'exact',{},exact).valid,false);
  assert.equal(computeTarget(100,'exact',{}, {infantry:1,lancer:19,marksman:80}).valid,true);
 });
+test('leader-only partial exact formations reserve real troops without forcing capacity fill',()=>{
+ const exact={infantry:1,lancer:2,marksman:3};
+ assert.equal(computeTarget(100,'exact',{},exact,true).valid,true);
+ assert.equal(computeTarget(100,'exact',{},exact).valid,false);
+ assert.equal(computeTarget(5,'exact',{},exact,true).valid,false);
+ assert.equal(computeTarget(100,'exact',{}, {infantry:0,lancer:0,marksman:0},true).valid,false);
+});

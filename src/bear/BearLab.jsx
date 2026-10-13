@@ -4,6 +4,7 @@ import db from './database.js';
 import { CLASSES } from './model.js';
 import { parseEntry, gearDifference } from './number-entry.js';
 import { heroNamesForClass, migrateSetup, resolveHero, starKey } from './leader-setup.js';
+import { scoreRally } from './mixed-troops.js';
 import { assessSetup, compareHero, replaceHero } from './hero-comparison.js';
 import { Button } from '../ui/components.jsx';
 import './bear-lab.css';
@@ -107,33 +108,33 @@ function HeroFields({ hero, names, prefix, onChange }) {
   </>;
 }
 
-function HeroComparison({ index, draft, tiers, capacity, minister, onEdit, onUse }) {
+function HeroComparison({ index, draft, tiers, capacity, minister, inventory, onEdit, onUse }) {
   const [open, setOpen] = useState(false);
   const candidate = draft.alternatives[index];
   const c = CLASSES[index];
-  const comparison = useMemo(() => open ? compareHero(draft, index, candidate, tiers, capacity, minister, db) : null,
-    [open, draft, index, candidate, tiers, capacity, minister]);
+  const comparison = useMemo(() => open ? compareHero(draft, index, candidate, tiers, capacity, minister, db, inventory) : null,
+    [open, draft, index, candidate, tiers, capacity, minister, inventory]);
   const best = comparison?.winner === 'alternative' ? comparison.alternative : comparison?.current;
   return <details className="bl-details bl-compare" open={open} onToggle={e => setOpen(e.currentTarget.open)}>
     <summary>Compare another {c} hero</summary>
     {open && <>
-      <p className="bl-help">Same troops, capacity, bonuses and other heroes.</p>
+      <p className="bl-help">Same troop inventory, capacity, bonuses and other heroes. Each hero gets its best available split.</p>
       <HeroFields hero={candidate} names={HERO_NAMES[index]} prefix={`Alternative ${c}`} onChange={onEdit} />
       <Button type="button" onClick={() => onEdit({ ...candidate, gear: Object.fromEntries(['attackOn', 'attackOff', 'lethalityOn', 'lethalityOff'].map(k => [k, draft.stats[index][k]])) })}>Use current hero’s gear readings</Button>
       <p className="bl-help">Use this shortcut only if you will transfer the same gear and its bonus is unchanged.</p>
       {comparison.errors.length ? <p className="bl-help" role="status">{comparison.errors[0]}</p> : <div className="bl-comparison-result" aria-live="polite">
         <div className="bl-grid two">{[['current', comparison.current], ['alternative', comparison.alternative]].map(([key, item]) => <div key={key} className={`bl-score-card ${comparison.winner === key ? 'bl-score-best' : ''}`}>
           <span>{item.profile.starters[index]}</span><strong>{item.result.sourceBoost.toFixed(4)}</strong>
-          <span>{comparison.winner === key ? 'Recommended' : comparison.winner === 'tie' ? 'Equal score' : 'Optimal boost'}</span>
+          <span>{comparison.winner === key ? 'Recommended' : comparison.winner === 'tie' ? comparison.uncertain ? 'Too close to call' : 'Equal score' : 'Optimal boost'}</span>
         </div>)}</div>
-        <p className="bl-help">{comparison.winner === 'tie' ? 'Same score at this precision. Keep your current hero.' : `${best.profile.starters[index]} scores higher${comparison.improvement === null ? '' : ` by ${comparison.improvement.toFixed(2)}%`}.`}</p>
+        <p className="bl-help">{comparison.winner === 'tie' ? comparison.uncertain ? 'Scores are too close to recommend a winner. Keep your current hero.' : 'Same score at this precision. Keep your current hero.' : `${best.profile.starters[index]} scores higher${comparison.improvement === null ? '' : ` by ${comparison.improvement.toFixed(2)}%`}.`}</p>
         <p className="bl-help">Optimal boost compares setups, not damage points.</p>
         {comparison.winner !== 'tie' && <Button type="button" tone="primary" onClick={() => onUse(comparison)}>Use {best.profile.starters[index]} & squad</Button>}
       </div>}
     </>}
   </details>;
 }
-export default function BearLab({ accountId, accountName, leaderCapacity, leaderMinister = 'None', troopTiers, onApplyLeader }) {
+export default function BearLab({ accountId, accountName, leaderCapacity, leaderMinister = 'None', troopTiers, inventory, actualRally, onApplyLeader }) {
   const [draft, setDraft] = useState(() => loadSetup(accountId));
   const tiers = troopTiers || draft.tierInputs;
   const [open, setOpen] = useState(false);
@@ -152,15 +153,19 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
   useEffect(() => {
     if (mounted.current) { setDirty(true); setNotice(''); }
     mounted.current = true;
-  }, [leaderCapacity, leaderMinister, troopTiers]);
+  }, [leaderCapacity, leaderMinister, troopTiers, inventory]);
   function edit(fields) { setDraft(p => ({ ...p, ...fields })); setDirty(true); setNotice(''); }
   function editAt(field, i, fields) {
     setDraft(p => ({ ...p, [field]: p[field].map((v, j) => i === j ? { ...v, ...fields } : v) }));
     setDirty(true); setNotice('');
   }
   const assessment = useMemo(() => {
-    return assessSetup(draft, tiers, leaderCapacity, leaderMinister, db);
-  }, [draft, leaderCapacity, leaderMinister, troopTiers]);
+    return assessSetup(draft, tiers, leaderCapacity, leaderMinister, db, inventory);
+  }, [draft, leaderCapacity, leaderMinister, troopTiers, inventory]);
+  const actualScore = useMemo(() => {
+    if (!assessment.result?.model || !actualRally) return null;
+    try { return scoreRally(assessment.result.model,actualRally); } catch { return null; }
+  }, [assessment,actualRally]);
   function apply() {
     if (!assessment.result) return;
     onApplyLeader(assessment.result.counts, assessment.result.ratios.map(n => n * 100));
@@ -174,7 +179,7 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
     </button>
     {!open && applied && <p className="bl-status">{dirty ? 'Setup changed. Recalculate to update your squad.' : `${applied.heroes.join(' · ')} · ${fmt(applied.capacity)} troops before inventory limits`}</p>}
     {open && <form id={panelId} className="bl-panel" onSubmit={e => { e.preventDefault(); apply(); }}>
-      <p className="bl-help">For {accountName}. Troop levels and capacity come from above.</p>
+      <p className="bl-help">For {accountName}. Uses your available T11, T10 and T9 troops, filling higher tiers first.</p>
       <details className="bl-details"><summary>Calculation assumptions</summary><p className="bl-help">Two Jessie and two Seo-yoon joiners, level-5 skills. Pets active. Trap attack +25%.</p></details>
       <BonusScanner onApply={readings => { setDraft(p => applyBonusReadings(p, readings)); setDirty(true); setNotice('Account bonuses updated.'); }} />
       <div className="bl-grid two">
@@ -197,10 +202,10 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
         <figure><a href={heroStatsPhoto} target="_blank" rel="noreferrer"><img src={heroStatsPhoto} loading="lazy" alt="Hector’s lower-right menu and highlighted Expedition Infantry Attack and Lethality" /></a><figcaption>Use the Expedition percentages. Tap to enlarge.</figcaption></figure>
       </details>
       {CLASSES.map((c, i) => <fieldset className="bl-class" key={c}><legend>{c}</legend>
-        <p className="bl-help">Uses FC {tiers[i].fc === '' ? '—' : tiers[i].fc} · T{tiers[i].level === '' ? '—' : tiers[i].level} from your inventory.</p>
+        <p className="bl-help">Uses FC {tiers[i].fc === '' ? '—' : tiers[i].fc} · T{tiers[i].level === '' ? '—' : tiers[i].level} from your inventory. Any FC-by-tier overrides are included.</p>
         <HeroFields hero={{ name: draft.starters[i], info: draft.heroInfo[i], gear: draft.stats[i] }} names={HERO_NAMES[i]} prefix={c}
           onChange={hero => edit({ starters: draft.starters.map((v, j) => i === j ? hero.name : v), heroInfo: draft.heroInfo.map((v, j) => i === j ? hero.info : v), stats: draft.stats.map((v, j) => i === j ? hero.gear : v) })} />
-        <HeroComparison index={i} draft={draft} tiers={tiers} capacity={leaderCapacity} minister={leaderMinister} onEdit={candidate => { setDraft(p => ({ ...p, alternatives: p.alternatives.map((v, j) => i === j ? candidate : v) })); setNotice(''); }}
+        <HeroComparison index={i} draft={draft} tiers={tiers} capacity={leaderCapacity} minister={leaderMinister} inventory={inventory} onEdit={candidate => { setDraft(p => ({ ...p, alternatives: p.alternatives.map((v, j) => i === j ? candidate : v) })); setNotice(''); }}
           onUse={comparison => {
             const old = { name: draft.starters[i], info: { ...draft.heroInfo[i] }, gear: Object.fromEntries(['attackOn', 'attackOff', 'lethalityOn', 'lethalityOff'].map(k => [k, draft.stats[i][k]])) };
             const next = comparison.winner === 'alternative' ? replaceHero(draft, i, draft.alternatives[i]) : draft;
@@ -217,13 +222,17 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
           label={label} value={draft[field]} max={1000} onChange={v => edit({ [field]: v })} />)}</div>
       </details>
       <div className="bl-apply-area">
-        {applied && !dirty && <div key={applied.revision} ref={resultRef} tabIndex={-1} className="bl-ideal-result rally-result-update" aria-label="Ideal rally leader squad" role="region"><h3>Ideal rally leader squad</h3><div className="bl-grid three">{CLASSES.map((c, i) => <div key={c}><small>{c} · {(applied.ratios[i] * 100).toFixed(2)}%</small><strong>{fmt(applied.counts[i])}</strong></div>)}</div><p className="bl-help">Total: {fmt(applied.capacity)} troops before inventory limits.</p><p className="bl-model-score">WOS Nerds optimal boost: <strong>{applied.sourceBoost.toFixed(4)}</strong></p><p className="bl-help">A comparison score, not a prediction of Bear Trap damage points.</p></div>}
+        {applied && !dirty && <div key={applied.revision} ref={resultRef} tabIndex={-1} className="bl-ideal-result rally-result-update" aria-label="Ideal rally leader squad" role="region"><h3>Ideal rally leader squad</h3><div className="bl-grid three">{CLASSES.map((c, i) => <div key={c}><small>{c} · {(applied.ratios[i] * 100).toFixed(2)}%</small><strong>{fmt(applied.counts[i])}</strong></div>)}</div><p className="bl-help">Total: {fmt(applied.capacity)} troops{applied.shortfall > 0 ? ` · ${fmt(applied.shortfall)} spaces unfilled` : ''}.</p>
+          {applied.breakdown && <div className="bl-tier-mix">{CLASSES.map((c,i) => <p key={c}><strong>{c}</strong> {['t11','t10','t9'].filter(t => applied.breakdown[['infantry','lancer','marksman'][i]][t]>0).map(t => `${t.toUpperCase()} FC${applied.model.classes[i].find(e=>e.tier===t).fc} ${fmt(applied.breakdown[['infantry','lancer','marksman'][i]][t])}`).join(' · ') || '0 troops'}</p>)}</div>}
+          <p className="bl-model-score">{applied.mixedTiers ? applied.optimalAtDisplayPrecision ? 'Inventory-adjusted optimal boost' : 'Best inventory-adjusted boost' : 'WOS Nerds optimal boost'}: <strong>{applied.sourceBoost.toFixed(4)}</strong></p><p className="bl-help">A comparison score, not a prediction of Bear Trap damage points.</p></div>}
         {assessment.errors.length > 0 && <details className="bl-details bl-setup-issues"><summary>{assessment.errors.length} {assessment.errors.length === 1 ? 'item' : 'items'} to check</summary><ul>{assessment.errors.map(error => <li key={error}>{error}</li>)}</ul></details>}
         <button type="submit" className="bl-apply" disabled={!assessment.result}>{applied && !dirty ? 'Calculate again' : 'Calculate & apply squad'}</button>
-        <p className="bl-help">Applies the split below. Available troops may limit the final squad.</p>
+        <p className="bl-help">Applies a split that fits your troop inventory.</p>
+
       </div>
-      <details className="bl-details"><summary>Formula reference</summary><p className="bl-help">Proportions use the theoretical WOS Nerds comparison model: each class’s D² ÷ sum(D²), with source ratios retained at full precision and whole troops rounded to capacity. The displayed optimal boost uses WOS Nerds’ normalization (raw boost × Chameleon × 1.3 ÷ 23,400), including its 10% display fallback when Chameleon is zero. This does not establish an in-game damage prediction. Explicit skill levels are honored here; WOS Nerds infers them from stars. <a href="https://wosnerds.com/bear-calc/" target="_blank" rel="noreferrer">WOS Nerds formula reference</a>.</p></details>
+      <details className="bl-details"><summary>Formula reference</summary><p className="bl-help">Single-tier proportions use WOS Nerds’ D² ÷ sum(D²). Mixed-tier scores extend that model: each class’s coefficient is weighted by its actual T11/T10/T9 counts, then multiplied by the square root of its total count. The optimizer searches whole troop counts within your inventory; higher tiers fill first. FC comes from the inventory heading or its optional FC-by-tier overrides. The displayed optimal boost uses WOS Nerds’ normalization (raw boost × Chameleon × 1.3 ÷ 23,400), including its 10% display fallback when Chameleon is zero. Mixed-tier weighting is our model extension, not a verified game damage formula. Explicit skill levels are honored here; WOS Nerds infers them from stars. <a href="https://wosnerds.com/bear-calc/" target="_blank" rel="noreferrer">WOS Nerds formula reference</a>.</p></details>
     </form>}
+        {actualScore !== null && <p className="bl-model-score" role="status">Current rally boost: <strong>{actualScore.toFixed(4)}</strong><span className="bl-help"> · based on the exact T11/T10/T9 amounts below</span></p>}
     {notice && <p className="bl-status" role="status">{notice}</p>}
   </div>;
 }

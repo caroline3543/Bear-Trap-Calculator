@@ -86,3 +86,7 @@
 #root .bl-setup-issues li + li { margin-top:8px; }
 
 #root .bt-flow-note { font:400 16px/1.5 'Nunito Sans',sans-serif; color:var(--sub); margin:12px 0; }
+
+#root .bl-tier-mix { padding:12px 0; border-top:1px solid var(--selectedBorder); margin-top:12px; }
+#root .bl-tier-mix p { font-size:16px; margin:0 0 8px; }
+#root .bl-tier-mix strong { display:inline; font-size:16px; }

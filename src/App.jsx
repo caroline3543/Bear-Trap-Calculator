@@ -93,7 +93,7 @@ const TRANSLATIONS = {
     infantryLabel: "Infantry", lancerLabel: "Lancer", marksmanLabel: "Marksman",
     fullPill: "Full", partialPill: "Partial", usesT9Pill: "Uses T9", addBtn: "Add",
     invalidTarget: "Check your split", fixComposition: "Percentages must total 100%, or amounts must match capacity.",
-    leaderNotReserved: "Leader troops are not reserved until the split matches capacity. Joiners currently use the full pool.",
+    leaderNotReserved: "Enter a valid leader split to reserve troops. Exact amounts can be below capacity.",
     noJoinerSquads: "No joiner squads selected. Only the leader squad will use troops.",
     squadLabel: "Squad", strongerLabel: "Stronger", weakerLabel: "Weaker", leaderLabel: "Rally Leader",
     recSourceNote: "Joiner ratio reference", recSourceSub: "Generation 5 guidance; not a rule for every rally.",
@@ -1511,8 +1511,8 @@ function CompositionInputs({ animateUpdates = false, capacity, mode, setMode, ra
             <NumField label={tType("lancer", lang)} value={exact.lancer} onChange={(v) => setExact({ ...exact, lancer: v })} />
             <NumField label={tType("marksman", lang)} value={exact.marksman} onChange={(v) => setExact({ ...exact, marksman: v })} />
           </div>
-          {!target.valid && (
-            <div style={{ marginTop: 8, fontWeight: 500, fontSize: 12.5, color: target.total < capacity ? C.amber : C.red }}>
+          {target.total !== capacity && (
+            <div style={{ marginTop: 8, fontWeight: 500, fontSize: 16, color: target.total < capacity ? C.amber : C.red }}>
               {target.total < capacity ? tFmt("spacesRemainingBelow", lang, { a: fmt(capacity - target.total) }) : tFmt("exceedsCapacityBy", lang, { a: fmt(target.total - capacity) })}
             </div>
           )}
@@ -2176,7 +2176,7 @@ export default function App() {
   const targetManual = useMemo(() => computeTarget(capacity, mode, ratio, exact), [capacity, mode, ratio, exact]);
   const effectiveRallyCapacity = rallyCapacity + cyrilleBoost + snowApeBoost + ministerBoost;
 
-  const rallyTarget = useMemo(() => computeTarget(effectiveRallyCapacity, rallyMode, rallyRatio, rallyExact), [effectiveRallyCapacity, rallyMode, rallyRatio, rallyExact]);
+  const rallyTarget = useMemo(() => computeTarget(effectiveRallyCapacity, rallyMode, rallyRatio, rallyExact, true), [effectiveRallyCapacity, rallyMode, rallyRatio, rallyExact]);
 
   // Rally leader consumes from the pool first, independent of joiner strategy.
   const rallyComputation = useMemo(() => {
@@ -2253,6 +2253,7 @@ export default function App() {
   const recommendedTroopTiers = useMemo(() => TYPES.map((type, i) => ({
     ...troopTiers[i], level: t11[type] > 0 ? 11 : t10[type] > 0 ? 10 : t9[type] > 0 ? 9 : troopTiers[i].level,
   })), [troopTiers, t11, t10, t9]);
+  const leaderInventory = useMemo(() => ({ t11, t10, t9, fcByTier:Object.fromEntries(['t11','t10','t9'].map(tier => [tier,Object.fromEntries(TYPES.map((type,i)=>[type,troopTiers[i].byTier?.[tier]]))])) }), [t11,t10,t9,troopTiers]);
   const totalAvailable = TYPES.reduce((s, t) => s + t11[t] + t10[t] + t9[t], 0);
   const rallyAllocated = rallyComputation.result ? rallyComputation.result.totalAllocated : 0;
   const totalAllocated = computation.squads.reduce((s, sq) => s + (sq ? sq.totalAllocated : 0), 0) + rallyAllocated;
@@ -2866,10 +2867,10 @@ export default function App() {
                       </details>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8, marginBottom: 8 }}>
                         {TYPES.map((type, i) => <TroopFcLabel key={type} type={type} name={tType(type, lang)} fc={troopTiers[i].fc}
-                          onChange={v => setTroopTiers(p => p.map((t, j) => j === i ? { ...t, fc: v } : t))} />)}
+                          onChange={v => setTroopTiers(p => p.map((t, j) => j === i ? { ...t, fc: v, byTier:undefined } : t))} />)}
                       </div>
                       <Btn tone="ghost" small disabled={troopTiers[0].fc === '' || troopTiers[0].fc > 10}
-                        onClick={() => setTroopTiers(p => p.map(t => ({ ...t, fc: p[0].fc })))}>Same FC for all</Btn>
+                        onClick={() => setTroopTiers(p => p.map(t => ({ ...t, fc: p[0].fc, byTier:undefined })))}>Same FC for all</Btn>
                       <label style={{ display: 'flex', alignItems: 'center', gap: 9, color: C.ink, fontSize: 16, margin: '16px 0', cursor: 'pointer' }}>
                         <input type="checkbox" aria-label="Show T11 Helios troops" checked={hasHelios || TYPES.some(t => t11[t] > 0)}
                           onChange={e => { setHasHelios(e.target.checked); if (!e.target.checked) { const previous = t11; setT11(EMPTY); showToast('T11 troops removed.', tr('undoAction'), () => { setT11(previous); setHasHelios(true); dismissToast(); }); } }}
@@ -2886,6 +2887,15 @@ export default function App() {
                           </div>
                         </section>;
                       })}
+                      <details className="bt-capacity-help"><summary>Different FC levels by tier</summary>
+                        <p>Optional. Leave blank to use the FC in each troop heading. Changing that heading clears these overrides.</p>
+                        {[11,10,9].filter(level => TYPES.some(type => (level===11?t11:level===10?t10:t9)[type]>0)).map(level => <div key={level}>
+                          <strong>T{level}</strong><div style={{ display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:8 }}>
+                            {TYPES.map((type,i) => <TroopLevelField key={type} allowBlank label={`${tType(type,lang)} FC`} ariaLabel={`${type} T${level} FC override`} value={troopTiers[i].byTier?.[`t${level}`]??''} max={10}
+                              onChange={value => setTroopTiers(p=>p.map((entry,j)=>j===i ? {...entry,byTier:{...entry.byTier,[`t${level}`]:value===''?undefined:value}} : entry))} />)}
+                          </div>
+                        </div>)}
+                      </details>
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
                         <TroopChip label="Inf" value={t11.infantry + t10.infantry + t9.infantry} color={TYPE_COLOR.infantry} />
                         <TroopChip label="Lan" value={t11.lancer + t10.lancer + t9.lancer} color={TYPE_COLOR.lancer} />
@@ -2947,6 +2957,8 @@ export default function App() {
                               accountId={activeAccount}
                               accountName={accountNames[activeAccount]}
                               troopTiers={recommendedTroopTiers}
+                              inventory={leaderInventory}
+                              actualRally={rallyComputation.result?.breakdown}
                               leaderCapacity={effectiveRallyCapacity}
                               leaderMinister={ministerBoost === 3750 ? "Strategy (supreme)" : ministerBoost ? "Strategy (normal)" : "None"}
                               onApplyLeader={(counts, recommendedPercentages) => {

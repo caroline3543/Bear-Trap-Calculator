@@ -1,8 +1,9 @@
+import { optimizeMixed } from './mixed-troops.js';
 import { CLASSES, calculate } from './model.js';
 import { gearDifference, withGearDifferences } from './number-entry.js';
 import { heroNamesForClass, resolveHero, starKey } from './leader-setup.js';
 
-export function assessSetup(draft, tiers, leaderCapacity, leaderMinister, db) {
+export function assessSetup(draft, tiers, leaderCapacity, leaderMinister, db, inventory) {
     const validBonus = v => v !== '' && v != null && Number.isFinite(Number(v)) && Number(v) >= 0 && Number(v) <= 10000;
     const errors = [];
     if (!Number.isSafeInteger(leaderCapacity) || leaderCapacity <= 0) errors.push('Enter a positive, whole-number deployment capacity above.');
@@ -27,7 +28,13 @@ export function assessSetup(draft, tiers, leaderCapacity, leaderMinister, db) {
     const profile = withGearDifferences({ ...draft, capacity: leaderCapacity, capacityIsEffective: true,
       starters, joiners, roster, tiers: tiers.map(t => `FC${t.fc} T${t.level}`),
       minister: leaderMinister, petsActive: true, trap: 25 });
-    return { errors, profile, result: errors.length ? null : calculate(profile, db) };
+    let result=null;
+    if (!errors.length) {
+      try { result=inventory ? optimizeMixed(profile,inventory,db) : calculate(profile,db); }
+      catch(error) { errors.push(error.message); }
+      if (inventory && result?.capacity===0) { errors.push('Add troops to the inventory above before calculating.'); result=null; }
+    }
+    return { errors, profile, result };
 }
 
 export function replaceHero(draft, index, candidate) {
@@ -37,9 +44,9 @@ export function replaceHero(draft, index, candidate) {
     stats: draft.stats.map((v, i) => i === index ? { ...v, ...candidate.gear } : v),
   };
 }
-export function compareHero(draft, index, candidate, tiers, capacity, minister, db) {
-  const current = assessSetup(draft, tiers, capacity, minister, db);
-  const alternative = assessSetup(replaceHero(draft, index, candidate), tiers, capacity, minister, db);
+export function compareHero(draft, index, candidate, tiers, capacity, minister, db, inventory) {
+  const current = assessSetup(draft, tiers, capacity, minister, db, inventory);
+  const alternative = assessSetup(replaceHero(draft, index, candidate), tiers, capacity, minister, db, inventory);
   const errors = current.errors.length
     ? current.errors.map(error => `Current setup: ${error}`)
     : alternative.errors.map(error => `Alternative hero: ${error}`);
@@ -47,7 +54,8 @@ export function compareHero(draft, index, candidate, tiers, capacity, minister, 
   if (errors.length) return { errors, current, alternative };
   const a = current.result.sourceBoost, b = alternative.result.sourceBoost;
   // Treat scores equal at the displayed precision as a tie, not a hidden winner.
-  const winner = a.toFixed(4) === b.toFixed(4) ? 'tie' : b > a ? 'alternative' : 'current';
+  const uncertain = inventory && Math.min(current.result.scoreUpperBound,alternative.result.scoreUpperBound) >= Math.max(a,b) && !(current.result.optimalAtDisplayPrecision && alternative.result.optimalAtDisplayPrecision);
+  const winner = uncertain ? 'tie' : a.toFixed(4) === b.toFixed(4) ? 'tie' : b > a ? 'alternative' : 'current';
   const improvement = Math.min(a, b) > 0 ? (Math.max(a, b) / Math.min(a, b) - 1) * 100 : null;
-  return { errors, current, alternative, winner, improvement };
+  return { errors, current, alternative, winner, improvement, uncertain };
 }
