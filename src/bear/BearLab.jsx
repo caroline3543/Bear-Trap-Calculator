@@ -169,8 +169,8 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
   }
   useEffect(() => { if (applied && !dirty) resultRef.current?.focus({ preventScroll: true }); }, [applied]);
   return <div className="bear-leader-helper">
-    <button type="button" className="bl-launch" aria-expanded={open} aria-controls={panelId} onClick={() => setOpen(v => !v)}>
-      <span>Calculate recommended rally leader squad</span><Chevron expanded={open} />
+    <button type="button" className="bl-launch bl-calculate-launch" aria-expanded={open} aria-controls={panelId} onClick={() => setOpen(v => !v)}>
+      <span>Calculate rally squad</span><Chevron expanded={open} />
     </button>
     {!open && applied && <p className="bl-status">{dirty ? 'Setup changed. Open and recalculate to update your squad.' : `${applied.heroes.join(' · ')} · ${fmt(applied.capacity)} troops before inventory limits`}</p>}
     {open && <form id={panelId} className="bl-panel" onSubmit={e => { e.preventDefault(); apply(); }}>

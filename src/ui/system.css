@@ -49,7 +49,7 @@
 #root .ui-header-actions button { background:var(--btnSecondaryBg); color:var(--gold); border:1px solid var(--btnSecondaryBorder); }
 #root .ui-section-title { margin:0; }
 #root .lang-select { min-height:48px; padding:10px 12px; border-radius:12px; font:700 16px/1.5 'Nunito Sans',sans-serif; }
-#root .bl-launch:not(.bl-upload) { background:var(--btnSecondaryBg); color:var(--gold); border:1px solid var(--btnSecondaryBorder); box-shadow:none; }
+#root .bl-launch:not(.bl-upload):not(.bl-calculate-launch) { background:var(--btnSecondaryBg); color:var(--gold); border:1px solid var(--btnSecondaryBorder); box-shadow:none; }
 #root .bl-launch.bl-upload { background:var(--goldStrong); color:var(--cocoaDark); }
 #root .ui-chevron { width:20px; height:20px; flex-shrink:0; transition:transform .12s ease; }
 #root .ui-chevron[data-open=false] { transform:rotate(-90deg); }
@@ -60,3 +60,20 @@
 #root a.th-btn { min-height:48px; border-radius:12px; font:800 16px/1.4 'Nunito Sans',sans-serif; padding:10px 16px; background:var(--btnSecondaryBg); color:var(--gold); border:1px solid var(--btnSecondaryBorder); box-shadow:none; }
 #root a.th-btn.gold { background:var(--goldStrong); color:var(--cocoaDark); border-color:transparent; }
 #root :is(.ui-input,.th-input,.calc-input):disabled { opacity:.6; cursor:default; }
+
+/* Rally calculation is the primary action; disclosures and uploads stay secondary. */
+#root .bear-leader-helper .bl-calculate-launch { min-height:56px; padding:14px 18px; background:var(--goldStrong); color:var(--cocoaDark); border:1px solid transparent; box-shadow:0 3px 0 var(--btnGoldShadow); font-size:18px; font-weight:800; margin:8px 0 16px; }
+#root .bear-leader-helper .bl-calculate-launch[aria-expanded=true] { background:var(--goldBg); color:var(--gold); border-color:var(--goldBorder); box-shadow:none; }
+#root .bear-leader-helper .bl-calculate-launch:active { transform:translateY(1px); }
+#root .bear-leader-helper .bl-panel .bl-upload { background:var(--btnSecondaryBg); color:var(--ink); border:1px solid var(--btnSecondaryBorder); box-shadow:none; }
+#root .bear-leader-helper .bl-panel .bl-field > span { color:var(--ink); font-weight:700; }
+#root .bear-leader-helper :is(.bl-class,.bl-class-bonuses) > legend { font:600 20px/1.4 'Fredoka','Nunito Sans',sans-serif; color:var(--teal); }
+#root .bear-leader-helper .bl-details > summary { color:var(--sub); font-weight:600; }
+#root .bear-leader-helper .bl-details[open] > summary { color:var(--ink); }
+#root .bear-leader-helper .bl-compare > summary { color:var(--teal); font-weight:700; }
+#root .bear-leader-helper .bl-apply-area { margin-top:24px; padding-top:20px; border-top:2px solid var(--cardBorder); }
+#root .bear-leader-helper .bl-ideal-result { border-color:var(--selectedBorder); background:var(--selectedBg); color:var(--selectedText); padding:18px; }
+#root .bear-leader-helper .bl-ideal-result h3 { color:var(--selectedText); font-size:22px; }
+#root .bear-leader-helper .bl-ideal-result .bl-help, #root .bear-leader-helper .bl-ideal-result small { color:var(--selectedTextMuted); }
+#root .bear-leader-helper .bl-ideal-result .bl-grid strong { font-size:24px; }
+@media(prefers-reduced-motion:reduce) { #root .bear-leader-helper .bl-calculate-launch:active { transform:none; } }
