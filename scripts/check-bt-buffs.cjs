@@ -1,0 +1,41 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');const path=require('node:path');const os=require('node:os');
+const deps=require('node:module').createRequire(path.join(process.env.BT_TEST_DEPS,'package.json'));
+(async()=>{
+ const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'bt-buffs-'));
+ const {JSDOM}=deps('jsdom');const dom=new JSDOM('<div id="root"></div>',{url:'https://test.example'});
+ Object.assign(global,{window:dom.window,document:dom.window.document,localStorage:dom.window.localStorage,HTMLElement:dom.window.HTMLElement,IS_REACT_ACT_ENVIRONMENT:true});
+ await deps('esbuild').build({entryPoints:[path.resolve('src/bear/BearLab.jsx')],outfile:path.join(tmp,'form.cjs'),bundle:true,platform:'node',format:'cjs',external:['react'],loader:{'.css':'empty','.webp':'dataurl'},logLevel:'silent'});
+ const React=deps('react');const {act}=React;const root=deps('react-dom/client').createRoot(document.getElementById('root'));const Form=require(path.join(tmp,'form.cjs')).default;
+ let id='main', caps={position:'None',frostdragon:'None',deploy:0,titlesCapacityIncluded:false}, applied=[];
+ const stock={infantry:300000,lancer:300000,marksman:300000};const inventory={t10:stock};const tiers=[{fc:6,level:10},{fc:6,level:10},{fc:6,level:10}];
+ const capacity=()=>Math.round((100000+(caps.titlesCapacityIncluded ? 0 : caps.position==='Strategy (normal)' ? 2500 : 0))*(1+Number(caps.deploy)/100));
+ const render=()=>root.render(React.createElement(Form,{key:id,accountId:id,accountName:id,leaderCapacity:capacity(),leaderMinister:caps.position,capacityBuffs:caps,onCapacityBuffsChange:v=>{caps=v;render();},apeCapacity:0,cyrilleCapacity:0,inventory,troopTiers:tiers,onApplyLeader:counts=>applied.push(counts)}));
+ const input=(label,value)=>{const e=document.querySelector(`input[aria-label="${label}"]`);assert.ok(e,label);Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set.call(e,value);e.dispatchEvent(new window.Event('input',{bubbles:true}));};
+ const choose=(text,value)=>{const label=[...document.querySelectorAll('label')].find(e=>e.querySelector('select')&&e.textContent.startsWith(text));const e=label.querySelector('select');e.value=value;e.dispatchEvent(new window.Event('change',{bubbles:true}));};
+ const toggle=text=>{const e=[...document.querySelectorAll('label')].find(e=>e.textContent===text);assert.ok(e,text);e.querySelector('input').click();};
+ const submit=()=>document.querySelector('form').dispatchEvent(new window.Event('submit',{bubbles:true,cancelable:true}));
+ const saved=()=>JSON.parse(localStorage.getItem('bearLeader:v2:main')).profile;
+ try {
+  await act(async()=>render());await act(async()=>document.querySelector('.bl-launch').click());
+  assert.ok(document.querySelector('.bl-buffs').textContent.includes('Pet and city buffs'));assert.equal(saved().cyrilleDamage,0);
+  await act(async()=>['Infantry','Lancer','Marksman'].forEach((c,i)=>input(`${c} hero`,['Hector','Mia','Gwen'][i])));
+  await act(async()=>submit());assert.equal(applied.at(-1).reduce((a,b)=>a+b),100000);
+  const boost=()=>Number([...document.querySelectorAll('.bl-model-score strong')][0].textContent);
+  const baseline=boost();
+  const city=[...document.querySelectorAll('.bl-buff-choice')].find(e=>e.textContent.startsWith('Troops Attack Up'));
+  await act(async()=>[...city.querySelectorAll('button')].find(e=>e.textContent==='20%').click());
+  assert.equal(saved().cityAttack,20);assert.equal(city.querySelectorAll('[aria-pressed="true"]').length,1);
+  assert.equal(document.querySelector('.bl-ideal-result'),null);
+  assert.equal(document.querySelector('.bl-apply').textContent,'Calculate & apply squad');
+  await act(async()=>submit());assert.ok(boost()>baseline);
+  await act(async()=>toggle('City attack and lethality are already in my account stats'));await act(async()=>submit());assert.equal(boost(),baseline);
+  await act(async()=>choose('Minister or president','Strategy (normal)'));await act(async()=>submit());assert.equal(applied.at(-1).reduce((a,b)=>a+b),102500);
+  await act(async()=>toggle('Title capacity is already in my deployment reading'));await act(async()=>submit());assert.equal(applied.at(-1).reduce((a,b)=>a+b),100000);
+  const beforeHealth=boost();await act(async()=>input('Titan Roc enemy health down (%)','5'));await act(async()=>submit());assert.equal(boost(),beforeHealth);
+  await act(async()=>input('City deployment increase (%)','20'));await act(async()=>submit());assert.equal(applied.at(-1).reduce((a,b)=>a+b),120000);
+  id='farm';caps={position:'None',frostdragon:'None',deploy:0,titlesCapacityIncluded:false};await act(async()=>render());await act(async()=>document.querySelector('.bl-launch').click());assert.equal(JSON.parse(localStorage.getItem('bearLeader:v2:farm')).profile.cityAttack,0);
+  id='main';await act(async()=>render());await act(async()=>document.querySelector('.bl-launch').click());assert.equal(saved().cityAttack,20);assert.equal(saved().enemyHealthDown,5);
+  console.log('Buff UI passed: exclusive city choices, double-count protection, title capacity, percent deployment, health tracking, dirty animation state and isolated saved account settings.');
+ } finally {await act(async()=>root.unmount());dom.window.close();fs.rmSync(tmp,{recursive:true,force:true});}
+})().catch(e=>{console.error(e);process.exitCode=1;});

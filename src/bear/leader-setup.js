@@ -18,6 +18,15 @@ export function migrateSetup(old = {}) {
   });
   return { allAttack: old.allAttack ?? 0, allLethality: old.allLethality ?? 0,
     chameleon: old.chameleon ?? 0, tiger: old.tiger ?? 0, lion: old.lion ?? 0,
+    buffModelVersion: 1,
+    cityAttack: old.cityAttack ?? 0, cityLethality: old.cityLethality ?? 0,
+    cityDefenseDown: old.cityDefenseDown ?? 0, enemyHealthDown: old.enemyHealthDown ?? 0,
+    extraAttack: old.extraAttack ?? 0, extraLethality: old.extraLethality ?? 0,
+    // Existing setups historically assumed max Cyrille. Make that visible;
+    // new accounts start without a talent bonus.
+    cyrilleDamage: old.cyrilleDamage ?? (Object.keys(old).length ? 30 : 0),
+    petStatsIncluded: old.petStatsIncluded ?? false, cityStatsIncluded: old.cityStatsIncluded ?? false,
+    titlesStatsIncluded: old.titlesStatsIncluded ?? false,
     stats, starters: CLASSES.map((_, i) => old.starters?.[i] || ''),
     heroInfo: CLASSES.map((_, i) => {
       const h = old.heroInfo?.[i] || old.roster?.[old.starters?.[i]] || {};

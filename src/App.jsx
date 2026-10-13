@@ -1,3 +1,4 @@
+import { migrateCapacityBuffs, effectiveCapacity } from './bear/buffs.js';
 import { Button as SharedButton, Field as SharedField, Chevron } from './ui/components.jsx';
 import { flattenWords, parseScanText, resolveCardLabel, mergeBadgeReadings, confirmAmountReadings } from "./bear/troop-scan.js";
 import { loadTesseract } from "./bear/ocr-runtime.js";
@@ -2120,8 +2121,7 @@ export default function App() {
   // Flat capacity increases the player gets from specific buffs.
   const [cyrilleBoost, setCyrilleBoost] = useState(saved?.cyrilleBoost ?? 0);
   const [snowApeBoost, setSnowApeBoost] = useState(saved?.snowApeBoost ?? 0);
-  // Minister of Strategy: 0 = not appointed, otherwise 2000 or 3750 extra deployment capacity.
-  const [ministerBoost, setMinisterBoost] = useState(saved?.ministerBoost ?? 0);
+  const [capacityBuffs, setCapacityBuffs] = useState(() => migrateCapacityBuffs(saved));
   const [rallyMode, setRallyMode] = useState(saved?.rallyMode ?? "exact");
   const [rallyRatio, setRallyRatio] = useState(saved?.rallyRatio ?? { infantry: 0, lancer: 0, marksman: 0 });
   const [rallyExact, setRallyExact] = useState(saved?.rallyExact ?? { infantry: 0, lancer: 0, marksman: 0 });
@@ -2155,7 +2155,7 @@ export default function App() {
           capacity, numSquads, t10, t9, t11, hasHelios, troopTiers,
           mode, ratio, exact, minMarchMarksman,
           strategy,
-          rallyCapacity, cyrilleBoost, snowApeBoost, ministerBoost, rallyMode, rallyRatio, rallyExact,
+          rallyCapacity, cyrilleBoost, snowApeBoost, capacityBuffs, rallyMode, rallyRatio, rallyExact,
           advancedOpen, darkMode, lang, fills, recInfantryPct, recLancerPct,
         })
       );
@@ -2167,14 +2167,14 @@ export default function App() {
     capacity, numSquads, t10, t9, t11, hasHelios, troopTiers,
     mode, ratio, exact, minMarchMarksman,
     strategy,
-    rallyCapacity, cyrilleBoost, snowApeBoost, ministerBoost, rallyMode, rallyRatio, rallyExact,
+    rallyCapacity, cyrilleBoost, snowApeBoost, capacityBuffs, rallyMode, rallyRatio, rallyExact,
     advancedOpen, darkMode, lang, fills, recInfantryPct, recLancerPct,
   ]);
 
   const tr = (key) => (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || TRANSLATIONS.en[key] || key;
 
   const targetManual = useMemo(() => computeTarget(capacity, mode, ratio, exact), [capacity, mode, ratio, exact]);
-  const effectiveRallyCapacity = rallyCapacity + cyrilleBoost + snowApeBoost + ministerBoost;
+  const effectiveRallyCapacity = effectiveCapacity(rallyCapacity, cyrilleBoost, snowApeBoost, capacityBuffs);
 
   const rallyTarget = useMemo(() => computeTarget(effectiveRallyCapacity, rallyMode, rallyRatio, rallyExact, true), [effectiveRallyCapacity, rallyMode, rallyRatio, rallyExact]);
 
@@ -2353,7 +2353,7 @@ export default function App() {
       capacity, numSquads, t10, t9, t11, hasHelios, troopTiers,
       mode, ratio, exact, minMarchMarksman,
       strategy,
-      rallyCapacity, cyrilleBoost, snowApeBoost, ministerBoost, rallyMode, rallyRatio, rallyExact,
+      rallyCapacity, cyrilleBoost, snowApeBoost, capacityBuffs, rallyMode, rallyRatio, rallyExact,
       recInfantryPct, recLancerPct, fills,
     };
     setCapacity(110000);
@@ -2370,7 +2370,7 @@ export default function App() {
     setRallyCapacity(140000);
     setCyrilleBoost(0);
     setSnowApeBoost(0);
-    setMinisterBoost(0);
+    setCapacityBuffs(migrateCapacityBuffs());
     setRallyMode("exact");
     setRallyRatio({ infantry: 0, lancer: 0, marksman: 0 });
     setRallyExact({ infantry: 0, lancer: 0, marksman: 0 });
@@ -2397,7 +2397,7 @@ export default function App() {
       setRallyCapacity(snapshot.rallyCapacity);
       setCyrilleBoost(snapshot.cyrilleBoost);
       setSnowApeBoost(snapshot.snowApeBoost);
-      setMinisterBoost(snapshot.ministerBoost);
+      setCapacityBuffs(snapshot.capacityBuffs);
       setRallyMode(snapshot.rallyMode);
       setRallyRatio(snapshot.rallyRatio);
       setRallyExact(snapshot.rallyExact);
@@ -2414,7 +2414,7 @@ export default function App() {
       capacity, numSquads, t10, t9, t11, hasHelios, troopTiers,
       mode, ratio, exact, minMarchMarksman,
       strategy,
-      rallyCapacity, cyrilleBoost, snowApeBoost, ministerBoost, rallyMode, rallyRatio, rallyExact,
+      rallyCapacity, cyrilleBoost, snowApeBoost, capacityBuffs, rallyMode, rallyRatio, rallyExact,
       recInfantryPct, recLancerPct, fills,
     };
   }
@@ -2435,7 +2435,7 @@ export default function App() {
     setRallyCapacity(data.rallyCapacity ?? 140000);
     setCyrilleBoost(data.cyrilleBoost ?? 0);
     setSnowApeBoost(data.snowApeBoost ?? 0);
-    setMinisterBoost(data.ministerBoost ?? 0);
+    setCapacityBuffs(migrateCapacityBuffs(data));
     setRallyMode(data.rallyMode ?? "exact");
     setRallyRatio(data.rallyRatio ?? { infantry: 0, lancer: 0, marksman: 0 });
     setRallyExact(data.rallyExact ?? { infantry: 0, lancer: 0, marksman: 0 });
@@ -2925,32 +2925,7 @@ export default function App() {
                             <p>Start a Polar Terror rally with your leader heroes. Tap <strong>!</strong> beside the troop count and copy <strong>Deployment Capacity</strong>.</p>
                             <p>Use your march capacity, not the whole rally’s capacity. Add the bonuses below only if they are missing from that reading.</p>
                           </details>
-                          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                            <NumField label={tr("cyrilleBoostLabel")} value={cyrilleBoost} onChange={setCyrilleBoost} />
-                            <NumField label={tr("snowApeBoostLabel")} value={snowApeBoost} onChange={setSnowApeBoost} />
-                          </div>
-
-                          <div style={{ marginTop: 14 }}>
-                            <label style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 12.5, fontWeight: 500, color: C.ink, cursor: "pointer" }}>
-                              <input
-                                type="checkbox"
-                                checked={ministerBoost > 0}
-                                onChange={(e) => setMinisterBoost(e.target.checked ? 2000 : 0)}
-                                style={{ width: 17, height: 17, accentColor: C.goldStrong, cursor: "pointer" }}
-                              />
-                              {tr("ministerAppointed")}
-                            </label>
-                            {ministerBoost > 0 && (
-                              <div style={{ display: "flex", gap: 8, marginTop: 9 }}>
-                                <Btn tone={ministerBoost === 2000 ? "primary" : "ghost"} small onClick={() => setMinisterBoost(2000)}>{tr("minister2000")}</Btn>
-                                <Btn tone={ministerBoost === 3750 ? "primary" : "ghost"} small onClick={() => setMinisterBoost(3750)}>{tr("minister3750")}</Btn>
-                              </div>
-                            )}
-                          </div>
-
-                          <div style={{ marginTop: 12, marginBottom: 10, fontSize: 12, fontWeight: 500, color: C.gold, background: C.goldBg, border: `1px solid ${C.goldBorder}`, borderRadius: 12, padding: "6px 10px" }}>
-                            {tr("effectiveCapacity")}: {fmt(rallyCapacity)} + {fmt(cyrilleBoost)} + {fmt(snowApeBoost)} + {fmt(ministerBoost)} = {fmt(effectiveRallyCapacity)}
-                          </div>
+                          <p className="bt-flow-note">Deployment capacity with extra buffs: <strong>{fmt(effectiveRallyCapacity)}</strong></p>
                           <React.Suspense fallback={<p style={{ color: C.sub, fontSize: 12 }}>Loading recommendation form…</p>}>
                             <BearLab
                               key={activeAccount}
@@ -2960,7 +2935,11 @@ export default function App() {
                               inventory={leaderInventory}
                               actualRally={rallyComputation.result?.breakdown}
                               leaderCapacity={effectiveRallyCapacity}
-                              leaderMinister={ministerBoost === 3750 ? "Strategy (supreme)" : ministerBoost ? "Strategy (normal)" : "None"}
+                              leaderMinister={capacityBuffs.position}
+                              capacityBuffs={capacityBuffs}
+                              onCapacityBuffsChange={setCapacityBuffs}
+                              cyrilleCapacity={cyrilleBoost} onCyrilleCapacityChange={setCyrilleBoost}
+                              apeCapacity={snowApeBoost} onApeCapacityChange={setSnowApeBoost}
                               onApplyLeader={(counts, recommendedPercentages) => {
                                 setRallyRatio(Object.fromEntries(TYPES.map((t, i) => [t, recommendedPercentages[i]])));
                                 setRallyExact(Object.fromEntries(TYPES.map((t, i) => [t, counts[i]])));

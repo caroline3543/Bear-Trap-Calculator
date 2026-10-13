@@ -20,7 +20,7 @@ export function mixedModel(profile, inventory, db) {
     });
   });
   // Preserve the source display normalization, including its zero-Chameleon fallback.
-  const factor = (1+base.widgetL)*(1+base.widgetA)*(profile.petsActive ? 1+(Number(profile.chameleon)||10)/100 : 1)*1.3/23400;
+  const factor = (1+base.widgetL)*(1+base.widgetA)*base.sourceNormalization;
   return { base, classes, factor };
 }
 export function classMix(entries, amount) {

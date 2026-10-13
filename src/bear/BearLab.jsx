@@ -1,6 +1,7 @@
 import { Chevron } from '../ui/components.jsx';
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import db from './database.js';
+import { POSITIONS, FROSTDRAGON_TITLES, BUFF_SOURCES } from './buffs.js';
 import { CLASSES } from './model.js';
 import { parseEntry, gearDifference } from './number-entry.js';
 import { heroNamesForClass, migrateSetup, resolveHero, starKey } from './leader-setup.js';
@@ -134,9 +135,55 @@ function HeroComparison({ index, draft, tiers, capacity, minister, inventory, on
     </>}
   </details>;
 }
-export default function BearLab({ accountId, accountName, leaderCapacity, leaderMinister = 'None', troopTiers, inventory, actualRally, onApplyLeader }) {
+function BuffFields({ draft, edit, capacityBuffs, onCapacityBuffsChange, cyrilleCapacity, onCyrilleCapacityChange, apeCapacity, onApeCapacityChange }) {
+  const check = (field, label) => <label className="bl-buff-check"><input type="checkbox" checked={draft[field]} onChange={e => edit({ [field]: e.target.checked })} />{label}</label>;
+  const amount = (field, label, max) => <NumberField key={field} label={label} value={draft[field]} max={max} onChange={v => edit({ [field]: v })} />;
+  const city = (field, label) => <div className="bl-buff-choice"><span>{label}</span><div role="group" aria-label={label}>{[0, 10, 20].map(n => <Button key={n} small aria-pressed={Number(draft[field]) === n} tone={Number(draft[field]) === n ? 'primary' : 'secondary'} onClick={() => edit({ [field]: n })}>{n ? `${n}%` : 'None'}</Button>)}</div></div>;
+  const titleLabel = (name, v) => `${name} · ${[v.attack && `ATK +${v.attack * 100}%`, v.lethality && `LETH +${v.lethality * 100}%`, v.troops && `capacity +${fmt(v.troops)}`].filter(Boolean).join(' · ')}`;
+  return <details className="bl-details bl-buffs"><summary>Pet and city buffs</summary>
+    <p className="bl-help">Enter active bonuses. Use 0 or None for anything inactive.</p>
+    <h3>Pet skills</h3>
+    <div className="bl-grid two">{amount('lion', 'Cave Lion attack (%)', 10)}{amount('tiger', 'Saber-tooth Tiger lethality (%)', 10)}</div>
+    {check('petStatsIncluded', 'Pet attack and lethality are already in my account stats')}
+    <div className="bl-grid two">{amount('chameleon', 'Chameleon enemy defence down (%)', 10)}{amount('enemyHealthDown', 'Titan Roc enemy health down (%)', 5)}</div>
+    <p className="bl-help">Health down is saved but excluded from the score: its Bear effect is unverified.</p>
+    <h3>City items</h3>
+    {city('cityAttack', 'Troops Attack Up')}{city('cityLethality', 'Troops Damage Up — lethality')}
+    {check('cityStatsIncluded', 'City attack and lethality are already in my account stats')}
+    {city('cityDefenseDown', 'Enemy Troops Defence Down')}
+    <p className="bl-help">Choose one item per type. Defence down uses a model approximation.</p>
+    {capacityBuffs && onCapacityBuffsChange && <>
+      <h3>Positions and titles</h3>
+      <label className="bl-field"><span>Minister or president</span><select className="ui-input" value={capacityBuffs.position} onChange={e => onCapacityBuffsChange({ ...capacityBuffs, position: e.target.value })}>{Object.entries(POSITIONS).map(([name,v]) => <option key={name} value={name}>{name === 'None' ? name : titleLabel(name,v)}</option>)}</select></label>
+      <label className="bl-field"><span>Frostdragon title</span><select className="ui-input" value={capacityBuffs.frostdragon} onChange={e => onCapacityBuffsChange({ ...capacityBuffs, frostdragon: e.target.value })}>{Object.entries(FROSTDRAGON_TITLES).map(([name,v]) => <option key={name} value={name}>{name === 'None' ? name : titleLabel(name,v)}</option>)}</select></label>
+      {(capacityBuffs.position !== 'None' || capacityBuffs.frostdragon !== 'None') && <>
+        {check('titlesStatsIncluded', 'Title attack and lethality are already in my account stats')}
+        <label className="bl-buff-check"><input type="checkbox" checked={capacityBuffs.titlesCapacityIncluded} onChange={e => onCapacityBuffsChange({ ...capacityBuffs, titlesCapacityIncluded: e.target.checked })} />Title capacity is already in my deployment reading</label>
+      </>}
+      <h3>Extra deployment capacity</h3>
+      <p className="bl-help">Add only bonuses missing from the deployment capacity above.</p>
+      <div className="bl-grid two">
+        {onApeCapacityChange && <NumberField label="Snow Ape extra troops" value={apeCapacity} max={15000} decimal={false} onChange={onApeCapacityChange} />}
+        {onCyrilleCapacityChange && <NumberField label="Cyrille extra troops (Ursa’s Bane)" value={cyrilleCapacity} max={30000} decimal={false} onChange={onCyrilleCapacityChange} />}
+        <NumberField label="City deployment increase (%)" value={capacityBuffs.deploy} max={20} onChange={v => onCapacityBuffsChange({ ...capacityBuffs, deploy: v })} />
+      </div>
+      <p className="bl-help">Cyrille’s Entrapment boosts the whole rally, not your troop limit.</p>
+    </>}
+    <h3>Cyrille damage</h3>
+    {amount('cyrilleDamage', 'Earthbreaker damage bonus (%)', 30)}
+    <p className="bl-help">Copy the talent’s current bonus. Use 0 if locked. Older setups used 30%.</p>
+    <details className="bl-details"><summary>Other bonuses and what is counted</summary>
+      <p className="bl-help">Research, chief gear, charms, VIP, skins, island, facilities and permanent pet stats belong in your account readings. Do not add them twice.</p>
+      <div className="bl-grid two">{amount('extraAttack', 'Other missing base attack (%)', 10000)}{amount('extraLethality', 'Other missing base lethality (%)', 10000)}</div>
+      <p className="bl-help">Use these only for missing base stats. Health, defence, enemy attack/lethality down, healing and gathering have no score term here. March speed affects timing, not this single-rally score.</p>
+      <p className="bl-help">Official references: {BUFF_SOURCES.map(([label,url],i) => <React.Fragment key={url}>{i > 0 && ' · '}<a href={url} target="_blank" rel="noreferrer">{label}</a></React.Fragment>)}</p>
+    </details>
+  </details>;
+}
+export default function BearLab({ accountId, accountName, leaderCapacity, leaderMinister = 'None', troopTiers, inventory, actualRally, onApplyLeader, capacityBuffs, onCapacityBuffsChange, cyrilleCapacity, onCyrilleCapacityChange, apeCapacity, onApeCapacityChange }) {
   const [draft, setDraft] = useState(() => loadSetup(accountId));
   const tiers = troopTiers || draft.tierInputs;
+  const calculationDraft = useMemo(() => ({ ...draft, frostdragon: capacityBuffs?.frostdragon ?? 'None' }), [draft, capacityBuffs]);
   const [open, setOpen] = useState(false);
   const [notice, setNotice] = useState('');
   const [applied, setApplied] = useState(null);
@@ -153,15 +200,15 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
   useEffect(() => {
     if (mounted.current) { setDirty(true); setNotice(''); }
     mounted.current = true;
-  }, [leaderCapacity, leaderMinister, troopTiers, inventory]);
+  }, [leaderCapacity, leaderMinister, troopTiers, inventory, capacityBuffs]);
   function edit(fields) { setDraft(p => ({ ...p, ...fields })); setDirty(true); setNotice(''); }
   function editAt(field, i, fields) {
     setDraft(p => ({ ...p, [field]: p[field].map((v, j) => i === j ? { ...v, ...fields } : v) }));
     setDirty(true); setNotice('');
   }
   const assessment = useMemo(() => {
-    return assessSetup(draft, tiers, leaderCapacity, leaderMinister, db, inventory);
-  }, [draft, leaderCapacity, leaderMinister, troopTiers, inventory]);
+    return assessSetup(calculationDraft, tiers, leaderCapacity, leaderMinister, db, inventory);
+  }, [draft, leaderCapacity, leaderMinister, troopTiers, inventory, capacityBuffs]);
   const actualScore = useMemo(() => {
     if (!assessment.result?.model || !actualRally) return null;
     try { return scoreRally(assessment.result.model,actualRally); } catch { return null; }
@@ -180,7 +227,7 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
     {!open && applied && <p className="bl-status">{dirty ? 'Setup changed. Recalculate to update your squad.' : `${applied.heroes.join(' · ')} · ${fmt(applied.capacity)} troops before inventory limits`}</p>}
     {open && <form id={panelId} className="bl-panel" onSubmit={e => { e.preventDefault(); apply(); }}>
       <p className="bl-help">For {accountName}. Uses your available T11, T10 and T9 troops, filling higher tiers first.</p>
-      <details className="bl-details"><summary>Calculation assumptions</summary><p className="bl-help">Two Jessie and two Seo-yoon joiners, level-5 skills. Pets active. Trap attack +25%.</p></details>
+      <details className="bl-details"><summary>Calculation assumptions</summary><p className="bl-help">Two Jessie and two Seo-yoon joiners, level-5 skills. Active pet and city buffs use the values below. Trap attack +25%.</p></details>
       <BonusScanner onApply={readings => { setDraft(p => applyBonusReadings(p, readings)); setDirty(true); setNotice('Account bonuses updated.'); }} />
       <div className="bl-grid two">
         <NumberField label="All troops attack (%)" value={draft.allAttack} onChange={v => edit({ allAttack: v })} />
@@ -192,10 +239,12 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
           label={`${c} base ${kind} (%)`} value={draft.stats[i][kind]} onChange={v => editAt('stats', i, { [kind]: v })} />)}</div>)}
       </fieldset>
       <details className="bl-details bl-guide"><summary>Where to find bonuses</summary>
-        <ol><li>Open <strong>Power → Bonus Overview</strong>.</li><li>Copy <strong>Attack</strong> and <strong>Lethality</strong> for all troops and each troop type.</li><li>Use readings before pet skills. Enter pet bonuses separately below.</li></ol>
+        <ol><li>Open <strong>Power → Bonus Overview</strong>.</li><li>Copy <strong>Attack</strong> and <strong>Lethality</strong> for all troops and each troop type.</li><li>Use readings before temporary buffs, or mark those buffs as already included below.</li></ol>
         <p className="bl-help">Use Bonus Overview; rally stats include your heroes.</p>
         <figure><a href={bonusOverviewPhoto} target="_blank" rel="noreferrer"><img src={bonusOverviewPhoto} loading="lazy" alt="Bonus Overview example highlighting Troops’ Attack 216.77%, Troops’ Lethality 62.33%, and Infantry and Lancer bonuses" /></a><figcaption>Enter the highlighted fields. Tap to enlarge.</figcaption></figure>
       </details>
+      <BuffFields draft={draft} edit={edit} capacityBuffs={capacityBuffs} onCapacityBuffsChange={onCapacityBuffsChange}
+        cyrilleCapacity={cyrilleCapacity} onCyrilleCapacityChange={onCyrilleCapacityChange} apeCapacity={apeCapacity} onApeCapacityChange={onApeCapacityChange} />
       <details className="bl-details bl-guide"><summary>Where to find gear stats</summary>
         <ol><li>Open <strong>Hero → Stats → lower-right menu → Expedition</strong>.</li><li>Read <strong>Attack</strong> and <strong>Lethality</strong> with gear on, then off.</li><li>Keep stars, widget and skills unchanged. Restore your gear afterward.</li></ol>
         <p className="bl-help">Only gear on − gear off is added. Hero bonuses are calculated separately.</p>
@@ -205,7 +254,7 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
         <p className="bl-help">Uses FC {tiers[i].fc === '' ? '—' : tiers[i].fc} · T{tiers[i].level === '' ? '—' : tiers[i].level} from your inventory. Any FC-by-tier overrides are included.</p>
         <HeroFields hero={{ name: draft.starters[i], info: draft.heroInfo[i], gear: draft.stats[i] }} names={HERO_NAMES[i]} prefix={c}
           onChange={hero => edit({ starters: draft.starters.map((v, j) => i === j ? hero.name : v), heroInfo: draft.heroInfo.map((v, j) => i === j ? hero.info : v), stats: draft.stats.map((v, j) => i === j ? hero.gear : v) })} />
-        <HeroComparison index={i} draft={draft} tiers={tiers} capacity={leaderCapacity} minister={leaderMinister} inventory={inventory} onEdit={candidate => { setDraft(p => ({ ...p, alternatives: p.alternatives.map((v, j) => i === j ? candidate : v) })); setNotice(''); }}
+        <HeroComparison index={i} draft={calculationDraft} tiers={tiers} capacity={leaderCapacity} minister={leaderMinister} inventory={inventory} onEdit={candidate => { setDraft(p => ({ ...p, alternatives: p.alternatives.map((v, j) => i === j ? candidate : v) })); setNotice(''); }}
           onUse={comparison => {
             const old = { name: draft.starters[i], info: { ...draft.heroInfo[i] }, gear: Object.fromEntries(['attackOn', 'attackOff', 'lethalityOn', 'lethalityOff'].map(k => [k, draft.stats[i][k]])) };
             const next = comparison.winner === 'alternative' ? replaceHero(draft, i, draft.alternatives[i]) : draft;
@@ -216,11 +265,6 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
             setDirty(false); setNotice(`${chosen.profile.starters[i]} and recommended squad applied.`);
           }} />
       </fieldset>)}
-      <details className="bl-details"><summary>Pet bonuses</summary>
-        <p className="bl-help">Enter the pet skill bonuses you will activate. Account bonuses above should exclude these skills.</p>
-        <div className="bl-grid two">{[['chameleon', 'Chameleon (%)'], ['tiger', 'Sabre-tooth lethality (%)'], ['lion', 'Cave lion attack (%)']].map(([field, label]) => <NumberField key={field}
-          label={label} value={draft[field]} max={1000} onChange={v => edit({ [field]: v })} />)}</div>
-      </details>
       <div className="bl-apply-area">
         {applied && !dirty && <div key={applied.revision} ref={resultRef} tabIndex={-1} className="bl-ideal-result rally-result-update" aria-label="Ideal rally leader squad" role="region"><h3>Ideal rally leader squad</h3><div className="bl-grid three">{CLASSES.map((c, i) => <div key={c}><small>{c} · {(applied.ratios[i] * 100).toFixed(2)}%</small><strong>{fmt(applied.counts[i])}</strong></div>)}</div><p className="bl-help">Total: {fmt(applied.capacity)} troops{applied.shortfall > 0 ? ` · ${fmt(applied.shortfall)} spaces unfilled` : ''}.</p>
           {applied.breakdown && <div className="bl-tier-mix">{CLASSES.map((c,i) => <p key={c}><strong>{c}</strong> {['t11','t10','t9'].filter(t => applied.breakdown[['infantry','lancer','marksman'][i]][t]>0).map(t => `${t.toUpperCase()} FC${applied.model.classes[i].find(e=>e.tier===t).fc} ${fmt(applied.breakdown[['infantry','lancer','marksman'][i]][t])}`).join(' · ') || '0 troops'}</p>)}</div>}
@@ -230,7 +274,7 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
         <p className="bl-help">Applies a split that fits your troop inventory.</p>
 
       </div>
-      <details className="bl-details"><summary>Formula reference</summary><p className="bl-help">Single-tier proportions use WOS Nerds’ D² ÷ sum(D²). Mixed-tier scores extend that model: each class’s coefficient is weighted by its actual T11/T10/T9 counts, then multiplied by the square root of its total count. The optimizer searches whole troop counts within your inventory; higher tiers fill first. FC comes from the inventory heading or its optional FC-by-tier overrides. The displayed optimal boost uses WOS Nerds’ normalization (raw boost × Chameleon × 1.3 ÷ 23,400), including its 10% display fallback when Chameleon is zero. Mixed-tier weighting is our model extension, not a verified game damage formula. Explicit skill levels are honored here; WOS Nerds infers them from stars. <a href="https://wosnerds.com/bear-calc/" target="_blank" rel="noreferrer">WOS Nerds formula reference</a>.</p></details>
+      <details className="bl-details"><summary>Formula reference</summary><p className="bl-help">The score compares setups; it is not expected damage points. Single-tier proportions use WOS Nerds’ D² ÷ sum(D²). Mixed tiers weight each class by the T11/T10/T9 troops actually deployed. Higher tiers fill first; inventory and FC overrides are included.</p><p className="bl-help">City attack/lethality share the special-stat pool with widgets. Positions and other base bonuses add percentage points. Chameleon follows the source approximation; city defence down adds to its Defence down skill pool. Enemy health down is excluded. Normalization uses your entered Chameleon and Cyrille values; 0 means no bonus. Mixed tiers and city debuff weighting are model extensions, not verified game damage formulas. Explicit skill levels are used instead of inferring them from stars. <a href="https://wosnerds.com/bear-calc/" target="_blank" rel="noreferrer">WOS Nerds reference</a></p></details>
     </form>}
         {actualScore !== null && <p className="bl-model-score" role="status">Current rally boost: <strong>{actualScore.toFixed(4)}</strong><span className="bl-help"> · based on the exact T11/T10/T9 amounts below</span></p>}
     {notice && <p className="bl-status" role="status">{notice}</p>}

@@ -3,13 +3,8 @@
 export const CLASSES = ['Infantry', 'Lancer', 'Marksman'];
 export const PREFIXES = ['Inf', 'Lan', 'Mar'];
 export const CATEGORIES = ['Lethality (adds)', 'Attack (adds)', 'Damage taken up', 'Defense down', 'DamageUp (adds)', 'Damage (multiplies)', 'NormalDamage (Reina S1)', 'SkillDamage (adds Reina S1; x Wu Ming S3)', 'SkillDamage (Wu Ming S3)'];
-export const MINISTERS = {
-  None: { lethality: 0, attack: 0, troops: 0 },
-  'Defense (normal)': { lethality: .1, attack: 0, troops: 0 },
-  'Defense (supreme)': { lethality: .15, attack: 0, troops: 0 },
-  'Strategy (normal)': { lethality: 0, attack: .05, troops: 2500 },
-  'Strategy (supreme)': { lethality: 0, attack: .08, troops: 3750 },
-};
+import { POSITIONS, FROSTDRAGON_TITLES } from './buffs.js';
+export const MINISTERS = POSITIONS;
 export const nonnegative = value => Number.isFinite(Number(value)) ? Math.max(0, Number(value)) : 0;
 export function findName(name, table, kind = 'meta') {
   const aliases = { seoyoon: kind === 'meta' ? 'Seo-Yoon' : 'Seo-yoon', 'seo-yoon': kind === 'meta' ? 'Seo-Yoon' : 'Seo-yoon', ling: kind === 'meta' ? 'Ling' : 'Ling Xue', 'ling xue': kind === 'meta' ? 'Ling' : 'Ling Xue', 'wallis bokan': kind === 'meta' ? 'Wallis Bokan' : 'Lumak Bokan', 'lumak bokan': kind === 'meta' ? 'Wallis Bokan' : 'Lumak Bokan' };
@@ -32,12 +27,17 @@ export function integerCounts(ratios, capacity) {
   return counts;
 }
 export function calculate(profile, db) {
-  const minister = MINISTERS[profile.minister] || MINISTERS.None;
+  const selectedMinister = MINISTERS[profile.minister] || MINISTERS.None;
+  const selectedTitle = FROSTDRAGON_TITLES[profile.frostdragon] || FROSTDRAGON_TITLES.None;
+  const minister = profile.titlesStatsIncluded ? MINISTERS.None : selectedMinister;
+  const title = profile.titlesStatsIncluded ? FROSTDRAGON_TITLES.None : selectedTitle;
   const pets = profile.petsActive;
-  const capacity = profile.capacityIsEffective ? Math.round(nonnegative(profile.capacity)) : Math.round((nonnegative(profile.capacity) + (pets ? nonnegative(profile.ape) : 0) + minister.troops) * (1 + nonnegative(profile.deploy) / 100));
+  const capacity = profile.capacityIsEffective ? Math.round(nonnegative(profile.capacity)) : Math.round((nonnegative(profile.capacity) + (pets ? nonnegative(profile.ape) : 0) + (profile.titlesCapacityIncluded ? 0 : selectedMinister.troops + selectedTitle.troops)) * (1 + nonnegative(profile.deploy) / 100));
   const starters = profile.starters || ['', '', ''];
   const roster = profile.roster || {};
-  let widgetL = 0, widgetA = 0;
+  // City gem buffs share the additive special-stat pool with rally widgets.
+  let widgetL = profile.cityStatsIncluded ? 0 : nonnegative(profile.cityLethality) / 100;
+  let widgetA = profile.cityStatsIncluded ? 0 : nonnegative(profile.cityAttack) / 100;
   const caller = CLASSES.map(() => CATEGORIES.map(() => 0));
   const seen = new Set();
   for (const hero of starters) {
@@ -65,11 +65,14 @@ export function calculate(profile, db) {
     const meta = metaFor(hero, db);
     const stars = db.starLevelStats[findName(hero, db.heroMetadata)] || {};
     const starKey = String(info.stars || '0*').replace(/\*?$/, '*');
-    let l = (nonnegative(profile.allLethality) + nonnegative(profile.stats?.[c]?.lethality) + nonnegative(profile.stats?.[c]?.gearLethality)) / 100 + minister.lethality;
-    let a = (nonnegative(profile.allAttack) + nonnegative(profile.trap) + nonnegative(profile.stats?.[c]?.attack) + nonnegative(profile.stats?.[c]?.gearAttack)) / 100 + minister.attack;
+    let l = (nonnegative(profile.allLethality) + nonnegative(profile.stats?.[c]?.lethality) + nonnegative(profile.stats?.[c]?.gearLethality)) / 100 + minister.lethality + title.lethality + nonnegative(profile.extraLethality) / 100;
+    let a = (nonnegative(profile.allAttack) + nonnegative(profile.trap) + nonnegative(profile.stats?.[c]?.attack) + nonnegative(profile.stats?.[c]?.gearAttack)) / 100 + minister.attack + title.attack + nonnegative(profile.extraAttack) / 100;
     if (hero) { l += nonnegative(info.widget) * (db.widgetMultipliers[String(meta.gen || 1)] || 0); a += (stars[starKey] || 0) / 100; }
-    if (pets) { l = l * (1 + nonnegative(profile.chameleon) / 100) + nonnegative(profile.tiger) / 100; a = a * (1 + nonnegative(profile.chameleon) / 100) + nonnegative(profile.lion) / 100; }
+    if (pets) { l = l * (1 + nonnegative(profile.chameleon) / 100) + (profile.petStatsIncluded ? 0 : nonnegative(profile.tiger)) / 100; a = a * (1 + nonnegative(profile.chameleon) / 100) + (profile.petStatsIncluded ? 0 : nonnegative(profile.lion)) / 100; }
     const b = caller[c].map(v => 1 + v);
+    // Extension: apply the city debuff in the source's Defense down pool.
+    // This is a comparison-model approximation, not verified Bear mitigation.
+    b[3] += nonnegative(profile.cityDefenseDown) / 100;
     const tier = db.troopDamageStats[profile.tiers?.[c]];
     if (!tier) throw new Error('Choose a valid troop tier for every class.');
     const factor = b[6] + (b[7] + (c === 2 ? tier.MarFcSkill || 0 : 0) - 1) * b[8];
@@ -78,9 +81,13 @@ export function calculate(profile, db) {
   const sum = damage.reduce((s, d) => s + d * d, 0);
   const ratios = damage.map(d => sum > 0 ? d * d / sum : 1 / 3);
   const raw = Math.sqrt(sum * capacity) * (1 + widgetL) * (1 + widgetA);
-  const normalization = (pets ? 1 + nonnegative(profile.chameleon) / 100 : 1) * 1.3 / 23400;
-  const sourceBoost = raw * (pets ? 1 + (nonnegative(profile.chameleon) || 10) / 100 : 1) * 1.3 / 23400;
-  return { sourceBoost, raw, boost: raw * normalization, capacity, ratios, counts: integerCounts(ratios, capacity), damage, widgetL, widgetA, normalization };
+  const cyrille = profile.cyrilleDamage == null ? 1.3 : 1 + nonnegative(profile.cyrilleDamage) / 100;
+  const normalization = (pets ? 1 + nonnegative(profile.chameleon) / 100 : 1) * cyrille / 23400;
+  // Retain the historical zero-Chameleon fallback only for legacy parity calls.
+  const sourceNormalization = (pets ? 1 + (nonnegative(profile.chameleon) || (profile.buffModelVersion ? 0 : 10)) / 100 : 1) * cyrille / 23400;
+  const sourceBoost = raw * sourceNormalization;
+  return { sourceBoost, raw, boost: raw * normalization, capacity, ratios, counts: integerCounts(ratios, capacity), damage, widgetL, widgetA, normalization, sourceNormalization };
+
 }
 // Extension inferred from the source's squared-ratio optimum, not extracted game logic.
 // sum(D_c sqrt(n_c)) gives exactly sqrt(sum(D_c²) N) at the optimal ratio.

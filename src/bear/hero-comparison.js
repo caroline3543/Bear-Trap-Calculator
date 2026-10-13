@@ -1,3 +1,4 @@
+import { BUFF_LIMITS, POSITIONS, FROSTDRAGON_TITLES } from './buffs.js';
 import { optimizeMixed } from './mixed-troops.js';
 import { CLASSES, calculate } from './model.js';
 import { gearDifference, withGearDifferences } from './number-entry.js';
@@ -6,8 +7,15 @@ import { heroNamesForClass, resolveHero, starKey } from './leader-setup.js';
 export function assessSetup(draft, tiers, leaderCapacity, leaderMinister, db, inventory) {
     const validBonus = v => v !== '' && v != null && Number.isFinite(Number(v)) && Number(v) >= 0 && Number(v) <= 10000;
     const errors = [];
-    if (!Number.isSafeInteger(leaderCapacity) || leaderCapacity <= 0) errors.push('Enter a positive, whole-number deployment capacity above.');
-    if (['allAttack', 'allLethality', 'chameleon', 'tiger', 'lion'].some(k => !validBonus(draft[k]))) errors.push('Complete the account and pet bonuses with values from 0 to 10,000. Use 0 for no bonus.');
+    if (!Number.isSafeInteger(leaderCapacity) || leaderCapacity <= 0) errors.push('Check deployment capacity and extra capacity buffs. Troop amounts must be whole numbers; city deployment is 0–20%.');
+    if (['allAttack', 'allLethality'].some(k => !validBonus(draft[k]))) errors.push('Complete the account bonuses with values from 0 to 10,000. Use 0 for no bonus.');
+    if (draft.buffModelVersion) {
+      for (const [field, max] of Object.entries(BUFF_LIMITS)) {
+        if (!validBonus(draft[field]) || Number(draft[field]) > max) errors.push(`${field.replace(/([A-Z])/g, ' $1')}: enter 0–${max}.`);
+      }
+      if (!POSITIONS[leaderMinister]) errors.push('Choose a valid minister or president position.');
+      if (!FROSTDRAGON_TITLES[draft.frostdragon ?? 'None']) errors.push('Choose a valid Frostdragon title.');
+    }
     const starters = draft.starters.map((h, i) => resolveHero(h, heroNamesForClass(db, i)));
     const joiners = ['Jessie', 'Jessie', 'Seo-yoon', 'Seo-yoon'];
     const roster = {};

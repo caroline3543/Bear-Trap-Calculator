@@ -79,3 +79,10 @@
 .bl-score-card strong { font-size: 24px; font-variant-numeric: tabular-nums; }
 .bl-score-best { border: 2px solid var(--teal); background: var(--selectedBg, var(--surface)); }
 .bl-comparison-result .ui-button { width: 100%; }
+
+.bl-buffs h3 { font-size: 16px; color: var(--ink); margin: 20px 0 10px; }
+.bl-buff-check { display: flex; align-items: flex-start; gap: 10px; font-size: 16px; line-height: 1.5; margin: 12px 0; cursor: pointer; }
+.bl-buff-check input { width: 20px; height: 20px; min-height: 20px; padding: 0; flex-shrink: 0; margin-top: 2px; accent-color: var(--gold, #d99b42); }
+.bl-buff-choice { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 14px 0; font-size: 16px; }
+.bl-buff-choice > div { display: flex; gap: 6px; }
+.bl-buffs select { width: 100%; font-size: 16px; min-height: 48px; }
