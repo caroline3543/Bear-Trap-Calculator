@@ -86,3 +86,12 @@
 .bl-buff-choice { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 14px 0; font-size: 16px; }
 .bl-buff-choice > div { display: flex; gap: 6px; }
 .bl-buffs select { width: 100%; font-size: 16px; min-height: 48px; }
+
+.bl-position-buttons { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 14px; }
+.bl-position-buttons button { text-align:left; white-space:normal; }
+.bl-progress { border:1px solid var(--inputBorder); border-radius:12px; padding:12px; margin-bottom:18px; }
+.bl-progress p { font-size:16px; margin:0 0 8px; }
+.bl-progress progress { width:100%; height:10px; accent-color:var(--teal); }
+.bl-issue-links { margin:10px 0 0; padding:0; list-style:none; }
+.bl-issue-links button { background:none; border:0; color:var(--ink); font:inherit; font-size:16px; text-align:left; min-height:44px; padding:8px 0; text-decoration:underline; cursor:pointer; }
+[data-needs-attention] { outline:2px solid var(--gold); outline-offset:4px; border-radius:8px; }

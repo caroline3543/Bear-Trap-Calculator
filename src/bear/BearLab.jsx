@@ -67,7 +67,7 @@ function HeroNameField({ label, ariaLabel, value, names, onChange }) {
         placeholder="Start typing a hero name" value={value}
         onFocus={() => { setOpen(true); setActive(-1); }}
         onChange={e => { onChange(e.target.value); setOpen(true); setActive(-1); }}
-        onBlur={() => { setOpen(false); if (resolved) onChange(resolved); }}
+        onBlur={() => setOpen(false)}
         onKeyDown={e => {
           if (e.key === 'Escape') { setOpen(false); setActive(-1); }
           if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -150,7 +150,7 @@ function BuffFields({ draft, edit, capacityBuffs, onCapacityBuffsChange, cyrille
         <NumberField label="City deployment increase (%)" value={capacityBuffs.deploy} max={20} onChange={v => onCapacityBuffsChange({ ...capacityBuffs, deploy: v })} />
       </div>
       <details className="bl-details"><summary>Minister positions and titles</summary>
-      <div role="group" aria-label="Minister or president">{Object.entries(POSITIONS).filter(([name]) => name !== 'None').map(([name,v]) => <label className="bl-buff-check" key={name}><input type="checkbox" checked={capacityBuffs.position === name} onChange={e => onCapacityBuffsChange({ ...capacityBuffs, position: e.target.checked ? name : 'None' })} />{titleLabel(name,v)}</label>)}</div>
+      <div className="bl-position-buttons" role="group" aria-label="Minister or president">{Object.entries(POSITIONS).map(([name,v]) => <Button key={name} small aria-pressed={capacityBuffs.position === name} tone={capacityBuffs.position === name ? 'primary' : 'secondary'} onClick={() => onCapacityBuffsChange({ ...capacityBuffs, position: name })}>{name === 'None' ? 'None' : titleLabel(name,v)}</Button>)}</div>
       <label className="bl-field"><span>Frostdragon title</span><select className="ui-input" value={capacityBuffs.frostdragon} onChange={e => onCapacityBuffsChange({ ...capacityBuffs, frostdragon: e.target.value })}>{Object.entries(FROSTDRAGON_TITLES).map(([name,v]) => <option key={name} value={name}>{name === 'None' ? name : titleLabel(name,v)}</option>)}</select></label>
       </details>
     </>}
@@ -185,6 +185,7 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
   const [dirty, setDirty] = useState(false);
   const panelId = useId();
   const resultRef = useRef(null);
+  const helperRef = useRef(null);
   const mounted = useRef(false);
   useEffect(() => {
     try {
@@ -204,18 +205,66 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
   const assessment = useMemo(() => {
     return assessSetup(calculationDraft, tiers, leaderCapacity, leaderMinister, db, inventory);
   }, [draft, leaderCapacity, leaderMinister, troopTiers, inventory, capacityBuffs]);
+  function fieldsFor(error) {
+    const root = helperRef.current;
+    if (!root) return [];
+    const controls = [...root.querySelectorAll('input[aria-label], select')];
+    const name = el => el.getAttribute('aria-label') || el.closest('label')?.querySelector('span')?.textContent || '';
+    const c = CLASSES.find(v => error.startsWith(v + ':'));
+    if (c) {
+      if (error.includes('hero')) return controls.filter(el => name(el) === `${c} hero`);
+      if (error.includes('star')) return controls.filter(el => name(el) === `${c} stars`);
+      if (error.includes('widget')) return controls.filter(el => name(el) === `${c} widget`);
+      if (error.includes('skill')) return controls.filter(el => name(el) === `${c} skill level`);
+      if (error.includes('gear')) return controls.filter(el => name(el).startsWith(c + ' ') && name(el).includes('Gear'));
+      if (error.includes('troop-type')) return controls.filter(el => name(el).startsWith(c + ' base'));
+      if (error.includes('FC')) return [...document.querySelectorAll('input')].filter(el => (el.getAttribute('aria-label') || '').toLowerCase().includes(c.toLowerCase()) && /FC|tier/i.test(el.getAttribute('aria-label')));
+    }
+    if (error.includes('account bonuses')) return controls.filter(el => name(el).startsWith('All troops'));
+    if (error.includes('capacity')) return [...document.querySelectorAll('#rally-leader-fields input')].slice(0,1).concat(controls.filter(el => /extra troops|deployment increase/.test(name(el))));
+    const labels = { chameleon:'Chameleon', tiger:'Saber-tooth', lion:'Cave Lion', 'city attack':'Attack increase', 'city lethality':'Lethality increase', 'city defense down':'Enemy defence down', 'enemy health down':'Titan Roc', 'cyrille damage':'Earthbreaker', 'extra attack':'Other attack', 'extra lethality':'Other lethality' };
+    const key = Object.keys(labels).find(k => error.startsWith(k + ':'));
+    if (error.includes('minister')) return [...root.querySelectorAll('.bl-position-buttons button')];
+    if (key?.startsWith('city ')) {
+      const group = [...root.querySelectorAll('.bl-buff-choice')].find(el => el.textContent.startsWith(labels[key]));
+      return group ? [...group.querySelectorAll('button')] : [];
+    }
+    return key ? controls.filter(el => name(el).startsWith(labels[key])) : [];
+  }
+  function goToIssue(error) {
+    const fields = fieldsFor(error);
+    const target = fields.find(el => el.value === '' || el.getAttribute('aria-invalid') === 'true') || fields[0];
+    const fallback = error.includes('inventory') || error.includes('troops') ? document.querySelector('#troop-pool-fields') || document.querySelector('input[aria-label="infantry FC"]') : helperRef.current;
+    const node = target || fallback;
+    for (let p = node?.parentElement; p; p = p.parentElement) if (p.tagName === 'DETAILS') p.open = true;
+    node?.scrollIntoView?.({ behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'center' });
+    if (target) target.focus({ preventScroll:true });
+  }
+  useEffect(() => {
+    if (!open) return;
+    helperRef.current.querySelectorAll('details').forEach(el => {
+      if (el.querySelector('input, select, .bl-position-buttons') && !el.closest('.bl-compare')) el.open = true;
+    });
+  }, [open]);
+  useEffect(() => {
+    document.querySelectorAll('[data-needs-attention]').forEach(el => el.removeAttribute('data-needs-attention'));
+    if (open) assessment.errors.forEach(error => fieldsFor(error).forEach(el => el.closest('label, .bl-buff-choice, .bl-position-buttons')?.setAttribute('data-needs-attention','true')));
+  }, [open, assessment]);
+  const checkpoints = ['Capacity', 'Buffs', 'Account stats', ...CLASSES, 'Troops'];
+  const issueGroup = error => CLASSES.find(c => error.startsWith(c + ':')) || (error.includes('capacity') ? 'Capacity' : error.includes('account bonuses') ? 'Account stats' : /inventory|troops|tier/i.test(error) ? 'Troops' : 'Buffs');
+  const ready = checkpoints.length - new Set(assessment.errors.map(issueGroup)).size;
   const actualScore = useMemo(() => {
     if (!assessment.result?.model || !actualRally) return null;
     try { return scoreRally(assessment.result.model,actualRally); } catch { return null; }
   }, [assessment,actualRally]);
   function apply() {
-    if (!assessment.result) return;
+    if (!assessment.result) { goToIssue(assessment.errors[0]); return; }
     onApplyLeader(assessment.result.counts, assessment.result.ratios.map(n => n * 100));
     setApplied({ ...assessment.result, heroes: assessment.profile.starters, revision: (applied?.revision || 0) + 1 });
     setDirty(false); setNotice('Recommended squad updated.');
   }
   useEffect(() => { if (applied && !dirty) resultRef.current?.focus({ preventScroll: true }); }, [applied]);
-  return <div className="bear-leader-helper">
+  return <div className="bear-leader-helper" ref={helperRef}>
       <BuffFields draft={draft} edit={edit} capacityBuffs={capacityBuffs} onCapacityBuffsChange={onCapacityBuffsChange}
         cyrilleCapacity={cyrilleCapacity} onCyrilleCapacityChange={onCyrilleCapacityChange} apeCapacity={apeCapacity} onApeCapacityChange={onApeCapacityChange} />
     <p className="bl-help">Capacity with buffs: <strong>{fmt(leaderCapacity)}</strong></p>
@@ -224,6 +273,11 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
     </button>
     {!open && applied && <p className="bl-status">{dirty ? 'Setup changed. Recalculate to update your squad.' : `${applied.heroes.join(' · ')} · ${fmt(applied.capacity)} troops before inventory limits`}</p>}
     {open && <form id={panelId} className="bl-panel" onSubmit={e => { e.preventDefault(); apply(); }}>
+      <div className="bl-progress" role="region" aria-label="Setup progress">
+        <p role="status"><strong>{ready} of {checkpoints.length} sections ready</strong>{assessment.errors.length === 0 ? ' · Ready to calculate' : ` · ${assessment.errors.length} ${assessment.errors.length === 1 ? 'item' : 'items'} to check`}</p>
+        <progress max={checkpoints.length} value={ready} aria-label="Completed setup sections" />
+        {assessment.errors.length > 0 && <ul className="bl-issue-links">{assessment.errors.map(error => <li key={error}><button type="button" onClick={() => goToIssue(error)}>{error}</button></li>)}</ul>}
+      </div>
       <p className="bl-help">Uses {accountName}’s available troops, highest tiers first.</p>
       <details className="bl-details"><summary>Calculation assumptions</summary><p className="bl-help">Two Jessie and two Seo-yoon joiners, level-5 skills. Active pet and city buffs use the values below. Trap attack +25%.</p></details>
       <BonusScanner onApply={readings => { setDraft(p => applyBonusReadings(p, readings)); setDirty(true); setNotice('Account bonuses updated.'); }} />
@@ -266,8 +320,8 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
         {applied && !dirty && <div key={applied.revision} ref={resultRef} tabIndex={-1} className="bl-ideal-result rally-result-update" aria-label="Ideal rally leader squad" role="region"><h3>Ideal rally leader squad</h3><div className="bl-grid three">{CLASSES.map((c, i) => <div key={c}><small>{c} · {(applied.ratios[i] * 100).toFixed(2)}%</small><strong>{fmt(applied.counts[i])}</strong></div>)}</div><p className="bl-help">Total: {fmt(applied.capacity)} troops{applied.shortfall > 0 ? ` · ${fmt(applied.shortfall)} spaces unfilled` : ''}.</p>
           {applied.breakdown && <div className="bl-tier-mix">{CLASSES.map((c,i) => <p key={c}><strong>{c}</strong> {['t11','t10','t9'].filter(t => applied.breakdown[['infantry','lancer','marksman'][i]][t]>0).map(t => `${t.toUpperCase()} FC${applied.model.classes[i].find(e=>e.tier===t).fc} ${fmt(applied.breakdown[['infantry','lancer','marksman'][i]][t])}`).join(' · ') || '0 troops'}</p>)}</div>}
           <p className="bl-model-score">{applied.mixedTiers ? applied.optimalAtDisplayPrecision ? 'Inventory-adjusted optimal boost' : 'Best inventory-adjusted boost' : 'WOS Nerds optimal boost'}: <strong>{applied.sourceBoost.toFixed(4)}</strong></p><p className="bl-help">A comparison score, not a prediction of Bear Trap damage points.</p></div>}
-        {assessment.errors.length > 0 && <details className="bl-details bl-setup-issues"><summary>{assessment.errors.length} {assessment.errors.length === 1 ? 'item' : 'items'} to check</summary><ul>{assessment.errors.map(error => <li key={error}>{error}</li>)}</ul></details>}
-        <button type="submit" className="bl-apply" disabled={!assessment.result}>{applied && !dirty ? 'Calculate again' : 'Calculate & apply squad'}</button>
+
+        <button type="submit" className="bl-apply">{applied && !dirty ? 'Calculate again' : 'Calculate & apply squad'}</button>
         <p className="bl-help">Applies a split that fits your troop inventory.</p>
 
       </div>

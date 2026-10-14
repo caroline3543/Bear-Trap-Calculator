@@ -13,13 +13,19 @@ const deps=require('node:module').createRequire(path.join(process.env.BT_TEST_DE
  const render=()=>root.render(React.createElement(Form,{key:id,accountId:id,accountName:id,leaderCapacity:capacity(),leaderMinister:caps.position,capacityBuffs:caps,onCapacityBuffsChange:v=>{caps=v;render();},apeCapacity:0,cyrilleCapacity:0,inventory,troopTiers:tiers,onApplyLeader:counts=>applied.push(counts)}));
  const input=(label,value)=>{const e=document.querySelector(`input[aria-label="${label}"]`);assert.ok(e,label);Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set.call(e,value);e.dispatchEvent(new window.Event('input',{bubbles:true}));};
 
- const toggle=text=>{const e=[...document.querySelectorAll('label')].find(e=>e.textContent===text);assert.ok(e,text);e.querySelector('input').click();};
+ const toggle=text=>{const e=[...document.querySelectorAll('.bl-position-buttons button')].find(e=>e.textContent===text);assert.ok(e,text);e.click();};
  const submit=()=>document.querySelector('form').dispatchEvent(new window.Event('submit',{bubbles:true,cancelable:true}));
  const saved=()=>JSON.parse(localStorage.getItem('bearLeader:v2:main')).profile;
  try {
   await act(async()=>render());await act(async()=>document.querySelector('.bl-launch').click());
+  assert.equal(document.querySelector('input[aria-label="Infantry attack · Gear on (%)"]').closest('details').open,true);
+  assert.equal(document.querySelector('.bl-position-buttons').closest('details').open,true);
+  assert.ok(document.querySelector('.bl-progress').textContent.includes('4 of 7'));
+  await act(async()=>document.querySelector('.bl-issue-links button').click());
+  assert.equal(document.activeElement.getAttribute('aria-label'),'Infantry hero');
   assert.ok(document.querySelector('.bl-buffs').textContent.includes('Pet and city buffs'));assert.equal(saved().cyrilleDamage,0);
   await act(async()=>['Infantry','Lancer','Marksman'].forEach((c,i)=>input(`${c} hero`,['Hector','Mia','Gwen'][i])));
+  assert.ok(document.querySelector('.bl-progress').textContent.includes('Ready to calculate'));
   await act(async()=>submit());assert.equal(applied.at(-1).reduce((a,b)=>a+b),100000);
   const boost=()=>Number([...document.querySelectorAll('.bl-model-score strong')][0].textContent);
   const baseline=boost();
@@ -37,6 +43,6 @@ const deps=require('node:module').createRequire(path.join(process.env.BT_TEST_DE
   await act(async()=>input('City deployment increase (%)','20'));await act(async()=>submit());assert.equal(applied.at(-1).reduce((a,b)=>a+b),120000);
   id='farm';caps={position:'None',frostdragon:'None',deploy:0,titlesCapacityIncluded:false};await act(async()=>render());await act(async()=>document.querySelector('.bl-launch').click());assert.equal(JSON.parse(localStorage.getItem('bearLeader:v2:farm')).profile.cityAttack,0);
   id='main';await act(async()=>render());await act(async()=>document.querySelector('.bl-launch').click());assert.equal(saved().cityAttack,20);assert.equal(saved().enemyHealthDown,5);
-  console.log('Buff UI passed: exclusive city choices, unbuffed input assumption, exclusive minister ticks, title capacity, percent deployment, health tracking, dirty animation state and isolated saved account settings.');
+  console.log('Buff UI passed: exclusive city choices, unbuffed input assumption, exclusive minister buttons, title capacity, percent deployment, health tracking, dirty animation state and isolated saved account settings.');
  } finally {await act(async()=>root.unmount());dom.window.close();fs.rmSync(tmp,{recursive:true,force:true});}
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -32,7 +32,10 @@ const deps = process.env.BT_TEST_DEPS ? require('node:module').createRequire(pat
     assert.equal(applied.length,2);assert.notDeepEqual(applied[0],applied[1]);
     tiers=[{fc:'',level:10},{fc:6,level:10},{fc:5,level:11}];
     await act(async()=>render());
-    assert.equal(document.querySelector('button[type="submit"]').disabled,true);
+    assert.equal(document.querySelector('button[type="submit"]').disabled,false);
+    await act(async()=>document.querySelector('form').dispatchEvent(new window.Event('submit',{bubbles:true,cancelable:true})));
+    assert.equal(applied.length,2,'Invalid FC still blocks applying a squad');
+    assert.ok(document.querySelector('.bl-issue-links').textContent.includes('Infantry: check FC'));
     assert.ok(document.body.textContent.includes('in the troop inventory above'));
     await act(async()=>root.unmount());
     console.log('FC form check passed: no duplicate inputs; per-class inventory tiers drive calculation; edits invalidate results; blank FC blocks calculation.');
