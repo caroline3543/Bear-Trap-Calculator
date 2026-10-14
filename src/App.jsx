@@ -2923,9 +2923,8 @@ export default function App() {
                           <NumField label={tr("rallyBaseCapacity")} value={rallyCapacity} onChange={setRallyCapacity} />
                           <details className="bt-capacity-help"><summary>Where to find capacity</summary>
                             <p>Start a Polar Terror rally with your leader heroes. Tap <strong>!</strong> beside the troop count and copy <strong>Deployment Capacity</strong>.</p>
-                            <p>Use your march capacity, not the whole rally’s capacity. Add the bonuses below only if they are missing from that reading.</p>
+                            <p>Use your own deployment capacity before temporary buffs.</p>
                           </details>
-                          <p className="bt-flow-note">Deployment capacity with extra buffs: <strong>{fmt(effectiveRallyCapacity)}</strong></p>
                           <React.Suspense fallback={<p style={{ color: C.sub, fontSize: 12 }}>Loading recommendation form…</p>}>
                             <BearLab
                               key={activeAccount}

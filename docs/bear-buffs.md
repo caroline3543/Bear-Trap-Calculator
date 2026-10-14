@@ -27,8 +27,8 @@ These descriptions do not verify an exact Bear combat simulator. The score remai
 - Titan Roc health down is recorded but has **no numerical score term** because its Bear effect could not be established from primary descriptions.
 - New UI profiles remove the phantom 10% Chameleon fallback, and use the entered Cyrille value. Legacy profiles without `buffModelVersion` preserve source parity.
 - Mixed-tier optimizer and manual rally scoring use the exact same returned normalization.
-- Permanent research, gear, charms, VIP, skins, island, facilities and pet stats belong in account readings. Separate included-stat switches suppress pet, city and title attack/lethality additions. Title capacity inclusion is independent.
-- Deployment is `round((reading + missing Cyrille + missing Ape + missing title capacity) * (1 + missing city deployment % / 100))`. An already-boosted deployment reading needs zero missing boosts.
+- Permanent research, gear, charms, VIP, skins, island, facilities and pet stats belong in account readings. The UI assumes all readings are before temporary buffs. Legacy included-stat switches are cleared on migration; all selected buffs are added.
+- Deployment is `round((reading + missing Cyrille + missing Ape + missing title capacity) * (1 + missing city deployment % / 100))`. The entered deployment reading must be before the selected temporary buffs.
 - Defence/health, defensive debuffs, healing/gathering and march speed are not single-rally damage terms. Speed may affect how many rallies fit in the event; this calculator does not simulate the event schedule.
 
 ## Sources

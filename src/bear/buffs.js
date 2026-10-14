@@ -21,7 +21,7 @@ export function migrateCapacityBuffs(saved = {}) {
   saved = saved || {};
   return { position: saved.capacityBuffs?.position ?? (saved.ministerBoost === 3750 ? 'Strategy (supreme)' : saved.ministerBoost ? 'Strategy (normal)' : 'None'),
     frostdragon: saved.capacityBuffs?.frostdragon ?? 'None', deploy: saved.capacityBuffs?.deploy ?? 0,
-    titlesCapacityIncluded: saved.capacityBuffs?.titlesCapacityIncluded ?? false };
+    titlesCapacityIncluded: false };
 }
 export function effectiveCapacity(base, cyrille, ape, buffs) {
   const flat = buffs.titlesCapacityIncluded ? 0 : (POSITIONS[buffs.position]?.troops ?? 0) + (FROSTDRAGON_TITLES[buffs.frostdragon]?.troops ?? 0);

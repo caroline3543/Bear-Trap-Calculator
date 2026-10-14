@@ -25,8 +25,8 @@ export function migrateSetup(old = {}) {
     // Existing setups historically assumed max Cyrille. Make that visible;
     // new accounts start without a talent bonus.
     cyrilleDamage: old.cyrilleDamage ?? (Object.keys(old).length ? 30 : 0),
-    petStatsIncluded: old.petStatsIncluded ?? false, cityStatsIncluded: old.cityStatsIncluded ?? false,
-    titlesStatsIncluded: old.titlesStatsIncluded ?? false,
+    petStatsIncluded: false, cityStatsIncluded: false,
+    titlesStatsIncluded: false,
     stats, starters: CLASSES.map((_, i) => old.starters?.[i] || ''),
     heroInfo: CLASSES.map((_, i) => {
       const h = old.heroInfo?.[i] || old.roster?.[old.starters?.[i]] || {};

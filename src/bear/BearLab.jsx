@@ -136,54 +136,49 @@ function HeroComparison({ index, draft, tiers, capacity, minister, inventory, on
   </details>;
 }
 function BuffFields({ draft, edit, capacityBuffs, onCapacityBuffsChange, cyrilleCapacity, onCyrilleCapacityChange, apeCapacity, onApeCapacityChange }) {
-  const check = (field, label) => <label className="bl-buff-check"><input type="checkbox" checked={draft[field]} onChange={e => edit({ [field]: e.target.checked })} />{label}</label>;
   const amount = (field, label, max) => <NumberField key={field} label={label} value={draft[field]} max={max} onChange={v => edit({ [field]: v })} />;
   const city = (field, label) => <div className="bl-buff-choice"><span>{label}</span><div role="group" aria-label={label}>{[0, 10, 20].map(n => <Button key={n} small aria-pressed={Number(draft[field]) === n} tone={Number(draft[field]) === n ? 'primary' : 'secondary'} onClick={() => edit({ [field]: n })}>{n ? `${n}%` : 'None'}</Button>)}</div></div>;
   const titleLabel = (name, v) => `${name} · ${[v.attack && `ATK +${v.attack * 100}%`, v.lethality && `LETH +${v.lethality * 100}%`, v.troops && `capacity +${fmt(v.troops)}`].filter(Boolean).join(' · ')}`;
-  return <details className="bl-details bl-buffs"><summary>Pet and city buffs</summary>
-    <p className="bl-help">Enter active bonuses. Use 0 or None for anything inactive.</p>
+  return <div className="bl-buffs">
+    <p className="bl-help">Enter stats and capacity before these buffs. Leave inactive buffs at 0 or None.</p>
+    {capacityBuffs && onCapacityBuffsChange && <>
+      <h3>Capacity buffs</h3>
+
+      <div className="bl-grid two">
+        {onApeCapacityChange && <NumberField label="Snow Ape extra troops" value={apeCapacity} max={15000} decimal={false} onChange={onApeCapacityChange} />}
+        {onCyrilleCapacityChange && <NumberField label="Cyrille extra troops" value={cyrilleCapacity} max={30000} decimal={false} onChange={onCyrilleCapacityChange} />}
+        <NumberField label="City deployment increase (%)" value={capacityBuffs.deploy} max={20} onChange={v => onCapacityBuffsChange({ ...capacityBuffs, deploy: v })} />
+      </div>
+      <details className="bl-details"><summary>Minister positions and titles</summary>
+      <div role="group" aria-label="Minister or president">{Object.entries(POSITIONS).filter(([name]) => name !== 'None').map(([name,v]) => <label className="bl-buff-check" key={name}><input type="checkbox" checked={capacityBuffs.position === name} onChange={e => onCapacityBuffsChange({ ...capacityBuffs, position: e.target.checked ? name : 'None' })} />{titleLabel(name,v)}</label>)}</div>
+      <label className="bl-field"><span>Frostdragon title</span><select className="ui-input" value={capacityBuffs.frostdragon} onChange={e => onCapacityBuffsChange({ ...capacityBuffs, frostdragon: e.target.value })}>{Object.entries(FROSTDRAGON_TITLES).map(([name,v]) => <option key={name} value={name}>{name === 'None' ? name : titleLabel(name,v)}</option>)}</select></label>
+      </details>
+    </>}
+    <details className="bl-details"><summary>Pet and city buffs</summary>
     <h3>Pet skills</h3>
     <div className="bl-grid two">{amount('lion', 'Cave Lion attack (%)', 10)}{amount('tiger', 'Saber-tooth Tiger lethality (%)', 10)}</div>
-    {check('petStatsIncluded', 'Pet attack and lethality are already in my account stats')}
     <div className="bl-grid two">{amount('chameleon', 'Chameleon enemy defence down (%)', 10)}{amount('enemyHealthDown', 'Titan Roc enemy health down (%)', 5)}</div>
     <p className="bl-help">Health down is saved but excluded from the score: its Bear effect is unverified.</p>
     <h3>City items</h3>
-    {city('cityAttack', 'Troops Attack Up')}{city('cityLethality', 'Troops Damage Up — lethality')}
-    {check('cityStatsIncluded', 'City attack and lethality are already in my account stats')}
-    {city('cityDefenseDown', 'Enemy Troops Defence Down')}
+    {city('cityAttack', 'Attack increase')}{city('cityLethality', 'Lethality increase')}
+    {city('cityDefenseDown', 'Enemy defence down')}
     <p className="bl-help">Choose one item per type. Defence down uses a model approximation.</p>
-    {capacityBuffs && onCapacityBuffsChange && <>
-      <h3>Positions and titles</h3>
-      <label className="bl-field"><span>Minister or president</span><select className="ui-input" value={capacityBuffs.position} onChange={e => onCapacityBuffsChange({ ...capacityBuffs, position: e.target.value })}>{Object.entries(POSITIONS).map(([name,v]) => <option key={name} value={name}>{name === 'None' ? name : titleLabel(name,v)}</option>)}</select></label>
-      <label className="bl-field"><span>Frostdragon title</span><select className="ui-input" value={capacityBuffs.frostdragon} onChange={e => onCapacityBuffsChange({ ...capacityBuffs, frostdragon: e.target.value })}>{Object.entries(FROSTDRAGON_TITLES).map(([name,v]) => <option key={name} value={name}>{name === 'None' ? name : titleLabel(name,v)}</option>)}</select></label>
-      {(capacityBuffs.position !== 'None' || capacityBuffs.frostdragon !== 'None') && <>
-        {check('titlesStatsIncluded', 'Title attack and lethality are already in my account stats')}
-        <label className="bl-buff-check"><input type="checkbox" checked={capacityBuffs.titlesCapacityIncluded} onChange={e => onCapacityBuffsChange({ ...capacityBuffs, titlesCapacityIncluded: e.target.checked })} />Title capacity is already in my deployment reading</label>
-      </>}
-      <h3>Extra deployment capacity</h3>
-      <p className="bl-help">Add only bonuses missing from the deployment capacity above.</p>
-      <div className="bl-grid two">
-        {onApeCapacityChange && <NumberField label="Snow Ape extra troops" value={apeCapacity} max={15000} decimal={false} onChange={onApeCapacityChange} />}
-        {onCyrilleCapacityChange && <NumberField label="Cyrille extra troops (Ursa’s Bane)" value={cyrilleCapacity} max={30000} decimal={false} onChange={onCyrilleCapacityChange} />}
-        <NumberField label="City deployment increase (%)" value={capacityBuffs.deploy} max={20} onChange={v => onCapacityBuffsChange({ ...capacityBuffs, deploy: v })} />
-      </div>
-      <p className="bl-help">Cyrille’s Entrapment boosts the whole rally, not your troop limit.</p>
-    </>}
     <h3>Cyrille damage</h3>
     {amount('cyrilleDamage', 'Earthbreaker damage bonus (%)', 30)}
-    <p className="bl-help">Copy the talent’s current bonus. Use 0 if locked. Older setups used 30%.</p>
-    <details className="bl-details"><summary>Other bonuses and what is counted</summary>
-      <p className="bl-help">Research, chief gear, charms, VIP, skins, island, facilities and permanent pet stats belong in your account readings. Do not add them twice.</p>
-      <div className="bl-grid two">{amount('extraAttack', 'Other missing base attack (%)', 10000)}{amount('extraLethality', 'Other missing base lethality (%)', 10000)}</div>
-      <p className="bl-help">Use these only for missing base stats. Health, defence, enemy attack/lethality down, healing and gathering have no score term here. March speed affects timing, not this single-rally score.</p>
+    <p className="bl-help">Use 0 if Earthbreaker is locked.</p>
+    <details className="bl-details"><summary>Other bonuses</summary>
+      <p className="bl-help">Permanent upgrades are already part of your account stats.</p>
+      <div className="bl-grid two">{amount('extraAttack', 'Other attack (%)', 10000)}{amount('extraLethality', 'Other lethality (%)', 10000)}</div>
+      <p className="bl-help">Add only extra base attack or lethality. Defensive and march-speed buffs do not change this score.</p>
       <p className="bl-help">Official references: {BUFF_SOURCES.map(([label,url],i) => <React.Fragment key={url}>{i > 0 && ' · '}<a href={url} target="_blank" rel="noreferrer">{label}</a></React.Fragment>)}</p>
     </details>
-  </details>;
+    </details>
+  </div>;
 }
 export default function BearLab({ accountId, accountName, leaderCapacity, leaderMinister = 'None', troopTiers, inventory, actualRally, onApplyLeader, capacityBuffs, onCapacityBuffsChange, cyrilleCapacity, onCyrilleCapacityChange, apeCapacity, onApeCapacityChange }) {
   const [draft, setDraft] = useState(() => loadSetup(accountId));
   const tiers = troopTiers || draft.tierInputs;
-  const calculationDraft = useMemo(() => ({ ...draft, frostdragon: capacityBuffs?.frostdragon ?? 'None' }), [draft, capacityBuffs]);
+  const calculationDraft = useMemo(() => ({ ...draft, petStatsIncluded: false, cityStatsIncluded: false, titlesStatsIncluded: false, frostdragon: capacityBuffs?.frostdragon ?? 'None' }), [draft, capacityBuffs]);
   const [open, setOpen] = useState(false);
   const [notice, setNotice] = useState('');
   const [applied, setApplied] = useState(null);
@@ -221,12 +216,15 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
   }
   useEffect(() => { if (applied && !dirty) resultRef.current?.focus({ preventScroll: true }); }, [applied]);
   return <div className="bear-leader-helper">
+      <BuffFields draft={draft} edit={edit} capacityBuffs={capacityBuffs} onCapacityBuffsChange={onCapacityBuffsChange}
+        cyrilleCapacity={cyrilleCapacity} onCyrilleCapacityChange={onCyrilleCapacityChange} apeCapacity={apeCapacity} onApeCapacityChange={onApeCapacityChange} />
+    <p className="bl-help">Capacity with buffs: <strong>{fmt(leaderCapacity)}</strong></p>
     <button type="button" className="bl-launch bl-calculate-launch" aria-expanded={open} aria-controls={panelId} onClick={() => setOpen(v => !v)}>
       <span>Calculate rally squad</span><Chevron expanded={open} />
     </button>
     {!open && applied && <p className="bl-status">{dirty ? 'Setup changed. Recalculate to update your squad.' : `${applied.heroes.join(' · ')} · ${fmt(applied.capacity)} troops before inventory limits`}</p>}
     {open && <form id={panelId} className="bl-panel" onSubmit={e => { e.preventDefault(); apply(); }}>
-      <p className="bl-help">For {accountName}. Uses your available T11, T10 and T9 troops, filling higher tiers first.</p>
+      <p className="bl-help">Uses {accountName}’s available troops, highest tiers first.</p>
       <details className="bl-details"><summary>Calculation assumptions</summary><p className="bl-help">Two Jessie and two Seo-yoon joiners, level-5 skills. Active pet and city buffs use the values below. Trap attack +25%.</p></details>
       <BonusScanner onApply={readings => { setDraft(p => applyBonusReadings(p, readings)); setDirty(true); setNotice('Account bonuses updated.'); }} />
       <div className="bl-grid two">
@@ -234,17 +232,16 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
         <NumberField label="All troops lethality (%)" value={draft.allLethality} onChange={v => edit({ allLethality: v })} />
       </div>
       <fieldset className="bl-class-bonuses"><legend>Troop-type bonuses</legend>
-        <p className="bl-help">Copy each troop type’s listed values. Do not add the all-troops bonus.</p>
+        <p className="bl-help">Copy the listed values for each troop type.</p>
         {CLASSES.map((c, i) => <div className="bl-grid two" key={c}>{['attack', 'lethality'].map(kind => <NumberField key={kind}
           label={`${c} base ${kind} (%)`} value={draft.stats[i][kind]} onChange={v => editAt('stats', i, { [kind]: v })} />)}</div>)}
       </fieldset>
       <details className="bl-details bl-guide"><summary>Where to find bonuses</summary>
-        <ol><li>Open <strong>Power → Bonus Overview</strong>.</li><li>Copy <strong>Attack</strong> and <strong>Lethality</strong> for all troops and each troop type.</li><li>Use readings before temporary buffs, or mark those buffs as already included below.</li></ol>
+        <ol><li>Open <strong>Power → Bonus Overview</strong>.</li><li>Copy <strong>Attack</strong> and <strong>Lethality</strong> for all troops and each troop type.</li><li>Use readings before temporary buffs.</li></ol>
         <p className="bl-help">Use Bonus Overview; rally stats include your heroes.</p>
         <figure><a href={bonusOverviewPhoto} target="_blank" rel="noreferrer"><img src={bonusOverviewPhoto} loading="lazy" alt="Bonus Overview example highlighting Troops’ Attack 216.77%, Troops’ Lethality 62.33%, and Infantry and Lancer bonuses" /></a><figcaption>Enter the highlighted fields. Tap to enlarge.</figcaption></figure>
       </details>
-      <BuffFields draft={draft} edit={edit} capacityBuffs={capacityBuffs} onCapacityBuffsChange={onCapacityBuffsChange}
-        cyrilleCapacity={cyrilleCapacity} onCyrilleCapacityChange={onCyrilleCapacityChange} apeCapacity={apeCapacity} onApeCapacityChange={onApeCapacityChange} />
+
       <details className="bl-details bl-guide"><summary>Where to find gear stats</summary>
         <ol><li>Open <strong>Hero → Stats → lower-right menu → Expedition</strong>.</li><li>Read <strong>Attack</strong> and <strong>Lethality</strong> with gear on, then off.</li><li>Keep stars, widget and skills unchanged. Restore your gear afterward.</li></ol>
         <p className="bl-help">Only gear on − gear off is added. Hero bonuses are calculated separately.</p>

@@ -17,6 +17,9 @@ test('new setup has no phantom Chameleon or Cyrille bonus; legacy source calls k
   close(calculate({...p,cyrilleDamage:30},db).sourceBoost,r.sourceBoost*1.3);
   assert.equal(migrateSetup({allAttack:400}).cyrilleDamage,30);
   assert.equal(migrateSetup().cyrilleDamage,0);
+  const migrated=migrateSetup({petStatsIncluded:true,cityStatsIncluded:true,titlesStatsIncluded:true});
+  assert.ok(!migrated.petStatsIncluded && !migrated.cityStatsIncluded && !migrated.titlesStatsIncluded);
+  assert.equal(migrateCapacityBuffs({capacityBuffs:{titlesCapacityIncluded:true}}).titlesCapacityIncluded,false);
   const legacy={...p};delete legacy.buffModelVersion;delete legacy.cyrilleDamage;
   close(calculate(legacy,db).sourceBoost,r.sourceBoost*1.3*1.1);
 });
