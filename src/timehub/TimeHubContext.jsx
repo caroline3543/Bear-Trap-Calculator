@@ -5,6 +5,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { setFeedbackPrefs } from "./lib/feedback.js";
 import { loadState, saveState, newId } from "./lib/storage.js";
+import { pauseFocus } from "./lib/todo.js";
 import { deviceTimeZone } from "./lib/time.js";
 import { makeT, RTL_LANGS } from "./i18n/index.js";
 import { updateAccountData, visibleAccountIds, primaryAccount, emptyAccountData, ALL } from "./lib/accounts.js";
@@ -50,7 +51,7 @@ function reducer(state, action) {
 }
 
 export function TimeHubProvider({ lang = "en", onAccountsChange, activeAccountId, onActiveAccountChange, children }) {
-  const [state, dispatch] = useReducer(reducer, undefined, () => loadState());
+  const [state, dispatch] = useReducer(reducer, undefined, () => { const s = loadState(); return { ...s, settings: { ...s.settings, focus: pauseFocus(s.settings.focus, Date.now()) } }; });
   // Notify the calculator immediately, without waiting for the debounced storage write.
   useEffect(() => { onAccountsChange?.(state.accounts); }, [state.accounts, onAccountsChange]);
   const activeChange = useRef(onActiveAccountChange);
@@ -84,6 +85,7 @@ export function TimeHubProvider({ lang = "en", onAccountsChange, activeAccountId
     try { return localStorage.getItem(TAB_KEY) || state.settings.tab || "today"; } catch { return state.settings.tab || "today"; }
   });
   const setTab = useCallback((next) => {
+    if (next !== "todos") dispatch({ type: "update", fn: (s) => s.settings.focus && s.settings.focus.pausedAt == null ? { ...s, settings: { ...s.settings, focus: pauseFocus(s.settings.focus, Date.now()) } } : s });
     setTabState(next);
     try { localStorage.setItem(TAB_KEY, next); } catch { /* private mode */ }
   }, []);
@@ -96,8 +98,13 @@ export function TimeHubProvider({ lang = "en", onAccountsChange, activeAccountId
     return () => clearTimeout(id);
   }, [state]);
   useEffect(() => {
-    const flush = () => saveState(latest.current);
-    const onVis = () => { if (document.visibilityState === "hidden") flush(); };
+    const flush = () => { const s = latest.current; saveState({ ...s, settings: { ...s.settings, focus: pauseFocus(s.settings.focus, Date.now()) } }); };
+    const onVis = () => {
+      if (document.visibilityState === "hidden") {
+        dispatch({ type: "update", fn: (s) => ({ ...s, settings: { ...s.settings, focus: pauseFocus(s.settings.focus, Date.now()) } }) });
+        flush();
+      }
+    };
     window.addEventListener("pagehide", flush);
     document.addEventListener("visibilitychange", onVis);
     return () => { window.removeEventListener("pagehide", flush); document.removeEventListener("visibilitychange", onVis); };
@@ -141,7 +148,7 @@ export function TimeHubProvider({ lang = "en", onAccountsChange, activeAccountId
       rearrange, setRearrange, bookingDraft, setBookingDraft, openBooking,
       trainDraft, setTrainDraft, startTraining, setTab,
       notify,
-      // "Start for 5 min" — a small focus timer, no commitment to finish (stopping isn't failure)
+      // A brief session — a small focus timer, no commitment to finish (stopping isn't failure)
       setFocus: (taskId, minutes = 2, minimum = false) => { const at = Date.now(); dispatch({ type: "settings", patch: { focus: { taskId, startedAt: at, endsAt: minutes ? at + minutes * 60000 : 0, minimum } } }); },
     };
   }, [state, lang, activeAccountId, setFilter, rearrange, bookingDraft, openBooking, trainDraft, startTraining, setTab, notify]);

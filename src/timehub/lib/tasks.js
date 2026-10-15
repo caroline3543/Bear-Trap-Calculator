@@ -25,7 +25,7 @@ export const DEFAULT_TASK_MS = 30 * MINUTE;
  *  only these thresholds matter, so a task doesn't visibly jump between buckets constantly).
  *  → "now" (<=15m or already due) | "soon" (<=3h) | "today" (later today) | "none" (unscheduled) */
 export function urgencyOf(task, now, dayEnd) {
-  const at = task.start ?? task.dueAt;
+  const at = taskMoment(task);
   if (at == null) return "none";
   const left = at - now;
   if (left <= 15 * MINUTE) return "now";
@@ -35,7 +35,7 @@ export function urgencyOf(task, now, dayEnd) {
 }
 
 /** The moment used for urgency/ordering: scheduled time first, else a user-set due time. */
-export const taskMoment = (task) => task.start ?? task.dueAt ?? null;
+export const taskMoment = (task) => task.start != null && task.dueAt != null ? Math.min(task.start, task.dueAt) : task.start ?? task.dueAt ?? null;
 
 /**
  * Which of the four ADHD-priority groups a task belongs in. Urgency comes from time the app

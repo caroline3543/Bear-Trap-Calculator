@@ -25,7 +25,7 @@
      deferrals   how many times it was put off (used gently in suggestions, never shown as blame)
      endedOn  dayKey  a recurring series deleted "this and future" (history kept)
    ============================================================ */
-import { MINUTE, HOUR, DAY, dayKey, zonedParts, zonedTimeToUtc, hhmmToMinutes } from "./time.js";
+import { MINUTE, HOUR, DAY, dayKey, zonedParts, zonedTimeToUtc, hhmmToMinutes, localDayRange } from "./time.js";
 
 export const REPEAT_TYPES = ["never", "daily", "weekdays", "weekly", "custom"];
 export const WHEN_TYPES = ["anytime", "morning", "afternoon", "evening", "time"];
@@ -112,13 +112,51 @@ export function todayView(tasks, now, tz) {
         else if (t.doneAt == null) done.push({ ...t, day: k, recurring: false, state: "done" }); // legacy ticks: keep visible
         continue;
       }
-      if (t.deferredTo && t.deferredTo > k) { skipped.push({ ...t, day: k, recurring: false, state: "skipped" }); continue; }
-      open.push({ ...t, day: k, recurring: false, state: "pending" });
+      if (t.deferredTo && t.deferredTo > k && !deadlineToday(t, now, tz)) { skipped.push({ ...t, day: k, recurring: false, state: "skipped" }); continue; }
+      if (plannedToday(t, now, tz)) open.push({ ...t, day: k, recurring: false, state: "pending" });
     }
   }
   const ord = (a, b) => (a.order ?? Infinity) - (b.order ?? Infinity) || (a.createdAt || 0) - (b.createdAt || 0);
   open.sort(ord); done.sort(ord);
   return { day: k, open, done, skipped };
+}
+
+/** A deadline is a commitment; a selected day or time is only a flexible plan. */
+export function deadlineToday(task, now, tz) {
+  return !task.repeat && Number.isFinite(task.dueAt) && task.dueAt < localDayRange(now, tz, 0).end;
+}
+export function plannedToday(task, now, tz) {
+  if (deadlineToday(task, now, tz)) return true;
+  if (task.repeat) return dueOn(task, dayKey(now, tz));
+  if (task.plannedDay === "backlog") return false;
+  // Existing unclassified tasks stay on Today; new captures explicitly use "backlog".
+  return !task.plannedDay || task.plannedDay <= dayKey(now, tz);
+}
+export function planToday(task, now, tz) {
+  return { ...task, plannedDay: dayKey(now, tz), deferredTo: null };
+}
+export function moveToBacklog(task) {
+  return { ...task, plannedDay: "backlog", deferredTo: null, start: null, end: null };
+}
+/** All unfinished definitions, including future plans and routines not due today. */
+export function everythingView(tasks, now, tz) {
+  const today = todayView(tasks, now, tz);
+  const ids = new Set([...today.open, ...today.done].map((t) => t.id));
+  const extra = (tasks || []).filter((t) => !ids.has(t.id) && !t.done && (!t.repeat || !t.endedOn || t.endedOn > today.day))
+    .filter((t) => !t.repeat || !dueOn(t, today.day) || stateOn(t, today.day) === "pending")
+    .map((t) => ({ ...t, day: today.day, recurring: !!t.repeat, state: "pending", upcoming: !!t.repeat && !dueOn(t, today.day) }));
+  return { ...today, open: [...today.open, ...extra] };
+}
+
+/** Pausing freezes the remaining session; resume never counts the interruption as work. */
+export function pauseFocus(focus, now) {
+  if (!focus || focus.pausedAt != null) return focus;
+  return { ...focus, pausedAt: now, remainingMs: focus.endsAt === 0 ? 0 : Math.max(0, focus.endsAt - now) };
+}
+export function resumeFocus(focus, now) {
+  if (!focus) return null;
+  return { ...focus, pausedAt: null, startedAt: now,
+    endsAt: focus.endsAt === 0 ? 0 : now + (focus.remainingMs || 2 * MINUTE), remainingMs: null };
 }
 
 /** Today's scheduled subset for the Timeline (one-offs with a slot today, recurring with a
@@ -145,7 +183,7 @@ export function setDone(t, done, now, tz) {
 export function notToday(t, now, tz) {
   const k = dayKey(now, tz);
   if (t.repeat) return { ...t, occ: { ...trimOcc(t.occ, k), [k]: { s: "skipped", at: now } }, placed: t.placed?.day === k ? null : t.placed };
-  return { ...t, deferredTo: addDays(k, 1), deferrals: (t.deferrals || 0) + 1, start: null, end: null };
+  return { ...t, plannedDay: addDays(k, 1), deferredTo: addDays(k, 1), deferrals: (t.deferrals || 0) + 1, start: null, end: null };
 }
 
 /** Delete just today's occurrence of a recurring task (history says "removed", not "skipped"). */
@@ -162,7 +200,7 @@ export function endSeries(t, now, tz) {
 /** Put a task on today's timeline. Recurring tasks are placed for TODAY only. */
 export function placeAt(t, start, end, now, tz) {
   if (t.repeat) return { ...t, placed: { day: dayKey(now, tz), start, end } };
-  return { ...t, start, end };
+  return { ...t, plannedDay: dayKey(start, tz), deferredTo: null, start, end };
 }
 
 /** Take a task off the timeline (the to-do itself stays). */
@@ -180,13 +218,11 @@ export const subDone = (t, s, k) => (t.repeat ? s.doneOn === k : s.doneOn != nul
 
 /* ---------- retention ---------- */
 /** What survives a save. Open to-dos are never silently dropped; a live recurring definition is
- *  never dropped; finished one-offs and ended series stay 30 days for History; a timeline block
- *  that slipped by more than a week (never ticked) is let go, as before. */
+ *  never dropped; finished one-offs and ended series stay 30 days for History. Unfinished plans stay saved. */
 export function keepTask(t, now) {
   if (t.repeat) return !t.endedOn || keyToUtc(t.endedOn) > now - DONE_KEEP_MS;
   if (t.done) return (t.doneAt ?? t.end ?? t.createdAt ?? now) > now - DONE_KEEP_MS;
-  // a plain to-do never expires; an old timeline block that slipped by a week does
-  if (t.start != null && t.end != null) return t.end > now - 7 * DAY;
+  // An unfinished task stays available even if a flexible planned time has passed.
   return true;
 }
 
@@ -391,6 +427,8 @@ export function cleanTodoFields(t) {
     at: when === "time" && HHMM.test(t.at || "") ? t.at : null,
     reminder: reminder === "time" && !HHMM.test(t.remindAt || "") ? "none" : reminder,
     remindAt: reminder === "time" && HHMM.test(t.remindAt || "") ? t.remindAt : null,
+    plannedDay: t.plannedDay === "backlog" || DAYKEY.test(t.plannedDay || "") ? t.plannedDay : null,
+    dueAt: !repeat && isNum(t.dueAt) && t.dueAt > 0 ? t.dueAt : null,
     firstStep: typeof t.firstStep === "string" ? t.firstStep.trim().slice(0, 160) : "",
     minimumTitle: typeof t.minimumTitle === "string" ? t.minimumTitle.trim().slice(0, 120) : "",
     minimumDurationMs: isNum(t.minimumDurationMs) && t.minimumDurationMs > 0 && t.minimumDurationMs <= DAY ? t.minimumDurationMs : null,

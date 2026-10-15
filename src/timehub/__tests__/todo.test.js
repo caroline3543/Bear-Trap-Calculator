@@ -69,7 +69,7 @@ test("one-off completed on an earlier day is archived (History), not crossed out
 test("retention: open to-dos never silently expire; live recurring definitions never expire", () => {
   assert.equal(keepTask(one({ createdAt: MON - 60 * DAY }), MON), true);
   assert.equal(keepTask(rec({ createdAt: MON - 400 * DAY }), MON), true);
-  assert.equal(keepTask(one({ start: MON - 9 * DAY, end: MON - 9 * DAY + HOUR }), MON), false); // old timeline block
+  assert.equal(keepTask(one({ start: MON - 9 * DAY, end: MON - 9 * DAY + HOUR }), MON), true); // old timeline block
 });
 
 test("recurring tasks are not forced onto the Timeline; a specific time or an explicit placement is", () => {
@@ -208,7 +208,7 @@ test("invalid small-task fields are cleaned; untimed focus survives a round trip
   assert.equal(fields.firstStep, ""); assert.equal(fields.minimumTitle, ""); assert.equal(fields.minimumDurationMs, null);
   const s = emptyState(MON, id);
   s.settings.focus = { taskId: "one", startedAt: MON, endsAt: 0, minimum: true };
-  assert.deepEqual(sanitizeState(s, MON, id).settings.focus, s.settings.focus);
+  assert.deepEqual(sanitizeState(s, MON, id).settings.focus, { ...s.settings.focus, pausedAt: null, remainingMs: null });
 });
 
 test("one-off tasks can be essentials; smaller versions determine suggestion duration", async () => {
@@ -219,4 +219,61 @@ test("one-off tasks can be essentials; smaller versions determine suggestion dur
   const picks = whatNow([taskForEnergy(task, true)], 5 * MINUTE, { now: MON, tz: TZ });
   assert.equal(picks.good.id, task.id);
   assert.equal(suggestionReason(task, MON), "reasonEssential");
+});
+
+test("Today is an explicit selection; Everything retains captures and future plans", async () => {
+  const { everythingView, planToday, moveToBacklog } = await import("../lib/todo.js");
+  const captured = one({ plannedDay: "backlog" });
+  const future = one({ plannedDay: addDays(K, 3), deferredTo: addDays(K, 3) });
+  assert.equal(todayView([captured, future], MON, TZ).open.length, 0);
+  assert.equal(everythingView([captured, future], MON, TZ).open.length, 2);
+  const chosen = planToday(captured, MON, TZ);
+  assert.equal(todayView([chosen], MON, TZ).open.length, 1);
+  assert.equal(todayView([chosen], MON + DAY, TZ).open.length, 1, "unfinished selection stays available");
+  const back = moveToBacklog({ ...chosen, start: MON, end: MON + HOUR });
+  assert.equal(back.start, null); assert.equal(todayView([back], MON, TZ).open.length, 0);
+  assert.equal(everythingView([back], MON, TZ).open.length, 1);
+});
+
+test("real deadlines survive postponement and override future plans in Today", async () => {
+  const { planToday, moveToBacklog } = await import("../lib/todo.js");
+  const { taskMoment, priorityBucket } = await import("../lib/tasks.js");
+  const due = one({ plannedDay: "backlog", dueAt: MON - MINUTE, start: MON + DAY, end: MON + DAY + HOUR });
+  assert.equal(todayView([due], MON, TZ).open.length, 1);
+  assert.equal(taskMoment(due), MON - MINUTE);
+  assert.equal(priorityBucket(due, MON, MON + DAY), "quick");
+  const moved = notToday(due, MON, TZ);
+  assert.equal(moved.dueAt, due.dueAt);
+  assert.equal(todayView([moved], MON, TZ).open.length, 1, "deadline remains visible");
+  assert.equal(planToday(due, MON, TZ).dueAt, due.dueAt);
+  assert.equal(moveToBacklog(due).dueAt, due.dueAt);
+});
+
+test("future routines can be managed in Everything but do not create today's occurrence", async () => {
+  const { everythingView } = await import("../lib/todo.js");
+  const task = rec({ repeat: { type: "weekly", days: [2] } }); // Tuesday, currently Monday
+  assert.equal(todayView([task], MON, TZ).open.length, 0);
+  assert.equal(everythingView([task], MON, TZ).open[0].upcoming, true);
+  assert.equal(everythingView([task], MON + DAY, TZ).open[0].upcoming, undefined);
+});
+
+test("pause/resume preserves remaining time and untimed mode across storage", async () => {
+  const { pauseFocus, resumeFocus } = await import("../lib/todo.js");
+  const active = { taskId: "x", startedAt: MON, endsAt: MON + 2 * MINUTE, minimum: false };
+  const paused = pauseFocus(active, MON + 30000);
+  assert.equal(paused.remainingMs, 90000);
+  assert.equal(pauseFocus(paused, MON + HOUR), paused, "already paused does not lose remaining time");
+  const s = emptyState(MON, id); s.settings.focus = paused;
+  const saved = sanitizeState(JSON.parse(JSON.stringify(s)), MON, id).settings.focus;
+  assert.equal(resumeFocus(saved, MON + HOUR).endsAt, MON + HOUR + 90000);
+  assert.equal(resumeFocus(pauseFocus({ ...active, endsAt: 0 }, MON), MON + HOUR).endsAt, 0);
+});
+
+test("planning and deadlines round trip without converting flexible dates into deadlines", () => {
+  const s = emptyState(MON, id);
+  s.tasks = [one({ plannedDay: "backlog", dueAt: MON + DAY }), one({ plannedDay: K })];
+  const saved = sanitizeState(JSON.parse(JSON.stringify(s)), MON, id).tasks;
+  assert.equal(saved[0].plannedDay, "backlog"); assert.equal(saved[0].dueAt, MON + DAY);
+  assert.equal(saved[1].plannedDay, K); assert.equal(saved[1].dueAt, null);
+  assert.equal(cleanTodoFields({ dueAt: Infinity, plannedDay: "random" }).dueAt, null);
 });

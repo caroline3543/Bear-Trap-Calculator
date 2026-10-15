@@ -35,6 +35,7 @@ const { JSDOM } = require('jsdom');
     await click('＋ Add task');
     await fill(scope().querySelector('input[placeholder="What do you need to do?"]'), 'Title-only capture');
     await act(async () => scope().querySelector('.th-todo-add-wrap').dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true })));
+    await click('Everything', document);
     assert.ok(scope().textContent.includes('Title-only capture'));
     await click('Minimum Day');
     assert.ok(scope().textContent.includes('Move three plates'));
@@ -57,10 +58,33 @@ const { JSDOM } = require('jsdom');
     assert.ok(btn('Undo', document));
     await click('Undo', document);
     assert.ok(scope().textContent.includes('Move three plates'));
+    // Pause retains the next step and releases the list; switching tabs pauses a running timer.
+    const nextRow = scope().querySelector('.th-minday .th-todo-row');
+    await click('Help me start', nextRow); await click('Start for 2 minutes', nextRow);
+    await click('Pause', scope().querySelector('.th-focus'));
+    assert.ok(scope().querySelector('.th-resume-card'));
+    assert.equal(scope().querySelector('.th-focus'), null);
+    await click('Resume', scope().querySelector('.th-resume-card'));
+    assert.ok(scope().querySelector('.th-focus-time'));
+    await act(async () => [...document.querySelectorAll('.th-tabbar button')].find(x => x.textContent === 'Timers').click());
+    await act(async () => [...document.querySelectorAll('.th-tabbar button')].find(x => x.textContent === 'To do').click());
+    assert.ok(scope().querySelector('.th-resume-card'), 'leaving the tab pauses the running task');
+    await click('Choose another', scope().querySelector('.th-resume-card'));
+    await click('Show all tasks', scope().querySelector('.th-minday'));
+    await click('Today', scope().querySelector('[aria-label="Task scope"]'));
+    assert.ok(!scope().textContent.includes('Title-only capture'), 'capture is in Everything, not Today');
+    await click('Everything (4)', scope().querySelector('[aria-label="Task scope"]'));
+    const capturedRow = [...scope().querySelectorAll('.th-todo-row')].find(x => x.textContent.includes('Title-only capture'));
+    await click('Plan for today', capturedRow);
+    await click('Today', scope().querySelector('[aria-label="Task scope"]'));
+    assert.ok(scope().textContent.includes('Title-only capture'));
+    const plannedRow = [...scope().querySelectorAll('.th-todo-row')].find(x => x.textContent.includes('Title-only capture'));
+    await click('Remove from Today', plannedRow);
+    assert.ok(!scope().textContent.includes('Title-only capture'));
     // An active calculator panel is inert and hidden from assistive technology when switched away.
     await act(async () => [...document.querySelectorAll('.th-tabbar button')].find(x => x.textContent === 'BT Calculator').click());
     await act(async () => [...document.querySelectorAll('.th-tabbar button')].find(x => x.textContent === 'To do').click());
     for (const panel of document.querySelectorAll('.th-panel[hidden]')) { assert.equal(panel.getAttribute('aria-hidden'), 'true'); assert.ok(panel.hasAttribute('inert')); }
-    console.log('To-do integration passed: priority capture, title-only add, one-off essentials, small versions, suggestions, untimed focus, completion Undo, hidden-panel accessibility.');
+    console.log('To-do integration passed: priority capture, title-only add, one-off essentials, small versions, suggestions, untimed focus, completion Undo, interruption recovery, Today/Everything selection, hidden-panel accessibility.');
   } finally { await act(async () => root.unmount()); dom.window.close(); fs.rmSync(tmp, { recursive: true, force: true }); }
 })().catch(e => { console.error(e); process.exitCode = 1; });

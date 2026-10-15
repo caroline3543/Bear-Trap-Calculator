@@ -1829,7 +1829,7 @@ html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
 .th-finishform .th-dayadd .th-chip-btn { white-space: normal; text-align: start; line-height: 1.25; padding-block: 6px; }
 
 /* Quiet task initiation: keep the existing colours and spacing language. */
-.th-start-task { padding: 16px; margin-block: 8px 14px; border: 1px solid var(--th-line, #b8ccca); border-radius: 16px; background: var(--th-card, #f7f5e9); }
+.th-start-task { padding: 16px; margin-block: 8px 14px; border: 1px solid var(--cardBorderT); border-radius: 16px; background: var(--surface); }
 .th-start-task .th-field { display: grid; gap: 6px; margin-block: 12px; }
 .th-start-step { font-size: 1.15rem; line-height: 1.5; margin-block: 10px; }
 .th-essential-choices { display: grid; gap: 12px; padding-block: 14px; }
@@ -1852,4 +1852,17 @@ html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
 }
 @media (prefers-reduced-motion: reduce) {
   .th-todos *, .th-focus, .th-toast { animation: none !important; transition: none !important; }
+}
+
+/* Plans, deadlines and recovery share the app's light/dark theme. */
+.th-resume-card { display: grid; gap: 12px; padding: 16px; margin-block: 12px; border: 1px solid var(--cardBorderT); border-radius: 16px; background: var(--surface); color: var(--ink); }
+.th-resume-card .th-field { display: grid; gap: 6px; }
+.th-todos .th-task-opts input[type="date"], .th-todos .th-task-opts input[type="time"] { max-width: 100%; min-width: 0; }
+.th-todos .th-todo-title, .th-todos .th-todo-meta, .th-resume-card b { overflow-wrap: anywhere; }
+@media (max-width: 480px) {
+  .th-whatnow-row { flex-wrap: wrap; }
+  .th-whatnow-row .th-todo-main { flex-basis: 100%; }
+  .th-todos .th-task-edit-row { flex-wrap: wrap; }
+  .th-todos input, .th-todos textarea { scroll-margin-block: 100px; }
+  .th-resume-card .th-item-actions > button { flex: 1 1 auto; }
 }
