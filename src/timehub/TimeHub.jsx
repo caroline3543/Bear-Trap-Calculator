@@ -302,7 +302,7 @@ const EventsPanel = React.memo(function EventsPanel() {
 const CalcPanel = React.memo(function CalcPanel({ calculator }) { return <div className="th-calc-slot">{calculator}</div>; });
 const Panel = React.memo(function Panel({ on, children }) {
   return (
-    <div className={`th-panel ${on ? "on" : ""}`} hidden={!on}>
+    <div className={`th-panel ${on ? "on" : ""}`} hidden={!on} aria-hidden={!on} inert={!on ? "" : undefined}>
       <FreezeWhenHidden active={on}>
         <ActiveTab active={on}>{children}</ActiveTab>
       </FreezeWhenHidden>
@@ -321,9 +321,11 @@ function Toast() {
   return (
     <div className="th-toast-slot" role="status" aria-live="polite">
       {toast && (
-        <button type="button" key={toast.id} className="th-toast" onClick={dismiss}>
+        <div key={toast.id} className="th-toast">
           {toast.lines.map((l, i) => <span key={i} className={i === 0 ? "th-toast-main" : "th-toast-sub"}>{l}</span>)}
-        </button>
+          {toast.action ? <button type="button" className="th-link" onClick={() => { toast.action.run(); dismiss(); }}>{toast.action.label}</button>
+            : <button type="button" className="th-link" onClick={dismiss}>×</button>}
+        </div>
       )}
     </div>
   );

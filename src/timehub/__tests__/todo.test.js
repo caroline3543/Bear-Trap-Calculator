@@ -188,3 +188,35 @@ test("Minimum Day, energy and suggestion settings persist (today-scoped values)"
   const r = sanitizeState(JSON.parse(JSON.stringify(s)), MON).settings;
   assert.equal(r.minDay, K); assert.deepEqual(r.energy, { day: K, level: "low" }); assert.equal(r.taskSuggest, "minimal"); assert.equal(r.focus.taskId, "x");
 });
+
+test("small versions survive saving without changing the full task or recurrence", async () => {
+  const { taskForEnergy } = await import("../lib/todo.js");
+  const s = emptyState(MON, id);
+  s.tasks = [rec({ title: "Clean room", essential: true, firstStep: "Collect plates", minimumTitle: "Move three plates", minimumDurationMs: 2 * MINUTE })];
+  const saved = sanitizeState(JSON.parse(JSON.stringify(s)), MON, id).tasks[0];
+  const small = taskForEnergy(saved, true);
+  assert.equal(small.title, "Move three plates");
+  assert.equal(small.durationMs, 2 * MINUTE);
+  assert.equal(saved.title, "Clean room");
+  assert.equal(saved.firstStep, "Collect plates");
+  assert.equal(taskForEnergy(saved, false), saved);
+  assert.deepEqual(todayView([saved], MON + DAY, TZ).open[0].repeat, { type: "daily" });
+});
+
+test("invalid small-task fields are cleaned; untimed focus survives a round trip", () => {
+  const fields = cleanTodoFields({ firstStep: {}, minimumTitle: 42, minimumDurationMs: -1 });
+  assert.equal(fields.firstStep, ""); assert.equal(fields.minimumTitle, ""); assert.equal(fields.minimumDurationMs, null);
+  const s = emptyState(MON, id);
+  s.settings.focus = { taskId: "one", startedAt: MON, endsAt: 0, minimum: true };
+  assert.deepEqual(sanitizeState(s, MON, id).settings.focus, s.settings.focus);
+});
+
+test("one-off tasks can be essentials; smaller versions determine suggestion duration", async () => {
+  const { taskForEnergy, suggestionReason } = await import("../lib/todo.js");
+  const task = one({ essential: true, durationMs: 40 * MINUTE, minimumTitle: "First plate", minimumDurationMs: 2 * MINUTE });
+  assert.equal(splitEssentials([task]).essentials.length, 1);
+  assert.equal(whatNow([task], 5 * MINUTE, { now: MON, tz: TZ }).good, null);
+  const picks = whatNow([taskForEnergy(task, true)], 5 * MINUTE, { now: MON, tz: TZ });
+  assert.equal(picks.good.id, task.id);
+  assert.equal(suggestionReason(task, MON), "reasonEssential");
+});

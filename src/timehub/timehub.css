@@ -1827,3 +1827,29 @@ html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
 .th-bk-whytext { display: block; margin-top: 2px; color: var(--sub); font-weight: 600; font-size: 12.5px; }
 .th-train-group { grid-template-columns: minmax(0, 1fr); }
 .th-finishform .th-dayadd .th-chip-btn { white-space: normal; text-align: start; line-height: 1.25; padding-block: 6px; }
+
+/* Quiet task initiation: keep the existing colours and spacing language. */
+.th-start-task { padding: 16px; margin-block: 8px 14px; border: 1px solid var(--th-line, #b8ccca); border-radius: 16px; background: var(--th-card, #f7f5e9); }
+.th-start-task .th-field { display: grid; gap: 6px; margin-block: 12px; }
+.th-start-step { font-size: 1.15rem; line-height: 1.5; margin-block: 10px; }
+.th-essential-choices { display: grid; gap: 12px; padding-block: 14px; }
+.th-todos .th-item-actions { flex-wrap: wrap; }
+.th-todos .th-input { font-size: max(16px, 1rem); }
+.th-todos .th-note, .th-todos .th-hint { line-height: 1.5; }
+.th-todos button, .th-todos summary { min-height: 44px; }
+.th-todos .th-task-check, .th-todos .th-step-check { min-width: 44px; flex-shrink: 0; }
+.th-todos button:focus-visible, .th-todos summary:focus-visible { outline: 3px solid #396c65; outline-offset: 3px; }
+.th-todos .th-todo-sub { display: flex; flex-wrap: wrap; gap: 8px; }
+.th-todos details > summary { cursor: pointer; display: list-item; padding-block: 10px; }
+.th-todos .th-task-opts details { margin-block: 8px; }
+.th-toast .th-link { min-height: 44px; padding-inline: 14px; }
+.th-panel[hidden] { display: none !important; }
+@media (max-width: 480px) {
+  .th-todos-actions { flex-wrap: wrap; }
+  .th-todo-add { flex-wrap: wrap; }
+  .th-todo-add > .th-input:first-child { min-width: 100%; }
+  .th-start-task .th-item-actions > button { flex: 1 1 auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .th-todos *, .th-focus, .th-toast { animation: none !important; transition: none !important; }
+}

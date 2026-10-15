@@ -310,7 +310,7 @@ export function sanitizeState(raw, now = Date.now(), makeId = newId) {
       minDay: /^\d{4}-\d{2}-\d{2}$/.test(s.minDay || "") ? s.minDay : null,
       energy: s.energy && /^\d{4}-\d{2}-\d{2}$/.test(s.energy.day || "") && ENERGY.includes(s.energy.level) ? { day: s.energy.day, level: s.energy.level } : null,
       taskSuggest: SUGGEST_LEVELS.includes(s.taskSuggest) ? s.taskSuggest : "balanced",
-      focus: s.focus && typeof s.focus.taskId === "string" && isNum(s.focus.startedAt) && isNum(s.focus.endsAt) ? { taskId: s.focus.taskId, startedAt: s.focus.startedAt, endsAt: s.focus.endsAt } : null,
+      focus: s.focus && typeof s.focus.taskId === "string" && isNum(s.focus.startedAt) && isNum(s.focus.endsAt) ? { taskId: s.focus.taskId, startedAt: s.focus.startedAt, endsAt: s.focus.endsAt, minimum: s.focus.minimum === true } : null,
       todoHistory: s.todoHistory === true,
       todoOpen: Object.fromEntries(["game", "personal", "work"].map((k) => [k, s.todoOpen?.[k] !== false])),
       prioOpen: Object.fromEntries(["next", "plan", "quick", "later"].map((k) => [k, s.prioOpen?.[k] !== false])),

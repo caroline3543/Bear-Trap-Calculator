@@ -19,7 +19,7 @@ import { localDayRange, formatTime, formatSpan, formatDate, dayKey, MINUTE } fro
 import {
   todayView, scheduledToday, setDone, notToday, removeToday, endSeries, placeAt, toggleSubtask, subDone,
   splitEssentials, todaySummary, history, minimumDayOn, energyToday, bestOpening, whatNow, routineTasks,
-  ROUTINE_PRESETS, moveTask, weekdayOf, addDays,
+  ROUTINE_PRESETS, moveTask, weekdayOf, addDays, taskForEnergy, suggestionReason,
 } from "../lib/todo.js";
 import { itemTitle } from "../components/labels.js";
 import { Ltr, AccountTag, Btn, Seg, AccountSelect } from "../components/ui.jsx";
@@ -33,9 +33,24 @@ const REPEAT_LABEL = { never: "repeatNever", daily: "repeatDaily", weekdays: "re
 const WHEN_LABEL = { anytime: "whenAnytime", morning: "whenMorning", afternoon: "whenAfternoon", evening: "whenEvening", time: "whenTime" };
 const REMIND_LABEL = { none: "remindNone", time: "remindTime", morning: "whenMorning", afternoon: "whenAfternoon", evening: "whenEvening", later: "remindLater" };
 const EFFORT_LABEL = { tiny: "effortTiny", low: "effortLow", medium: "effortMedium", high: "effortHigh" };
-const FOCUS_MS = 5 * MINUTE;
+const FOCUS_MS = 2 * MINUTE;
 
 const mapTask = (s, id, fn) => ({ ...s, tasks: s.tasks.map((x) => (x.id === id ? fn(x) : x)) });
+
+function useTaskAction() {
+  const { update, notify, t, tz } = useTimeHub();
+  return (task, action) => {
+    const now = Date.now();
+    const day = dayKey(now, tz);
+    const fields = action === "done" ? ["done", "doneAt"] : ["deferredTo", "deferrals", "start", "end", "placed"];
+    update((s) => mapTask(s, task.id, (x) => action === "done" ? setDone(x, true, now, tz) : notToday(x, now, tz)));
+    notify(action === "done" ? t("taskCompleted") : t("taskMoved"), { label: t("undoTask"), run: () => update((s) => mapTask(s, task.id, (x) => {
+      if (task.repeat) { const occ = { ...x.occ }; if (task.occ?.[day]) occ[day] = task.occ[day]; else delete occ[day]; return { ...x, occ, placed: task.placed || null }; }
+      return { ...x, ...Object.fromEntries(fields.map((key) => [key, task[key] ?? null])) };
+    })) });
+    if (action === "done") success();
+  };
+}
 
 /** Today's derived view (open / done / skipped), shared by every part of this tab. */
 function useView() {
@@ -97,6 +112,13 @@ function TaskOptions({ v, set, category }) {
   };
   return (
     <div className="th-task-opts">
+      <label className="th-field"><span className="th-label">{t("firstStepLabel")}</span>
+        <input className="th-input" value={v.firstStep || ""} maxLength={160} placeholder={t("firstStepExample")} onChange={(e) => set({ ...v, firstStep: e.target.value })} /></label>
+      <details><summary>{t("smallerVersion")}</summary>
+        <label className="th-field"><span className="th-label">{t("minimumAction")}</span><input className="th-input" value={v.minimumTitle || ""} maxLength={120} onChange={(e) => set({ ...v, minimumTitle: e.target.value })} /></label>
+        <label className="th-field"><span className="th-label">{t("minimumMinutes")}</span><input className="th-input th-task-dur" inputMode="numeric" value={v.minimumDuration || ""} onChange={(e) => set({ ...v, minimumDuration: e.target.value.replace(/[^\d:]/g, "") })} /></label>
+        <p className="th-hint">{t("minimumVersionHint")}</p>
+      </details>
       <span className="th-label">{t("repeatQ")}</span>
       <Chips value={rtype} onChange={setRepeat} label={t("repeatQ")} options={["never", "daily", "weekdays", "weekly", "custom"].map((x) => ({ value: x, label: t(REPEAT_LABEL[x]) }))} />
       {(rtype === "weekly" || rtype === "custom") && (
@@ -120,15 +142,16 @@ function TaskOptions({ v, set, category }) {
     </div>
   );
 }
-const optsFrom = (task) => ({ repeat: task?.repeat || null, when: task?.when || "anytime", at: task?.at || "", reminder: task?.reminder || "none", remindAt: task?.remindAt || "", essential: !!task?.essential, effort: task?.effort || null });
+const optsFrom = (task) => ({ repeat: task?.repeat || null, when: task?.when || "anytime", at: task?.at || "", reminder: task?.reminder || "none", remindAt: task?.remindAt || "", essential: !!task?.essential, effort: task?.effort || null, firstStep: task?.firstStep || "", minimumTitle: task?.minimumTitle || "", minimumDuration: task?.minimumDurationMs ? String(task.minimumDurationMs / MINUTE) : "" });
 const optsToTask = (o) => ({
   repeat: o.repeat, when: o.when === "time" && !o.at ? "anytime" : o.when, at: o.when === "time" ? o.at || null : null,
   reminder: o.reminder === "time" && !o.remindAt ? "none" : o.reminder, remindAt: o.reminder === "time" ? o.remindAt || null : null,
-  essential: o.essential, effort: o.effort,
+  essential: o.essential, effort: o.effort, firstStep: o.firstStep, minimumTitle: o.minimumTitle, minimumDurationMs: o.minimumDuration ? parseTaskDuration(o.minimumDuration) : null,
 });
 
 /* ---------- capture: title + duration, everything else folded away ---------- */
-function QuickAdd({ category, group = null, onDone }) {
+function QuickAdd({ category: initialCategory = "personal", group = null, onDone, chooseCategory = false }) {
+  const [category, setCategory] = useState(initialCategory);
   const { t, update, newId, tz } = useTimeHub();
   const [title, setTitle] = useState("");
   const [durRaw, setDurRaw] = useState("");
@@ -154,6 +177,11 @@ function QuickAdd({ category, group = null, onDone }) {
         <input className="th-input th-task-dur th-todo-dur" inputMode="numeric" value={durRaw} placeholder={t("durPlaceholder")} aria-label={t("durPlaceholder")} onChange={(e) => setDurRaw(e.target.value.replace(/[^\d:]/g, ""))} />
         <Btn small tone="gold" type="submit" disabled={!title.trim()}>{t("add")}</Btn>
       </div>
+      <div className="th-item-actions">
+        {[5, 15, 30].map((n) => <button key={n} type="button" className="th-chip-btn small" aria-pressed={durRaw === String(n)} onClick={() => setDurRaw(durRaw === String(n) ? "" : String(n))}>{n} {t("minShort")}</button>)}
+        <button type="button" className="th-link" onClick={onDone}>{t("cancel")}</button>
+      </div>
+      {chooseCategory && <Seg value={category} onChange={setCategory} label={t("category")} options={TASK_CATEGORIES.map((c) => ({ value: c, label: t(CAT_LABEL[c]) }))} />}
       <button type="button" className="th-link" aria-expanded={more} onClick={() => setMore(!more)}>{more ? t("fewerOptions") : t("moreOptions")}</button>
       {more && <TaskOptions v={opts} set={setOpts} category={category} />}
     </form>
@@ -287,17 +315,18 @@ function TaskEditForm({ task, onDone, onSchedule }) {
       </div>
       {category === "game" && <AccountSelect value={accountId} onChange={setAccountId} allowShared />}
       <div className="th-item-actions">
-        <Btn small tone="gold" onClick={() => { setFocus(task.id); onDone(); }}>▶ {t("startFiveMin")}</Btn>
+        <Btn small tone="gold" onClick={() => { save(); setFocus(task.id); }}>▶ {t("startTwoMin")}</Btn>
         <Btn small aria-expanded={easier} onClick={() => setEasier(!easier)}>{t("makeEasier")}</Btn>
         {task.start == null && task.state === "pending" && <Btn small onClick={() => { onDone(); onSchedule?.(); }}>{t("addToTimeline")}</Btn>}
       </div>
       {easier && <><p className="th-hint">{t("makeEasierHint")}</p><Steps task={task} editable /></>}
-      <TaskOptions v={opts} set={setOpts} category={category} />
+      <details><summary>{t("moreOptions")}</summary><TaskOptions v={opts} set={setOpts} category={category} />
       <label className="th-field"><span className="th-label">{t("groupLabel")} <span className="th-hint">{t("optional")}</span></span>
         <input className="th-input" list={`th-groups-${task.id}`} value={group} maxLength={40} placeholder={t("groupPlaceholder")} onChange={(e) => setGroup(e.target.value)} />
         <datalist id={`th-groups-${task.id}`}>{groups.map((g) => <option key={g} value={g} />)}</datalist>
       </label>
       <label className="th-field"><span className="th-label">{t("notes")}</span><textarea className="th-input th-textarea" rows={2} maxLength={500} value={notes} onChange={(e) => setNotes(e.target.value)} /></label>
+      </details>
       {deleting ? <DeleteChoice task={task} onDone={() => { setDeleting(false); onDone(); }} /> : (
         <div className="th-item-actions">
           <Btn small tone="gold" onClick={save} disabled={!title.trim()}>{t("save")}</Btn>
@@ -323,6 +352,8 @@ function metaLine(task, t, lang, tz, opening) {
 
 function TodoRow({ task, showAccount, onImportant, gaps, drag }) {
   const { t, tz, lang, update, state } = useTimeHub();
+  const act = useTaskAction();
+  const [helping, setHelping] = useState(false);
   const [scheduling, setScheduling] = useState(false);
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -330,11 +361,12 @@ function TodoRow({ task, showAccount, onImportant, gaps, drag }) {
   const now = useMinute();
   const k = dayKey(now, tz);
   const done = task.state === "done";
-  const toggle = (e) => { e.stopPropagation(); const at = Date.now(); update((s) => mapTask(s, task.id, (x) => setDone(x, !done, at, tz))); if (!done) success(); };
+  const toggle = (e) => { e.stopPropagation(); if (!done) act(task, "done"); else update((s) => mapTask(s, task.id, (x) => setDone(x, false, Date.now(), tz))); };
   const acct = showAccount && task.accountId;
   const opening = state.settings.taskSuggest !== "minimal" && gaps && task.start == null ? bestOpening(task, gaps, now) : null;
   const subs = task.subtasks || [];
   const subsDone = subs.filter((s) => subDone(task, s, k)).length;
+  const display = taskForEnergy(task, !done && minimumDayOn(state.settings, now, tz));
   const body = (
     <div className="th-todo-line">
       {drag && !done && (
@@ -343,8 +375,8 @@ function TodoRow({ task, showAccount, onImportant, gaps, drag }) {
       )}
       <button type="button" className="th-task-check" aria-pressed={done} aria-label={task.title} onClick={toggle}>{done ? "✓" : ""}</button>
       <button type="button" className="th-todo-main th-ev-hit" aria-expanded={editing} onClick={() => setEditing(!editing)}>
-        <span className="th-todo-title">{task.title}{task.essential && <span className="th-ess" title={t("essentialLabel")}> · {t("essentialShort")}</span>}</span>
-        <span className="th-todo-meta">{metaLine(task, t, lang, tz, opening)}</span>
+        <span className="th-todo-title">{display.title}{task.essential && <span className="th-ess" title={t("essentialLabel")}> · {t("essentialShort")}</span>}</span>
+        <span className="th-todo-meta">{display.minimum ? `${t("smallerVersion")} · ${task.title}` : metaLine(task, t, lang, tz, opening)}</span>
         {acct && <AccountTag accountId={acct} />}
       </button>
       {!done && onImportant && (
@@ -359,10 +391,12 @@ function TodoRow({ task, showAccount, onImportant, gaps, drag }) {
       {done ? body : (
         <SwipeRow label={task.title} actions={[
           ...(task.start == null ? [{ label: t("timelineShort"), tone: "teal", onClick: () => setScheduling(true) }] : []),
-          { label: t("notToday"), tone: "quiet", onClick: () => { const at = Date.now(); update((s) => mapTask(s, task.id, (x) => notToday(x, at, tz))); } },
+          { label: t("notToday"), tone: "quiet", onClick: () => act(task, "later") },
           { label: t("delete"), onClick: () => setDeleting(true) },
         ]}>{body}</SwipeRow>
       )}
+      {!done && <div className="th-todo-sub"><button type="button" className="th-link" aria-expanded={helping} onClick={() => setHelping(!helping)}>{t("helpMeStart")}</button></div>}
+      {helping && !done && <StartTask task={task} minimum={!!display.minimum} onClose={() => setHelping(false)} />}
       {!done && subs.length > 0 && (
         <div className="th-todo-sub">
           <button type="button" className="th-link" aria-expanded={showSteps} onClick={() => setShowSteps(!showSteps)}>{t("stepsProgress", { n: subsDone, total: subs.length })}</button>
@@ -467,7 +501,7 @@ function CategorySection({ category, open: openTasks, done: doneTasks, gaps, dra
       </button>
       {open && (
         <div className="th-todo-cat-body" data-drop="section" data-cat={category} data-group="">
-          {openTasks.length === 0 && <p className="th-note">{doneTasks.length ? t("todoAllDoneToday") : t("todoEmpty")}</p>}
+          {openTasks.length === 0 && doneTasks.length > 0 && <p className="th-note">{t("todoAllDoneToday")}</p>}
           {plain.length > 0 && <ul className="th-slist">{rows(plain)}</ul>}
           {groups.map((g) => (
             <div key={g} className="th-todo-group">
@@ -518,35 +552,35 @@ function FreeNow({ view, gaps }) {
   const now = useMinute();
   const g = gaps.find((x) => x.start <= now + MINUTE);
   if (!g || state.settings.taskSuggest === "minimal") return null;
-  const n = view.open.filter((x) => x.start == null && x.durationMs && x.durationMs <= g.ms).length;
   return (
     <p className="th-freenow">
-      <b>{t("freeNowFor", { time: formatSpan(g.end - now, lang) })}</b>{g.before ? ` · ${t("beforeWhat", { what: g.before })}` : ""}
-      {n > 0 && <> · {t("nTodosFit", { n })}</>}
+      {g.before ? t("nextTrackedEvent", { time: formatSpan(g.end - now, lang), what: g.before }) : t("noMoreTrackedEvents")}
     </p>
   );
 }
 
-/* ---------- Just start: a 5-minute timer with no commitment to finish ---------- */
+/* ---------- Just start: a brief timer with no commitment to finish ---------- */
 function FocusBanner({ view }) {
-  const { t, lang, state, update, dispatch, tz } = useTimeHub();
+  const { t, state, dispatch } = useTimeHub();
+  const act = useTaskAction();
   const f = state.settings.focus;
   const now = useNow();
   if (!f) return null;
-  const task = [...view.open, ...view.done].find((x) => x.id === f.taskId);
-  if (!task) return null;
+  const source = view.open.find((x) => x.id === f.taskId);
+  if (!source) return null;
+  const task = taskForEnergy(source, f.minimum);
   const setF = (focus) => dispatch({ type: "settings", patch: { focus } });
   const stop = () => setF(null);
-  const finish = () => { update((s) => mapTask(s, task.id, (x) => setDone(x, true, Date.now(), tz))); success(); setF(null); };
+  const finish = () => { act(source, "done"); setF(null); };
   const openEnded = f.endsAt === 0;
   const left = f.endsAt - now;
   if (!openEnded && left <= 0) {
     return (
       <section className="th-focus done" role="status" aria-live="polite">
-        <b>{t("fiveMinDone")}</b> <span>{task.title}</span>
+        <b>{t("smallSessionDone")}</b> <span>{task.title}</span>
         <div className="th-item-actions">
           <Btn small tone="gold" onClick={finish}>✓ {t("finished")}</Btn>
-          <Btn small onClick={() => setF({ ...f, endsAt: Date.now() + FOCUS_MS })}>+5 {t("minShort")}</Btn>
+          <Btn small onClick={() => setF({ ...f, endsAt: Date.now() + FOCUS_MS })}>+2 {t("minShort")}</Btn>
           <Btn small onClick={() => setF({ ...f, endsAt: 0 })}>{t("keepGoing")}</Btn>
           <Btn small onClick={stop}>{t("stopForNow")}</Btn>
         </div>
@@ -557,55 +591,93 @@ function FocusBanner({ view }) {
   return (
     <section className="th-focus" role="timer" aria-label={task.title}>
       <span>{t("workingOn")} <b>{task.title}</b></span>
-      <span className="th-focus-time"><Ltr>{openEnded ? formatSpan(Math.max(MINUTE, now - f.startedAt), lang) : `${Math.floor(left / 60000)}:${String(Math.floor((left % 60000) / 1000)).padStart(2, "0")}`}</Ltr></span>
+      {task.firstStep && <p className="th-start-step">{task.firstStep}</p>}
+      {!openEnded && <span className="th-focus-time"><Ltr>{ `${Math.floor(left / 60000)}:${String(Math.floor((left % 60000) / 1000)).padStart(2, "0")}`}</Ltr></span>}
       <div className="th-item-actions">
         <Btn small tone="gold" onClick={finish}>✓ {t("finished")}</Btn>
         <Btn small onClick={stop}>{t("stopForNow")}</Btn>
+        {!openEnded && <Btn small onClick={() => setF({ ...f, endsAt: 0 })}>{t("withoutTimer")}</Btn>}
       </div>
+      <p className="th-hint">{t("stopIsFine")}</p>
     </section>
   );
 }
 
+function StartTask({ task, minimum = false, onClose }) {
+  const { t, update, setFocus, tz } = useTimeHub();
+  const today = dayKey(Date.now(), tz);
+  const display = taskForEnergy(task, minimum);
+  const [step, setStep] = useState(display.firstStep || task.subtasks?.find((x) => !subDone(task, x, today))?.title || "");
+  const start = (minutes) => {
+    if (!minimum) update((s) => mapTask(s, task.id, (x) => ({ ...x, firstStep: step.trim().slice(0, 160) })));
+    setFocus(task.id, minutes, minimum); onClose();
+  };
+  return <section className="th-start-task" aria-label={t("helpMeStart")}>
+    <b>{display.title}</b>
+    <label className="th-field"><span className="th-label">{t("firstStepLabel")}</span>
+      <input className="th-input" value={step} maxLength={160} readOnly={minimum} placeholder={t("firstStepExample")} onChange={(e) => setStep(e.target.value)} /></label>
+    <p className="th-hint">{t("startHint")}</p>
+    <div className="th-item-actions">
+      <Btn small tone="gold" onClick={() => start(2)}>{t("startTwoMin")}</Btn>
+      <Btn small onClick={() => start(0)}>{t("withoutTimer")}</Btn>
+      <Btn small onClick={onClose}>{t("cancel")}</Btn>
+    </div>
+  </section>;
+}
+
 /* ---------- What should I do now? — three picks at most ---------- */
 function WhatNow({ view, gaps, onClose }) {
-  const { t, lang, tz, state, dispatch, update, setFocus } = useTimeHub();
+  const { t, lang, tz, state, dispatch } = useTimeHub();
   const now = useMinute();
   const k = dayKey(now, tz);
   const energy = energyToday(state.settings, now, tz) || "okay";
   const setEnergy = (level) => dispatch({ type: "settings", patch: { energy: { day: k, level } } });
-  const current = gaps.find((g) => g.start <= now + MINUTE);
-  const avail = current ? current.end - now : 0;
-  const pool = minimumDayOn(state.settings, now, tz) ? view.open.filter((x) => x.essential) : view.open;
+  const [budget, setBudget] = useState(15);
+  const [excluded, setExcluded] = useState([]);
+  const [starting, setStarting] = useState(null);
+  const avail = budget * MINUTE;
+  const minimum = minimumDayOn(state.settings, now, tz);
+  const candidates = minimum ? view.open.filter((x) => x.essential) : view.open;
+  const pool = candidates.filter((x) => !excluded.includes(x.id)).map((x) => taskForEnergy(x, minimum));
   const picks = avail > 0 ? whatNow(pool, avail, { energy, now, tz, dayEnd: localDayRange(now, tz, 0).end }) : {};
   const list = [["good", "goodFit"], ["tiny", "tinyTask"], ["stretch", "moreEnergy"]].filter(([key]) => picks[key]);
-  const done = (task) => { update((s) => mapTask(s, task.id, (x) => setDone(x, true, Date.now(), tz))); success(); };
+  const act = useTaskAction();
+  const done = (task) => act(candidates.find((x) => x.id === task.id), "done");
   return (
     <section className="th-whatnow" aria-label={t("whatNowQ")}>
       <div className="th-whatnow-head">
-        <b>{avail > 0 ? t("youHaveTime", { time: formatSpan(avail, lang) }) : t("busyRightNow")}</b>
+        <b>{t("chooseAvailableTime")}</b>
         <button type="button" className="th-link" onClick={onClose}>{t("close")}</button>
       </div>
-      {current?.before && avail > 0 && <span className="th-hint">{t("beforeWhat", { what: current.before })}</span>}
+      <Chips value={budget} onChange={(n) => { setBudget(n); setExcluded([]); }} label={t("chooseAvailableTime")} options={[5, 15, 30, 60].map((n) => ({ value: n, label: `${n} ${t("minShort")}` }))} />
       <span className="th-label">{t("energyQ")}</span>
       <Chips value={energy} onChange={setEnergy} label={t("energyQ")} options={["low", "okay", "good"].map((x) => ({ value: x, label: t(`energy_${x}`) }))} />
-      {list.length === 0 && <p className="th-note">{avail > 0 ? t("nothingFitsNow") : t("nextFreeAt", { time: gaps[0] ? formatTime(gaps[0].start, tz, lang) : "—" })}</p>}
+      {list.length === 0 && <p className="th-note">{!candidates.length ? t("emptySuggestion") : excluded.length ? t("otherPicksDone") : candidates.some((x) => !x.durationMs) ? t("addDurationsHint") : t("noTimeMatch")}</p>}
       {list.map(([key, label]) => (
         <div key={key} className="th-whatnow-pick">
           <span className="th-label">{t(label)}</span>
           <div className="th-whatnow-row">
             <span className="th-todo-main"><span className="th-todo-title">{picks[key].title}</span><span className="th-todo-meta">{formatSpan(picks[key].durationMs, lang)}{picks[key].essential ? ` · ${t("essentialShort")}` : ""}</span></span>
-            <Btn small onClick={() => { setFocus(picks[key].id); onClose(); }}>▶ 5 {t("minShort")}</Btn>
+            <Btn small onClick={() => setStarting(picks[key].id)}>{t("helpMeStart")}</Btn>
             <Btn small tone="gold" onClick={() => done(picks[key])} aria-label={`${t("markDone")}: ${picks[key].title}`}>✓</Btn>
           </div>
+          <p className="th-hint">{t(suggestionReason(picks[key], now))}</p>
+          {starting === picks[key].id && <StartTask task={candidates.find((x) => x.id === starting)} minimum={minimum} onClose={onClose} />}
         </div>
       ))}
+      <div className="th-item-actions">
+        {list.length > 0 && <Btn small onClick={() => { setExcluded([...excluded, ...list.map(([key]) => picks[key].id)]); setStarting(null); }}>{t("somethingElse")}</Btn>}
+        {excluded.length > 0 && <Btn small onClick={() => setExcluded([])}>{t("resetPicks")}</Btn>}
+        <Btn small onClick={onClose}>{t("takeBreak")}</Btn>
+      </div>
     </section>
   );
 }
 
 /* ---------- Minimum Day ---------- */
 function MinimumDay({ view, gaps, showAll, setShowAll }) {
-  const { t } = useTimeHub();
+  const { t, update, dispatch } = useTimeHub();
+  const [choosing, setChoosing] = useState(false);
   const { essentials, rest } = splitEssentials(view.open);
   const doneEss = view.done.filter((x) => x.essential).length;
   return (
@@ -614,6 +686,9 @@ function MinimumDay({ view, gaps, showAll, setShowAll }) {
       <p className="th-minday-sub">{t("keepTodaySmall")}</p>
       {essentials.length > 0 && <ul className="th-slist">{essentials.map((task) => <TodoRow key={task.id} task={task} gaps={gaps} />)}</ul>}
       <p className="th-minday-left">{essentials.length ? t("essentialsLeft", { n: essentials.length }) : doneEss ? t("essentialsAllDone") : t("noEssentialsYet")}</p>
+      <div className="th-item-actions"><Btn small aria-expanded={choosing} onClick={() => setChoosing(!choosing)}>{choosing ? t("finished") : t("chooseEssentials")}</Btn>
+        <Btn small onClick={() => dispatch({ type: "settings", patch: { minDay: null } })}>{t("exitMinimumDay")}</Btn></div>
+      {choosing && <div className="th-essential-choices">{view.open.map((task) => <label key={task.id} className="th-check"><input type="checkbox" checked={!!task.essential} onChange={(e) => { const essential = e.target.checked; update((s) => mapTask(s, task.id, (x) => ({ ...x, essential }))); }} />{task.title}</label>)}</div>}
       {rest.length > 0 && <button type="button" className="th-link" aria-expanded={showAll} onClick={() => setShowAll(!showAll)}>{showAll ? t("showLess") : t("showEverything", { n: rest.length })}</button>}
     </section>
   );
@@ -691,6 +766,7 @@ export function TodoWidget({ standalone } = {}) {
   const drag = useDrag();
   const [panel, setPanel] = useState(null); // null | "whatnow" | "routine" | "history"
   const [showAll, setShowAll] = useState(false);
+  const [adding, setAdding] = useState(false);
   const filter = state.settings.todoFilter;
   const viewMode = state.settings.todoView;
   const minDay = minimumDayOn(state.settings, now, tz);
@@ -701,29 +777,35 @@ export function TodoWidget({ standalone } = {}) {
   const sum = todaySummary(view);
   const byCat = (c, list) => list.filter((x) => x.category === c);
   const dayEnd = localDayRange(now, tz, 0).end;
-  const prioPool = filter === "all" ? view.open : byCat(filter, view.open);
+  const priorityOpen = minDay ? view.open.filter((x) => !x.essential) : view.open;
+  const prioPool = filter === "all" ? priorityOpen : byCat(filter, priorityOpen);
   const buckets = useMemo(() => groupByPriority(prioPool, now, dayEnd), [prioPool, now, dayEnd]);
   const listOpen = minDay ? view.open.filter((x) => !x.essential) : view.open;
-  const showLists = !minDay || showAll;
+  const focusing = view.open.some((x) => x.id === state.settings.focus?.taskId);
+  const showLists = (!minDay || showAll) && !focusing;
+  const hasTasks = view.open.length + view.done.length > 0;
 
   return (
     <section className={`th-todos ${standalone ? "" : "th-card"} ${minDay ? "minday" : ""}`} aria-label={t("todosTitle")} id="th-sec-todos">
       <div className="th-todos-head">
-        <h2 className="th-sband-title">{t("todosTitle")}</h2>
+        {!standalone && <h2 className="th-sband-title">{t("todosTitle")}</h2>}
         {(sum.completed > 0 || sum.open > 0) && (
           <span className="th-sec-sub">{[t("todayWord"), sum.completed ? t("nCompleted", { n: sum.completed }) : null, sum.essentialsLeft ? t("essentialsLeft", { n: sum.essentialsLeft }) : null].filter(Boolean).join(" · ")}</span>
         )}
       </div>
-      <div className="th-todos-actions">
-        <Btn small tone="gold" aria-expanded={panel === "whatnow"} onClick={() => setPanel(panel === "whatnow" ? null : "whatnow")}>{t("whatNowQ")}</Btn>
+      {!focusing && <div className="th-todos-actions">
+        <Btn small tone={!hasTasks ? "gold" : undefined} aria-expanded={adding} onClick={() => setAdding(!adding)}>＋ {t("addTaskGlobal")}</Btn>
+        {hasTasks && <Btn small tone="gold" aria-expanded={panel === "whatnow"} onClick={() => setPanel(panel === "whatnow" ? null : "whatnow")}>{t("whatNowQ")}</Btn>}
         <button type="button" className={`th-chip-btn small ${minDay ? "on" : ""}`} aria-pressed={minDay} onClick={toggleMinDay}>{t("minimumDay")}</button>
-      </div>
-      <FreeNow view={view} gaps={gaps} />
+      </div>}
+      {adding && !focusing && <QuickAdd chooseCategory onDone={() => setAdding(false)} />}
+      {!hasTasks && !minDay && <p className="th-note">{t("emptyTaskCapture")}</p>}
+      {!focusing && <FreeNow view={view} gaps={gaps} />}
       <FocusBanner view={view} />
-      {panel === "whatnow" && <WhatNow view={view} gaps={gaps} onClose={() => setPanel(null)} />}
-      {minDay && <MinimumDay view={view} gaps={gaps} showAll={showAll} setShowAll={setShowAll} />}
+      {!focusing && panel === "whatnow" && <WhatNow view={view} gaps={gaps} onClose={() => setPanel(null)} />}
+      {!focusing && minDay && <MinimumDay view={view} gaps={gaps} showAll={showAll} setShowAll={setShowAll} />}
 
-      {showLists && (
+      {showLists && hasTasks && (
         <>
           <div className="th-todos-toolbar">
             <Seg value={viewMode} onChange={setView} label={t("todoView")} options={[
@@ -751,12 +833,12 @@ export function TodoWidget({ standalone } = {}) {
         </>
       )}
 
-      <div className="th-todos-foot">
+      {!focusing && <div className="th-todos-foot">
         <button type="button" className="th-link" aria-expanded={panel === "routine"} onClick={() => setPanel(panel === "routine" ? null : "routine")}>＋ {t("createRoutine")}</button>
         <button type="button" className="th-link" aria-expanded={panel === "history"} onClick={() => setPanel(panel === "history" ? null : "history")}>{t("history")}</button>
-      </div>
-      {panel === "routine" && <RoutineForm onDone={() => setPanel(null)} />}
-      {panel === "history" && <HistoryView />}
+      </div>}
+      {!focusing && panel === "routine" && <RoutineForm onDone={() => setPanel(null)} />}
+      {!focusing && panel === "history" && <HistoryView />}
     </section>
   );
 }

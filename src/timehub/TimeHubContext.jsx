@@ -73,10 +73,10 @@ export function TimeHubProvider({ lang = "en", onAccountsChange, activeAccountId
   // survives the row it came from disappearing (a spent "Contributions full" row leaves the list).
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
-  const notify = useCallback((lines) => {
+  const notify = useCallback((lines, action = null) => {
     clearTimeout(toastTimer.current);
-    setToast({ lines: Array.isArray(lines) ? lines : [lines], id: Date.now() });
-    toastTimer.current = setTimeout(() => setToast(null), 5000);
+    setToast({ lines: Array.isArray(lines) ? lines : [lines], action, id: Date.now() });
+    toastTimer.current = setTimeout(() => setToast(null), action ? 10000 : 5000);
   }, []);
   // Tab switches paint instantly (local state); remembering the tab happens in the background.
   // (stored under its own key so a tab switch never re-renders the other tabs)
@@ -142,7 +142,7 @@ export function TimeHubProvider({ lang = "en", onAccountsChange, activeAccountId
       trainDraft, setTrainDraft, startTraining, setTab,
       notify,
       // "Start for 5 min" — a small focus timer, no commitment to finish (stopping isn't failure)
-      setFocus: (taskId) => { const at = Date.now(); dispatch({ type: "settings", patch: { focus: { taskId, startedAt: at, endsAt: at + 5 * 60000 } } }); },
+      setFocus: (taskId, minutes = 2, minimum = false) => { const at = Date.now(); dispatch({ type: "settings", patch: { focus: { taskId, startedAt: at, endsAt: minutes ? at + minutes * 60000 : 0, minimum } } }); },
     };
   }, [state, lang, activeAccountId, setFilter, rearrange, bookingDraft, openBooking, trainDraft, startTraining, setTab, notify]);
   const toastValue = useMemo(() => ({ toast, dismiss: () => setToast(null) }), [toast]);

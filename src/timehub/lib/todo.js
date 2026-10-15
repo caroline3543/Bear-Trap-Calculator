@@ -315,6 +315,22 @@ export function whatNow(open, availableMs, { energy = "okay", now, tz, dayEnd } 
   return { good, tiny, stretch };
 }
 
+/** Presentation-only smaller version. Never overwrites the stored full task. */
+export function taskForEnergy(task, minimum = false) {
+  if (!minimum || !task.minimumTitle) return task;
+  return { ...task, fullTitle: task.title, title: task.minimumTitle,
+    durationMs: task.minimumDurationMs || null, firstStep: task.minimumTitle, minimum: true };
+}
+
+/** Plain-language reason for a suggestion; urgency and duration remain separate. */
+export function suggestionReason(task, now) {
+  if (task.essential) return "reasonEssential";
+  if (task.start != null && task.start <= now + 15 * MINUTE) return "reasonScheduled";
+  if (task.important) return "reasonImportant";
+  if (task.effort === "tiny" || task.effort === "low") return "reasonLowEffort";
+  return "reasonFits";
+}
+
 /* ---------- routines ---------- */
 /** Starter routines — offered, never forced. Every item becomes its own independent task. */
 export const ROUTINE_PRESETS = {
@@ -375,6 +391,9 @@ export function cleanTodoFields(t) {
     at: when === "time" && HHMM.test(t.at || "") ? t.at : null,
     reminder: reminder === "time" && !HHMM.test(t.remindAt || "") ? "none" : reminder,
     remindAt: reminder === "time" && HHMM.test(t.remindAt || "") ? t.remindAt : null,
+    firstStep: typeof t.firstStep === "string" ? t.firstStep.trim().slice(0, 160) : "",
+    minimumTitle: typeof t.minimumTitle === "string" ? t.minimumTitle.trim().slice(0, 120) : "",
+    minimumDurationMs: isNum(t.minimumDurationMs) && t.minimumDurationMs > 0 && t.minimumDurationMs <= DAY ? t.minimumDurationMs : null,
     essential: t.essential === true,
     effort: EFFORTS.includes(t.effort) ? t.effort : null,
     group: typeof t.group === "string" && t.group.trim() ? t.group.trim().slice(0, 40) : null,

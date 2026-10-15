@@ -852,7 +852,7 @@ test("an account chip can't appear twice on one row", () => {
 });
 
 // round 22: every task carries the optional to-do fields; old tasks migrate to "behaves exactly as before"
-const TODO_DEFAULTS = { repeat: null, occ: {}, when: "anytime", at: null, reminder: "none", remindAt: null, essential: false, effort: null, group: null, order: null, subtasks: [], placed: null, doneAt: null, deferredTo: null, deferrals: 0, endedOn: null, createdDay: null, snooze: null };
+const TODO_DEFAULTS = { firstStep: "", minimumTitle: "", minimumDurationMs: null, repeat: null, occ: {}, when: "anytime", at: null, reminder: "none", remindAt: null, essential: false, effort: null, group: null, order: null, subtasks: [], placed: null, doneAt: null, deferredTo: null, deferrals: 0, endedOn: null, createdDay: null, snooze: null };
 test("tasks survive save/load; junk and old tasks are dropped; category/duration/account/importance default sensibly", async () => {
   const { sanitizeState } = await import("../lib/storage.js");
   const s = emptyState(T0, mkId);
