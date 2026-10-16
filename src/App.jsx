@@ -1,3 +1,4 @@
+import "./ui/journal.css";
 import { migrateCapacityBuffs, effectiveCapacity } from './bear/buffs.js';
 import { Button as SharedButton, Field as SharedField, Chevron } from './ui/components.jsx';
 import { flattenWords, parseScanText, resolveCardLabel, mergeBadgeReadings, confirmAmountReadings } from "./bear/troop-scan.js";
@@ -980,7 +981,7 @@ function allocateSquad(capacity, target, pools, acceptedFills = []) {
    ============================================================ */
 function SectionHeader({ title, sub, step }) {
   return (
-    <div style={{ marginBottom: 14 }}>
+    <div className="journal-calculator-heading" id={step ? `calc-step-${step}` : undefined} tabIndex={step ? -1 : undefined} style={{ marginBottom: 14 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         {step && (
           <span
@@ -1013,9 +1014,9 @@ function SectionHeader({ title, sub, step }) {
 }
 function Card({ children, style }) {
   return (
-    <div className="calc-card" style={style}>
+    <section className="calc-card journal-calculator-card" style={style}>
       {children}
-    </div>
+    </section>
   );
 }
 /* Holds its own local text so the field can go genuinely empty while typing
@@ -1372,7 +1373,7 @@ function SquadCard({ index, squadKey, result, invalid, onAcceptFill, onRemoveFil
   const usesT9 = t9Used > 0;
 
   return (
-    <Card style={{ borderColor, borderLeft: tierAccent ? `4px solid ${tierAccent}` : undefined }}>
+    <Card style={{ borderTopColor: borderColor, borderRightColor: borderColor, borderBottomColor: borderColor, borderLeftWidth: tierAccent ? 4 : undefined, borderLeftStyle: tierAccent ? "solid" : undefined, borderLeftColor: tierAccent || borderColor }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 8, flexWrap: "wrap" }}>
         <div style={{ fontWeight: 600, color: C.ink, fontSize: 15.5 }}>
           {index === "Leader" ? tWord("leaderLabel", lang) : `${tWord("squadLabel", lang)} ${index}`} {tierLabel && <span style={{ fontSize: 10.5, fontWeight: 500, color: C.sub, textTransform: "uppercase", marginLeft: 6 }}>{tWord(tierLabel === "stronger" ? "strongerLabel" : "weakerLabel", lang)}</span>}
@@ -2587,7 +2588,7 @@ export default function App() {
 
   return (
     <div
-      className={darkMode ? "dark" : ""}
+      className={`polar-app ${darkMode ? "dark" : ""}`}
       style={{
         background: "var(--pageGradient)",
         minHeight: "100vh",
@@ -2598,7 +2599,7 @@ export default function App() {
       }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@600&family=Nunito+Sans:wght@400;500;600;700;800&display=swap');
+
 
         :root {
           --bgPage: #E7F1F4;
@@ -2800,16 +2801,6 @@ export default function App() {
           A live SVG filter over the whole page made iPhone Safari take ~1 s to redraw the Time Hub tabs. */}
       <div style={{ position: "absolute", inset: 0, zIndex: 0, backgroundImage: `url(${paperGrainTile})`, backgroundSize: "128px 128px", backgroundRepeat: "repeat", opacity: 0.08, mixBlendMode: "multiply", pointerEvents: "none" }} />
 
-      {/* Decorative watercolor corner accents — low opacity, never behind text */}
-      <div style={{ position: "absolute", inset: 0, zIndex: 0, overflow: "hidden" }}>
-        <PineTree width={44} height={58} style={{ position: "absolute", top: 6, left: -6 }} />
-        <Snowflake size={16} style={{ position: "absolute", top: 20, left: 60 }} />
-        <Snowflake size={22} style={{ position: "absolute", top: 90, right: 18 }} />
-        <PineTree width={34} height={46} style={{ position: "absolute", top: 100, right: -4 }} />
-        <CampScene width={120} height={70} style={{ position: "absolute", bottom: 10, right: -10, opacity: 0.7 }} />
-        <Snowflake size={18} style={{ position: "absolute", bottom: 140, left: 14 }} />
-      </div>
-
       <div className="app-shell">
         {/* TIME HUB — bottom tabs: Today · Timers · Events · BT Calculator.
             The whole calculator below becomes the "BT Calculator" tab. */}
@@ -2821,7 +2812,10 @@ export default function App() {
           headerExtra={<>{langPicker}{themeButton}</>}
           calculator={
             <>
-                    <div style={{ position: "sticky", top: 0, zIndex: 10, marginBottom: 16 }} className="calc-card">
+                    <nav className="journal-calc-nav" aria-label="Calculator steps">
+                      {[[1, "troopPool"], [2, "rallyLeader"], [3, "joinerSquadsLabel"], [4, "squadStrategy"]].map(([n, key]) => <a key={n} href={`#calc-step-${n}`}><b>{String(n).padStart(2, '0')}</b>{tr(key)}</a>)}
+                    </nav>
+                    <div className="calc-card journal-calculator-summary">
                       <div style={{ display: "flex", gap: 0, overflowX: "auto" }}>
                         <SummaryStat label={tr("availableStat")} value={fmt(totalAvailable)} />
                         <StatDivider />
@@ -2837,7 +2831,7 @@ export default function App() {
                       </div>
                     </div>
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    <div className="journal-calculator-sections">
                       {/* TROOP POOL */}
                       <Card>
                       <SectionHeader step={1} title={tr("troopPool")} sub={tr("troopPoolSub")} />
@@ -3099,7 +3093,7 @@ export default function App() {
 
                     {/* SQUAD RESULTS */}
                     {strategy === "manual" && !targetManual.valid ? (
-                      <div style={{ fontSize: 16, color: C.cocoaDark, fontWeight: 700, textAlign: "center", padding: "14px 10px", background: C.amberBg, border: `1.5px solid ${C.goldStrong}`, borderRadius: 14 }}>
+                      <div style={{ fontSize: 16, color: C.amber, fontWeight: 700, textAlign: "center", padding: "14px 10px", background: C.amberBg, border: `1.5px solid ${C.goldStrong}`, borderRadius: 14 }}>
                         ⚠ {tr("fixComposition")}
                       </div>
                     ) : (
