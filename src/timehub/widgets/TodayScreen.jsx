@@ -853,11 +853,11 @@ function TodayPreview({ full, setFull }) {
 
 export function TodayScreen() {
   const [offset, setOffset] = useState(0);
-  const [full, setFull] = useState(false);
+  // Start every fresh visit with the full timeline visible; collapsing is session-only.
+  const [full, setFull] = useState(true);
   const next = useNextUp();
   const { t } = useTimeHub();
-  // Calm first screen: NEXT UP (+ two small lines) → NEEDS YOU (only if actionable) → READY NOW
-  // (compact count) → TODAY (short preview). The full Timeline and friends' clocks are one tap away.
+  // Keep the full timeline open by default, with an optional compact view for this session.
   return (
     <div className="th-screen th-home">
       <NextUp data={next} />

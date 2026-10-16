@@ -17,14 +17,30 @@ const deps=require('node:module').createRequire(path.join(process.env.BT_TEST_DE
  const tab=async index=>act(async()=>document.querySelectorAll('.th-tabbar button')[index].click());
  try{
   await act(async()=>root.render(React.createElement(App)));
+  assert.ok(document.querySelector('#th-sec-today'),'Full timeline is expanded on initial load');
+  const scheduleToggle=()=>document.querySelector('#th-sec-today-preview button[aria-expanded]');
+  assert.equal(scheduleToggle().getAttribute('aria-expanded'),'true');
+  await act(async()=>scheduleToggle().click());assert.equal(document.querySelector('#th-sec-today'),null,'Manual collapse still works');
+  await act(async()=>root.render(React.createElement(App,{key:'fresh-session'})));
+  assert.ok(document.querySelector('#th-sec-today'),'A fresh app mount expands the timeline again');
+  assert.equal(scheduleToggle().getAttribute('aria-expanded'),'true');
   assert.equal(document.querySelectorAll('.ui-page-header').length,1);
   assert.equal(document.querySelectorAll('.ui-account-selector').length,1);
+  assert.equal(document.querySelector('.journal-skip').getAttribute('href'),'#journal-content');
+  const brief=[...document.querySelectorAll('.journal-brief-actions button')];
+  assert.equal(brief.length,2);
+  await act(async()=>brief[0].click());assert.equal(document.querySelector('.th-tabbar [aria-current=page] span').textContent,'To do');
+  await tab(0);await act(async()=>document.querySelectorAll('.journal-brief-actions button')[1].click());
+  assert.equal(document.querySelector('.th-tabbar [aria-current=page] span').textContent,'Timers');
+  for(const link of document.querySelectorAll('.journal-section-links a')){await act(async()=>link.click());const target=document.querySelector(link.getAttribute('href'));assert.ok(target,'Section link has a target');assert.equal(target.querySelector('[aria-expanded]').getAttribute('aria-expanded'),'true');}
+  await tab(0);
   await choose('Farm');
   assert.equal(localStorage.getItem('bearTrapCalculator:activeAccount'),'farm');
   assert.equal(document.querySelector('.ui-account-selector summary span').textContent,'Farm');
   const titles=[];
   for(let i=0;i<5;i++){await tab(i);titles.push(title());assert.equal(document.querySelectorAll('.ui-page-header').length,1);assert.equal(document.querySelectorAll('.ui-account-selector').length,1);assert.equal(document.querySelector('.ui-account-selector summary span').textContent,'Farm');}
   assert.equal(new Set(titles).size,5);
+  for(const link of document.querySelectorAll('.journal-calc-nav a')) assert.ok(document.querySelector(link.getAttribute('href')),'Calculator step has a target');
   const toggle=document.querySelector('.ui-section-toggle');const before=toggle.getAttribute('aria-expanded');
   await act(async()=>toggle.dispatchEvent(new window.KeyboardEvent('keydown',{key:'Enter',bubbles:true})));assert.notEqual(toggle.getAttribute('aria-expanded'),before);
   await act(async()=>toggle.dispatchEvent(new window.KeyboardEvent('keydown',{key:' ',bubbles:true})));assert.equal(toggle.getAttribute('aria-expanded'),before);
@@ -35,6 +51,9 @@ const deps=require('node:module').createRequire(path.join(process.env.BT_TEST_DE
   await choose('All accounts');await tab(4);assert.equal(document.querySelector('.ui-account-selector summary span').textContent,'Main');await tab(0);assert.equal(document.querySelector('.ui-account-selector summary span').textContent,'All accounts');
   const details=document.querySelector('.ui-account-selector');details.open=true;details.dispatchEvent(new window.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));assert.equal(details.open,false);
   await act(async()=>document.querySelector('.ui-header-actions button').click());assert.ok(document.querySelector('.ui-button'));assert.ok(document.querySelector('.ui-input'));
+  assert.equal(title(),'Settings');assert.equal(document.querySelector('#journal-content').tabIndex,-1);
+  for(const link of document.querySelectorAll('.journal-section-links a')) assert.ok(document.querySelector(link.getAttribute('href')),'Settings link has a target');
+  await tab(0);assert.equal(title(),titles[0]);assert.equal(document.querySelector('.th-settings'),null,'Nav closes settings even on the current tab');
   await act(async()=>root.unmount());console.log('Shared UI check passed: all five headers, one account selector, tracker → calculator → tracker selection, isolated saved stats, aggregate views, Escape and shared form controls.');
  }finally{dom.window.close();fs.rmSync(tmp,{recursive:true,force:true});}
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -1,3 +1,4 @@
+import { JournalBrand, JournalNavFooter, JournalPageContext, JournalSectionLinks } from "../ui/JournalChrome.jsx";
 import { PageHeader, AccountSelector } from '../ui/components.jsx';
 /* ============================================================
    TIME HUB page (v2): one dashboard for every account.
@@ -84,22 +85,22 @@ const TABS = [
 ];
 
 
-function TabBar({ hasCalc, active }) {
+function TabBar({ hasCalc, active, onNavigate }) {
   const { t } = useTimeHub();
   const { setTab } = useTab();
   const tabs = TABS.filter((x) => x.id !== "calc" || hasCalc);
   const idx = Math.max(0, tabs.findIndex((x) => x.id === active));
   return (
-    <nav className="th-tabbar" aria-label={t("mainNav")} style={{ "--n": tabs.length, "--i": idx }}>
+    <aside className="journal-navigation"><JournalBrand /><nav className="th-tabbar" aria-label={t("mainNav")} style={{ "--n": tabs.length, "--i": idx }}>
       <span className="th-tabpill" aria-hidden="true" />
       {tabs.map((x) => (
         <button key={x.id} type="button" aria-current={active === x.id ? "page" : undefined} className={active === x.id ? "on" : ""}
-          onPointerDown={() => { window.__thTap = performance.now(); if (active !== x.id) setTab(x.id); }} onClick={() => setTab(x.id)}>
+          onPointerDown={() => { window.__thTap = performance.now(); if (active !== x.id) setTab(x.id); }} onClick={() => { onNavigate(); setTab(x.id); }}>
           <TabIcon name={x.icon} />
-          <span>{t(`tab_${x.id}`)}</span>
+          <span>{t(`tab_${x.id}`)}</span><small className="journal-nav-index" data-index={String(tabs.indexOf(x) + 1).padStart(2, '0')} aria-hidden="true" />
         </button>
       ))}
-    </nav>
+    </nav><JournalNavFooter /></aside>
   );
 }
 
@@ -282,22 +283,15 @@ function SettingsPanel({ headerExtra, closeSettings, reopenSettings, hasCalc, st
 
 /* Each tab's content is memoised: switching tabs doesn't re-render the other tabs. */
 const TodayPanel = React.memo(function TodayPanel() { return <TodayScreen />; });
-const TodosPanel = React.memo(function TodosPanel() { return <Stack><TodoWidget standalone /></Stack>; });
+const TodosPanel = React.memo(function TodosPanel() { return <div className="journal-todo-layout"><TodoWidget standalone /></div>; });
 const TimersPanel = React.memo(function TimersPanel() {
   const { state } = useTimeHub();
   const tr = tracking(state);
-  return (
-    <Stack>
-      {(tr.stamina || tr.store) && <StaminaWidget />}
-      {tr.trek && <TrekWidget />}
-      <TrainingWidget />
-      <ResearchWidget />
-      {tr.contrib && <ContributionWidget />}
-    </Stack>
-  );
+  return <div className="journal-tool-layout"><div className="journal-tool-main"><TrainingWidget /><ResearchWidget /></div>
+    <div className="journal-tool-aside">{(tr.stamina || tr.store) && <StaminaWidget />}{tr.trek && <TrekWidget />}{tr.contrib && <ContributionWidget />}</div></div>;
 });
 const EventsPanel = React.memo(function EventsPanel() {
-  return <Stack><EventsWidget /><BookingsWidget /><ShareCard /><HistoryWidget /></Stack>;
+  return <div className="journal-tool-layout"><div className="journal-tool-main"><EventsWidget /><BookingsWidget /></div><div className="journal-tool-aside"><ShareCard /><HistoryWidget /></div></div>;
 });
 const CalcPanel = React.memo(function CalcPanel({ calculator }) { return <div className="th-calc-slot">{calculator}</div>; });
 const Panel = React.memo(function Panel({ on, children }) {
@@ -385,24 +379,30 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
   }, [active, state.settings.showSpeed]);
 
   return (
-    <div className={`th-root th-app ${active === "calc" ? "is-calc" : ""} ${compact ? "th-compact" : ""} ${tour != null ? "th-touring" : ""}`} dir={dir}
+    <div className={`th-root th-app journal-layout ${active === "calc" ? "is-calc" : ""} ${compact ? "th-compact" : ""} ${tour != null ? "th-touring" : ""}`} dir={dir}
       onPointerDownCapture={(e) => onPress(e.target)}>
+      <a className="journal-skip" href="#journal-content">{t("journalSkipContent")}</a>
+      <div className="journal-workspace"><JournalBrand mobile />
       {showHeader && (
-        <Header title={t(`tab_${active}`)} tab={active} headerExtra={headerExtra} settingsOpen={settings} onSettings={() => setSettings(!settings)}>
+        <Header title={settings ? t("settingsTitle") : t(`tab_${active}`)} tab={active} headerExtra={headerExtra} settingsOpen={settings} onSettings={() => setSettings(!settings)}>
           {active === "today" && !settings && <StatStrip />}
         </Header>
       )}
-      {(settings ? <SettingsPanel headerExtra={headerExtra} hasCalc={!!calculator} closeSettings={() => flushSync(() => setSettings(false))} reopenSettings={() => setSettings(true)} startTour={() => setTour(0)} /> : <AccountGrid compact={active === "timers" || active === "today" || active === "todos"} onAdd={() => setSettings(true)} />)}
-      <main className={settings ? "th-hidden" : ""}>
+      <JournalPageContext page={settings ? "settings" : active} />
+      {!settings && <div className="journal-account-context"><span className="journal-smallcap">{t("journalAccountContext")}</span><AccountGrid onAdd={() => setSettings(true)} /></div>}
+      <JournalSectionLinks page={settings ? "settings" : active} />
+      <main id="journal-content" tabIndex={-1}>
+      {(settings ? <SettingsPanel headerExtra={headerExtra} hasCalc={!!calculator} closeSettings={() => flushSync(() => setSettings(false))} reopenSettings={() => setSettings(true)} startTour={() => setTour(0)} /> : null)}
+      <div className={settings ? "th-hidden" : ""}>
         {panel("today", TODAY_EL)}
         {panel("todos", TODOS_EL)}
         {panel("timers", TIMERS_EL)}
         {panel("events", EVENTS_EL)}
         {calculator && panel("calc", <CalcPanel calculator={calculator} />)}
-      </main>
+      </div></main>
       {tour != null && <Tour step={tour} setStep={setTour} setSettings={setSettings} />}
       <Toast />
-      <TabBar hasCalc={!!calculator} active={pressed} />
+      </div><TabBar hasCalc={!!calculator} active={pressed} onNavigate={() => setSettings(false)} />
       {state.settings.showSpeed && speed && <div className="th-speed" role="status">{t(`tab_${speed.tab}`)} · {speed.ms} ms</div>}
     </div>
   );
