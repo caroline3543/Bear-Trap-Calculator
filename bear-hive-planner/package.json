@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node test/model.test.cjs && node test/attendance.test.cjs && node test/layout.test.cjs && node test/revision.test.cjs && node test/ui-smoke.cjs",
+    "test": "node test/model.test.cjs && node test/attendance.test.cjs && node test/layout.test.cjs && node test/revision.test.cjs && node test/ui-smoke.cjs && node test/world-groups.test.cjs",
     "test:browser": "node test/browser-flows.cjs"
   }
 }
