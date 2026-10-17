@@ -38,3 +38,9 @@ Blocked keys: mountain, lake, building, castle and resource-node coverage. Citie
 Source: https://github.com/wosnerdwarriors/wos-data/tree/main/data/worldmap
 
 Data revision: 802a263238893581b1ae7fc38914fa660f37b42f. `world-data.js` stores row runs instead of repeated per-tile JSON. `world-map.js` provides coordinates, collision checks and visible-region rendering. No remote service is needed at runtime.
+
+## Phone map controls
+
+One finger pans the map. Hold a city for 320 ms, then drag to move it; moving before the hold completes pans instead. Two fingers pan and pinch around their moving midpoint. Double-tap zooms in, two-finger tap zooms out, and double-tap followed by a vertical drag zooms with one hand. A second finger cancels an active city drag. Cancellation, app blur and Escape do not save a move. Pan momentum honours reduced-motion preferences. Browser/page gestures remain available outside the map. Map orientation stays fixed to preserve coordinate directions.
+
+Coordinates are below the map on phones and available in both modes. Search does not place anything. The placement selector supports BT1, BT2, a roster player’s city, empty city space, banner, HQ and editable blocked terrain. Non-trap objects use a review step, proper footprints, collisions, locked-city checks and one-step Undo.

@@ -17,6 +17,9 @@ Verified through real interface controls in both sizes:
 - Plain begins with both traps and no fixed terrain layer. Plain reset keeps both traps; Terrain reset removes all placed traps while retaining fixed world features. Each reset preserves the other draft, roster and history, and can be undone.
 - Built-in Templates → LUN preview, current-origin placement, roster/history preservation, Undo, direct template links and reload persistence.
 - Nonempty 4096×4096 PNG export.
+- Coordinate panel follows the map in DOM order. Both desktop and phone interface tests placed a player city, empty city space, banner, HQ and editable terrain through the review sheet.
+- Phone touch tests verified pinch scale changes, two-finger pan without scale changes, two-finger tap zoom-out, double-tap zoom-in, double-tap-drag zoom and cancellation of a held city drag when a second finger touches the map. Gestures did not mutate the plan.
+- City dragging on phones uses a hold before movement; mouse dragging remains immediate.
 - No uncaught browser errors in the final run.
 
 Model checks additionally cover exact reference geometry, fixed-feature world-coordinate invariance, terrain collision rejection, no-op removal of fixed IDs, locked-city movement constraints, partial/complete eligibility, missing dates and roster imports without attendance creation.
