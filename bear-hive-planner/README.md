@@ -2,9 +2,11 @@
 
 Browser-local Bear Trap map, roster and attendance planner for officers. Serve `dist/`.
 
+Choose Plain map or Terrain map. Each mode saves its own layout while sharing roster and attendance. Plain starts with both bear traps and no fixed terrain. Terrain starts with fixed world features and no placed traps or editable objects. Search coordinates marks a location without placing anything; Place bear trap explicitly places BT1 or BT2 at the entered coordinates, with collision checks and Undo.
+
 - Direct city dragging, grid snapping, collision previews, locked placements, edge panning, precise tap movement and Undo.
 - Separate BT1, BT2 and Other members queues. Other members are excluded from city assignment. Suggest assignments seats the selected list around its corresponding trap using attendance.
-- Reset layout retains the configured BT coordinates and fixed world layer, removes all editable objects and city spaces, and unassigns everyone. Roster groups and attendance remain. Reset is one undoable action.
+- Reset layout affects only the active mode. Plain keeps both configured bear traps; Terrain removes all placed traps. Both remove editable objects and city spaces and unassign everyone. Roster groups and attendance remain. Reset is one undoable action.
 - Remove tool deletes map placements, terrain and structures without deleting roster members or attendance.
 - Independent BT1 and BT2 coordinate origins. Radial rows start at the trap; row 1 is the front row.
 - Bulk format: `[ALLIANCE] Exact username, player ID, code`. Codes f, s, r, u or blank (Unknown). Alliance tags remain metadata.
@@ -29,7 +31,7 @@ See VERIFICATION.md for browser coverage and limitations.
 
 ## Fixed world map
 
-The bundled WOS Nerds community dataset contains 198,365 mapped tiles in a 1200×1200 world. Fixed features are rendered separately from editable plan objects. They cannot be moved or deleted and remain in world coordinates when trap references change. Coordinate changes reject invalid trap positions and locked-city conflicts; other conflicting cities return to the queue after review.
+The bundled WOS Nerds community dataset contains 198,365 mapped tiles in a 1200×1200 world. In Terrain mode, fixed features are rendered separately from editable plan objects. Plain mode hides that layer and disables its terrain constraints. They cannot be moved or deleted and remain in world coordinates when trap references change. Coordinate changes reject invalid trap positions and locked-city conflicts; other conflicting cities return to the queue after review.
 
 Blocked keys: mountain, lake, building, castle and resource-node coverage. Cities may occupy fortress/stronghold and facility areas; other structures follow the source planner’s restrictions. This is a community reference, not live state data. Completeness, state-specific differences and in-game placement are not guaranteed.
 

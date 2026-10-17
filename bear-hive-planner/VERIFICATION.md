@@ -2,7 +2,7 @@
 
 ## Current release
 
-Build, model, attendance, layout, revision, DOM-contract and world/groups suites passed. Real Chromium checks passed at 1440×1000 and 390×844. Phone-sized dragging used simulated touch input.
+Build, model, attendance, layout, revision, DOM-contract and world/groups and map-mode suites passed. Real Chromium checks passed at 1440×1000 and 390×844. Phone-sized dragging used simulated touch input.
 
 Verified through real interface controls in both sizes:
 - Bulk import into BT1, BT2 and Other members with explicit destination review.
@@ -12,7 +12,9 @@ Verified through real interface controls in both sizes:
 - Percentages start with the first completed eligible record; no minimum-record field is present. Switching traps isolates records.
 - Coordinate updates reposition the trap and related city spaces in one world coordinate frame. Invalid trap positions are rejected.
 - Fixed map features render and cannot be removed through the Remove tool.
-- Reset leaves both configured traps and the fixed map layer, with zero city spaces, allocations or editable objects. Roster and history remain; Undo restores the plan.
+- Separate saved Plain and Terrain map drafts share roster and attendance. Switching modes restores the corresponding layout.
+- Terrain begins without placed traps or editable objects. Searching coordinates creates only a marker; explicit BT1/BT2 placement validates the footprint. Fixed-feature removal is rejected.
+- Plain begins with both traps and no fixed terrain layer. Plain reset keeps both traps; Terrain reset removes all placed traps while retaining fixed world features. Each reset preserves the other draft, roster and history, and can be undone.
 - Built-in Templates → LUN preview, current-origin placement, roster/history preservation, Undo, direct template links and reload persistence.
 - Nonempty 4096×4096 PNG export.
 - No uncaught browser errors in the final run.
