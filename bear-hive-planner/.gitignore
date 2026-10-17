@@ -1,0 +1,5 @@
+node_modules/
+.vercel/
+dist/vendor/ocr/*.js
+dist/vendor/ocr/core/
+dist/vendor/ocr/lang/

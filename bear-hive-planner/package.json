@@ -1,0 +1,13 @@
+{
+  "name": "bear-hive-planner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "R4 Bear Trap hive and attendance planner",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node scripts/fetch-ocr.mjs",
+    "test": "node test/model.test.cjs && node test/attendance.test.cjs && node test/ui-smoke.cjs"
+  }
+}
