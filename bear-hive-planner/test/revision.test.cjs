@@ -6,3 +6,9 @@ const first=H.reviewAttendees(s,'car')[0];assert(first.candidates.some(c=>c.id==
 s.members[0].playerId='123456789';s.operations.trap=2;const rows=H.reviewBulk(s,'[LUN] Caroline, 123456789, f');const moved=H.applyBulk(s,rows,()=> 'new');assert.equal(moved.members[0].trap,2);assert.equal(moved.members[0].slot,null);assert.deepEqual(moved.attendanceLog.sessions,s.attendanceLog.sessions);
 const fs=require('node:fs'),html=fs.readFileSync(require('node:path').join(__dirname,'../dist/index.html'),'utf8');assert(!html.includes('ocr.js'));assert(!html.includes('screenshotAttendees'));assert(!html.includes('compactBtn'));assert(html.includes('queueTrapTabs'));assert(html.includes('anchor2X'));assert(html.includes('data-tool="remove"'));
 console.log('PASS: independent BT origins, radial row instructions, typed-name suggestions, trap-specific roster lists and removed OCR/compact UI.');
+
+const R=require('../dist/reference-layout.js'),source=R.lunReference(),loaded=R.loadLunLayout(R.demo());
+assert.equal(loaded.slots.length,58);assert.equal(loaded.structures.filter(x=>x.kind==='flag').length,16);assert.equal(loaded.blocks.length,32);assert(loaded.members.every(m=>!m.slot));assert.deepEqual(loaded.sessions,R.demo().sessions);
+for(const slot of loaded.slots){assert(R.validCityPosition(loaded,slot));for(const other of loaded.slots)if(slot.id!==other.id)assert(!R.overlap(slot,other));}
+assert.equal(loaded.settings.anchorX,604);assert.equal(loaded.settings.anchorY,596);assert.equal(loaded.settings.anchor2X,595);assert.equal(loaded.settings.anchor2Y,596);
+console.log('PASS: exact reference geometry, empty spaces, independent source anchors, no overlapping city footprints.');

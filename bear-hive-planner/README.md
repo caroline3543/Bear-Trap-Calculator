@@ -12,6 +12,7 @@ Browser-local Bear Trap map, roster and attendance planner for officers. Serve `
 - Partial lists confirm attendance only. Complete lists allow eligible unlisted players to count as absent. Missing dates do not count as absence.
 - Separate two-day schedules and attendance history per trap. Imports never create attendance records.
 - Large 4096 × 4096 PNG map exports, CSV exports, backups, recovery and dark mode.
+- Load LUN layout previews the saved WOS Nerds reference: 58 empty city spaces, two traps, HQ, 16 banners and 32 terrain tiles. It preserves roster/history and is undoable. The direct link `?layout=lun` opens the preview. Reference numbering groups each space with the nearest trap (32 BT1, 26 BT2).
 - No screenshot OCR, compact command, whale seating or rally-method controls.
 
 ## Development

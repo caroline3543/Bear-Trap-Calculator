@@ -15,10 +15,11 @@ Verified in both browser sizes:
 - Attendance survives reload and remains isolated between traps.
 - Factory reset clears both maps, including locked allocations and terrain, preserves roster/history/anchors and undoes exactly.
 - Exported PNG header and dimensions confirm a nonempty 4096×4096 image.
+- Reference import preview, exact object counts, roster/history preservation, Undo, direct-link opening and persistence after reload.
 - No uncaught browser errors.
 
 Model suites additionally cover collision rejection, locks, fuzzy matching, complete-list correction, frequency recalculation, date/trap isolation, partial-list semantics and roster imports without attendance creation. Those cases were not all rerun through the browser in this release.
 
 ## Unverified
 
-Physical iPhone Safari, real-device performance, VoiceOver and actual pinch gestures remain unverified. Protected production-page rendering could not be accessed with the connected account; deployment status is checked through Vercel metadata. The app remains browser-local with exportable backups.
+Physical iPhone Safari, real-device performance, VoiceOver and actual pinch gestures remain unverified. Public access was enabled on the previous release; this release is checked through deployment metadata and an unauthenticated HTTP request. The app remains browser-local with exportable backups.
