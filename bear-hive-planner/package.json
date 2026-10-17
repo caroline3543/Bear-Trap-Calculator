@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "node scripts/fetch-ocr.mjs",
-    "test": "node test/model.test.cjs && node test/attendance.test.cjs && node test/ui-smoke.cjs"
+    "test": "node test/model.test.cjs && node test/attendance.test.cjs && node test/layout.test.cjs && node test/ui-smoke.cjs",
+    "test:browser": "node test/browser-flows.cjs"
   }
 }

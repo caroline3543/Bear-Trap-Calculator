@@ -9,7 +9,7 @@ const original=JSON.stringify(state),proposal=H.suggest(state);
 assert.equal(JSON.stringify(state),original,'Preview must not mutate draft');
 assert.equal(proposal.members[0].slot,state.members[0].slot,'Preserve locked cities');
 assert.equal(new Set(proposal.members.map(m=>m.slot)).size,proposal.members.length,'Unique assignments');
-for(const m of proposal.members.filter(m=>m.whale&&m.speed==='fast'&&!m.locked))assert.equal(state.slots.find(s=>s.id===m.slot).row,2);
+const withoutLegacy=JSON.parse(JSON.stringify(state));withoutLegacy.members.forEach(m=>{delete m.whale;delete m.speed});assert.deepEqual(H.suggest(withoutLegacy).members.map(m=>m.slot),proposal.members.map(m=>m.slot),'Ignore legacy whale/speed metadata');
 H.validate({...state,members:proposal.members});
 assert.equal(H.suggest({...state,members:proposal.members}).changes.length,0,'Suggestions must be stable');
 const oneTrap=H.suggest(state,'1');for(const m of state.members.filter(m=>m.trap===2))assert.equal(oneTrap.members.find(x=>x.id===m.id).slot,m.slot);
@@ -18,4 +18,4 @@ const invalid=JSON.parse(original);invalid.members[1].slot=invalid.members[0].sl
 const member={...state.members[1],attendance:{1:{attended:2,total:10,kind:'regular'}}};assert.equal(H.attendance(member,1),.2);
 const ranking=H.demo();ranking.members=ranking.members.slice(0,2);ranking.members[0].attendance[1]={kind:'rarely'};ranking.members[1].attendance[1]={kind:'regular'};ranking.members.forEach(m=>{m.slot=null;m.whale=false});const rank=H.suggest(ranking);assert(rank.members[1].slot);assert.equal(ranking.slots.find(s=>s.id===rank.members[1].slot).row,1);
 const blocked=H.demo();const empty=blocked.slots.find(s=>!blocked.members.some(m=>m.slot===s.id));blocked.blocks.push({...empty});const blockedResult=H.suggest(blocked);assert(!blockedResult.members.some(m=>m.slot===empty.id));
-console.log('PASS: geometry, attendance priority, row-two whales, trap isolation, locks, collision avoidance, stable previews, backup Unicode, invalid assignment rejection.');
+console.log('PASS: geometry, attendance priority, legacy field compatibility, trap isolation, locks, collision avoidance, stable previews, backup Unicode, invalid assignment rejection.');
