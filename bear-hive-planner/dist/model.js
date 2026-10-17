@@ -5,7 +5,7 @@ const center=o=>({x:o.x+o.w/2,y:o.y+o.h/2});
 function attendance(m,t){const a=m.attendance[t]||{kind:'unknown',attended:null,total:null};return a.total>0&&a.attended!==null?Math.max(0,Math.min(1,a.attended/a.total)):({regular:.9,sometimes:.5,rarely:.15,unknown:.45}[a.kind]??.45)}
 function attendanceText(m,t){const a=m.attendance[t]||{};return a.total>0&&a.attended!==null?`${a.attended}/${a.total} events`:({regular:'Frequent',sometimes:'Sometimes',rarely:'Rarely',unknown:'Unknown'}[a.kind]||'Unknown')}
 function slotsFor(traps){let slots=[];for(const t of traps){for(let x=-6;x<=8;x+=2)for(let y=-6;y<=8;y+=2){let s={id:`s${t.id}_${x}_${y}`,x:x+t.x,y:y+t.y,w:2,h:2,trap:t.id};if(overlap(s,t))continue;const c=center(s),tc=center(t);s.row=Math.max(1,Math.ceil((Math.max(Math.abs(c.x-tc.x),Math.abs(c.y-tc.y))-1.5)/2));slots.push(s)}}return slots}
-function coord(state,s){return {x:state.settings.anchorX+s.x,y:state.settings.anchorY+s.y}}
+function coord(state,s){const traps=state.traps,trap=traps.find(t=>t.id===s.trap)||[...traps].sort((a,b)=>Math.hypot(s.x-a.x,s.y-a.y)-Math.hypot(s.x-b.x,s.y-b.y))[0];const t1=traps.find(t=>t.id===1)||{x:0,y:0};if(trap?.id===2){const ax=Number.isFinite(state.settings.anchor2X)?state.settings.anchor2X:state.settings.anchorX+trap.x-t1.x,ay=Number.isFinite(state.settings.anchor2Y)?state.settings.anchor2Y:state.settings.anchorY+trap.y-t1.y;return{x:ax+s.x-trap.x,y:ay+s.y-trap.y}}return{x:state.settings.anchorX+s.x-(trap?.x||0),y:state.settings.anchorY+s.y-(trap?.y||0)}}
 function suggest(state,trapFilter='all'){
 const members=JSON.parse(JSON.stringify(state.members));const slots=state.slots;
 const affected=m=>trapFilter==='all'||String(m.trap)===String(trapFilter);
