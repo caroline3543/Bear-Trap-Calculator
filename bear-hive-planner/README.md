@@ -44,3 +44,13 @@ Data revision: 802a263238893581b1ae7fc38914fa660f37b42f. `world-data.js` stores 
 One finger pans the map. Hold a city for 320 ms, then drag to move it; moving before the hold completes pans instead. Two fingers pan and pinch around their moving midpoint. Double-tap zooms in, two-finger tap zooms out, and double-tap followed by a vertical drag zooms with one hand. A second finger cancels an active city drag. Cancellation, app blur and Escape do not save a move. Pan momentum honours reduced-motion preferences. Browser/page gestures remain available outside the map. Map orientation stays fixed to preserve coordinate directions.
 
 Coordinates are below the map on phones and available in both modes. Search does not place anything. The placement selector supports BT1, BT2, a roster player’s city, empty city space, banner, HQ and editable blocked terrain. Non-trap objects use a review step, proper footprints, collisions, locked-city checks and one-step Undo.
+
+## Officer workflows
+
+Empty city spaces open a searchable sheet ranked Frequently, Sometimes, Rarely and Unknown for that trap. Attendance percentage orders players inside each category; manual codes are the fallback. Already placed players are hidden initially; including them shows a move confirmation. Locked players cannot be moved.
+
+Members and the map queue offer Select members. Select all shown includes the entire filtered result, not just the viewport; selected members remain selected when filters change. Bulk moves to BT1, BT2 or Other members and deletion use a count preview and one Undo operation. Locked cities require an explicit skip or unlock choice. Attendance history remains. Group changes clear active and saved-mode placement associations; deletion also clears placed city footprints in saved drafts.
+
+Tapping a bear opens Change trap number. With two traps, this swaps their labels and city-space associations on the active map. Physical positions, roster groups, event schedules and attendance histories remain unchanged. Conflicting roster/placement associations are highlighted for officer review; copied move instructions flag the conflict until resolved.
+
+On phones, the map is prioritised; tools and queue open in dismissible panels. Coordinates remain below the map. Bulk actions sit above navigation; dialogs size to the visual viewport. Physical iPhone keyboard/Safari behaviour still needs device verification.

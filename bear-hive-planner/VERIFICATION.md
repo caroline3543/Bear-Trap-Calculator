@@ -24,6 +24,10 @@ Verified through real interface controls in both sizes:
 
 Model checks additionally cover exact reference geometry, fixed-feature world-coordinate invariance, terrain collision rejection, no-op removal of fixed IDs, locked-city movement constraints, partial/complete eligibility, missing dates and roster imports without attendance creation.
 
+## Officer workflow release
+
+Real Chromium at desktop and 390×844 phone sizes verified: ranked slot suggestions; trap filtering; name search; hidden/already-placed players; locked candidates; confirmed relocation and Undo; filtered select-all; selection retained through search; deselection and re-selection; locked skip/unlock bulk moves; deletion with history retained; bulk Undo; map trap details, number-swap preview, review flags, geometry/history preservation, swap Undo and reload persistence; queue-to-selection entry. A 390×480 resized viewport checked sheet bounds as a keyboard-space simulation, not a physical keyboard test. No uncaught errors in the completed officer workflow runs. The existing browser suite also passed on both sizes, including phone multi-touch gestures, direct city movement, fixed terrain, coordinate placement, attendance, reset/template Undo and PNG export.
+
 ## Data provenance
 
 Bundled community world-map data: WOS Nerds / wosnerdwarriors/wos-data, revision 802a263238893581b1ae7fc38914fa660f37b42f.
