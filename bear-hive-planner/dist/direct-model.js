@@ -9,5 +9,7 @@ H.moveMapItem=function(s,ref,x,y){
  if(![x,y].every(Number.isInteger)||x+origin.x<0||y+origin.y<0||x+origin.x+o.w>1200||y+origin.y+o.h>1200)throw Error('That position is outside the map.');
  if(H.worldBlocked(n,box,ref.kind==='slot'?'city':o.kind||'terrain')||[...n.traps,...n.slots,...n.blocks,...n.structures].some(b=>b!==o&&H.overlap(b,box)))throw Error('That position overlaps terrain or another item.');
  Object.assign(o,{x,y});if(ref.kind==='slot'){const t=n.traps.find(t=>t.id===o.trap);if(t)o.row=H.cityRow(o,t)}return n;
+};
+H.mapPlacementPreview=function(s,tool,x,y,trap=1){const kind={slot:'slot',block:'terrain',flag:'flag',hq:'hq'}[tool],size=kind==='slot'?2:kind==='hq'?3:1;trap=[1,2].includes(+trap)?+trap:1;const result={tool,kind,x,y,w:size,h:size,trap,valid:false,error:''};try{if(!kind)throw Error('Choose a placement tool.');const origin=H.worldOrigin(s);H.placeMapObject(s,kind,origin.x+x,origin.y+y,{trapId:trap});result.valid=true}catch(e){result.error=e.message}return result;
 };if(typeof module!=='undefined')module.exports=H;
 })(typeof window!=='undefined'?window:globalThis);

@@ -61,6 +61,6 @@ Find & place by coordinates is a closed-by-default disclosure under the map. Sug
 
 ## Direct phone controls
 
-Map tools and Member queue are visible inline. Tap an editable object to select it and reveal its minus control. Removing a city keeps its player in the roster. Tap an empty city space for ranked player shortcuts or the full searchable list. One finger moves editable items; two fingers pan and pinch. Placement tools add one item, then return to selection. Locked cities and fixed terrain remain protected.
+Map tools and Member queue are visible inline. Tap an editable object to select it and reveal its minus control. Removing a city keeps its player in the roster. Tap an empty city space for ranked player shortcuts or the full searchable list. One finger moves editable items; two fingers pan and pinch. Placement tools stay active until tapped again. Hold and position the live outline, then release to place each item. Selection controls sit below the canvas. Locked cities and fixed terrain remain protected.
 
 Verification for this interaction revision is limited to automated models, DOM contracts and synthetic pointer-handler checks. Real-browser and physical iPhone checks remain pending.
