@@ -1,6 +1,6 @@
 'use strict';
 let mapPlacement=null,mapDrag=null,mapGesture=null,edgeFrame=null,holdTimer=null,tapTimer=null,lastTouchTap=null,momentumFrame=null;const mapPointers=new Map(),viewport=$('#mapViewport');
-const gestureHint='Drag to pan · Double-tap an item to select · Pinch to zoom';
+const gestureHint='Drag to pan · Tap an item to select · Pinch to zoom';
 function mapXY(e){const b=viewport.getBoundingClientRect();return{x:e.clientX-b.left,y:e.clientY-b.top}}
 function hitCity(p){return state.members.filter(m=>m.slot).map(m=>({m,s:slotBy(m.slot)})).find(({s})=>s&&visible(s)&&p.x>=s.x&&p.x<s.x+2&&p.y>=s.y&&p.y<s.y+2)}
 function applyCityMove(id,x,y){try{const m=state.members.find(m=>m.id===id),old=slotBy(m?.slot);if(old?.x===x&&old?.y===y){setTool('select');return}const next=Hive.moveCity(state,id,x,y);commit(()=>state=next);setTool('select');selectedMember=id;renderMap();toast('City moved. Undo is available.')}catch(e){toast(e.message)}}
@@ -14,7 +14,7 @@ function pair(){const a=[...mapPointers.values()];return{distance:Math.max(1,Mat
 function cancelMapGesture(){clearTimeout(tapTimer);lastTouchTap=null;mapPointers.clear();mapGesture=null;clearDrag();stopMomentum()}
 function selectableHit(p){const hit=hitDraggable(p);if(hit)return hit;const t=state.traps.find(t=>visible({...t,trap:t.id})&&p.x>=t.x&&p.x<t.x+t.w&&p.y>=t.y&&p.y<t.y+t.h);if(t)return{ref:{kind:'trap',id:t.id}};const origin=Hive.worldOrigin(state);if(state.mapMode==='terrain'&&Hive.worldAt(origin.x+Math.floor(p.x),origin.y+Math.floor(p.y)))return{ref:{kind:'fixed',id:Math.floor(p.x)+':'+Math.floor(p.y)}};return null}
 function sameMapRef(a,b){return !!a&&!!b&&a.kind===b.kind&&a.id===b.id}
-function deselectMapItem(){selectedMapItem=null;selectedSlot=null;selectedMember=null;renderMap()}
+function deselectMapItem(){selectedMapItem=null;selectedSlot=null;selectedMember=null;renderMap();renderQueue()}
 viewport.addEventListener('pointerdown',e=>{
  stopMomentum();if(e.target.closest('.map-controls,[data-map-action]')||e.button>0)return;
  viewport.setPointerCapture(e.pointerId);const screen=mapXY(e),world=screenWorld(screen.x,screen.y),touch=e.pointerType==='touch';mapPointers.set(e.pointerId,screen);
@@ -40,7 +40,7 @@ viewport.addEventListener('pointerup',e=>{
  if(g.multi){if(!(g.hadMovement??g.moved)&&performance.now()-g.begin<300)zoom(1/1.8,g.initial.x,g.initial.y);return}
  if(placement){applyPlacement(placement);return}if(d?.started){applyDragItem(d.ref,d.x,d.y);return}
  if(g.moved){if(g.touch&&!d&&!g.quick&&performance.now()-g.time<80)startMomentum(g.vx,g.vy);return}
- if(tool==='select'){if(g.quick){if(g.hit)mapTap(e,g.target);else zoom(1.8,g.start.x,g.start.y)}else{if(!g.hit)deselectMapItem();lastTouchTap={...mapXY(e),key:g.key,time:performance.now()}}return}
+ if(tool==='select'){if(g.quick){if(g.hit)mapTap(e,g.target);else zoom(1.8,g.start.x,g.start.y)}else{if(g.hit)mapTap(e,g.target);else deselectMapItem();lastTouchTap={...mapXY(e),key:g.key,time:performance.now()}}return}
  mapTap(e,g.target);
 });
 viewport.addEventListener('pointercancel',cancelMapGesture);viewport.addEventListener('lostpointercapture',e=>{if(mapPointers.has(e.pointerId))cancelMapGesture()});
