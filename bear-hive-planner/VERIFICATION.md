@@ -46,3 +46,9 @@ This is not live state data. Completeness, resource-node coverage, state-specifi
 ## Unverified
 
 Physical iPhone Safari, VoiceOver, real-device performance and real pinch gestures. Post-deploy testing is a public HTTP check plus Vercel deployment metadata; the complete browser suite was run against the local production files.
+
+## Direct map interaction release
+
+Current changes: map tools and Member queue are inline on phones; Select, Assign and Remove tool buttons are replaced by direct item selection, contextual minus and ranked player shortcuts. City, empty-space, editable terrain and structure dragging use one finger immediately. Two fingers pan/zoom; a second finger cancels an in-progress object drag. Editable terrain shows a mountain marker. Fixed world features remain immutable.
+
+Validation for this revision: model checks, script startup/DOM contracts and synthetic pointer-handler checks. These are not browser tests. They cover collision/lock/bounds rejection, row recalculation, immediate city movement as one undo step, one-finger empty-space restraint, two-finger panning and contextual city removal with roster retention. Real-browser and physical iPhone verification of the revised controls remain unverified because the supported browser capability was unavailable in this session. Earlier browser results above describe earlier releases.

@@ -1,0 +1,6 @@
+const assert=require('node:assert/strict'),H=require('../dist/direct-model.js');
+let s=H.emptyPlan();s=H.migrate(s);s.mapMode='plain';s.slots=[];s.structures=[{id:'flag',kind:'flag',x:15,y:15,w:1,h:1}];s.blocks=[{id:'rock',x:18,y:18,w:1,h:1}];
+const before=JSON.stringify(s);let n=H.moveMapItem(s,{kind:'object',id:'flag'},16,15);assert.equal(n.structures[0].x,16);assert.equal(JSON.stringify(s),before);assert.throws(()=>H.moveMapItem(s,{kind:'object',id:'flag'},18,18),/overlaps/);n=H.moveMapItem(s,{kind:'terrain',id:'rock'},19,18);assert.equal(n.blocks[0].x,19);assert.throws(()=>H.moveMapItem(s,{kind:'terrain',id:'rock'},.5,18));assert.throws(()=>H.moveMapItem(s,{kind:'terrain',id:'rock'},-9999,18),/outside/);
+s.slots=[{id:'empty',x:20,y:20,w:2,h:2,trap:1,row:99}];n=H.moveMapItem(s,{kind:'slot',id:'empty'},22,22);assert.equal(n.slots[0].row,H.cityRow(n.slots[0],n.traps.find(t=>t.id===1)));assert.throws(()=>H.moveMapItem(s,{kind:'slot',id:'empty'},15,15),/overlaps/);
+const m=H.demo().members[0];s.members=[m];{m.slot='empty';m.trap=1;m.locked=true;assert.throws(()=>H.moveMapItem(s,{kind:'member',id:m.id},22,22),/locked/);assert.throws(()=>H.removeMapObject(s,{memberId:m.id}),/Unlock/)}
+console.log('PASS: editable item dragging, collision rejection, map bounds, city rows, immutable input and locked city protection.');

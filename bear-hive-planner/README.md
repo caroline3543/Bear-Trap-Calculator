@@ -58,3 +58,9 @@ On phones, the map is prioritised; tools and queue open in dismissible panels. C
 ## Phone copy and controls
 
 Find & place by coordinates is a closed-by-default disclosure under the map. Suggest assignments is inside Member queue, below the player list. Sharing is labelled Share plan because it creates a snapshot link; individual move instructions remain under each player. App text distinguishes partial and complete attendance, fixed versus planned terrain, and snapshots versus synced data.
+
+## Direct phone controls
+
+Map tools and Member queue are visible inline. Tap an editable object to select it and reveal its minus control. Removing a city keeps its player in the roster. Tap an empty city space for ranked player shortcuts or the full searchable list. One finger moves editable items; two fingers pan and pinch. Placement tools add one item, then return to selection. Locked cities and fixed terrain remain protected.
+
+Verification for this interaction revision is limited to automated models, DOM contracts and synthetic pointer-handler checks. Real-browser and physical iPhone checks remain pending.
