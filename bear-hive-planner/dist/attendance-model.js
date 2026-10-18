@@ -18,6 +18,43 @@ function parseAttendees(text){return text.split(/\r?\n/).filter(x=>x.trim()).map
 function match(s,row){if(row.playerId){const ids=s.members.filter(m=>m.playerId===row.playerId);if(ids.length)return ids.map(m=>({id:m.id,score:1,reason:'Exact player ID',exact:true}))}const q=norm(row.name);if(!q)return[];const candidates=s.members.map(m=>{const names=[m.name,...(s.attendanceLog.aliases[m.id]||[])];let score=0,exact=false;for(const name of names){const n=norm(name);if(!n)continue;const e=n===q;const v=e?1:Math.max(n.startsWith(q)?.8+Math.min(.15,q.length/n.length*.15):0,1-levenshtein(q,n)/Math.max(q.length,n.length));if(v>score){score=v;exact=e}}if(row.alliance&&row.alliance.toLowerCase()!==(m.alliance||s.settings.alliance).toLowerCase())score*=.88;return{id:m.id,score,exact:exact&&score===1,reason:exact&&score===1?'Exact normalised name':'Similar spelling'}}).filter(c=>c.score>=.35).sort((a,b)=>b.score-a.score);return candidates.slice(0,5)}
 function reviewAttendees(s,text){return parseAttendees(text).map(r=>{const candidates=match(s,r),exact=candidates.filter(c=>c.exact);return{...r,candidates,target:exact.length===1?exact[0].id:'',confirmed:exact.length===1}})}
 function saveSession(s,{date,trap,selected,complete,eligible,replace=false,aliases=[]},now=Date.now()){const n=clone(s);migrate(n);if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||![1,2].includes(+trap))throw Error('Choose a valid event date and trap.');const ids=new Set(n.members.map(m=>m.id)),attended=[...new Set(selected)].filter(id=>ids.has(id)),prior=session(n,date,trap);const allAttended=replace?attended:[...new Set([...(prior?.attended||[]),...attended])];const eligibility=[...new Set([...(eligible||prior?.eligible||n.members.filter(m=>m.trap===+trap).map(m=>m.id)),...allAttended])].filter(id=>ids.has(id));const r={date,trap:+trap,attended:allAttended,eligible:eligibility,complete:!!complete,updated:new Date(now).toISOString()};if(r.complete&&!finished(n,r,now))throw Error('This BT has not finished yet. Save a partial list, then complete it after the event.');n.attendanceLog.sessions[sessionKey(date,trap)]=r;for(const {id,name} of aliases){if(!ids.has(id)||!name||name.length>100)continue;const list=n.attendanceLog.aliases[id]||(n.attendanceLog.aliases[id]=[]);if(!list.includes(name))list.push(name)}return n}
+// Positive attendance can route roster membership without inferring any absences.
+function rosterSuggestions(s,query){
+ const q=norm(query);if(!q)return[];
+ const row=parseAttendees(query)[0]||{name:query};
+ const scores=new Map(match(s,row).map(c=>[c.id,c]));
+ for(const m of s.members){const name=norm(m.name),id=String(m.playerId||'');if(name.includes(q)||id.includes(q))scores.set(m.id,{id:m.id,score:name===q||id===q?1:.9,exact:name===q||id===q,reason:'Name or ID match'})}
+ return [...scores.values()].sort((a,b)=>b.score-a.score||s.members.find(m=>m.id===a.id).name.localeCompare(s.members.find(m=>m.id===b.id).name)).slice(0,12).map(c=>({...c,member:s.members.find(m=>m.id===c.id)}));
+}
+function preferredAttendanceTrap(s,m,now=Date.now()){
+ const counts={1:0,2:0};for(const t of [1,2]){
+  const logs=Object.values(s.attendanceLog.sessions).filter(r=>r.trap===t&&finished(s,r,now)).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,s.attendanceLog.settings.window);
+  counts[t]=logs.filter(r=>r.attended.includes(m.id)).length;
+ }
+ return{trap:counts[1]===counts[2]?null:counts[1]>counts[2]?1:2,counts};
+}
+function routeAttendanceGroups(s,now=Date.now()){
+ const n=clone(s);migrate(n);
+ for(const m of n.members){
+  delete m.suggestedAttendanceTrap;
+  if(m.btGroupMode==='manual')continue;
+  const pref=preferredAttendanceTrap(n,m,now),target=pref.trap??(pref.counts[1]||pref.counts[2]?m.trap:m.attendanceGroupBase??m.trap);
+  if(target===m.trap)continue;
+  if(m.slot||m.locked||Object.values(n.mapDrafts||{}).some(d=>d.placements?.some(p=>p.id===m.id&&p.slot))||H.memberHasLockedPlacement?.(n,m)){m.suggestedAttendanceTrap=target;continue}
+  if(m.attendanceGroupBase===undefined)m.attendanceGroupBase=m.trap;
+  m.trap=target;m.confirmed=false;m.verified=false;
+ }
+ return n;
+}
+function setRosterGroup(s,ids,trap,{automatic=true,kind='keep'}={}){
+ if(![0,1,2].includes(+trap))throw Error('Choose a BT list.');
+ const n=H.bulkMemberAction?H.bulkMemberAction(s,ids,+trap).state:clone(s);
+ for(const id of ids){const m=n.members.find(m=>m.id===id);if(!m)throw Error('Choose an existing player.');m.trap=+trap;m.btGroupMode=automatic?'attendance':'manual';m.attendanceGroupBase=+trap;delete m.suggestedAttendanceTrap;if(trap&&kind!=='keep'){if(!labels[kind])throw Error('Choose a valid frequency.');m.attendance[trap]={kind,attended:null,total:null}}}
+ return n;
+}
+const originalSaveSession=saveSession;
+saveSession=function(s,options,now=Date.now()){return routeAttendanceGroups(originalSaveSession(s,options,now),now)};
+Object.assign(H,{rosterSuggestions,preferredAttendanceTrap,routeAttendanceGroups,setRosterGroup});
 const baseSuggest=H.suggest;
 H.suggest=function(s,trap){const work=clone(s);migrate(work);for(const m of work.members){for(const t of [1,2]){const a=stats(work,m,t);if(a.enough)m.attendance[t]={kind:a.kind,attended:a.attended,total:a.count}}}const result=baseSuggest(work,trap);for(const m of result.members){const old=s.members.find(x=>x.id===m.id);m.attendance=clone(old.attendance)}return result};
 Object.assign(H,{migrate,attendanceStats:stats,attendanceScore:attendance,parseBulk:parseRoster,reviewBulk:reviewRoster,applyBulk:applyRoster,frequencyLabels:labels,attendanceSession:session,attendanceSessionKey:sessionKey,shiftEventDate:shiftDate,expectedEventDate:expected,parseAttendees,matchAttendee:match,reviewAttendees,saveAttendanceSession:saveSession,sessionFinished:finished});if(typeof module!=='undefined')module.exports=H;
