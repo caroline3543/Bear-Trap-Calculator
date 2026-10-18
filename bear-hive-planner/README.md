@@ -14,7 +14,7 @@ Choose Plain map or Terrain map. Each mode saves its own layout while sharing ro
 - Percentages apply from the first completed eligible event, show the sample size, and use manual codes only when no calculated percentage exists. Partial lists confirm attendance only. Complete lists allow eligible unlisted players to count as absent. Missing dates do not count as absence.
 - Separate two-day schedules and attendance history per trap. Imports never create attendance records.
 - Large 4096 × 4096 PNG map exports, CSV exports, backups, recovery and dark mode.
-- Load LUN layout previews the saved WOS Nerds reference: 58 empty city spaces, two traps, HQ, 16 banners and 32 terrain tiles. It preserves roster/history and is undoable. The direct link `?layout=lun` opens the preview. Reference numbering groups each space with the nearest trap (32 BT1, 26 BT2). The template uses the current BT1 coordinates and places BT2 nine tiles west. Fixed-map conflicts are blocked for assignment.
+- Templates offers LUN (58 spaces), Owl (99), Swirl (50), Banner pad (50), Twin swirl (100) and Twin banner pad (100). Preview the geometry and BT1 coordinates before replacing the active map. Roster, attendance and the other map remain saved; all cities are unassigned. Applying a template is undoable. `?layout=owl` and the other template IDs open a direct preview. Fixed-map conflicts are reported and blocked city spaces cannot be assigned. See dist/TEMPLATE-SOURCES.md for source attribution and interpretation limits.
 - No screenshot OCR, compact command, whale seating or rally-method controls.
 
 ## Development
@@ -54,3 +54,7 @@ Members and the map queue offer Select members. Select all shown includes the en
 Tapping a bear opens Change trap number. With two traps, this swaps their labels and city-space associations on the active map. Physical positions, roster groups, event schedules and attendance histories remain unchanged. Conflicting roster/placement associations are highlighted for officer review; copied move instructions flag the conflict until resolved.
 
 On phones, the map is prioritised; tools and queue open in dismissible panels. Coordinates remain below the map. Bulk actions sit above navigation; dialogs size to the visual viewport. Physical iPhone keyboard/Safari behaviour still needs device verification.
+
+## Phone copy and controls
+
+Find & place by coordinates is a closed-by-default disclosure under the map. Suggest assignments is inside Member queue, below the player list. Sharing is labelled Share plan because it creates a snapshot link; individual move instructions remain under each player. App text distinguishes partial and complete attendance, fixed versus planned terrain, and snapshots versus synced data.

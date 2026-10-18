@@ -28,6 +28,14 @@ Model checks additionally cover exact reference geometry, fixed-feature world-co
 
 Real Chromium at desktop and 390×844 phone sizes verified: ranked slot suggestions; trap filtering; name search; hidden/already-placed players; locked candidates; confirmed relocation and Undo; filtered select-all; selection retained through search; deselection and re-selection; locked skip/unlock bulk moves; deletion with history retained; bulk Undo; map trap details, number-swap preview, review flags, geometry/history preservation, swap Undo and reload persistence; queue-to-selection entry. A 390×480 resized viewport checked sheet bounds as a keyboard-space simulation, not a physical keyboard test. No uncaught errors in the completed officer workflow runs. The existing browser suite also passed on both sizes, including phone multi-touch gestures, direct city movement, fixed terrain, coordinate placement, attendance, reset/template Undo and PNG export.
 
+## Template and copy release
+
+Six built-in templates passed internal footprint-overlap and map-edge checks: LUN, Owl, Swirl, Banner pad, Twin swirl and Twin banner pad. Owl geometry was traced from the supplied image; player names and decorative territory shading were omitted. See dist/TEMPLATE-SOURCES.md for attribution and interpretation details.
+
+Real desktop and 390×844 Chromium interface tests verified all six template previews, application, Undo, coordinate changes, roster/attendance/other-map preservation and Owl persistence after reload. The same tests verified a collapsed-by-default coordinate disclosure and Suggest assignments inside Member queue. The existing phone gesture/placement/attendance suite and officer bulk/swap suite also passed, with no uncaught browser errors.
+
+Copy was revised across map, roster, attendance, sharing, settings and action sheets. Sharing is labelled Share plan; partial-list and snapshot limits remain explicit. Physical iPhone Safari remains unverified.
+
 ## Data provenance
 
 Bundled community world-map data: WOS Nerds / wosnerdwarriors/wos-data, revision 802a263238893581b1ae7fc38914fa660f37b42f.
