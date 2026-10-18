@@ -41,31 +41,27 @@ Data revision: 802a263238893581b1ae7fc38914fa660f37b42f. `world-data.js` stores 
 
 ## Phone map controls
 
-One finger pans the map. Hold a city for 320 ms, then drag to move it; moving before the hold completes pans instead. Two fingers pan and pinch around their moving midpoint. Double-tap zooms in, two-finger tap zooms out, and double-tap followed by a vertical drag zooms with one hand. A second finger cancels an active city drag. Cancellation, app blur and Escape do not save a move. Pan momentum honours reduced-motion preferences. Browser/page gestures remain available outside the map. Map orientation stays fixed to preserve coordinate directions.
+Tap an item to select it, drag the selected footprint to move it, then tap ✓ Done to deselect. One finger pans from empty space or an unselected item. Pinch and two-finger panning remain available. A second finger cancels a drag. Invalid drops, pointer cancellation and app blur preserve the original position. Each valid drop saves immediately as one Undo action; Done does not save another change. Momentum honours reduced-motion preferences.
 
-Coordinates are below the map on phones and available in both modes. Search does not place anything. The placement selector supports BT1, BT2, a roster player’s city, empty city space, banner, HQ and editable blocked terrain. Non-trap objects use a review step, proper footprints, collisions, locked-city checks and one-step Undo.
+The phone canvas uses 72% of viewport height. Expand fills the available screen and hides page navigation; Exit restores the page and scroll position. Expansion preserves the world centre and scale. Selection, assignment and Done preserve the camera. Resizing does not automatically Fit. Fit remains a separate explicit action.
+
+A selected-item dock sits outside the canvas and contains Done, Details, Coordinates and Remove as appropriate. Locked cities show a padlock and Unlock; unlocking is undoable. Dragging hides the dock without changing canvas size. The exact footprint stays snapped under the pointer, while a touch magnifier beside the finger shows its position and validity. Banner, HQ, terrain and city placement tools remain active for repeated placement until Done, the active tool or Escape is pressed.
+
+Map options (⋯) contains Plain/Terrain modes, Templates, Reset, projection and Find & place by coordinates. Fixed world terrain remains immutable. Search does not place an item. Coordinate moves validate footprints, collisions, terrain, bounds and locks, and are undoable.
 
 ## Officer workflows
 
-Empty city spaces open a searchable sheet ranked Frequently, Sometimes, Rarely and Unknown for that trap. Attendance percentage orders players inside each category; manual codes are the fallback. Already placed players are hidden initially; including them shows a move confirmation. Locked players cannot be moved.
+Select an empty city to see players from the highest remaining attendance group for that trap: Frequently, Sometimes, Rarely, then Unknown. Allocated players are excluded. Tap a suggested name to place them there. All players opens the full searchable list for that group. When nothing is selected, a horizontal player strip remains visible below the map and places names into the next available city.
 
-Members and the map queue offer Select members. Select all shown includes the entire filtered result, not just the viewport; selected members remain selected when filters change. Bulk moves to BT1, BT2 or Other members and deletion use a count preview and one Undo operation. Locked cities require an explicit skip or unlock choice. Attendance history remains. Group changes clear active and saved-mode placement associations; deletion also clears placed city footprints in saved drafts.
+The full Players to place section remains available on the page, including BT list editing and attendance-based routing. The Players tab retains roster imports and bulk selection, group moves and deletion. Bulk operations preview counts and handle locks explicitly. Roster imports never create attendance records. Removing a city preserves the player and attendance history.
 
-Tapping a bear opens Change trap number. With two traps, this swaps their labels and city-space associations on the active map. Physical positions, roster groups, event schedules and attendance histories remain unchanged. Conflicting roster/placement associations are highlighted for officer review; copied move instructions flag the conflict until resolved.
+Selecting a bear trap shows its details and Done. Change trap number swaps labels and city-space associations on the active map without changing physical positions, roster groups, schedules or attendance. Bear trap movement remains a coordinate operation. Fixed world-map features retain their read-only details.
 
-On phones, the map is prioritised; tools and queue open in dismissible panels. Coordinates remain below the map. Bulk actions sit above navigation; dialogs size to the visual viewport. Physical iPhone keyboard/Safari behaviour still needs device verification.
+## Browser verification
 
-## Phone copy and controls
+`npm test` covers models and DOM contracts. `npm run test:planning` runs actual Chromium workflows using intercepted local static assets, with no preview server. Set `HIVE_PLAYWRIGHT_PATH` to an installed Playwright package when it is outside this project.
 
-Find & place by coordinates is a closed-by-default disclosure under the map. Suggest assignments is inside Member queue, below the player list. Sharing is labelled Share plan because it creates a snapshot link; individual move instructions remain under each player. App text distinguishes partial and complete attendance, fixed versus planned terrain, and snapshots versus synced data.
-
-## Direct phone controls
-
-Map tools and Member queue are visible inline. Tap an editable object to select it and reveal its minus control. Removing a city keeps its player in the roster. Select an empty city space for players in the highest remaining attendance group, or search within that group. Allocated players are excluded. One finger pans. Drag a selected item to move it. Two fingers also pan and pinch. Placement tools stay active until tapped again. Hold and position the live outline, then release to place each item. Selection controls sit below the canvas. Locked cities and fixed terrain remain protected.
-
-Verification for this interaction revision is limited to automated models, DOM contracts and synthetic pointer-handler checks. Real-browser and physical iPhone checks remain pending.
-
-Player suggestions advance through Frequently, Sometimes, Rarely and Unknown for the selected trap. Placement previews snap directly beneath the pointer. Undo/Redo have labelled, high-contrast controls.
+Real-browser checks cover touch selection/drag/Done, one-finger panning, pinch, collision/cancellation handling, locks and unlock Undo, inline/full-list assignments, repeated placement, touch preview and magnifier, removal and Undo/Redo, expanded view/exit, camera stability, saved-state reload, small phones, landscape, rotation, coordinate disclosure and dark mode. Existing roster and attendance browser flows also pass. Physical iPhone Safari, browser chrome and the software keyboard remain unverified.
 
 ## Selected simplified interface
 
