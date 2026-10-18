@@ -1,6 +1,6 @@
 'use strict';
 // A larger canvas is a view preference. It never changes saved coordinates.
-let expandedMap=false,planningScrollY=0,planningSize=null,planningFrame=null,planningRosterRevision=0,planningStripMemo=null,planningSelectionKey=null;
+let expandedMap=false,planningScrollY=0,planningSize=null,planningFrame=null,planningSelectionKey=null;
 const planningPanel=$('#mapPlannerPanel');
 function resizePlanningCanvas(preserveCenter=false){
  const b=viewport.getBoundingClientRect();if(!b.width||!b.height)return;
@@ -24,14 +24,12 @@ function openAllPlanningPlayers(){
  const show=()=>{const q=$('#planningPlayerSearch').value,group=trap?Hive.slotAttendanceGroup(state,trap,{query:q}):null,members=group?.members||state.members.filter(m=>!m.trap&&!m.slot&&(m.name+' '+m.playerId).toLocaleLowerCase().includes(q.toLocaleLowerCase()));$('#planningPlayerGroup').textContent=group?.label||'Choose a BT list before placing these players.';$('#planningPlayerChoices').innerHTML=members.map(m=>`<button data-planning-player="${esc(m.id)}"><strong>${esc(m.name)}</strong></button>`).join('')||'<p class="muted">No matches in this attendance group.</p>';$$('[data-planning-player]').forEach(b=>b.onclick=()=>{const m=state.members.find(m=>m.id===b.dataset.planningPlayer);if(!m.trap){closeModal();memberDetail(m.id);return}const before=m.slot;assignQueuedPlayer(m.id);if(state.members.find(p=>p.id===m.id)?.slot!==before)closeModal()})};$('#planningPlayerSearch').oninput=show;$('#planningManageList').onclick=openBTListEditor;show();
 }
 $('#planningAllPlayers').onclick=openAllPlanningPlayers;
-function renderPlanningStrip(){
- const strip=$('#planningPlayerStrip');strip.hidden=readonly||!!selectedEmptyCity()||isPlacementTool(tool);
- if(strip.hidden)return;
- const trap=queueTrap();if(planningStripMemo?.state===state&&planningStripMemo.revision===planningRosterRevision&&planningStripMemo.trap===trap)return;planningStripMemo={state,revision:planningRosterRevision,trap};const group=trap?Hive.slotAttendanceGroup(state,trap):null;
- $('#planningStripTitle').textContent=group?.kind?'BT '+trap+' · '+group.label:'Players to place';
- const html=(group?.members||[]).map(m=>`<button data-strip-player="${esc(m.id)}">${esc(m.name)}</button>`).join('')||'<span class="muted">'+(trap?'No unassigned players for BT '+trap+'.':'Choose BT1 or BT2 to place players.')+'</span>';
- const list=$('#planningStripNames');list.hidden=!group?.members.length;if(list.dataset.renderKey===html)return;list.dataset.renderKey=html;list.innerHTML=html;
- $$('[data-strip-player]').forEach(b=>b.onclick=()=>assignQueuedPlayer(b.dataset.stripPlayer));
+const openManagedBTList=$('#addToBTList').onclick;$('#addToBTList').onclick=()=>{$('#queueManageMenu').open=false;openManagedBTList()};
+const syncManagedBTLists=$('#syncBTLists').onclick;$('#syncBTLists').onclick=()=>{syncManagedBTLists();$('#queueManageMenu').open=false};
+function renderContextualPlayers(){
+ const panel=$('#memberQueueSection'),item=mapItem(selectedMapItem);
+ panel.hidden=readonly||isPlacementTool(tool)||!!item&&item.ref.kind!=='slot';
+ panel.classList.toggle('choosing-city',!!selectedEmptyCity());
 }
 function renderPlanningLoupe(){
  const el=$('#placementLoupe'),d=mapPlacement||(mapDrag?.started&&!mapDrag.locked?mapDrag:null);
@@ -46,21 +44,20 @@ function renderPlanningChrome(){
  $('#placementToolLabel').textContent=({slot:'+ City',flag:'Banner',block:'Terrain',hq:'Alliance HQ'})[tool]||'';
  $('#placementToolDock').classList.toggle('gesture-hidden',!!mapPointers.size);
  $('#loadLunBtn').disabled=readonly;$('#resetLayoutBtn').disabled=readonly;
- renderPlanningStrip();renderPlanningLoupe();
+ renderContextualPlayers();renderPlanningLoupe();
  const selectionKey=selectedMapItem?selectedMapItem.kind+':'+selectedMapItem.id:null;
  if(selectionKey&&selectionKey!==planningSelectionKey&&!expandedMap&&!readonly&&!mapPointers.size&&window.matchMedia?.('(max-width:720px)').matches)requestAnimationFrame(()=>{if(selectedMapItem&&selectedMapItem.kind+':'+selectedMapItem.id===selectionKey&&!expandedMap&&!mapPointers.size)$('#mapItemActions').scrollIntoView?.({block:'nearest',behavior:'auto'})});
  planningSelectionKey=selectionKey;
  // SVG buildings support the same selection and Done workflow by keyboard.
  $$('#mapSvg [data-slot]').forEach(el=>el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();const m=memberAt(el.dataset.slot);selectedMapItem={kind:m?'member':'slot',id:m?m.id:el.dataset.slot};selectedSlot=el.dataset.slot;if(!readonly){setTool('select');renderMap();renderQueue()}}});
 }
-const planningCommit=commit;commit=function(fn){planningRosterRevision++;return planningCommit(fn)};
 const planningBaseMap=renderMap;renderMap=function(){planningBaseMap();renderPlanningChrome()};
-const planningBaseQueue=renderQueue;renderQueue=function(){planningBaseQueue();renderPlanningStrip()};
+const planningBaseQueue=renderQueue;renderQueue=function(){planningBaseQueue();renderContextualPlayers()};
 const planningBaseTool=setTool;setTool=function(t){planningBaseTool(t);renderPlanningChrome()};
 const planningNavigate=navigate;navigate=function(p){if(p!=='map'&&expandedMap)setExpandedMap(false);planningNavigate(p)};
 $$('#trapTabs button').forEach(b=>{const prior=b.onclick;b.onclick=()=>{finishMapEditing();if(b.dataset.trap!=='all'){state.operations.rosterGroup=+b.dataset.trap;state.operations.trap=+b.dataset.trap}prior()}});
 $('#mapOptionsMenu').addEventListener('click',e=>{if(e.target.closest('#loadLunBtn,#resetLayoutBtn,#viewBtn,[data-map-mode]'))$('#mapOptionsMenu').open=false});
-document.addEventListener('pointerdown',e=>{if(!$('#mapOptionsMenu').contains(e.target))$('#mapOptionsMenu').open=false;if(!$('#itemMenu').contains(e.target))$('#itemMenu').open=false});
+document.addEventListener('pointerdown',e=>{if(!$('#mapOptionsMenu').contains(e.target))$('#mapOptionsMenu').open=false;if(!$('#itemMenu').contains(e.target))$('#itemMenu').open=false;if(!$('#queueManageMenu').contains(e.target))$('#queueManageMenu').open=false});
 window.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#modal').open)return;$('#mapOptionsMenu').open=false;$('#itemMenu').open=false;if(expandedMap)setExpandedMap(false)}});
 planningSize={width:viewport.getBoundingClientRect().width,height:viewport.getBoundingClientRect().height};
 if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>{if(planningFrame)cancelAnimationFrame(planningFrame);planningFrame=requestAnimationFrame(()=>{planningFrame=null;resizePlanningCanvas()})}).observe(viewport);

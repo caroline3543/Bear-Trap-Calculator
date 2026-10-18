@@ -51,9 +51,9 @@ Map options (⋯) contains Plain/Terrain modes, Templates, Reset, projection and
 
 ## Officer workflows
 
-Select an empty city to see players from the highest remaining attendance group for that trap: Frequently, Sometimes, Rarely, then Unknown. Allocated players are excluded. Tap a suggested name to place them there. All players opens the full searchable list for that group. When nothing is selected, a horizontal player strip remains visible below the map and places names into the next available city.
+Select an empty city to see players from the highest remaining attendance group for that trap: Frequently, Sometimes, Rarely, then Unknown. Allocated players are excluded. Tap a suggested name to place them there. All players opens the full searchable list for that group. The same player panel stays below the map when nothing is selected and places names into the next available city. There are no duplicated sidebar, strip or selected-city lists.
 
-The full Players to place section remains available on the page, including BT list editing and attendance-based routing. The Players tab retains roster imports and bulk selection, group moves and deletion. Bulk operations preview counts and handle locks explicitly. Roster imports never create attendance records. Removing a city preserves the player and attendance history.
+The player panel includes Full list for searching and a secondary BT lists disclosure for list editing and attendance-based routing. The Players tab retains roster imports and bulk selection, group moves and deletion. Bulk operations preview counts and handle locks explicitly. Roster imports never create attendance records. Removing a city preserves the player and attendance history.
 
 Selecting a bear trap shows its details and Done. Change trap number swaps labels and city-space associations on the active map without changing physical positions, roster groups, schedules or attendance. Bear trap movement remains a coordinate operation. Fixed world-map features retain their read-only details.
 
@@ -66,3 +66,9 @@ Real-browser checks cover touch selection/drag/Done, one-finger panning, pinch, 
 ## Selected simplified interface
 
 Map statistics are hidden. + Item contains Banner, HQ and Terrain. Players to place shows the current attendance group and assigns directly to the selected empty city or next valid space. Place players for me fills empty cities without rearranging allocated players and supports one-step Undo. Import rosters on Players. Attendance uses an event tick-list with explicit partial/full saving; advanced matching, eligibility and history remain available. The five tabs, trap/map options and native font remain.
+
+## Design system and visual review
+
+`DESIGN.md` records the original Bear Hive system informed by the selected VoltAgent Apple/Linear references and TasteCode review workflow. `dist/design-system.css` owns map, player and attendance components; `style.css` retains the page shell and specialist forms. `dist/ui-components.js` measures Unicode city names into at most two lines without modifying roster data.
+
+Run `npm run test:design` for real-browser checks of the single picker, Unicode label bounds in both projections, text contrast, unchanged model state, Players statuses and attendance saves. The test captures light/dark map, Players and Attendance views. `DESIGN_REVIEW.md` records the review scope and verification limits.
