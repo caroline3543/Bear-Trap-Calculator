@@ -78,3 +78,9 @@ Attendance now opens with a tick-list and Save attendees. This is the full list 
 Passed: full automated model suite and synthetic DOM/pointer checks for single-tap selection, placement, next-space/preferred-space assignment, strict attendance stages, one-action bulk placement with locked/existing positions preserved, Undo, tick/save/complete attendance, no attendance autosave, date/trap isolation and saved checkboxes. Script syntax and build checks passed. Browser scripts were updated for the new controls but were not executed.
 
 Unverified for this release: real-browser rendering/interactions, physical iPhone Safari, phone default framing and dark-mode appearance. The supported browser-control capability was unavailable. Browser results from earlier releases do not validate this revision.
+
+## Compact toolbar correction
+
+Removed the obsolete CSS-generated “＋ Slot” suffix. Reset the + Item details wrapper's inherited global margin, padding and border, which had inflated its grid row and stretched Undo/Redo. The four primary controls now have explicit 44px row/control heights; Templates and Reset remain on their own compact secondary row. Opening the item menu does not resize the toolbar.
+
+Real headless Chromium tests loaded the complete current production HTML, CSS and scripts from local files through isolated request interception. Passed at 320×844, 390×844, 428×926, 768×1024, 844×390 and 1440×1000: exactly one + City label; no generated Slot suffix; 44px aligned primary controls; compact toolbar bounds; no horizontal control overflow; Banner/HQ/Terrain visibility; HQ selection, menu closure and deselection; no uncaught browser errors. Light/dark phone screenshots were inspected internally. Build passed. Physical iPhone Safari remains unverified. This validates the toolbar correction, not every unrelated workflow.
