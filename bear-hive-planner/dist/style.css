@@ -48,3 +48,16 @@ body.dark #mapItemActions [data-map-action=remove]{color:#efb39f}
 #mapTools>.map-secondary{display:flex!important;align-items:center;justify-content:flex-end;flex:none;gap:6px;min-width:0;min-height:0;height:auto;margin:0}
 #mapTools>.map-secondary>button{flex:none;height:44px;min-height:44px;max-height:44px;margin:0;padding:7px 10px}
 body.dark #mapTools .tool-group>button.active,body.dark #mapTools #itemMenu.active>summary{color:var(--bg)}
+
+/* Empty-city suggestions live in the selection dock, outside the draggable map. */
+#mapItemActions .inline-city-assignment{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.inline-city-assignment>strong{display:block;font-size:14px}.inline-city-assignment>.attendance-group-label{display:block;color:var(--muted);margin:3px 0 6px}
+#mapItemActions .quick-city-players{margin:0;gap:7px;max-height:220px;overscroll-behavior:contain}
+#mapItemActions .quick-city-players button{white-space:normal;overflow-wrap:anywhere;font-size:14px;line-height:1.3;min-height:44px;padding:10px 12px;border:1px solid var(--line);color:var(--ink);background:var(--soft);text-align:left}
+#mapItemActions .quick-city-players button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+#mapItemActions.has-city-suggestions{display:grid;grid-template-columns:minmax(76px,100px) minmax(0,1fr);column-gap:12px;align-items:start}
+#mapItemActions.has-city-suggestions[hidden]{display:none}
+#mapItemActions.has-city-suggestions>span{grid-column:1;grid-row:1;white-space:normal}
+#mapItemActions.has-city-suggestions>div{grid-column:1;grid-row:2;margin-top:6px}
+#mapItemActions.has-city-suggestions .inline-city-assignment{grid-column:2;grid-row:1 / span 2;min-width:0;margin:0;padding:0;border:0}
+@media(max-width:720px){#mapItemActions.has-city-suggestions{scroll-margin-bottom:calc(100px + env(safe-area-inset-bottom))}}
