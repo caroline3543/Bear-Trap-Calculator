@@ -79,3 +79,7 @@ body.expanded-map #memberQueueSection.choosing-city .player-panel-footer{display
 #queue .queue-row{border-radius:12px}
 @media(max-width:720px){#mapTools .tool-group{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.12fr) 44px 44px;gap:4px}#mapTools #loadLunBtn{font-size:11px;padding:7px 2px}#mapTools #undoBtn,#mapTools #redoBtn{width:44px;max-width:44px;padding:6px 3px}}
 @media(max-width:360px){#mapTools .tool-group{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.18fr) 42px 42px;gap:3px}#mapTools #undoBtn,#mapTools #redoBtn{min-width:42px;width:42px}#mapTools #loadLunBtn{font-size:10px}}
+
+/* Scrollable multi-category Item picker, sized for mobile and landscape. */
+#itemMenu .item-options{max-height:min(65dvh,450px);overflow-y:auto;overscroll-behavior:contain;width:min(220px,calc(100vw - 30px));scrollbar-width:thin}
+#itemMenu .item-options button{min-height:44px;white-space:normal;line-height:1.35}
