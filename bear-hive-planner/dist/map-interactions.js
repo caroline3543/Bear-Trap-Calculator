@@ -24,6 +24,7 @@ viewport.addEventListener('pointerdown',e=>{
  if(!readonly&&isPlacementTool(tool)){mapPlacement={tool,screen,touch};updatePlacement();edgeFrame=requestAnimationFrame(edgePan);return}
  if(!readonly&&tool==='select'&&hit?.box&&sameMapRef(hit.ref,selectedMapItem)){mapDrag={id:hit.ref.id,ref:hit.ref,box:hit.box,locked:hit.locked,x:hit.box.x,y:hit.box.y,screen,touch,offset:{x:world.x-hit.box.x,y:world.y-hit.box.y},started:false,armed:true};renderMap()}
 });
+let panPaintFrame=null;function paintPan(){if(panPaintFrame!==null)return;panPaintFrame=requestAnimationFrame(()=>{panPaintFrame=null;renderMap()})}
 viewport.addEventListener('pointermove',e=>{
  if(!mapPointers.has(e.pointerId)||!mapGesture)return;const p=mapXY(e),old=mapPointers.get(e.pointerId);mapPointers.set(e.pointerId,p);
  if(mapPointers.size>1){const next=pair(),prev=mapGesture.pair;if(prev){camera.x+=next.x-prev.x;camera.y+=next.y-prev.y;zoom(next.distance/prev.distance,next.x,next.y);const first=mapGesture.initial;if(Math.abs(next.distance-first.distance)>6||Math.hypot(next.x-first.x,next.y-first.y)>6)mapGesture.moved=true}mapGesture.pair=next;return}
@@ -31,9 +32,10 @@ viewport.addEventListener('pointermove',e=>{
  const distance=Math.hypot(p.x-mapGesture.start.x,p.y-mapGesture.start.y);if(distance>6)mapGesture.moved=true;if(!mapGesture.moved)return;
  if(mapGesture.quick&&!mapGesture.hit){zoom(Math.exp(-(p.y-mapGesture.last.y)*.012),mapGesture.start.x,mapGesture.start.y);mapGesture.last=p;return}
  if(mapDrag){if(mapDrag.locked){$('#mapHint').textContent=mapDrag.ref.kind==='trap'?'Move bear traps by coordinates.':'City locked. Tap Unlock to move it.';return}mapDrag.started=true;mapDrag.screen=p;updateDrag();if(!edgeFrame)edgeFrame=requestAnimationFrame(edgePan)}
- else{const dt=Math.max(8,performance.now()-mapGesture.time);mapGesture.vx=Math.max(-25,Math.min(25,(p.x-old.x)*16/dt));mapGesture.vy=Math.max(-25,Math.min(25,(p.y-old.y)*16/dt));mapGesture.time=performance.now();camera.x+=p.x-old.x;camera.y+=p.y-old.y;renderMap()}
+ else{const dt=Math.max(8,performance.now()-mapGesture.time);mapGesture.vx=Math.max(-25,Math.min(25,(p.x-old.x)*16/dt));mapGesture.vy=Math.max(-25,Math.min(25,(p.y-old.y)*16/dt));mapGesture.time=performance.now();camera.x+=p.x-old.x;camera.y+=p.y-old.y;paintPan()}
 });
 viewport.addEventListener('pointerup',e=>{
+ if(panPaintFrame!==null){cancelAnimationFrame(panPaintFrame);panPaintFrame=null;renderMap()}
  if(!mapPointers.has(e.pointerId))return;const g=mapGesture,d=mapDrag,placement=mapPlacement;mapPointers.delete(e.pointerId);
  if(mapPointers.size){if(g?.multi){g.hadMovement=g.moved;g.pair=null;g.moved=true}return}
  mapGesture=null;clearDrag();if(!g)return;
