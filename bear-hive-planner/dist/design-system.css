@@ -64,3 +64,18 @@ body.expanded-map #memberQueueSection.choosing-city .player-panel-footer{display
 /* Keep event controls legible; the map itself has its own trap controls. */
 .event-context input,.event-context select,.event-step button{min-height:44px}
 @media(max-width:720px){.event-context input,.event-context select{font-size:16px}body.map-view #eventBar,body.map-view .page-heading .eyebrow,body.map-view .page-heading p,body.map-view .info-strip{display:none}body.map-view main{padding-top:12px}body.map-view .page-heading{margin-bottom:12px}body.map-view .page-heading h1{font-size:24px}}
+
+/* Redesign release: five clear map actions, consistent mobile sizing. */
+#mapTools .tool-group{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.12fr) 44px 44px;gap:6px}
+#mapTools #loadLunBtn{min-width:0;padding:7px 4px;font-weight:600;font-size:12px}
+#mapTools #undoBtn,#mapTools #redoBtn{padding:6px 3px;min-width:44px;font-size:0;gap:0}
+#mapTools #undoBtn span,#mapTools #redoBtn span{display:none}
+#mapTools #undoBtn svg,#mapTools #redoBtn svg{width:20px;height:20px;stroke-width:2.6}
+#mapTools #undoBtn:not(:disabled),#mapTools #redoBtn:not(:disabled){opacity:1;color:var(--ink);border-color:var(--green)}
+#mapTools #undoBtn:disabled,#mapTools #redoBtn:disabled{opacity:.34}
+#mapSvg [data-slot] polygon{stroke-linejoin:round}
+#mapSvg .city-name{font-weight:650;paint-order:stroke;stroke:transparent;stroke-width:0}
+#mapItemActions .selection-heading{min-height:44px}
+#queue .queue-row{border-radius:12px}
+@media(max-width:720px){#mapTools .tool-group{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.12fr) 44px 44px;gap:4px}#mapTools #loadLunBtn{font-size:11px;padding:7px 2px}#mapTools #undoBtn,#mapTools #redoBtn{width:44px;max-width:44px;padding:6px 3px}}
+@media(max-width:360px){#mapTools .tool-group{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.18fr) 42px 42px;gap:3px}#mapTools #undoBtn,#mapTools #redoBtn{min-width:42px;width:42px}#mapTools #loadLunBtn{font-size:10px}}
