@@ -33,7 +33,7 @@ const directBaseTool=setTool;setTool=function(t){directBaseTool(t);$$('[data-too
 function togglePlacementTool(t){cancelMapGesture();selectedMapItem=null;setTool(tool===t?'select':t);renderMap()}
 $$('[data-tool]').forEach(b=>b.onclick=()=>togglePlacementTool(b.dataset.tool));
 window.addEventListener('keydown',e=>{if(e.key==='Escape')finishMapEditing()});
-function isPlacementTool(t){return ['slot','block','flag','hq'].includes(t)}
+function isPlacementTool(t){return ['slot','block','flag','hq','water','node','farm','mine','wood','coal','iron'].includes(t)}
 function placementHint(){return isPlacementTool(tool)?'Hold and position · Release to place · ✓ Done to finish':gestureHint}
 function updatePlacement(){if(!mapPlacement)return;const p=screenWorld(mapPlacement.screen.x,mapPlacement.screen.y);Object.assign(mapPlacement,Hive.mapPlacementPreview(state,mapPlacement.tool,Math.floor(p.x),Math.floor(p.y),activeTrap==='all'?+state.operations.rosterGroup:+activeTrap));renderMap()}
 function applyPlacement(d){try{const preview=Hive.mapPlacementPreview(state,d.tool,d.x,d.y,d.trap);if(!preview.valid)throw Error(preview.error);const origin=Hive.worldOrigin(state),next=Hive.placeMapObject(state,preview.kind,origin.x+d.x,origin.y+d.y,{trapId:preview.trap});commit(()=>state=next);toast('Placed. Keep adding or tap ✓ Done.')}catch(e){toast(e.message)}renderMap()}
