@@ -41,7 +41,7 @@ function renderPlanningLoupe(){
 }
 function renderPlanningChrome(){
  const placing=isPlacementTool(tool);$('#placementToolDock').hidden=!placing||readonly;
- $('#placementToolLabel').textContent=({slot:'+ City',flag:'Banner',block:'Terrain',hq:'Alliance HQ'})[tool]||'';
+ $('#placementToolLabel').textContent=({slot:'+ City',flag:'Banner',block:'Mountain',water:'Water',node:'Alliance node',farm:'Farm node',mine:'Iron mine',wood:'Wood node',coal:'Coal node',iron:'Iron node',hq:'Alliance HQ'})[tool]||'';
  $('#placementToolDock').classList.toggle('gesture-hidden',!!mapPointers.size);
  $('#loadLunBtn').disabled=readonly;$('#resetLayoutBtn').disabled=readonly;
  renderContextualPlayers();renderPlanningLoupe();
