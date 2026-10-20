@@ -55,7 +55,7 @@ const planningBaseMap=renderMap;renderMap=function(){planningBaseMap();renderPla
 const planningBaseQueue=renderQueue;renderQueue=function(){planningBaseQueue();renderContextualPlayers()};
 const planningBaseTool=setTool;setTool=function(t){planningBaseTool(t);renderPlanningChrome()};
 const planningNavigate=navigate;navigate=function(p){if(p!=='map'&&expandedMap)setExpandedMap(false);planningNavigate(p)};
-$$('#trapTabs button').forEach(b=>{const prior=b.onclick;b.onclick=()=>{finishMapEditing();if(b.dataset.trap!=='all'){state.operations.rosterGroup=+b.dataset.trap;state.operations.trap=+b.dataset.trap}prior()}});
+$$('#trapTabs button').forEach(b=>{const prior=b.onclick;b.onclick=()=>{$('#queueSearch').value='';finishMapEditing();if(b.dataset.trap!=='all'){state.operations.rosterGroup=+b.dataset.trap;state.operations.trap=+b.dataset.trap}prior()}});
 $('#mapOptionsMenu').addEventListener('click',e=>{if(e.target.closest('#loadLunBtn,#resetLayoutBtn,#viewBtn,[data-map-mode]'))$('#mapOptionsMenu').open=false});
 document.addEventListener('pointerdown',e=>{if(!$('#mapOptionsMenu').contains(e.target))$('#mapOptionsMenu').open=false;if(!$('#itemMenu').contains(e.target))$('#itemMenu').open=false;if(!$('#queueManageMenu').contains(e.target))$('#queueManageMenu').open=false});
 window.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#modal').open)return;$('#mapOptionsMenu').open=false;$('#itemMenu').open=false;if(expandedMap)setExpandedMap(false)}});

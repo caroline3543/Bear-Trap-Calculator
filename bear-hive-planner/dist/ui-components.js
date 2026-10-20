@@ -19,3 +19,9 @@ function cityNameLines(name,width,fontSize){
  }
  if(cityLabelCache.size>1500)cityLabelCache.clear();cityLabelCache.set(key,lines);return lines;
 }
+
+function roundedFootprint(o,radius=Math.min(8,camera.k*.2)){
+ const corners=[[o.x,o.y],[o.x+o.w,o.y],[o.x+o.w,o.y+o.h],[o.x,o.y+o.h]].map(([x,y])=>point(x,y));
+ const cornersWithTangents=corners.map((p,i)=>{const prev=corners[(i+3)%4],next=corners[(i+1)%4],a=Math.hypot(prev.x-p.x,prev.y-p.y),b=Math.hypot(next.x-p.x,next.y-p.y),r=Math.min(radius,a/4,b/4);return{p,entry:{x:p.x+(prev.x-p.x)*r/a,y:p.y+(prev.y-p.y)*r/a},exit:{x:p.x+(next.x-p.x)*r/b,y:p.y+(next.y-p.y)*r/b}}});
+ return cornersWithTangents.map(({p,entry,exit},i)=>`${i?'L':'M'}${entry.x},${entry.y} Q${p.x},${p.y} ${exit.x},${exit.y}`).join(' ')+' Z';
+}

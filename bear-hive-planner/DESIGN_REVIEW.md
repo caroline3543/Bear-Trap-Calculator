@@ -38,3 +38,23 @@ The browser tests use Chromium with intercepted local static assets. Touch tests
 ## Visual captures
 
 The design test produces phone and desktop captures for the map, Players and Attendance, plus dark-mode Attendance. Captures are reproducible test outputs rather than shipped application assets. Review covered hierarchy, long names, touch controls, panel duplication, overflow, contrast, event destination and popup obstruction.
+
+## Approved preview changes · 19 October 2026
+
+Scope: apply Caroline's selected changes, retaining the existing navigation, canvas height, native font, map model, data and public URL.
+
+- Header now reads Bear Hive without the descriptor.
+- Primary toolbar: + City, + Item, + Template, icon Undo and icon Redo. Templates reuse the existing preview/apply workflow.
+- City surfaces have rounded projected corners, clearer theme-aware names and stronger selection outlines. Exact rectangular model hit bounds and collision geometry are unchanged.
+- Single-trap default zoom now favours readable cities. Fit remains explicit.
+- Player search is always visible within the one contextual picker, directly below the selection dock. Assignment clears the search so the next tier does not appear empty because of a stale query.
+- Attendance search shows matching roster suggestions without simultaneously repeating the whole checklist. Selecting a suggestion restores the checklist; saves still identify the event and use stable player IDs.
+- Preserved existing tap/select, selected-item drag, Done, pan/pinch, persistent placement, valid/invalid footprint preview, attendance-tier progression, atomic auto-placement and Undo behaviour.
+
+Current revision verification: npm test and npm run build passed. Browser regression scripts were updated for the rounded visual shape, five-button toolbar, template entry and visible player search. Their execution is pending because the local Chromium download returned invalid archives. Any earlier browser results above describe the previous revision, not this release. Staged cloud-browser verification is recorded below when complete. Physical iPhone Safari remains unverified.
+
+### Release reconciliation · 20 October 2026
+
+The first staged build (08a44b8) reached READY, but cloud-browser tab creation repeatedly failed or timed out before a page could be inspected. No real-browser workflow pass is claimed for this revision.
+
+The final source was reconciled with main at 67c5ae5, preserving subsequent isometric sprites, game-style labels, top-down text-only rendering, water/resource placement and frame-coalesced panning. The remaining approved design changes were merged into that source. The full npm test suite and static build were rerun on the combined result. Browser regression scripts remain available for a functioning Chromium environment; physical iPhone Safari, keyboard behaviour, touch gesture regression and visual captures remain unverified.

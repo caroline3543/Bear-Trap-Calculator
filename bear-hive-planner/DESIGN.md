@@ -47,13 +47,15 @@ Use 15px body text, 16px player names, 13px metadata and 12px compact map metada
 
 ### Map
 
-Keep BT1, BT2 and Both traps together. Keep City, Item, Undo and Redo in a stable toolbar. Put secondary tools in Map options. Use a large phone canvas and an explicit Expand/Exit view. Do not introduce hero sections, promotional statistics or decorative imagery into the planner.
+The app header reads Bear Hive without a descriptor. City surfaces have rounded corners while hit targets, grid footprints and collision checks retain the full 2×2 shape. A default close view favours readable names; Fit remains separate.
+
+Keep BT1, BT2 and Both traps together. Keep + City, + Item, + Template, Undo and Redo in a stable toolbar. Undo and Redo are compact icon buttons with accessible labels. Banner, HQ and Terrain live in + Item. Put secondary tools in Map options. Use a large phone canvas and an explicit Expand/Exit view. Do not introduce hero sections, promotional statistics or decorative imagery into the planner.
 
 Show valid/invalid footprint feedback at the actual grid position. A touch magnifier may sit beside the finger, but must not offset the committed footprint. City names must fit inside their tiles in top-down and isometric views. Locked cities have a visible lock marker.
 
 ### Player panel
 
-There is one persistent player picker, inside the map panel, in both normal and expanded views. It becomes Who goes here? for an empty city. It shows only the highest remaining attendance category for that trap: Frequently, Sometimes, Rarely, Unknown. Allocated players are excluded.
+There is one persistent player picker, inside the map panel, in both normal and expanded views. It becomes Who goes here? for an empty city. Keep the name search visible beside the suggestions. It shows only the highest remaining attendance category for that trap: Frequently, Sometimes, Rarely, Unknown. Allocated players are excluded.
 
 Tapping a name assigns to the selected city or the next valid empty city. Full list opens a searchable view of the same category. Keep roster-list management in the secondary BT lists disclosure. Keep roster importing on Players. Do not reintroduce separate sidebar, strip and selected-city copies of the same player list.
 
