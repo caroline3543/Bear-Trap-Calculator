@@ -9,7 +9,7 @@ import {
 import { searchZones } from "../lib/cities.js";
 import { parseTimerDigits, formatSpan, parseDaysTime, splitDaysTime, tidyHHMM, formatCountdownClock } from "../lib/time.js";
 import { useNow, useMinute } from "../hooks/useNow.jsx";
-import { buildICS, googleCalendarLink, downloadICS } from "../lib/ics.js";
+import { buildICS, googleCalendarLink, downloadICS, calendarAlerts } from "../lib/ics.js";
 
 /* ---------- icons (simple strokes, colour from CSS) ---------- */
 export const Icon = {
@@ -274,14 +274,15 @@ export function CalendarButtons({ items, filename, small = true, label, futureOn
   const eligible = () => futureOnly ? items.filter((i) => i.start > Date.now()) : items;
   const visible = futureOnly ? items.filter((i) => i.start > now) : items;
   if (!visible.length) return null;
-  const alarm = state.settings.calendarAlarmMin;
-  const withAlarm = visible.map((i) => ({ alarmMin: alarm, ...i }));
+  const alarmsMin = calendarAlerts(state.settings);
+  const withAlarm = visible.map((i) => ({ ...i, alarmsMin }));
   return (
     <span className="th-cal">
-      <Btn small={small} icon={<Icon.calendar />} onClick={() => { const current = eligible().map((i) => ({ alarmMin: alarm, ...i })); if (current.length) downloadICS(filename, buildICS(current)); }}>{label || t("addToCalendar")}</Btn>
+      <Btn small={small} icon={<Icon.calendar />} onClick={() => { const current = eligible().map((i) => ({ ...i, alarmsMin })); if (current.length) downloadICS(filename, buildICS(current)); }}>{label || t("addToCalendar")}</Btn>
       {visible.length === 1 && (
         <a className="th-btn ghost small" href={googleCalendarLink(withAlarm[0])} target="_blank" rel="noopener noreferrer">{t("googleCalendar")}</a>
       )}
+      {visible.length === 1 && <small className="th-hint">{t("calendarGoogleHint")}</small>}
     </span>
   );
 }

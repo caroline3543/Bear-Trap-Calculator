@@ -1,3 +1,4 @@
+import { calendarAlerts } from "./ics.js";
 /* ============================================================
    STORAGE v2 — localStorage key "timehub:v1" (kept so upgrades are
    in place), schema version 2. Loading always sanitises; v1 data is
@@ -41,7 +42,7 @@ export function newId() {
 function defaultSettings() {
   return {
     displayTz: null, compact: false, collapsed: {}, showArchived: false,
-    layout: sanitizeLayout([]), accountFilter: ALL, calendarAlarmMin: 10, setupDismissed: false,
+    layout: sanitizeLayout([]), accountFilter: ALL, calendarAlarmMin: 10, calendarAlertsMin: [10], setupDismissed: false,
     knownTemplates: Object.keys(TEMPLATES), timeOptionsRev: TIME_OPTIONS_REV, tab: "today", haptics: true, showSpeed: false, tour: null, eduPri: "checkins", eduFinish: null, eduBufferMin: 5, eduDismiss: {},
     timelineFilter: "all", todoView: "list", todoScope: "today", todoFilter: "all", homeReadyOpen: false, trainPlanMode: null, ministerMute: { accounts: [], combat: false }, minDay: null, energy: null, taskSuggest: "balanced", focus: null, todoHistory: false, todoOpen: { game: true, personal: true, work: true }, prioOpen: { next: true, plan: true, quick: true, later: true },
     track: { reset: true, store: true, trek: true, stamina: true, contrib: true, intel: true }, sleep: { ...DEFAULT_SLEEP },
@@ -288,6 +289,7 @@ export function sanitizeState(raw, now = Date.now(), makeId = newId) {
       compact: s.compact === true, collapsed, showArchived: s.showArchived === true,
       layout: sanitizeLayout(s.layout),
       accountFilter: s.accountFilter === ALL || accountIds.includes(s.accountFilter) ? s.accountFilter : ALL,
+      calendarAlertsMin: calendarAlerts(s),
       calendarAlarmMin: isNum(s.calendarAlarmMin) && s.calendarAlarmMin >= 0 && s.calendarAlarmMin <= 1440 ? s.calendarAlarmMin : 10,
       setupDismissed: s.setupDismissed === true,
       tab: ["today", "timers", "events", "todos", "calc"].includes(s.tab) ? s.tab : "today",

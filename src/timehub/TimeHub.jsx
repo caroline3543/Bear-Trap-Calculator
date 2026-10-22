@@ -15,6 +15,7 @@ import { SpeedTest, diag } from "./widgets/SpeedTest.jsx";
 import horizon from "./assets/header-landscape.webp";
 import { Tour } from "./widgets/Tour.jsx";
 import { zoneCity, deviceTimeZone, formatLongDay, formatSpan } from "./lib/time.js";
+import { calendarAlerts } from "./lib/ics.js";
 import { TRAINING_CAMPS, resetLearnedMax } from "./lib/timers.js";
 import { splitColumns } from "./lib/layout.js";
 import { TimeZonePicker, BrushUnderline, SectionIcon, TabIcon, Btn, Seg } from "./components/ui.jsx";
@@ -206,6 +207,34 @@ function MinisterMuteSettings() {
   );
 }
 
+function CalendarAlertSettings() {
+  const { t, state, dispatch } = useTimeHub();
+  const alerts = calendarAlerts(state.settings);
+  const save = (calendarAlertsMin) => dispatch({ type: "settings", patch: { calendarAlertsMin } });
+  const setCount = (count) => save(count === 0 ? [] : count === 1 ? [alerts[0] ?? 10] : [alerts[0] ?? 10, alerts[1] ?? (alerts[0] === 60 ? 30 : 60)]);
+  return (
+    <section className="th-card" id="th-set-calendar" aria-label={t("calendarAlertsTitle")}>
+      <div className="th-sec-head"><SectionIcon name="bell" /><span className="th-sec-title">{t("calendarAlertsTitle")}</span></div>
+      <BrushUnderline />
+      <div className="th-form" style={{ margin: 0 }}>
+        <Seg value={alerts.length} onChange={setCount} label={t("calendarAlertsTitle")} options={[
+          { value: 0, label: t("calendarNoAlert") }, { value: 1, label: t("calendarOneAlert") }, { value: 2, label: t("calendarTwoAlerts") },
+        ]} />
+        {alerts.map((minutes, index) => (
+          <label key={index} className="th-field">
+            <span>{t(index === 0 ? "calendarFirstAlert" : "calendarSecondAlert")}</span>
+            <input className="th-input" type="number" inputMode="numeric" min="0" max="10080" step="1" value={minutes}
+              onChange={(e) => { const n = Number(e.target.value); if (Number.isInteger(n) && n >= 0 && n <= 10080) save(alerts.map((v, i) => i === index ? n : v)); }} />
+          </label>
+        ))}
+        {alerts.length > 0 && <p className="th-hint">{t("calendarAlertUnits")}</p>}
+        <p className="th-note">{t("calendarAlertsHelp")}</p>
+        <p className="th-hint">{t("calendarGoogleHint")}</p>
+      </div>
+    </section>
+  );
+}
+
 function SettingsPanel({ headerExtra, closeSettings, reopenSettings, hasCalc, startTour }) {
   const { t, tz, state, dispatch } = useTimeHub();
   return (
@@ -227,6 +256,7 @@ function SettingsPanel({ headerExtra, closeSettings, reopenSettings, hasCalc, st
           <label className="th-check"><input type="checkbox" checked={!!state.settings.showSpeed} onChange={(e) => dispatch({ type: "settings", patch: { showSpeed: e.target.checked } })} />{t("showSpeed")}</label>
         </div>
       </section>
+      <CalendarAlertSettings />
       <section className="th-card" aria-label={t("speedTest")}>
         <div className="th-sec-head"><SectionIcon name="plan" /><span className="th-sec-title">{t("speedTest")}</span></div>
         <BrushUnderline />
