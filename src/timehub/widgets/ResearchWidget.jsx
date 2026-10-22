@@ -38,11 +38,11 @@ function MinisterNote({ timer, accountId }) {
   );
 }
 
-function ResearchForm({ initial, onDone }) {
+export function ResearchForm({ initial, preset, onDone }) {
   const { t, newId, defaultAccountId, updateAccount } = useTimeHub();
   const now = Date.now(); // only used to prefill the form
-  const [accountId, setAccountId] = useState(initial?.accountId || defaultAccountId);
-  const [category, setCategory] = useState(initial?.category || RESEARCH_LOCATIONS[0]);
+  const [accountId, setAccountId] = useState(initial?.accountId || preset?.accountId || defaultAccountId);
+  const [category, setCategory] = useState(initial?.category || preset?.category || RESEARCH_LOCATIONS[0]);
   const [dur, setDur] = useState(initial ? durFrom(initial.endAt - now) : EMPTY_DUR);
   const [error, setError] = useState(null);
   function save() {

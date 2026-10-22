@@ -145,10 +145,10 @@ function VpCard({ g, now, leaving, onBook, onBooked, onDismiss }) {
           </div>
         </>
       )}
-      <div className={`th-vp-acts ${open ? "" : "one"}`}>
+      <div className="th-vp-acts">
         <Btn small tone="gold" className="th-vp-book" aria-label={t("bookVpShort")} onClick={onBook}>{t("bookShort")}</Btn>
         {open && <Btn small onClick={onBooked}>{t("iBookedIt")}</Btn>}
-        {open && <Btn small onClick={onDismiss}>{t("dismiss")}</Btn>}
+        <Btn small onClick={onDismiss}>{t("dismiss")}</Btn>
       </div>
     </div>
   );
@@ -810,7 +810,7 @@ function Schedule({ offset, setOffset }) {
       {!isToday && items.length === 0 && <SleepingBear text={t("nothingToday")} />}
       {items.length > 0 && (
         <div className="th-item-actions th-sched-foot">
-          <CalendarButtons items={items.map((i) => toCalendarItem(i, t, templates, accountById(i.accountId)?.name))} filename={`time-hub-${formatDate(day.start + 1, "UTC", "en").replace(/\W+/g, "-")}`} label={t("addDayToCalendar")} />
+          <CalendarButtons futureOnly items={items.map((i) => toCalendarItem(i, t, templates, accountById(i.accountId)?.name))} filename={`time-hub-${formatDate(day.start + 1, "UTC", "en").replace(/\W+/g, "-")}`} label={t("addDayToCalendar")} />
         </div>
       )}
       </div>

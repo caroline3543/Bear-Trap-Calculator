@@ -268,15 +268,18 @@ export function DurationFields({ value, onChange, label, optional }) {
 }
 
 /* ---------- add to calendar ---------- */
-export function CalendarButtons({ items, filename, small = true, label }) {
+export function CalendarButtons({ items, filename, small = true, label, futureOnly = false }) {
   const { t, state } = useTimeHub();
-  if (!items.length) return null;
+  const now = useMinute();
+  const eligible = () => futureOnly ? items.filter((i) => i.start > Date.now()) : items;
+  const visible = futureOnly ? items.filter((i) => i.start > now) : items;
+  if (!visible.length) return null;
   const alarm = state.settings.calendarAlarmMin;
-  const withAlarm = items.map((i) => ({ alarmMin: alarm, ...i }));
+  const withAlarm = visible.map((i) => ({ alarmMin: alarm, ...i }));
   return (
     <span className="th-cal">
-      <Btn small={small} icon={<Icon.calendar />} onClick={() => downloadICS(filename, buildICS(withAlarm))}>{label || t("addToCalendar")}</Btn>
-      {items.length === 1 && (
+      <Btn small={small} icon={<Icon.calendar />} onClick={() => { const current = eligible().map((i) => ({ alarmMin: alarm, ...i })); if (current.length) downloadICS(filename, buildICS(current)); }}>{label || t("addToCalendar")}</Btn>
+      {visible.length === 1 && (
         <a className="th-btn ghost small" href={googleCalendarLink(withAlarm[0])} target="_blank" rel="noopener noreferrer">{t("googleCalendar")}</a>
       )}
     </span>

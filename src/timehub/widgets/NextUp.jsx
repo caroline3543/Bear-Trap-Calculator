@@ -14,6 +14,8 @@ import { idleCamps } from "../lib/today.js";
 import { formatTime, formatSpan, localDayRange, DAY } from "../lib/time.js";
 import { itemTitle } from "../components/labels.js";
 import { Ltr, AccountTag, Remaining, Btn } from "../components/ui.jsx";
+import { TrainForm, TrainingSettings } from "./TrainingWidget.jsx";
+import { ResearchForm } from "./ResearchWidget.jsx";
 import pool from "../assets/hero-pool-corner.webp";
 
 /** Routine or passive things never take the spotlight (they still appear on the Timeline). */
@@ -138,18 +140,18 @@ function SmallLine({ label, i }) {
  *  "Research · 3 ready"), not item counts. Review opens one grouped card: a row per account.
  *  Expanding is remembered (settings.homeReadyOpen) because the player chose it. */
 export function ReadyNow() {
-  const { t, accountById, startTraining, setTab } = useTimeHub();
+  const { t, accountById } = useTimeHub();
   const ready = useReadyNow();
   // always starts collapsed: the details open only when tapped (never remembered)
   const [open, setOpen] = useState(false);
-  const openResearch = () => { setTab("timers"); setTimeout(() => document.getElementById("th-sec-research")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80); };
+  const [editor, setEditor] = useState(null);
   const byAcct = useMemo(() => {
     const m = new Map();
     for (const x of ready.camps) { if (!m.has(x.a)) m.set(x.a, { camps: [], research: [] }); m.get(x.a).camps.push(x.name); }
     for (const x of ready.research) { if (!m.has(x.a)) m.set(x.a, { camps: [], research: [] }); m.get(x.a).research.push(x.name); }
     return [...m.entries()];
   }, [ready]);
-  if (!byAcct.length) return null;
+  if (!byAcct.length && !editor) return null;
   const campAccts = byAcct.filter(([, v]) => v.camps.length).length;
   return (
     <section className="th-ready" aria-label={t("readyNowTitle")}>
@@ -173,20 +175,23 @@ export function ReadyNow() {
                     {v.camps.length === 3 ? t("allCampsReady") : t("nCampsReady", { n: v.camps.length })}
                     <small>{v.camps.map((c) => t(`short_${c}`)).join(" · ")}</small>
                   </span>
-                  <Btn small tone="gold" onClick={() => startTraining({ accountId: a, restart: true, camps: v.camps })}>↻ {t("restartShort")}</Btn>
+                  <Btn small tone="gold" onClick={() => setEditor({ kind: "training", accountId: a, camps: v.camps })}>↻ {t("restartShort")}</Btn>
                 </div>
               )}
               {v.research.length > 0 && (
                 <div className="th-ready-row">
                   <span>{v.research.length === 1 ? t("researchReadyOne") : t("researchReadyN", { n: v.research.length })}
                     <small>{v.research.map((r) => t(r)).join(" · ")}</small></span>
-                  <Btn small aria-label={t("startResearchShort")} onClick={openResearch}>{t("startShort")}</Btn>
+                  <Btn small aria-label={t("startResearchShort")} onClick={() => setEditor({ kind: "research", accountId: a, category: v.research[0] })}>{t("startShort")}</Btn>
                 </div>
               )}
             </li>
           ))}
         </ul>
       )}
+      {editor?.kind === "training" && <TrainForm key={`train-${editor.accountId}`} accountId={editor.accountId} preset={{ restart: true, camps: editor.camps }} onDone={() => setEditor(null)} onEditTimes={() => setEditor({ ...editor, kind: "settings" })} />}
+      {editor?.kind === "settings" && <TrainingSettings accountId={editor.accountId} onClose={() => setEditor({ ...editor, kind: "training" })} />}
+      {editor?.kind === "research" && <ResearchForm key={`research-${editor.accountId}`} preset={editor} onDone={() => setEditor(null)} />}
     </section>
   );
 }
