@@ -45,6 +45,13 @@ export function rruleFor(rec) {
   }
 }
 
+/** Saved export alerts, with migration from the original single-alert setting. */
+export function calendarAlerts(settings = {}) {
+  const values = Array.isArray(settings.calendarAlertsMin) ? settings.calendarAlertsMin
+    : [settings.calendarAlarmMin ?? 10].filter((n) => n > 0);
+  return values.filter((n) => Number.isFinite(n) && n >= 0 && n <= 10080).map(Math.round).slice(0, 2);
+}
+
 /**
  * items: [{ uid, start, end?, title, description?, alarmMin?, rrule?, exdates?[] }]
  */
@@ -61,8 +68,8 @@ export function buildICS(items, { now = Date.now(), calName = "Time Hub" } = {})
     if (it.description) L.push(`DESCRIPTION:${escapeText(it.description)}`);
     if (it.rrule) L.push(`RRULE:${it.rrule}`);
     for (const x of it.exdates || []) L.push(`EXDATE:${icsDate(x)}`);
-    if (it.alarmMin > 0) {
-      L.push("BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${escapeText(it.title)}`, `TRIGGER:-PT${Math.round(it.alarmMin)}M`, "END:VALARM");
+    for (const minutes of new Set(calendarAlerts(it.alarmsMin ? { calendarAlertsMin: it.alarmsMin } : { calendarAlarmMin: it.alarmMin ?? 0 }))) {
+      L.push("BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${escapeText(it.title)}`, `TRIGGER:-PT${minutes}M`, "END:VALARM");
     }
     L.push("END:VEVENT");
   }
