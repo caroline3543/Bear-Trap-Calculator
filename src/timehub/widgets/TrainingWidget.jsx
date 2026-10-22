@@ -251,7 +251,7 @@ function PlanSteps({ plan }) {
   );
 }
 
-function TrainForm({ onDone, preset, accountId, onEditTimes, onPerCamp }) {
+export function TrainForm({ onDone, preset, accountId, onEditTimes, onPerCamp }) {
   const { t, lang, tz, newId, dataFor, updateAccount, state, notify, dispatch } = useTimeHub();
   const sleep = state.settings.sleep;
   const now = useMinute(); // the planner works in minutes
@@ -1321,7 +1321,7 @@ function campState(data, now) {
 
 /** Everything about training that used to sit behind several links, in one place:
  *  full-batch times (per camp, Helios, with Education), batch sizes, and Training Capacity maximums. */
-function TrainingSettings({ accountId, focusEdu, onClose }) {
+export function TrainingSettings({ accountId, focusEdu, onClose }) {
   const { t, lang, dataFor } = useTimeHub();
   const data = dataFor(accountId);
   const [editCap, setEditCap] = useState(false);
