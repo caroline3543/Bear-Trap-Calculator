@@ -85,7 +85,7 @@ function HeroNameField({ label, ariaLabel, value, names, onChange }) {
   </div>;
 }
 
-function HeroFields({ hero, names, prefix, onChange }) {
+function HeroFields({ hero, names, prefix, onChange, compare = false }) {
   function update(field, values) { onChange({ ...hero, [field]: { ...hero[field], ...values } }); }
   return <>
         <HeroNameField label="Hero name" ariaLabel={`${prefix} hero`} value={hero.name} names={names} onChange={v => onChange({ ...hero, name: v })} />
@@ -96,16 +96,13 @@ function HeroFields({ hero, names, prefix, onChange }) {
           <NumberField label="Widget" ariaLabel={`${prefix} widget`} value={hero.info.widget} max={10} decimal={false} onChange={v => update('info', { widget: v })} help="0–10" />
           <NumberField label="Skills" ariaLabel={`${prefix} skill level`} value={hero.info.skill} min={1} max={5} decimal={false} onChange={v => update('info', { skill: v })} help="1–5" />
         </div>
-        <details className="bl-details"><summary>Gear on / off <span>{['attack', 'lethality'].map(k => gearDifference(hero.gear, k)).every(n => n !== null && n >= 0) ? `+${fmt(gearDifference(hero.gear, 'attack'))} attack · +${fmt(gearDifference(hero.gear, 'lethality'))} lethality` : 'Complete both readings'}</span></summary>
-          <p className="bl-help">Read these percentages on this hero’s Stats screen. Change only their gear between readings.</p>
-          {['attack', 'lethality'].map(kind => <div key={kind}>
-            <h4 className="bl-stat-title">{kind}</h4>
-            <div className="bl-grid two">{[['On', 'Gear on'], ['Off', 'Gear off']].map(([suffix, label]) => <NumberField key={suffix}
-              label={`${label} (%)`} ariaLabel={`${prefix} ${kind} · ${label} (%)`} value={hero.gear[kind + suffix]}
-              onChange={v => update('gear', { [kind + suffix]: v })} />)}</div>
-            <p className={gearDifference(hero.gear, kind) < 0 ? 'bl-error' : 'bl-difference'}>{gearDifference(hero.gear, kind) === null ? 'Enter both readings.' : gearDifference(hero.gear, kind) < 0 ? 'Gear on must be at least gear off.' : `+${fmt(gearDifference(hero.gear, kind))} ${kind} percentage points`}</p>
-          </div>)}
-        </details>
+        {compare ? <div>
+          <p className="bl-help">For an accurate comparison, enter the hero stats with gear on and off.</p>
+          {['attack', 'lethality'].map(kind => <div className="bl-grid two" key={kind}>{[['On', 'Gear on'], ['Off', 'Gear off']].map(([suffix, label]) => <NumberField key={suffix} label={`${kind} ${label} (%)`} ariaLabel={`${prefix} ${kind} · ${label} (%)`} value={hero.gear[kind + suffix]} onChange={v => update('gear', { [kind + suffix]: v })} />)}</div>)}
+        </div> : <div>
+          <p className="bl-help">Enter the gear bonus only. If you enter the hero’s total stats with gear on, the estimate may count hero bonuses twice.</p>
+          <div className="bl-grid two">{['attack', 'lethality'].map(kind => <NumberField key={kind} label={`Gear ${kind} bonus (%)`} ariaLabel={`${prefix} gear ${kind} bonus (%)`} value={gearDifference(hero.gear, kind) ?? ''} onChange={v => update('gear', { [kind + 'On']: v, [kind + 'Off']: 0 })} />)}</div>
+        </div>}
   </>;
 }
 
@@ -120,7 +117,7 @@ function HeroComparison({ index, draft, tiers, capacity, minister, inventory, on
     <summary>Compare another {c} hero</summary>
     {open && <>
       <p className="bl-help">Same troop inventory, capacity, bonuses and other heroes. Each hero gets its best available split.</p>
-      <HeroFields hero={candidate} names={HERO_NAMES[index]} prefix={`Alternative ${c}`} onChange={onEdit} />
+      <HeroFields hero={candidate} names={HERO_NAMES[index]} prefix={`Alternative ${c}`} onChange={onEdit} compare />
       <Button type="button" onClick={() => onEdit({ ...candidate, gear: Object.fromEntries(['attackOn', 'attackOff', 'lethalityOn', 'lethalityOff'].map(k => [k, draft.stats[index][k]])) })}>Use current hero’s gear readings</Button>
       <p className="bl-help">Use this shortcut only if you will transfer the same gear and its bonus is unchanged.</p>
       {comparison.errors.length ? <p className="bl-help" role="status">{comparison.errors[0]}</p> : <div className="bl-comparison-result" aria-live="polite">
@@ -162,23 +159,14 @@ function BuffFields({ draft, edit, capacityBuffs, onCapacityBuffsChange, cyrille
     {city('cityAttack', 'Attack increase')}{city('cityLethality', 'Lethality increase')}
     {city('cityDefenseDown', 'Enemy defence down')}
     <p className="bl-help">Choose one item per type. Defence down uses a model approximation.</p>
-    <h3>Cyrille damage</h3>
-    {amount('cyrilleDamage', 'Earthbreaker damage bonus (%)', 30)}
-    <p className="bl-help">Use 0 if Earthbreaker is locked.</p>
-    <details className="bl-details"><summary>Other bonuses</summary>
-      <p className="bl-help">Permanent upgrades are already part of your account stats.</p>
-      <div className="bl-grid two">{amount('extraAttack', 'Other attack (%)', 10000)}{amount('extraLethality', 'Other lethality (%)', 10000)}</div>
-      <p className="bl-help">Add only extra base attack or lethality. Defensive and march-speed buffs do not change this score.</p>
-      <p className="bl-help">Official references: {BUFF_SOURCES.filter(([label]) => label !== 'Frostdragon titles').map(([label,url],i) => <React.Fragment key={url}>{i > 0 && ' · '}<a href={url} target="_blank" rel="noreferrer">{label}</a></React.Fragment>)}</p>
-    </details>
     </details>
   </div>;
 }
 export default function BearLab({ accountId, accountName, leaderCapacity, leaderMinister = 'None', troopTiers, inventory, actualRally, onApplyLeader, capacityBuffs, onCapacityBuffsChange, cyrilleCapacity, onCyrilleCapacityChange, apeCapacity, onApeCapacityChange }) {
   const [draft, setDraft] = useState(() => loadSetup(accountId));
   const tiers = troopTiers || draft.tierInputs;
-  const calculationDraft = useMemo(() => ({ ...draft, petStatsIncluded: false, cityStatsIncluded: false, titlesStatsIncluded: false, frostdragon: 'None' }), [draft, capacityBuffs]);
-  const [open, setOpen] = useState(true);
+  const calculationDraft = useMemo(() => ({ ...draft, petStatsIncluded: false, cityStatsIncluded: false, titlesStatsIncluded: false, frostdragon: 'None', cyrilleDamage: 0, extraAttack: 0, extraLethality: 0 }), [draft, capacityBuffs]);
+  const open = true;
   const [notice, setNotice] = useState('');
   const [applied, setApplied] = useState(null);
   const [dirty, setDirty] = useState(false);
@@ -264,14 +252,11 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
   }
   useEffect(() => { if (applied && !dirty) resultRef.current?.focus({ preventScroll: true }); }, [applied]);
   return <div className="bear-leader-helper" ref={helperRef}>
-      <BuffFields draft={draft} edit={edit} capacityBuffs={capacityBuffs} onCapacityBuffsChange={onCapacityBuffsChange}
+      {(Number(draft.cyrilleDamage) > 0 || Number(draft.extraAttack) > 0 || Number(draft.extraLethality) > 0) && <p className="bl-help" role="status">Previously saved extra damage and other bonuses are no longer included in this calculation.</p>}
+    <BuffFields draft={draft} edit={edit} capacityBuffs={capacityBuffs} onCapacityBuffsChange={onCapacityBuffsChange}
         cyrilleCapacity={cyrilleCapacity} onCyrilleCapacityChange={onCyrilleCapacityChange} apeCapacity={apeCapacity} onApeCapacityChange={onApeCapacityChange} />
     <p className="bl-help">Your march size with these bonuses: <strong>{fmt(leaderCapacity)}</strong></p>
-    <button type="button" className="bl-launch bl-calculate-launch" aria-expanded={open} aria-controls={panelId} onClick={() => setOpen(v => !v)}>
-      <span>Help me calculate my leader squad</span><Chevron expanded={open} />
-    </button>
-    {!open && applied && <p className="bl-status">{dirty ? 'Setup changed. Recalculate to update your squad.' : `${applied.heroes.join(' · ')} · ${fmt(applied.capacity)} troops before inventory limits`}</p>}
-    {open && <form id={panelId} className="bl-panel" onSubmit={e => { e.preventDefault(); apply(); }}>
+    <form id={panelId} className="bl-panel" onSubmit={e => { e.preventDefault(); apply(); }}>
       <div className="bl-progress" role="region" aria-label="Setup progress">
         <p role="status"><strong>{ready} of {checkpoints.length} sections ready</strong>{assessment.errors.length === 0 ? ' · Ready to calculate' : ` · ${assessment.errors.length} ${assessment.errors.length === 1 ? 'item' : 'items'} to check`}</p>
         <progress max={checkpoints.length} value={ready} aria-label="Completed setup sections" />
@@ -325,7 +310,7 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
 
       </div>
       <details className="bl-details"><summary>Formula reference</summary><p className="bl-help">The score compares setups; it is not expected damage points. Single-tier proportions use WOS Nerds’ D² ÷ sum(D²). Mixed tiers weight each class by the T11/T10/T9 troops actually deployed. Higher tiers fill first; inventory and FC overrides are included.</p><p className="bl-help">City attack/lethality share the special-stat pool with widgets. Positions and other base bonuses add percentage points. Chameleon follows the source approximation; city defence down adds to its Defence down skill pool. Enemy health down is excluded. Normalization uses your entered Chameleon and Cyrille values; 0 means no bonus. Mixed tiers and city debuff weighting are model extensions, not verified game damage formulas. Explicit skill levels are used instead of inferring them from stars. <a href="https://wosnerds.com/bear-calc/" target="_blank" rel="noreferrer">WOS Nerds reference</a></p></details>
-    </form>}
+    </form>
         {actualScore !== null && <p className="bl-model-score" role="status">Current rally boost: <strong>{actualScore.toFixed(4)}</strong><span className="bl-help"> · based on the exact T11/T10/T9 amounts below</span></p>}
     {notice && <p className="bl-status" role="status">{notice}</p>}
   </div>;
