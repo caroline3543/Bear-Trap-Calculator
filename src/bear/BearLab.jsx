@@ -137,7 +137,7 @@ function BuffFields({ draft, edit, capacityBuffs, onCapacityBuffsChange, cyrille
   const city = (field, label) => <div className="bl-buff-choice"><span>{label}</span><div role="group" aria-label={label}>{[0, 10, 20].map(n => <Button key={n} small aria-pressed={Number(draft[field]) === n} tone={Number(draft[field]) === n ? 'primary' : 'secondary'} onClick={() => edit({ [field]: n })}>{n ? `${n}%` : 'None'}</Button>)}</div></div>;
   const titleLabel = (name, v) => `${name} · ${[v.attack && `ATK +${v.attack * 100}%`, v.lethality && `LETH +${v.lethality * 100}%`, v.troops && `capacity +${fmt(v.troops)}`].filter(Boolean).join(' · ')}`;
   return <div className="bl-buffs">
-    <p className="bl-help">Enter stats and capacity before these buffs. Leave inactive buffs at 0 or None.</p>
+    <p className="bl-help">Enter capacity before temporary bonuses. Leave unused bonuses at 0.</p>
     {capacityBuffs && onCapacityBuffsChange && <>
       <h3>Capacity buffs</h3>
 
@@ -162,7 +162,7 @@ function BuffFields({ draft, edit, capacityBuffs, onCapacityBuffsChange, cyrille
     </details>
   </div>;
 }
-export default function BearLab({ accountId, accountName, leaderCapacity, leaderMinister = 'None', troopTiers, inventory, actualRally, onApplyLeader, capacityBuffs, onCapacityBuffsChange, cyrilleCapacity, onCyrilleCapacityChange, apeCapacity, onApeCapacityChange }) {
+export default function BearLab({ capacityBreakdown, accountId, accountName, leaderCapacity, leaderMinister = 'None', troopTiers, inventory, actualRally, onApplyLeader, capacityBuffs, onCapacityBuffsChange, cyrilleCapacity, onCyrilleCapacityChange, apeCapacity, onApeCapacityChange }) {
   const [draft, setDraft] = useState(() => loadSetup(accountId));
   const tiers = troopTiers || draft.tierInputs;
   const calculationDraft = useMemo(() => ({ ...draft, petStatsIncluded: false, cityStatsIncluded: false, titlesStatsIncluded: false, frostdragon: 'None', cyrilleDamage: 0, extraAttack: 0, extraLethality: 0 }), [draft, capacityBuffs]);
@@ -255,7 +255,8 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
       {(Number(draft.cyrilleDamage) > 0 || Number(draft.extraAttack) > 0 || Number(draft.extraLethality) > 0) && <p className="bl-help" role="status">Previously saved extra damage and other bonuses are no longer included in this calculation.</p>}
     <BuffFields draft={draft} edit={edit} capacityBuffs={capacityBuffs} onCapacityBuffsChange={onCapacityBuffsChange}
         cyrilleCapacity={cyrilleCapacity} onCyrilleCapacityChange={onCyrilleCapacityChange} apeCapacity={apeCapacity} onApeCapacityChange={onApeCapacityChange} />
-    <p className="bl-help">Your march size with these bonuses: <strong>{fmt(leaderCapacity)}</strong></p>
+    
+    {capacityBreakdown}
     <form id={panelId} className="bl-panel" onSubmit={e => { e.preventDefault(); apply(); }}>
       <div className="bl-progress" role="region" aria-label="Setup progress">
         <p role="status"><strong>{ready} of {checkpoints.length} sections ready</strong>{assessment.errors.length === 0 ? ' · Ready to calculate' : ` · ${assessment.errors.length} ${assessment.errors.length === 1 ? 'item' : 'items'} to check`}</p>
@@ -306,7 +307,7 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
           <p className="bl-model-score">{applied.mixedTiers ? applied.optimalAtDisplayPrecision ? 'Inventory-adjusted optimal boost' : 'Best inventory-adjusted boost' : 'WOS Nerds optimal boost'}: <strong>{applied.sourceBoost.toFixed(4)}</strong></p><p className="bl-help">A comparison score, not a prediction of Bear Trap damage points.</p></div>}
 
         <button type="submit" className="bl-apply">{applied && !dirty ? 'Calculate again' : 'Calculate & apply squad'}</button>
-        <p className="bl-help">Applies a split that fits your troop inventory.</p>
+        
 
       </div>
       <details className="bl-details"><summary>Formula reference</summary><p className="bl-help">The score compares setups; it is not expected damage points. Single-tier proportions use WOS Nerds’ D² ÷ sum(D²). Mixed tiers weight each class by the T11/T10/T9 troops actually deployed. Higher tiers fill first; inventory and FC overrides are included.</p><p className="bl-help">City attack/lethality share the special-stat pool with widgets. Positions and other base bonuses add percentage points. Chameleon follows the source approximation; city defence down adds to its Defence down skill pool. Enemy health down is excluded. Normalization uses your entered Chameleon and Cyrille values; 0 means no bonus. Mixed tiers and city debuff weighting are model extensions, not verified game damage formulas. Explicit skill levels are used instead of inferring them from stars. <a href="https://wosnerds.com/bear-calc/" target="_blank" rel="noreferrer">WOS Nerds reference</a></p></details>
