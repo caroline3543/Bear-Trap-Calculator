@@ -31,7 +31,7 @@
 #root .ui-account-selector summary { list-style:none; cursor:pointer; }
 #root .ui-account-selector summary::-webkit-details-marker { display:none; }
 #root .ui-account-selector summary span:first-child { overflow-wrap:anywhere; }
-#root .ui-account-menu { position:absolute; inset-inline-start:0; top:calc(100% + 8px); width:min(360px,calc(100vw - 48px)); max-height:60vh; overflow:auto; padding:8px; border:1px solid var(--cardBorder); border-radius:16px; background:var(--surface); box-shadow:0 8px 24px rgba(0,0,0,.18); }
+#root .ui-account-menu { position:absolute; inset-inline-end:0; top:calc(100% + 8px); box-sizing:border-box; width:min(360px,calc(100vw - 32px)); max-height:60vh; overflow:auto; padding:8px; border:1px solid var(--cardBorder); border-radius:16px; background:var(--surface); box-shadow:0 8px 24px rgba(0,0,0,.18); }
 #root .ui-account-menu > button:not(.ui-button) { display:flex; justify-content:space-between; align-items:center; gap:16px; width:100%; padding:12px; min-height:48px; border:0; border-radius:10px; background:transparent; color:var(--ink); font:700 16px/1.5 'Nunito Sans',sans-serif; text-align:start; cursor:pointer; }
 #root .ui-account-menu > button[aria-pressed=true] { background:var(--selectedBg); color:var(--selectedText); }
 #root .ui-account-single { width:fit-content; }
