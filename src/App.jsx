@@ -1,5 +1,5 @@
 import "./ui/journal.css";
-import { migrateCapacityBuffs, effectiveCapacity } from './bear/buffs.js';
+import { migrateCapacityBuffs, effectiveCapacity, POSITIONS } from './bear/buffs.js';
 import { Button as SharedButton, Field as SharedField, Chevron } from './ui/components.jsx';
 import { flattenWords, parseScanText, resolveCardLabel, mergeBadgeReadings, confirmAmountReadings } from "./bear/troop-scan.js";
 import { loadTesseract } from "./bear/ocr-runtime.js";
@@ -2911,6 +2911,11 @@ export default function App() {
                             <p>Start a Polar Terror rally with your leader heroes. Tap <strong>!</strong> beside the troop count and copy <strong>Deployment Capacity</strong>.</p>
                             <p>Use your own deployment capacity before temporary buffs.</p>
                           </details>
+                          <div className="bt-capacity-help" aria-label="Bear Trap capacity calculation">
+                            <strong>Bear Trap march capacity</strong>
+                            <p>Base {fmt(rallyCapacity)} + Snow Ape {fmt(snowApeBoost)} + Cyrille {fmt(cyrilleBoost)} + position {fmt(POSITIONS[capacityBuffs.position]?.troops || 0)} = {fmt(Number(rallyCapacity || 0) + Number(snowApeBoost || 0) + Number(cyrilleBoost || 0) + (POSITIONS[capacityBuffs.position]?.troops || 0))}</p>
+                            <p>Then add city deployment increase ({capacityBuffs.deploy}%) = <strong>{Number.isFinite(effectiveRallyCapacity) ? fmt(effectiveRallyCapacity) : 'Check the values above'}</strong></p>
+                          </div>
                           <React.Suspense fallback={<p style={{ color: C.sub, fontSize: 12 }}>Loading recommendation form…</p>}>
                             <BearLab
                               key={activeAccount}
