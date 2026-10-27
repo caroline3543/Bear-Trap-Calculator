@@ -244,7 +244,7 @@ export default function BearLab({ capacityBreakdown, accountId, accountName, lea
     try { return scoreRally(assessment.result.model,actualRally); } catch { return null; }
   }, [assessment,actualRally]);
   function apply() {
-    if (!assessment.result) { goToIssue(assessment.errors[0]); return; }
+    if (!assessment.result) { setNotice(assessment.errors[0] || 'Check the fields above.'); goToIssue(assessment.errors[0]); return; }
     onApplyLeader(assessment.result.counts, assessment.result.ratios.map(n => n * 100));
     setApplied({ ...assessment.result, heroes: assessment.profile.starters, revision: (applied?.revision || 0) + 1 });
     setDirty(false); setNotice('Recommended squad updated.');
@@ -256,13 +256,13 @@ export default function BearLab({ capacityBreakdown, accountId, accountName, lea
         cyrilleCapacity={cyrilleCapacity} onCyrilleCapacityChange={onCyrilleCapacityChange} apeCapacity={apeCapacity} onApeCapacityChange={onApeCapacityChange} />
     
     <form id={panelId} className="bl-panel" onSubmit={e => { e.preventDefault(); apply(); }}>
-      <div className="bl-progress" role="region" aria-label="Setup progress">
-        <p role="status"><strong>{ready} of {checkpoints.length} sections ready</strong>{assessment.errors.length === 0 ? ' · Ready to calculate' : ` · ${assessment.errors.length} ${assessment.errors.length === 1 ? 'item' : 'items'} to check`}</p>
-        <progress max={checkpoints.length} value={ready} aria-label="Completed setup sections" />
-        {assessment.errors.length > 0 && <ul className="bl-issue-links">{assessment.errors.map(error => <li key={error}><button type="button" onClick={() => goToIssue(error)}>{error}</button></li>)}</ul>}
-      </div>
       <p className="bl-help">Using your saved troops, highest tiers first.</p>
       <details className="bl-details"><summary>Calculation assumptions</summary><p className="bl-help">Two Jessie and two Seo-yoon joiners, level-5 skills. Active pet and city buffs use the values below. Trap attack +25%.</p></details>
+      <details className="bl-details bl-guide"><summary>Where to find bonuses</summary>
+        <ol><li>Open <strong>Power → Bonus Overview</strong>.</li><li>Copy <strong>Attack</strong> and <strong>Lethality</strong> for all troops and each troop type.</li><li>Use readings before temporary buffs.</li></ol>
+        <p className="bl-help">Use Bonus Overview; rally stats include your heroes.</p>
+        <figure><a href={bonusOverviewPhoto} target="_blank" rel="noreferrer"><img src={bonusOverviewPhoto} loading="lazy" alt="Bonus Overview example highlighting Troops’ Attack 216.77%, Troops’ Lethality 62.33%, and Infantry and Lancer bonuses" /></a><figcaption>Enter the highlighted fields. Tap to enlarge.</figcaption></figure>
+      </details>
       <BonusScanner onApply={readings => { setDraft(p => applyBonusReadings(p, readings)); setDirty(true); setNotice('Account bonuses updated.'); }} />
       <div className="bl-grid two">
         <NumberField label="All troops attack (%)" value={draft.allAttack} onChange={v => edit({ allAttack: v })} />
@@ -273,11 +273,6 @@ export default function BearLab({ capacityBreakdown, accountId, accountName, lea
         {CLASSES.map((c, i) => <div className="bl-grid two" key={c}>{['attack', 'lethality'].map(kind => <NumberField key={kind}
           label={`${c} base ${kind} (%)`} value={draft.stats[i][kind]} onChange={v => editAt('stats', i, { [kind]: v })} />)}</div>)}
       </fieldset>
-      <details className="bl-details bl-guide"><summary>Where to find bonuses</summary>
-        <ol><li>Open <strong>Power → Bonus Overview</strong>.</li><li>Copy <strong>Attack</strong> and <strong>Lethality</strong> for all troops and each troop type.</li><li>Use readings before temporary buffs.</li></ol>
-        <p className="bl-help">Use Bonus Overview; rally stats include your heroes.</p>
-        <figure><a href={bonusOverviewPhoto} target="_blank" rel="noreferrer"><img src={bonusOverviewPhoto} loading="lazy" alt="Bonus Overview example highlighting Troops’ Attack 216.77%, Troops’ Lethality 62.33%, and Infantry and Lancer bonuses" /></a><figcaption>Enter the highlighted fields. Tap to enlarge.</figcaption></figure>
-      </details>
 
       <details className="bl-details bl-guide"><summary>Where to find gear stats</summary>
         <ol><li>Open <strong>Hero → Stats → lower-right menu → Expedition</strong>.</li><li>Read <strong>Attack</strong> and <strong>Lethality</strong> with gear on, then off.</li><li>Keep stars, widget and skills unchanged. Restore your gear afterward.</li></ol>
