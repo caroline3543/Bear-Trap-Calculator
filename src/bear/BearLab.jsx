@@ -96,13 +96,12 @@ function HeroFields({ hero, names, prefix, onChange, compare = false }) {
           <NumberField label="Widget" ariaLabel={`${prefix} widget`} value={hero.info.widget} max={10} decimal={false} onChange={v => update('info', { widget: v })} help="0–10" />
           <NumberField label="Skills" ariaLabel={`${prefix} skill level`} value={hero.info.skill} min={1} max={5} decimal={false} onChange={v => update('info', { skill: v })} help="1–5" />
         </div>
-        {compare ? <div>
-          <p className="bl-help">For an accurate comparison, enter the hero stats with gear on and off.</p>
-          {['attack', 'lethality'].map(kind => <div className="bl-grid two" key={kind}>{[['On', 'Gear on'], ['Off', 'Gear off']].map(([suffix, label]) => <NumberField key={suffix} label={`${kind} ${label} (%)`} ariaLabel={`${prefix} ${kind} · ${label} (%)`} value={hero.gear[kind + suffix]} onChange={v => update('gear', { [kind + suffix]: v })} />)}</div>)}
-        </div> : <div>
-          
-          <div className="bl-grid two">{['attack', 'lethality'].map(kind => <NumberField key={kind} label={`Gear ${kind} bonus (%)`} ariaLabel={`${prefix} gear ${kind} bonus (%)`} value={gearDifference(hero.gear, kind) ?? ''} onChange={v => update('gear', { [kind + 'On']: v, [kind + 'Off']: 0 })} />)}</div>
-        </div>}
+        <div>
+          {['attack', 'lethality'].map(kind => <div key={kind}>
+            <div className="bl-grid two">{[['On', 'Gear on'], ['Off', 'Gear off']].map(([suffix, label]) => <NumberField key={suffix} label={`${kind} ${label} (%)`} ariaLabel={`${prefix} ${kind} · ${label} (%)`} value={hero.gear[kind + suffix]} onChange={v => update('gear', { [kind + suffix]: v })} />)}</div>
+            <p className={gearDifference(hero.gear, kind) < 0 ? 'bl-error' : 'bl-help'}>{gearDifference(hero.gear, kind) === null ? 'Enter both readings.' : gearDifference(hero.gear, kind) < 0 ? 'Gear on must be at least gear off.' : `Gear ${kind} bonus: ${fmt(gearDifference(hero.gear, kind))}%`}</p>
+          </div>)}
+        </div>
   </>;
 }
 
@@ -279,7 +278,7 @@ export default function BearLab({ capacityBreakdown, accountId, accountName, lea
         <p className="bl-help">Only gear on − gear off is added. Hero bonuses are calculated separately.</p>
         <figure><a href={heroStatsPhoto} target="_blank" rel="noreferrer"><img src={heroStatsPhoto} loading="lazy" alt="Hector’s lower-right menu and highlighted Expedition Infantry Attack and Lethality" /></a><figcaption>Use the Expedition percentages. Tap to enlarge.</figcaption></figure>
       </details>
-      <p className="bl-help">Enter gear bonuses only. Total hero stats can count hero bonuses twice.</p>
+      <p className="bl-help">Enter each hero’s stats with gear on and off. The calculator subtracts gear off from gear on to find the gear bonus. If you previously entered a gear bonus directly, update both readings.</p>
       {CLASSES.map((c, i) => <fieldset className="bl-class" key={c}><legend>{c}</legend>
         
         <HeroFields hero={{ name: draft.starters[i], info: draft.heroInfo[i], gear: draft.stats[i] }} names={HERO_NAMES[i]} prefix={c}
