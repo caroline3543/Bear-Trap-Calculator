@@ -100,7 +100,7 @@ function HeroFields({ hero, names, prefix, onChange, compare = false }) {
           <p className="bl-help">For an accurate comparison, enter the hero stats with gear on and off.</p>
           {['attack', 'lethality'].map(kind => <div className="bl-grid two" key={kind}>{[['On', 'Gear on'], ['Off', 'Gear off']].map(([suffix, label]) => <NumberField key={suffix} label={`${kind} ${label} (%)`} ariaLabel={`${prefix} ${kind} · ${label} (%)`} value={hero.gear[kind + suffix]} onChange={v => update('gear', { [kind + suffix]: v })} />)}</div>)}
         </div> : <div>
-          <p className="bl-help">Enter the gear bonus only. If you enter the hero’s total stats with gear on, the estimate may count hero bonuses twice.</p>
+          
           <div className="bl-grid two">{['attack', 'lethality'].map(kind => <NumberField key={kind} label={`Gear ${kind} bonus (%)`} ariaLabel={`${prefix} gear ${kind} bonus (%)`} value={gearDifference(hero.gear, kind) ?? ''} onChange={v => update('gear', { [kind + 'On']: v, [kind + 'Off']: 0 })} />)}</div>
         </div>}
   </>;
@@ -132,7 +132,7 @@ function HeroComparison({ index, draft, tiers, capacity, minister, inventory, on
     </>}
   </details>;
 }
-function BuffFields({ draft, edit, capacityBuffs, onCapacityBuffsChange, cyrilleCapacity, onCyrilleCapacityChange, apeCapacity, onApeCapacityChange }) {
+function BuffFields({ capacityBreakdown, draft, edit, capacityBuffs, onCapacityBuffsChange, cyrilleCapacity, onCyrilleCapacityChange, apeCapacity, onApeCapacityChange }) {
   const amount = (field, label, max) => <NumberField key={field} label={label} value={draft[field]} max={max} onChange={v => edit({ [field]: v })} />;
   const city = (field, label) => <div className="bl-buff-choice"><span>{label}</span><div role="group" aria-label={label}>{[0, 10, 20].map(n => <Button key={n} small aria-pressed={Number(draft[field]) === n} tone={Number(draft[field]) === n ? 'primary' : 'secondary'} onClick={() => edit({ [field]: n })}>{n ? `${n}%` : 'None'}</Button>)}</div></div>;
   const titleLabel = (name, v) => `${name} · ${[v.attack && `ATK +${v.attack * 100}%`, v.lethality && `LETH +${v.lethality * 100}%`, v.troops && `capacity +${fmt(v.troops)}`].filter(Boolean).join(' · ')}`;
@@ -146,10 +146,9 @@ function BuffFields({ draft, edit, capacityBuffs, onCapacityBuffsChange, cyrille
         {onCyrilleCapacityChange && <NumberField label="Cyrille extra troops" value={cyrilleCapacity} max={30000} decimal={false} onChange={onCyrilleCapacityChange} />}
         <NumberField label="City deployment increase (%)" value={capacityBuffs.deploy} max={20} onChange={v => onCapacityBuffsChange({ ...capacityBuffs, deploy: v })} />
       </div>
-      <details className="bl-details" open><summary>Minister positions</summary>
-      <div className="bl-position-buttons" role="group" aria-label="Minister or president">{Object.entries(POSITIONS).map(([name,v]) => <Button key={name} small aria-pressed={capacityBuffs.position === name} tone={capacityBuffs.position === name ? 'primary' : 'secondary'} onClick={() => onCapacityBuffsChange({ ...capacityBuffs, position: name })}>{name === 'None' ? 'None' : titleLabel(name,v)}</Button>)}</div>
-      </details>
+      <label className="bl-field"><span>Minister position</span><select className="calc-input" value={capacityBuffs.position} onChange={e => onCapacityBuffsChange({ ...capacityBuffs, position: e.target.value })}>{Object.entries(POSITIONS).map(([name,v]) => <option key={name} value={name}>{name === 'None' ? name : titleLabel(name,v)}</option>)}</select></label>
     </>}
+    {capacityBreakdown}
     <details className="bl-details" open><summary>Pet and city buffs</summary>
     <h3>Pet skills</h3>
     <div className="bl-grid two">{amount('lion', 'Cave Lion attack (%)', 10)}{amount('tiger', 'Saber-tooth Tiger lethality (%)', 10)}</div>
@@ -253,17 +252,16 @@ export default function BearLab({ capacityBreakdown, accountId, accountName, lea
   useEffect(() => { if (applied && !dirty) resultRef.current?.focus({ preventScroll: true }); }, [applied]);
   return <div className="bear-leader-helper" ref={helperRef}>
       {(Number(draft.cyrilleDamage) > 0 || Number(draft.extraAttack) > 0 || Number(draft.extraLethality) > 0) && <p className="bl-help" role="status">Previously saved extra damage and other bonuses are no longer included in this calculation.</p>}
-    <BuffFields draft={draft} edit={edit} capacityBuffs={capacityBuffs} onCapacityBuffsChange={onCapacityBuffsChange}
+    <BuffFields capacityBreakdown={capacityBreakdown} draft={draft} edit={edit} capacityBuffs={capacityBuffs} onCapacityBuffsChange={onCapacityBuffsChange}
         cyrilleCapacity={cyrilleCapacity} onCyrilleCapacityChange={onCyrilleCapacityChange} apeCapacity={apeCapacity} onApeCapacityChange={onApeCapacityChange} />
     
-    {capacityBreakdown}
     <form id={panelId} className="bl-panel" onSubmit={e => { e.preventDefault(); apply(); }}>
       <div className="bl-progress" role="region" aria-label="Setup progress">
         <p role="status"><strong>{ready} of {checkpoints.length} sections ready</strong>{assessment.errors.length === 0 ? ' · Ready to calculate' : ` · ${assessment.errors.length} ${assessment.errors.length === 1 ? 'item' : 'items'} to check`}</p>
         <progress max={checkpoints.length} value={ready} aria-label="Completed setup sections" />
         {assessment.errors.length > 0 && <ul className="bl-issue-links">{assessment.errors.map(error => <li key={error}><button type="button" onClick={() => goToIssue(error)}>{error}</button></li>)}</ul>}
       </div>
-      <p className="bl-help">Uses {accountName}’s available troops, highest tiers first.</p>
+      <p className="bl-help">Using your saved troops, highest tiers first.</p>
       <details className="bl-details"><summary>Calculation assumptions</summary><p className="bl-help">Two Jessie and two Seo-yoon joiners, level-5 skills. Active pet and city buffs use the values below. Trap attack +25%.</p></details>
       <BonusScanner onApply={readings => { setDraft(p => applyBonusReadings(p, readings)); setDirty(true); setNotice('Account bonuses updated.'); }} />
       <div className="bl-grid two">
@@ -286,8 +284,9 @@ export default function BearLab({ capacityBreakdown, accountId, accountName, lea
         <p className="bl-help">Only gear on − gear off is added. Hero bonuses are calculated separately.</p>
         <figure><a href={heroStatsPhoto} target="_blank" rel="noreferrer"><img src={heroStatsPhoto} loading="lazy" alt="Hector’s lower-right menu and highlighted Expedition Infantry Attack and Lethality" /></a><figcaption>Use the Expedition percentages. Tap to enlarge.</figcaption></figure>
       </details>
+      <p className="bl-help">Enter gear bonuses only. Total hero stats can count hero bonuses twice.</p>
       {CLASSES.map((c, i) => <fieldset className="bl-class" key={c}><legend>{c}</legend>
-        <p className="bl-help">Uses FC {tiers[i].fc === '' ? '—' : tiers[i].fc} · T{tiers[i].level === '' ? '—' : tiers[i].level} from your inventory. Any FC-by-tier overrides are included.</p>
+        
         <HeroFields hero={{ name: draft.starters[i], info: draft.heroInfo[i], gear: draft.stats[i] }} names={HERO_NAMES[i]} prefix={c}
           onChange={hero => edit({ starters: draft.starters.map((v, j) => i === j ? hero.name : v), heroInfo: draft.heroInfo.map((v, j) => i === j ? hero.info : v), stats: draft.stats.map((v, j) => i === j ? hero.gear : v) })} />
         <HeroComparison index={i} draft={calculationDraft} tiers={tiers} capacity={leaderCapacity} minister={leaderMinister} inventory={inventory} onEdit={candidate => { setDraft(p => ({ ...p, alternatives: p.alternatives.map((v, j) => i === j ? candidate : v) })); setNotice(''); }}
