@@ -1,7 +1,7 @@
 import { Chevron } from '../ui/components.jsx';
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import db from './database.js';
-import { POSITIONS, FROSTDRAGON_TITLES, BUFF_SOURCES } from './buffs.js';
+import { POSITIONS, BUFF_SOURCES } from './buffs.js';
 import { CLASSES } from './model.js';
 import { parseEntry, gearDifference } from './number-entry.js';
 import { heroNamesForClass, migrateSetup, resolveHero, starKey } from './leader-setup.js';
@@ -149,12 +149,11 @@ function BuffFields({ draft, edit, capacityBuffs, onCapacityBuffsChange, cyrille
         {onCyrilleCapacityChange && <NumberField label="Cyrille extra troops" value={cyrilleCapacity} max={30000} decimal={false} onChange={onCyrilleCapacityChange} />}
         <NumberField label="City deployment increase (%)" value={capacityBuffs.deploy} max={20} onChange={v => onCapacityBuffsChange({ ...capacityBuffs, deploy: v })} />
       </div>
-      <details className="bl-details"><summary>Minister positions and titles</summary>
+      <details className="bl-details" open><summary>Minister positions</summary>
       <div className="bl-position-buttons" role="group" aria-label="Minister or president">{Object.entries(POSITIONS).map(([name,v]) => <Button key={name} small aria-pressed={capacityBuffs.position === name} tone={capacityBuffs.position === name ? 'primary' : 'secondary'} onClick={() => onCapacityBuffsChange({ ...capacityBuffs, position: name })}>{name === 'None' ? 'None' : titleLabel(name,v)}</Button>)}</div>
-      <label className="bl-field"><span>Frostdragon title</span><select className="ui-input" value={capacityBuffs.frostdragon} onChange={e => onCapacityBuffsChange({ ...capacityBuffs, frostdragon: e.target.value })}>{Object.entries(FROSTDRAGON_TITLES).map(([name,v]) => <option key={name} value={name}>{name === 'None' ? name : titleLabel(name,v)}</option>)}</select></label>
       </details>
     </>}
-    <details className="bl-details"><summary>Pet and city buffs</summary>
+    <details className="bl-details" open><summary>Pet and city buffs</summary>
     <h3>Pet skills</h3>
     <div className="bl-grid two">{amount('lion', 'Cave Lion attack (%)', 10)}{amount('tiger', 'Saber-tooth Tiger lethality (%)', 10)}</div>
     <div className="bl-grid two">{amount('chameleon', 'Chameleon enemy defence down (%)', 10)}{amount('enemyHealthDown', 'Titan Roc enemy health down (%)', 5)}</div>
@@ -170,7 +169,7 @@ function BuffFields({ draft, edit, capacityBuffs, onCapacityBuffsChange, cyrille
       <p className="bl-help">Permanent upgrades are already part of your account stats.</p>
       <div className="bl-grid two">{amount('extraAttack', 'Other attack (%)', 10000)}{amount('extraLethality', 'Other lethality (%)', 10000)}</div>
       <p className="bl-help">Add only extra base attack or lethality. Defensive and march-speed buffs do not change this score.</p>
-      <p className="bl-help">Official references: {BUFF_SOURCES.map(([label,url],i) => <React.Fragment key={url}>{i > 0 && ' · '}<a href={url} target="_blank" rel="noreferrer">{label}</a></React.Fragment>)}</p>
+      <p className="bl-help">Official references: {BUFF_SOURCES.filter(([label]) => label !== 'Frostdragon titles').map(([label,url],i) => <React.Fragment key={url}>{i > 0 && ' · '}<a href={url} target="_blank" rel="noreferrer">{label}</a></React.Fragment>)}</p>
     </details>
     </details>
   </div>;
@@ -178,8 +177,8 @@ function BuffFields({ draft, edit, capacityBuffs, onCapacityBuffsChange, cyrille
 export default function BearLab({ accountId, accountName, leaderCapacity, leaderMinister = 'None', troopTiers, inventory, actualRally, onApplyLeader, capacityBuffs, onCapacityBuffsChange, cyrilleCapacity, onCyrilleCapacityChange, apeCapacity, onApeCapacityChange }) {
   const [draft, setDraft] = useState(() => loadSetup(accountId));
   const tiers = troopTiers || draft.tierInputs;
-  const calculationDraft = useMemo(() => ({ ...draft, petStatsIncluded: false, cityStatsIncluded: false, titlesStatsIncluded: false, frostdragon: capacityBuffs?.frostdragon ?? 'None' }), [draft, capacityBuffs]);
-  const [open, setOpen] = useState(false);
+  const calculationDraft = useMemo(() => ({ ...draft, petStatsIncluded: false, cityStatsIncluded: false, titlesStatsIncluded: false, frostdragon: 'None' }), [draft, capacityBuffs]);
+  const [open, setOpen] = useState(true);
   const [notice, setNotice] = useState('');
   const [applied, setApplied] = useState(null);
   const [dirty, setDirty] = useState(false);
@@ -267,9 +266,9 @@ export default function BearLab({ accountId, accountName, leaderCapacity, leader
   return <div className="bear-leader-helper" ref={helperRef}>
       <BuffFields draft={draft} edit={edit} capacityBuffs={capacityBuffs} onCapacityBuffsChange={onCapacityBuffsChange}
         cyrilleCapacity={cyrilleCapacity} onCyrilleCapacityChange={onCyrilleCapacityChange} apeCapacity={apeCapacity} onApeCapacityChange={onApeCapacityChange} />
-    <p className="bl-help">Capacity with buffs: <strong>{fmt(leaderCapacity)}</strong></p>
+    <p className="bl-help">Your march size with these bonuses: <strong>{fmt(leaderCapacity)}</strong></p>
     <button type="button" className="bl-launch bl-calculate-launch" aria-expanded={open} aria-controls={panelId} onClick={() => setOpen(v => !v)}>
-      <span>Calculate rally squad</span><Chevron expanded={open} />
+      <span>Help me calculate my leader squad</span><Chevron expanded={open} />
     </button>
     {!open && applied && <p className="bl-status">{dirty ? 'Setup changed. Recalculate to update your squad.' : `${applied.heroes.join(' · ')} · ${fmt(applied.capacity)} troops before inventory limits`}</p>}
     {open && <form id={panelId} className="bl-panel" onSubmit={e => { e.preventDefault(); apply(); }}>
