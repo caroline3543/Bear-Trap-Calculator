@@ -2127,7 +2127,7 @@ export default function App() {
   const [rallyRatio, setRallyRatio] = useState(saved?.rallyRatio ?? { infantry: 0, lancer: 0, marksman: 0 });
   const [rallyExact, setRallyExact] = useState(saved?.rallyExact ?? { infantry: 0, lancer: 0, marksman: 0 });
 
-  const [advancedOpen, setAdvancedOpen] = useState(saved?.advancedOpen ?? true);
+  const [advancedOpen, setAdvancedOpen] = useState(saved?.advancedOpen ?? false);
   const [darkMode, setDarkMode] = useState(saved?.darkMode ?? false);
   // First visit: the phone's language (or its time zone's country); after that, the saved choice.
   const [lang, setLang] = useState(() => saved?.lang ?? detectLanguage(LANGUAGES.map((l) => l.code)));
@@ -2819,13 +2819,7 @@ export default function App() {
                       <div style={{ display: "flex", gap: 0, overflowX: "auto" }}>
                         <SummaryStat label={tr("availableStat")} value={fmt(totalAvailable)} />
                         <StatDivider />
-                        <SummaryStat label={tr("allocatedStat")} value={fmt(totalAllocated)} />
-                        <StatDivider />
-                        <SummaryStat label={tr("remainingStat")} value={fmt(totalRemaining)} />
-                        <StatDivider />
                         <SummaryStat label={tr("fullSquadsLabel")} value={`${fullCount}/${numSquads}`} tone="green" />
-                        <StatDivider />
-                        <SummaryStat label={tr("partialStat")} value={partialCount} tone="amber" />
                         <StatDivider />
                         <SummaryStat label={tr("unfilledStat")} value={fmt(unfilledSpaces)} tone={unfilledSpaces > 0 ? "amber" : "green"} />
                       </div>
@@ -3022,9 +3016,12 @@ export default function App() {
 
                       {strategy === "manual" && (
                         <div>
-                          <NumField label={tr("minMarchMarksmanLabel")} value={minMarchMarksman} onChange={setMinMarchMarksman} />
-                          <div style={{ fontSize: 16, color: C.sub, marginTop: 5, marginBottom: 12 }}>{tr("minMarchMarksmanHelp")}</div>
                           <Btn tone="gold" small onClick={handleAutoSplit}>{tr("autoSplitBtn")}</Btn>
+                          <details className="bt-capacity-help" style={{ marginTop: 10 }}>
+                            <summary>{tr("minMarchMarksmanLabel")}{minMarchMarksman > 0 ? `: ${fmt(minMarchMarksman)}` : ""}</summary>
+                            <NumField label={tr("minMarchMarksmanLabel")} value={minMarchMarksman} onChange={setMinMarchMarksman} />
+                            <div style={{ fontSize: 16, color: C.sub, marginTop: 5, marginBottom: 12 }}>{tr("minMarchMarksmanHelp")}</div>
+                          </details>
                           <div style={{ marginTop: 14 }}>
                             <div key={flashSignal} className="flash-once">
                               <CompositionInputs capacity={capacity} mode={mode} setMode={setMode} ratio={ratio} setRatio={setRatio} exact={exact} setExact={setExact} target={targetManual} lang={lang} />
