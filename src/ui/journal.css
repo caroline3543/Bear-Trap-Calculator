@@ -152,7 +152,7 @@ html.th-skin #root > .polar-app { background:var(--bgPage)!important; }
   #root .polar-app .journal-brand-mobile svg { width:36px; height:36px; }
   #root .polar-app .journal-brand-mobile b { font-size:17px; letter-spacing:3px; }
   #root .polar-app .journal-brand-mobile small { font-size:10px; }
-  #root .polar-app .th-tabbar { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; margin:0 auto; max-width:640px; }
+  #root .polar-app .th-tabbar { display:grid; grid-template-columns:repeat(var(--n,4),minmax(0,1fr)); gap:4px; margin:0 auto; max-width:640px; }
   #root .polar-app .th-tabbar button { flex-direction:column; gap:5px; padding:8px 2px; min-height:58px; font-size:11px; text-align:center; line-height:1.25; }
   #root .polar-app .journal-nav-index::after { content:attr(data-index); }
 #root .polar-app .journal-nav-index { display:none; }
