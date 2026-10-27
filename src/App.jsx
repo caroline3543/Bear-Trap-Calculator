@@ -2902,9 +2902,8 @@ export default function App() {
                       {/* RALLY LEADER + JOINER SQUADS — paired side by side on wide screens */}
                       <div className="section-grid">
                     <Card>
-                      <SectionHeader step={2} title={tr("rallyLeader")} sub={tr("rallyLeaderSub")} />
+                      <SectionHeader step={2} title={tr("rallyLeader")} sub="Your leader squad is filled first." />
                       <div id="rally-leader-fields">
-                          <p className="bt-flow-note">Your leader squad is filled first.</p>
                           {capacityBuffs.frostdragon !== 'None' && <p className="bt-flow-note" role="status">A previously saved special title is no longer included in the calculation. Check your march size before using this plan.</p>}
                           <NumField label={tr("rallyBaseCapacity")} value={rallyCapacity} onChange={setRallyCapacity} />
                           <details className="bt-capacity-help"><summary>Where to find capacity</summary>
