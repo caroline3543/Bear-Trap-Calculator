@@ -2816,13 +2816,11 @@ export default function App() {
                       {[[1, "troopPool"], [2, "rallyLeader"], [3, "joinerSquadsLabel"], [4, "squadStrategy"]].map(([n, key]) => <a key={n} href={`#calc-step-${n}`}><b>{String(n).padStart(2, '0')}</b>{tr(key)}</a>)}
                     </nav>
                     <div className="calc-card journal-calculator-summary">
-                      <div style={{ display: "flex", gap: 0, overflowX: "auto" }}>
-                        <SummaryStat label={tr("availableStat")} value={fmt(totalAvailable)} />
-                        <StatDivider />
+                      {noTroopsEntered ? <p style={{ margin: 0 }}>Start by scanning or entering your troops.</p> : <div style={{ display: "flex", gap: 0, overflowX: "auto" }}>
                         <SummaryStat label={tr("fullSquadsLabel")} value={`${fullCount}/${numSquads}`} tone="green" />
                         <StatDivider />
                         <SummaryStat label={tr("unfilledStat")} value={fmt(unfilledSpaces)} tone={unfilledSpaces > 0 ? "amber" : "green"} />
-                      </div>
+                      </div>}
                     </div>
 
                     <div className="journal-calculator-sections">
