@@ -1,5 +1,5 @@
 import "./ui/journal.css";
-import { migrateCapacityBuffs, effectiveCapacity } from './bear/buffs.js';
+import { migrateCapacityBuffs, effectiveCapacity, POSITIONS } from './bear/buffs.js';
 import { Button as SharedButton, Field as SharedField, Chevron } from './ui/components.jsx';
 import { flattenWords, parseScanText, resolveCardLabel, mergeBadgeReadings, confirmAmountReadings } from "./bear/troop-scan.js";
 import { loadTesseract } from "./bear/ocr-runtime.js";
@@ -2127,7 +2127,7 @@ export default function App() {
   const [rallyRatio, setRallyRatio] = useState(saved?.rallyRatio ?? { infantry: 0, lancer: 0, marksman: 0 });
   const [rallyExact, setRallyExact] = useState(saved?.rallyExact ?? { infantry: 0, lancer: 0, marksman: 0 });
 
-  const [advancedOpen, setAdvancedOpen] = useState(saved?.advancedOpen ?? true);
+  const advancedOpen = true;
   const [darkMode, setDarkMode] = useState(saved?.darkMode ?? false);
   // First visit: the phone's language (or its time zone's country); after that, the saved choice.
   const [lang, setLang] = useState(() => saved?.lang ?? detectLanguage(LANGUAGES.map((l) => l.code)));
@@ -2175,7 +2175,7 @@ export default function App() {
   const tr = (key) => (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || TRANSLATIONS.en[key] || key;
 
   const targetManual = useMemo(() => computeTarget(capacity, mode, ratio, exact), [capacity, mode, ratio, exact]);
-  const effectiveRallyCapacity = effectiveCapacity(rallyCapacity, cyrilleBoost, snowApeBoost, capacityBuffs);
+  const effectiveRallyCapacity = effectiveCapacity(rallyCapacity, cyrilleBoost, snowApeBoost, { ...capacityBuffs, frostdragon: 'None' });
 
   const rallyTarget = useMemo(() => computeTarget(effectiveRallyCapacity, rallyMode, rallyRatio, rallyExact, true), [effectiveRallyCapacity, rallyMode, rallyRatio, rallyExact]);
 
@@ -2816,19 +2816,11 @@ export default function App() {
                       {[[1, "troopPool"], [2, "rallyLeader"], [3, "joinerSquadsLabel"], [4, "squadStrategy"]].map(([n, key]) => <a key={n} href={`#calc-step-${n}`}><b>{String(n).padStart(2, '0')}</b>{tr(key)}</a>)}
                     </nav>
                     <div className="calc-card journal-calculator-summary">
-                      <div style={{ display: "flex", gap: 0, overflowX: "auto" }}>
-                        <SummaryStat label={tr("availableStat")} value={fmt(totalAvailable)} />
-                        <StatDivider />
-                        <SummaryStat label={tr("allocatedStat")} value={fmt(totalAllocated)} />
-                        <StatDivider />
-                        <SummaryStat label={tr("remainingStat")} value={fmt(totalRemaining)} />
-                        <StatDivider />
+                      {noTroopsEntered ? <p style={{ margin: 0 }}>Start by scanning or entering your troops.</p> : <div style={{ display: "flex", gap: 0, overflowX: "auto" }}>
                         <SummaryStat label={tr("fullSquadsLabel")} value={`${fullCount}/${numSquads}`} tone="green" />
                         <StatDivider />
-                        <SummaryStat label={tr("partialStat")} value={partialCount} tone="amber" />
-                        <StatDivider />
                         <SummaryStat label={tr("unfilledStat")} value={fmt(unfilledSpaces)} tone={unfilledSpaces > 0 ? "amber" : "green"} />
-                      </div>
+                      </div>}
                     </div>
 
                     <div className="journal-calculator-sections">
@@ -2908,19 +2900,21 @@ export default function App() {
                       {/* RALLY LEADER + JOINER SQUADS — paired side by side on wide screens */}
                       <div className="section-grid">
                     <Card>
-                      <div className="ui-section-toggle" role="button" tabIndex={0} aria-expanded={advancedOpen} aria-label={tr('rallyLeader')} aria-controls="rally-leader-fields" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => setAdvancedOpen(!advancedOpen)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setAdvancedOpen(v => !v); } }}>
-                        <SectionHeader step={2} title={tr("rallyLeader")} sub={tr("rallyLeaderSub")} />
-                        <Chevron expanded={advancedOpen} />
-                      </div>
-                      {advancedOpen && (
-                        <div id="rally-leader-fields">
-                          <NumField label={tr("rallyBaseCapacity")} value={rallyCapacity} onChange={setRallyCapacity} />
+                      <SectionHeader step={2} title={tr("rallyLeader")} sub="Your leader squad is filled first." />
+                      <div id="rally-leader-fields">
+                          {capacityBuffs.frostdragon !== 'None' && <p className="bt-flow-note" role="status">A previously saved special title is no longer included in the calculation. Check your march size before using this plan.</p>}
                           <details className="bt-capacity-help"><summary>Where to find capacity</summary>
                             <p>Start a Polar Terror rally with your leader heroes. Tap <strong>!</strong> beside the troop count and copy <strong>Deployment Capacity</strong>.</p>
                             <p>Use your own deployment capacity before temporary buffs.</p>
                           </details>
+                          <NumField label={tr("rallyBaseCapacity")} value={rallyCapacity} onChange={setRallyCapacity} />
                           <React.Suspense fallback={<p style={{ color: C.sub, fontSize: 12 }}>Loading recommendation form…</p>}>
                             <BearLab
+                              capacityBreakdown={<div className="bt-capacity-help capacity-breakdown" aria-label="Bear Trap capacity calculation">
+                            <strong>Bear Trap march capacity</strong>
+                            <p>Base {fmt(rallyCapacity)} + Snow Ape {fmt(snowApeBoost)} + Cyrille {fmt(cyrilleBoost)} + position {fmt(POSITIONS[capacityBuffs.position]?.troops || 0)} = {fmt(Number(rallyCapacity || 0) + Number(snowApeBoost || 0) + Number(cyrilleBoost || 0) + (POSITIONS[capacityBuffs.position]?.troops || 0))}</p>
+                            <p>Then add city deployment increase ({capacityBuffs.deploy}%) = <strong>{Number.isFinite(effectiveRallyCapacity) ? fmt(effectiveRallyCapacity) : 'Check the values above'}</strong></p>
+                          </div>}
                               key={activeAccount}
                               accountId={activeAccount}
                               accountName={accountNames[activeAccount]}
@@ -2949,7 +2943,6 @@ export default function App() {
                             </div>
                           )}
                         </div>
-                      )}
                     </Card>
 
                     {/* JOINER SQUADS (formerly Settings) */}
@@ -3022,9 +3015,12 @@ export default function App() {
 
                       {strategy === "manual" && (
                         <div>
-                          <NumField label={tr("minMarchMarksmanLabel")} value={minMarchMarksman} onChange={setMinMarchMarksman} />
-                          <div style={{ fontSize: 16, color: C.sub, marginTop: 5, marginBottom: 12 }}>{tr("minMarchMarksmanHelp")}</div>
                           <Btn tone="gold" small onClick={handleAutoSplit}>{tr("autoSplitBtn")}</Btn>
+                          <details className="bt-capacity-help" style={{ marginTop: 10 }}>
+                            <summary>{tr("minMarchMarksmanLabel")}{minMarchMarksman > 0 ? `: ${fmt(minMarchMarksman)}` : ""}</summary>
+                            <NumField label={tr("minMarchMarksmanLabel")} value={minMarchMarksman} onChange={setMinMarchMarksman} />
+                            <div style={{ fontSize: 16, color: C.sub, marginTop: 5, marginBottom: 12 }}>{tr("minMarchMarksmanHelp")}</div>
+                          </details>
                           <div style={{ marginTop: 14 }}>
                             <div key={flashSignal} className="flash-once">
                               <CompositionInputs capacity={capacity} mode={mode} setMode={setMode} ratio={ratio} setRatio={setRatio} exact={exact} setExact={setExact} target={targetManual} lang={lang} />

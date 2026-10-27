@@ -38,7 +38,7 @@ export function JournalPageContext({ page }) {
   const today = todayView(state.tasks, now, tz);
   const running = accountIds.flatMap((id) => state.accountData[id]?.timers || []).filter((timer) => timer.endAt > now).length;
   const activeFocus = state.settings.focus && state.settings.focus.pausedAt == null && today.open.some((task) => task.id === state.settings.focus.taskId);
-  if (page === 'todos' && activeFocus) return null;
+  if (page === 'calc' || (page === 'todos' && activeFocus)) return null;
   return <section className="journal-context" aria-label={t('journalPageOverview')}>
     <div className="journal-context-copy"><span className="journal-smallcap">{NUMBER[page]} / {t(`journal_${page}_eyebrow`)}</span><p>{t(`journal_${page}_sub`)}</p></div>
     {page === 'today' && <div className="journal-brief-actions">

@@ -79,7 +79,6 @@ export function AccountGrid({ onAdd }) {
 
 const TABS = [
   { id: "today", icon: "calendar" },
-  { id: "todos", icon: "checklist" },
   { id: "timers", icon: "plan" },
   { id: "events", icon: "foundry" },
   { id: "calc", icon: "trap" },
