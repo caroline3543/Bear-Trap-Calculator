@@ -169,7 +169,7 @@ html.th-skin #root > .polar-app { background:var(--bgPage)!important; }
   #root .polar-app .journal-account-context>.journal-smallcap { font-size:9px; }
   #root .polar-app :is(.journal-account-context .ui-account-selector,.journal-account-context .ui-account-single) { min-width:0; max-width:100%; }
   #root .polar-app .th-card,#root .polar-app .journal-calculator-card { padding:18px; }
-  #root .polar-app .journal-calc-nav { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  #root .polar-app .journal-calc-nav { display:none; }
   #root .polar-app .journal-calc-nav a { padding:12px; border-bottom:1px solid var(--cardBorder); font-size:12px; }
   #root .polar-app .journal-calc-nav a:nth-child(even) { border-inline-end:0; }
   #root .polar-app .journal-calc-nav a:nth-last-child(-n+2) { border-bottom:0; }
