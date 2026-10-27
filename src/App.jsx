@@ -2127,7 +2127,7 @@ export default function App() {
   const [rallyRatio, setRallyRatio] = useState(saved?.rallyRatio ?? { infantry: 0, lancer: 0, marksman: 0 });
   const [rallyExact, setRallyExact] = useState(saved?.rallyExact ?? { infantry: 0, lancer: 0, marksman: 0 });
 
-  const [advancedOpen, setAdvancedOpen] = useState(saved?.advancedOpen ?? false);
+  const advancedOpen = true;
   const [darkMode, setDarkMode] = useState(saved?.darkMode ?? false);
   // First visit: the phone's language (or its time zone's country); after that, the saved choice.
   const [lang, setLang] = useState(() => saved?.lang ?? detectLanguage(LANGUAGES.map((l) => l.code)));
@@ -2175,7 +2175,7 @@ export default function App() {
   const tr = (key) => (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || TRANSLATIONS.en[key] || key;
 
   const targetManual = useMemo(() => computeTarget(capacity, mode, ratio, exact), [capacity, mode, ratio, exact]);
-  const effectiveRallyCapacity = effectiveCapacity(rallyCapacity, cyrilleBoost, snowApeBoost, capacityBuffs);
+  const effectiveRallyCapacity = effectiveCapacity(rallyCapacity, cyrilleBoost, snowApeBoost, { ...capacityBuffs, frostdragon: 'None' });
 
   const rallyTarget = useMemo(() => computeTarget(effectiveRallyCapacity, rallyMode, rallyRatio, rallyExact, true), [effectiveRallyCapacity, rallyMode, rallyRatio, rallyExact]);
 
@@ -2902,12 +2902,10 @@ export default function App() {
                       {/* RALLY LEADER + JOINER SQUADS — paired side by side on wide screens */}
                       <div className="section-grid">
                     <Card>
-                      <div className="ui-section-toggle" role="button" tabIndex={0} aria-expanded={advancedOpen} aria-label={tr('rallyLeader')} aria-controls="rally-leader-fields" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => setAdvancedOpen(!advancedOpen)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setAdvancedOpen(v => !v); } }}>
-                        <SectionHeader step={2} title={tr("rallyLeader")} sub={tr("rallyLeaderSub")} />
-                        <Chevron expanded={advancedOpen} />
-                      </div>
-                      {advancedOpen && (
-                        <div id="rally-leader-fields">
+                      <SectionHeader step={2} title={tr("rallyLeader")} sub={tr("rallyLeaderSub")} />
+                      <div id="rally-leader-fields">
+                          <p className="bt-flow-note">Enter your march size, then choose the troops you want to send. Your leader squad is reserved first.</p>
+                          {capacityBuffs.frostdragon !== 'None' && <p className="bt-flow-note" role="status">A previously saved special title is no longer included in the calculation. Check your march size before using this plan.</p>}
                           <NumField label={tr("rallyBaseCapacity")} value={rallyCapacity} onChange={setRallyCapacity} />
                           <details className="bt-capacity-help"><summary>Where to find capacity</summary>
                             <p>Start a Polar Terror rally with your leader heroes. Tap <strong>!</strong> beside the troop count and copy <strong>Deployment Capacity</strong>.</p>
@@ -2943,7 +2941,6 @@ export default function App() {
                             </div>
                           )}
                         </div>
-                      )}
                     </Card>
 
                     {/* JOINER SQUADS (formerly Settings) */}
