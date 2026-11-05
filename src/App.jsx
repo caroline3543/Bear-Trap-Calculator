@@ -1701,6 +1701,7 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
   const [scanPct, setScanPct] = useState(0);
   const [confidence, setConfidence] = useState({});
   const [rawText, setRawText] = useState("");
+  const [debugCopyStatus, setDebugCopyStatus] = useState("");
   const [scannedValues, setScannedValues] = useState(null); // immutable snapshot of the OCR result, for the debug panel — edited (below) can drift from this as the player corrects fields
   const [edited, setEdited] = useState(null); // { t10Infantry, t10Lancer, ... } once a scan has run — the player's editable copy
   const [hasScanned, setHasScanned] = useState(false);
@@ -1840,6 +1841,16 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
     setScannedValues(null);
     setHasScanned(false);
     setFileError(null);
+  }
+
+  useEffect(() => { setDebugCopyStatus(""); }, [rawText, scannedValues, confidence, detectedLang]);
+  async function copyDebugReport() {
+    try {
+      await navigator.clipboard.writeText(buildDebugSummary());
+      setDebugCopyStatus("Copied");
+    } catch {
+      setDebugCopyStatus("Could not copy. Select and copy the report text below.");
+    }
   }
 
   // Structured "what the scanner read" text — the raw OCR pass plus each
@@ -2016,9 +2027,11 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
           </div>
           <details style={{ marginTop: 8 }}>
             <summary style={{ cursor: "pointer", fontSize: 16, color: C.sub }}>{tWord("whatScannerRead", lang)}</summary>
-            <pre style={{ whiteSpace: "pre-wrap", fontSize: 16, color: C.sub, background: C.surface, border: `1px solid ${C.cardBorder}`, borderRadius: 8, padding: 8, marginTop: 6, maxHeight: 200, overflow: "auto" }}>
-              {buildDebugSummary()}
-            </pre>
+            <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <Btn small tone="ghost" onClick={copyDebugReport}>Copy report</Btn>
+              <span role="status" aria-live="polite" style={{ color: C.sub, fontSize: 14 }}>{debugCopyStatus}</span>
+            </div>
+            <pre tabIndex={0} aria-label="Scanner report" style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", userSelect: "text", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 14, color: C.ink, background: C.surface, border: `1px solid ${C.cardBorder}`, borderRadius: 8, padding: 12, marginTop: 6, maxHeight: 320, overflow: "auto" }}><code>{buildDebugSummary()}</code></pre>
           </details>
 
           {/* Apply straight to either account — no need to switch the
