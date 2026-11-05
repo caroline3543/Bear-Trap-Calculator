@@ -69,3 +69,29 @@ test('manual override is independent and its link preference survives storage',(
  assert.equal(resolveJoeTroops(form,{accountId:'A',t10:{infantry:999}},'A'),form);
  assert.equal(cleanJoe(form).linked,false);assert.equal(cleanJoe().linked,true);
 });
+
+import { resolveJoeCapacity } from './logic.js';
+test('Joe uses the matching Bear Trap base and Snow Ape, replacing old separate settings',()=>{
+ const saved=cleanJoe({...setup,capacity:'999',pet:'123',measured:true,different:true});
+ const live={accountId:'A',rallyCapacity:175610,snowApeBoost:15000};
+ const shared=resolveJoeCapacity(saved,live,'A');
+ assert.equal(shared.capacity,'175610');assert.equal(shared.pet,'15000');
+ assert.equal(shared.measured,false);assert.equal(shared.different,false);
+ const result=calculateJoe(shared);
+ assert.equal(result.baseline.marchCaps[0],175610);
+ assert.equal(result.scenarios.find(s=>s.pet===15000&&s.percent===10&&s.minister===0).marchCaps[0],209671);
+ assert.equal(resolveJoeCapacity(saved,{...live,rallyCapacity:180000,snowApeBoost:0},'A').pet,'0');
+ assert.equal(saved.capacity,'999');
+});
+test('shared capacity never leaks between accounts or falls back to stale Joe settings',()=>{
+ const saved=cleanJoe(setup), live={accountId:'B',rallyCapacity:200000,snowApeBoost:15000};
+ assert.equal(resolveJoeCapacity(saved,live,'A').capacity,'');
+ assert.equal(calculateJoe(resolveJoeCapacity(saved,live,'A')),null);
+ assert.equal(resolveJoeCapacity(saved,null,'A').pet,'');
+ assert.equal(resolveJoeCapacity(saved,{accountId:'A',rallyCapacity:'',snowApeBoost:0},'A').capacity,'');
+});
+test('manual capacity override and its preference persist independently of the shared values',()=>{
+ const manual=cleanJoe({...setup,capacityLinked:false,different:true,measured:true});
+ assert.equal(resolveJoeCapacity(manual,{accountId:'A',rallyCapacity:200000,snowApeBoost:15000},'A'),manual);
+ assert.equal(cleanJoe(manual).capacityLinked,false);assert.equal(cleanJoe().capacityLinked,true);
+});

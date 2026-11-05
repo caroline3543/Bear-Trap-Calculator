@@ -2833,6 +2833,7 @@ export default function App() {
           lang={lang}
           headerExtra={<>{langPicker}{themeButton}</>}
           joeInventory={{ accountId: activeAccount, t9, t10, t11,
+            rallyCapacity, snowApeBoost, onCapacityChange: setRallyCapacity, onSnowApeChange: setSnowApeBoost,
             demo: !saved?.t10 && JSON.stringify(t10) === JSON.stringify(SAMPLE.t10) && JSON.stringify(t9) === JSON.stringify(SAMPLE.t9) && !TYPES.some(type => t11[type] > 0) }}
           joeScanner={<ScreenshotScanner key={`joe-${activeAccount}`} lang={lang} accounts={trackedAccounts} activeAccountId={activeAccount} onApply={handleApplyScan} />}
           calculator={
