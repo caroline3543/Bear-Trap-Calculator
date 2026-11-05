@@ -128,8 +128,8 @@ const TRANSLATIONS = {
     copyPlan: "Copy squad plan", copiedToast: "Copied to clipboard!", copyFailedToast: "Couldn't copy — try again.",
     autoLabel: "auto", marksmanBelow60kWarning: "Below the 60,000 guidance level",
     infantryStockLimitWarning: "Not enough Infantry in your pool to go higher", lancerStockLimitWarning: "Not enough Lancer in your pool to go higher",
-    scanScreenshotBtn: "Scan troop screenshot", scanScreenshotHide: "Hide scanner", screenshotLangLabel: "Screenshot language — match your game's UI language",
-    chooseScreenshot: "Choose a screenshot", scanBtn: "Scan screenshot", scanningStatus: "Reading numbers…", scanResultsHeading: "Review detected troops",
+    scanScreenshotBtn: "Scan troop screenshot", scanScreenshotHide: "Hide scanner", screenshotLangLabel: "Game language",
+    chooseScreenshot: "Choose a screenshot", scanBtn: "Scan screenshot", scanningStatus: "Reading numbers…", scanResultsHeading: "Review your troops",
     needsReviewNote: "needs review", applyToPoolBtn: "Apply to Troop Pool", appliedScanToast: "Scanned values applied to Troop Pool.",
     scanErrorMsg: "Couldn't read that image — try a clearer screenshot, or enter the numbers by hand below.",
     scanHint: "Works best with a clear, uncropped shot of the Troops Preview screen.", whatScannerRead: "What the scanner read",
@@ -140,7 +140,7 @@ const TRANSLATIONS = {
     scanCropHint: "Scanning only reads what's visible above — scroll to frame just the numbers you want, or scan a section, scroll, and scan again to fill in the rest.",
     hasHeliosLabel: "I have Helios (T11) troops",
     appliedScanToOtherToast: "Scanned values applied to {a}.",
-    autoDetectLangLabel: "Auto-detect the screenshot's language", detectedLangNote: "Detected: {a}",
+    autoDetectLangLabel: "Detect automatically", detectedLangNote: "Detected: {a}",
     alwaysDoubleCheckNote: "Compare the numbers against your screenshot before applying.", scanFriendlyNote: "This scanner's still being improved, so it might only catch some of the numbers. Take a look through your screenshot and fill in anything it missed.", foundCountSummary: "{a} of {b} found",
   },
   it: {
@@ -1851,7 +1851,7 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
       await navigator.clipboard.writeText(buildDebugSummary());
       setDebugCopyStatus("Copied");
     } catch {
-      setDebugCopyStatus("Could not copy. Select and copy the report text below.");
+      setDebugCopyStatus("Couldn’t copy. Select the report text to copy it manually.");
     }
   }
 
@@ -1995,7 +1995,7 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
             <div style={{ fontSize: 16, fontWeight: 800, color: C.gold }}>{tWord("scanResultsHeading", lang)}</div>
             <div style={{ fontSize: 16, color: C.sub, fontWeight: 600 }}>{tFmt("foundCountSummary", lang, { a: relevantFields.length - missingCount, b: relevantFields.length })}</div>
           </div>
-          <p style={{ fontSize: 16, color: C.sub }}>Check highlighted readings. Missing amounts stay unchanged.</p>
+          <p style={{ fontSize: 16, color: C.sub }}>Check the highlighted numbers against your screenshot. Missing amounts keep their saved values.</p>
           {["t11", "t10", "t9"]
             .filter((tier) => SCAN_FIELDS.some((f) => f.tier === tier && !isMissing(f.key)))
             .map((tier) => (
@@ -2009,8 +2009,8 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
                       value={edited[f.key]}
                       onChange={v => { setEdited(p => ({ ...p, [f.key]: v })); setConfidence(p => ({ ...p, [f.key]: 100 })); }}
                     />
-                    <small style={{ color: C.sub }}>{isMissing(f.key) ? 'Unchanged' : confidence[f.key] < 85 ? 'Check the preview.' : ''}</small>
-                    {!isMissing(f.key) && confidence[f.key] < 85 && <button type="button" aria-label={`${tType(f.type, lang)} ${f.tier.toUpperCase()} reading is correct`} onClick={() => setConfidence(p => ({ ...p, [f.key]: 100 }))} style={{ fontSize: 16, color: C.gold, background: 'transparent', border: `1px solid ${C.cardBorder}`, borderRadius: 8, minHeight: 44 }}>Correct</button>}
+                    <small style={{ color: C.sub }}>{isMissing(f.key) ? 'Unchanged' : confidence[f.key] < 85 ? 'Check this number.' : ''}</small>
+                    {!isMissing(f.key) && confidence[f.key] < 85 && <button type="button" aria-label={`${tType(f.type, lang)} ${f.tier.toUpperCase()} reading is correct`} onClick={() => setConfidence(p => ({ ...p, [f.key]: 100 }))} style={{ fontSize: 16, color: C.gold, background: 'transparent', border: `1px solid ${C.cardBorder}`, borderRadius: 8, minHeight: 44 }}>Confirm</button>}
                   </div>
                 ))}
               </div>
@@ -2018,13 +2018,13 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
           ))}
 
           <div style={{ marginTop: 12 }}>
-            <strong style={{ fontSize: 16, color: C.gold }}>FC badge readings</strong>
-            <p style={{ fontSize: 16, color: C.sub }}>Use the FC number on each troop badge. Blank = unchanged.</p>
+            <strong style={{ fontSize: 16, color: C.gold }}>Fire Crystal level</strong>
+            <p style={{ fontSize: 16, color: C.sub }}>Enter the FC number on each troop badge. Leave blank to keep the saved level.</p>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{TYPES.map(type => <div key={type} style={{ flex: 1, minWidth: 100, borderRadius: 8, padding: 6, background: edited.troopTiers?.[type]?.uncertain ? C.amberBg : 'transparent' }}>
               <TroopLevelField label={`${tType(type, lang)} FC`} ariaLabel={`Scanned ${type} FC`} allowBlank value={edited.troopTiers?.[type]?.fc ?? ''} max={10}
                 onChange={fc => setEdited(p => ({ ...p, troopTiers: { ...p.troopTiers, [type]: { fc, uncertain: false, level: p.troopTiers?.[type]?.level || (p['t11' + type[0].toUpperCase() + type.slice(1)] > 0 ? 11 : 10) } } }))} />
               {edited.troopTiers?.[type]?.level && <small style={{ color: C.sub }}>T{edited.troopTiers[type].level}</small>}
-              {edited.troopTiers?.[type]?.uncertain && <button type="button" onClick={() => setEdited(p => ({ ...p, troopTiers: { ...p.troopTiers, [type]: { ...p.troopTiers[type], uncertain: false } } }))} style={{ color: C.gold, background: 'transparent', border: `1px solid ${C.cardBorder}`, borderRadius: 8, minHeight: 44, fontSize: 16 }}>FC is correct</button>}
+              {edited.troopTiers?.[type]?.uncertain && <button type="button" onClick={() => setEdited(p => ({ ...p, troopTiers: { ...p.troopTiers, [type]: { ...p.troopTiers[type], uncertain: false } } }))} style={{ color: C.gold, background: 'transparent', border: `1px solid ${C.cardBorder}`, borderRadius: 8, minHeight: 44, fontSize: 16 }}>Confirm FC</button>}
             </div>)}</div>
           </div>
           <details style={{ marginTop: 8 }}>
