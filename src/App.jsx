@@ -2810,6 +2810,9 @@ export default function App() {
           onActiveAccountChange={switchAccount}
           lang={lang}
           headerExtra={<>{langPicker}{themeButton}</>}
+          joeInventory={{ accountId: activeAccount, t9, t10, t11,
+            demo: !saved?.t10 && JSON.stringify(t10) === JSON.stringify(SAMPLE.t10) && JSON.stringify(t9) === JSON.stringify(SAMPLE.t9) && !TYPES.some(type => t11[type] > 0) }}
+          joeScanner={<ScreenshotScanner key={`joe-${activeAccount}`} lang={lang} accounts={trackedAccounts} activeAccountId={activeAccount} onApply={handleApplyScan} />}
           calculator={
             <>
                     <nav className="journal-calc-nav" aria-label="Calculator steps">

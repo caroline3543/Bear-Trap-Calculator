@@ -48,3 +48,24 @@ test('saved Joe settings survive normalization and stay separate from other acco
  saveState(state,storage);const restored=loadState(storage);assert.deepEqual(restored.accountData.A.crazyJoe,cleanJoe(setup));
  assert.equal(restored.accountData.A.timers.length,0);
 });
+
+import { resolveJoeTroops } from './logic.js';
+test('linked troops sum T9, T10 and Helios from the selected account',()=>{
+ const form=cleanJoe({infantry:'999',lancer:'888'});
+ const live={accountId:'A',t9:{infantry:100,lancer:200},t10:{infantry:300,lancer:400},t11:{infantry:50,lancer:60}};
+ assert.equal(resolveJoeTroops(form,live,'A').infantry,'450');assert.equal(resolveJoeTroops(form,live,'A').lancer,'660');
+ const scanned={...live,t10:{infantry:900,lancer:0}};
+ assert.equal(resolveJoeTroops(form,scanned,'A').infantry,'1050');assert.equal(resolveJoeTroops(form,scanned,'A').lancer,'260');
+ assert.equal(form.infantry,'999');
+});
+test('account transitions and demo data do not leak other or invented troop counts',()=>{
+ const form=cleanJoe({infantry:'999',lancer:'888'});
+ assert.equal(resolveJoeTroops(form,{accountId:'B',t10:{infantry:123}},'A').infantry,'');
+ assert.equal(resolveJoeTroops(form,{accountId:'A',demo:true,t10:{infantry:123}},'A').infantry,'');
+ assert.equal(resolveJoeTroops(form,null,'A').lancer,'');
+});
+test('manual override is independent and its link preference survives storage',()=>{
+ const form=cleanJoe({linked:false,infantry:'123',lancer:'456'});
+ assert.equal(resolveJoeTroops(form,{accountId:'A',t10:{infantry:999}},'A'),form);
+ assert.equal(cleanJoe(form).linked,false);assert.equal(cleanJoe().linked,true);
+});

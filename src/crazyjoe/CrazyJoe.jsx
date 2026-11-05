@@ -1,28 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { useTimeHub } from '../timehub/TimeHubContext.jsx';
-import { cleanJoe, calculateJoe } from './logic.js';
+import { cleanJoe, calculateJoe, resolveJoeTroops } from './logic.js';
 import './crazyjoe.css';
 
 function NumberInput({label,value,onChange,hint}) {
   return <label className="cj-field"><span>{label}</span><input inputMode="numeric" className="th-input" value={value} placeholder="0" onChange={e=>onChange(e.target.value.replace(/[^\d]/g,'').slice(0,9))}/>{hint&&<small>{hint}</small>}</label>;
 }
-export default function CrazyJoe() {
-  const { defaultAccountId, dataFor, updateAccount, lang, accountById }=useTimeHub();
-  const accountId=defaultAccountId;
+export default function CrazyJoe({ inventory, scanner }) {
+  const { activeAccountId, defaultAccountId, dataFor, updateAccount, lang, accountById }=useTimeHub();
+  const accountId=activeAccountId || defaultAccountId;
   const form=cleanJoe(dataFor(accountId).crazyJoe);
   const [picked,setPicked]=useState(null);
   const [copied,setCopied]=useState(false);
   useEffect(()=>{setPicked(null);setCopied(false);},[accountId]);
   const fmt=n=>n.toLocaleString(lang);
   const patch=p=>{setPicked(null);setCopied(false);updateAccount(accountId,d=>({...d,crazyJoe:{...form,...p}}));};
-  const result=calculateJoe(form);
+  const troops=resolveJoeTroops(form,inventory,accountId);
+  const result=calculateJoe(troops);
   const selected=result?.scenarios.find(s=>s.key===picked)||result?.best;
   const label=s=>[s.pet?`Snow Ape +${fmt(s.pet)}`:null,s.minister?`Strategy +${fmt(s.minister)}`:null,s.percent?`${s.percent}% capacity item`:null].filter(Boolean).join(' + ')||'No extra buffs';
   const copy=async()=>{const text=[`CRAZY JOE · ${accountById(accountId)?.name||'Account'}`,label(selected),...selected.rows.map((r,i)=>`March ${i+1}: ${fmt(r.infantry)} infantry / ${fmt(r.lancer)} lancers`),`At home: ${fmt(selected.leftInf)} infantry / ${fmt(selected.leftLan)} lancers`].join('\n');try{await navigator.clipboard.writeText(text);setCopied(true);}catch{setCopied(false);}};
   return <div className="cj-layout">
     <div className="cj-inputs">
-      <section className="cj-card"><h2>1. Troops available in your city</h2><p>Count infantry and lancers across all tiers. Exclude troops already marching or in the infirmary.</p>
-        <div className="cj-grid"><NumberInput label="Infantry" value={form.infantry} onChange={v=>patch({infantry:v})}/><NumberInput label="Lancers" value={form.lancer} onChange={v=>patch({lancer:v})}/></div>
+      <section className="cj-card"><h2>1. Troops available in your city</h2>
+        <label className="cj-check"><input type="checkbox" checked={form.linked} onChange={e=>patch({linked:e.target.checked})}/>Link to this account’s Bear Trap troops</label>
+        {form.linked ? <>
+          <p>Uses the same T9, T10 and T11 troop pool as Bear Trap for <strong>{accountById(accountId)?.name}</strong>. Changes in either scanner update both calculators.</p>
+          {troops.infantry === '' ? <p className="cj-callout">{inventory?.demo ? 'Bear Trap is showing demo troops. Scan your troops or edit the Bear Trap troop pool to use your own numbers.' : 'Waiting for this account’s Bear Trap troop pool.'}</p>
+            : <div className="cj-stats"><div><strong>{fmt(Number(troops.infantry))}</strong><span>Linked infantry</span></div><div><strong>{fmt(Number(troops.lancer))}</strong><span>Linked lancers</span></div></div>}
+          <p className="cj-help">Lower tiers are not in the Bear Trap pool. If you have extra tiers, or some of these troops are marching or injured, turn the link off and enter the available totals below.</p>
+        </> : <><p>Enter available troops across all tiers. Exclude troops already marching or in the infirmary. Manual totals affect Crazy Joe only.</p>
+          <div className="cj-grid"><NumberInput label="Infantry" value={form.infantry} onChange={v=>patch({infantry:v})}/><NumberInput label="Lancers" value={form.lancer} onChange={v=>patch({lancer:v})}/></div></>}
+        <div className="cj-scanner"><h3>Scan troop screenshots</h3><p>Choose screenshots, review the OCR readings, then select “Use these troops”. Confirmed readings update the selected account’s Bear Trap pool too; missing readings keep their existing values.</p>{scanner || <p>Open this calculator within the Bear Trap app to scan.</p>}
+        {!form.linked && <p className="cj-help">Turn the link on to calculate with scanned troops. Your manual Crazy Joe totals are kept separately.</p>}</div>
         <p className="cj-help">This plan sends infantry first, then lancers. Marksmen do not use up the space needed for those troops.</p>
       </section>
       <section className="cj-card"><h2>2. Marches you can send</h2><label className="cj-field"><span>Available marches</span><select className="th-input" value={form.marches} onChange={e=>patch({marches:Number(e.target.value)})}>{[1,2,3,4,5,6].map(n=><option key={n} value={n}>{n} marches</option>)}</select></label>

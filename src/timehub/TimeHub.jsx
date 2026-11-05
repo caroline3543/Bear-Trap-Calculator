@@ -356,7 +356,7 @@ function Toast() {
   );
 }
 
-function TimeHubBody({ showHeader, headerExtra, calculator }) {
+function TimeHubBody({ showHeader, headerExtra, calculator, joeInventory, joeScanner }) {
   const { t, dir, compact } = useTimeHub();
   const { tab } = useTab();
   const [settings, setSettings] = useState(false);
@@ -430,7 +430,7 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
         {panel("timers", TIMERS_EL)}
         {panel("events", EVENTS_EL)}
         {calculator && panel("calc", <CalcPanel calculator={calculator} />)}
-        {panel("joe", <CrazyJoe />)}
+        {panel("joe", <CrazyJoe inventory={joeInventory} scanner={joeScanner} />)}
       </div></main>
       {tour != null && <Tour step={tour} setStep={setTour} setSettings={setSettings} />}
       <Toast />
@@ -445,10 +445,10 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
  *   calculator — your existing Bear Trap calculator element. When given, it becomes the
  *   "BT Calculator" tab and the whole app shares one bottom tab bar.
  */
-export default function TimeHub({ lang = "en", showHeader = true, headerExtra = null, calculator = null, onAccountsChange, activeAccountId, onActiveAccountChange }) {
+export default function TimeHub({ lang = "en", showHeader = true, headerExtra = null, calculator = null, joeInventory = null, joeScanner = null, onAccountsChange, activeAccountId, onActiveAccountChange }) {
   return (
     <TimeHubProvider lang={lang} onAccountsChange={onAccountsChange} activeAccountId={activeAccountId} onActiveAccountChange={onActiveAccountChange}>
-      <TimeHubBody showHeader={showHeader} headerExtra={headerExtra} calculator={calculator} />
+      <TimeHubBody showHeader={showHeader} headerExtra={headerExtra} calculator={calculator} joeInventory={joeInventory} joeScanner={joeScanner} />
     </TimeHubProvider>
   );
 }

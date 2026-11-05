@@ -4,7 +4,7 @@ export const DEFAULT_JOE = { infantry: '', lancer: '', marches: 6, capacity: '',
 export function cleanJoe(raw = {}) {
   const field = (v) => v !== '' && v != null && count(v) != null ? String(v) : '';
   return { infantry: field(raw.infantry), lancer: field(raw.lancer), marches: [1,2,3,4,5,6].includes(Number(raw.marches)) ? Number(raw.marches) : 6,
-    capacity: field(raw.capacity), different: raw.different === true, measured: raw.measured === true,
+    capacity: field(raw.capacity), linked: raw.linked !== false, different: raw.different === true, measured: raw.measured === true,
     capacities: Array.from({length:6}, (_,i) => field(raw.capacities?.[i])), spaces: Array.from({length:6}, (_,i) => field(raw.spaces?.[i])),
     pet: field(raw.pet), minister: [2500,3750].includes(Number(raw.minister)) ? Number(raw.minister) : 0,
     item: [10,20].includes(Number(raw.item)) ? Number(raw.item) : 0 };
@@ -47,4 +47,12 @@ export function calculateJoe(input) {
   const clears=scenarios.filter(s=>!s.left).sort(compare);
   const best=clears[0]||[...scenarios].sort((a,b)=>a.left-b.left||compare(a,b))[0];
   return { infantry,lancer,total:infantry+lancer,bases,scenarios,best,baseline:scenarios[0],required:Math.ceil((infantry+lancer)/f.marches) };
+}
+
+/** Resolve shared live inventory without copying it to a second saved troop pool. */
+export function resolveJoeTroops(form, inventory, accountId) {
+  if (form.linked === false) return form;
+  if (!inventory || inventory.accountId !== accountId || inventory.demo) return { ...form, infantry: '', lancer: '' };
+  const sum = type => ['t9','t10','t11'].reduce((total,tier) => total + (count(inventory[tier]?.[type]) ?? 0),0);
+  return { ...form, infantry: String(sum('infantry')), lancer: String(sum('lancer')) };
 }
