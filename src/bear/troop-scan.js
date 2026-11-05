@@ -31,7 +31,7 @@ export function troopCards(words) {
     if (!row) { row = []; rows.push(row); }
     row.push(card);
   }
-  return rows.flatMap(row => {
+  const cards = rows.flatMap(row => {
     row.sort((a,b)=>centerX(a.label.bbox)-centerX(b.label.bbox));
     return row.map((card,i) => {
       const b = card.label.bbox;
@@ -45,6 +45,18 @@ export function troopCards(words) {
         amountRegion: { sx: Math.max(xMin, prefix-h*.6), sy: rowBottom + h * .08, sw: Math.min(xMax-Math.max(xMin,prefix-h*.6), Math.max(b.x1-Math.max(xMin,prefix-h*.6), h*8.1)), sh: h*1.65 },
         labelRegion: { sx: Math.max(xMin, b.x0-h*6.8), sy: b.y0-h*.3, sw: Math.min(xMax-Math.max(xMin,b.x0-h*6.8), b.x1-Math.max(xMin,b.x0-h*6.8)+h*.2), sh: b.y1-b.y0+h*.6 } };
     });
+  });
+  // Tier words can be displaced by badge noise. Align amount starts using the
+  // other recognized names in the same column, without assuming any troop tier.
+  return cards.map(card => {
+    const near=cards.filter(c=>c.prefixKnown && Math.abs(c.prefix-card.prefix)<card.h*3);
+    const trusted=near.filter(c=>c.tierConfidence>=85);
+    const peers=(trusted.length?trusted:near).map(c=>c.prefix).sort((a,b)=>a-b);
+    if(!trusted.length && peers.length<2) return card;
+    const columnStart=peers[0];
+    const sx=Math.max(card.xMin,columnStart-card.h*.15);
+    const right=card.amountRegion.sx+card.amountRegion.sw;
+    return {...card,amountColumnStart:sx,amountRegion:{...card.amountRegion,sx,sw:Math.max(card.h,right-sx)}};
   });
 }
 export function confirmAmountReadings(readings, baseline) {
@@ -95,7 +107,7 @@ export function resolveCardLabel(original, data) {
   if (!card.level || card.tierConfidence < 65) return { ...card, level: null };
   card.prefixKnown = Boolean(prefixWord);
   card.prefix = prefixWord ? Math.max(0, card.labelRegion.sx) + prefixWord.bbox.x0 / 3 : Math.max(card.xMin, card.label.bbox.x0-card.h*(card.level === 9 ? 5.6 : 3.5));
-  card.amountRegion.sx = Math.max(card.xMin,card.prefix-card.h*.6);
+  card.amountRegion.sx = original.amountColumnStart ?? Math.max(card.xMin,card.prefix-card.h*.6);
   card.amountRegion.sw = Math.min(card.xMax-card.amountRegion.sx, Math.max(card.label.bbox.x1-card.amountRegion.sx, card.h*8.1));
   return card;
 }

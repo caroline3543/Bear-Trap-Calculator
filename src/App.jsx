@@ -1575,13 +1575,15 @@ const SCAN_FIELDS = [
 // Compare English and Chinese models for this game’s stylized font.
 const AUTO_DETECT_SEQUENCE = ["eng", "chi_sim"];
 
-// Upscale the entire screenshot while keeping memory bounded.
+// Preserve clear screenshots at native resolution; only upscale small images.
+// A fractional full-image resize can distort digits before the close-up pass.
 const OCR_UPSCALE_FACTOR = 2;
 const OCR_MAX_DIMENSION = 3200;
 function buildOcrCanvas(imgEl) {
   const sx = 0, sy = 0;
   const sw = imgEl.naturalWidth, sh = imgEl.naturalHeight;
-  let destW = sw * OCR_UPSCALE_FACTOR, destH = sh * OCR_UPSCALE_FACTOR;
+  const scale = sw >= 1000 ? 1 : OCR_UPSCALE_FACTOR;
+  let destW = sw * scale, destH = sh * scale;
   if (Math.max(destW, destH) > OCR_MAX_DIMENSION) {
     const shrink = OCR_MAX_DIMENSION / Math.max(destW, destH);
     destW *= shrink;
@@ -1618,7 +1620,7 @@ async function scanTroopAmounts(Tesseract, canvas, parsed) {
       await worker.setParameters({ tessedit_pageseg_mode: '7', tessedit_char_whitelist: '0123456789,.' });
       const readings = [];
       for (const pad of [0, .08, .16]) {
-        const left = Math.max(card.xMin,card.amountRegion.sx-card.h*pad);
+        const left = Math.max(card.xMin,card.amountRegion.sx-card.h*pad*.25);
         const region = { ...card.amountRegion, sx:left, sw:card.amountRegion.sw+card.amountRegion.sx-left, sy: card.amountRegion.sy, sh: card.amountRegion.sh };
         const { data } = await worker.recognize(buildRegionCanvas(canvas, region));
         readings.push({ text: data.text, confidence: data.confidence });

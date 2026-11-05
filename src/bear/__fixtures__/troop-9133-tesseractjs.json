@@ -1,0 +1,697 @@
+{
+  "source": "IMG_9133.png; tesseract.js 5 with eng 4.0.0_best_int; native 1284x2778 full image, sparse psm11, app crop geometry and psm7 digits",
+  "data": {
+    "text": "\u201c~ Troops Preview\n\nAll\n\nSE\n\nUA ALLA SUL = LJ\n\nMarch Queue\n\nInjured\n\n3\n\n) Total Troops\n\n2.3M/2.3M\n\n-\n\n6/6\n\n+\n\n6/261.4K\n\nHelios Infantry\n\ni Apex Infantry\n\n11,701\n\nE> 839.78\n\noe\n\n35 Apex Lancer\n\n> Apex Marksman\n\n816,585\n\n> 32\u00b074\n\nS BBs upreme Lancer\n\n0\n\nSupreme Marksman\n\n38,539\n\n38,132\n\nCJ\n",
+    "words": [
+      {
+        "text": "\u201c~",
+        "confidence": 22.49945831298828,
+        "bbox": {
+          "x0": 20,
+          "y0": 124,
+          "x1": 137,
+          "y1": 227
+        }
+      },
+      {
+        "text": "Troops",
+        "confidence": 96.2368392944336,
+        "bbox": {
+          "x0": 170,
+          "y0": 155,
+          "x1": 356,
+          "y1": 215
+        }
+      },
+      {
+        "text": "Preview",
+        "confidence": 96.44933319091797,
+        "bbox": {
+          "x0": 373,
+          "y0": 154,
+          "x1": 590,
+          "y1": 201
+        }
+      },
+      {
+        "text": "All",
+        "confidence": 94.92962646484375,
+        "bbox": {
+          "x0": 211,
+          "y0": 325,
+          "x1": 266,
+          "y1": 359
+        }
+      },
+      {
+        "text": "SE",
+        "confidence": 31.271270751953125,
+        "bbox": {
+          "x0": 939,
+          "y0": 334,
+          "x1": 1028,
+          "y1": 335
+        }
+      },
+      {
+        "text": "UA",
+        "confidence": 3.8837356567382812,
+        "bbox": {
+          "x0": 945,
+          "y0": 352,
+          "x1": 969,
+          "y1": 380
+        }
+      },
+      {
+        "text": "ALLA",
+        "confidence": 3.8837356567382812,
+        "bbox": {
+          "x0": 964,
+          "y0": 364,
+          "x1": 1154,
+          "y1": 371
+        }
+      },
+      {
+        "text": "SUL",
+        "confidence": 10.64239501953125,
+        "bbox": {
+          "x0": 1041,
+          "y0": 352,
+          "x1": 1086,
+          "y1": 380
+        }
+      },
+      {
+        "text": "=",
+        "confidence": 0,
+        "bbox": {
+          "x0": 1104,
+          "y0": 352,
+          "x1": 1119,
+          "y1": 380
+        }
+      },
+      {
+        "text": "LJ",
+        "confidence": 27.25945281982422,
+        "bbox": {
+          "x0": 1132,
+          "y0": 352,
+          "x1": 1158,
+          "y1": 380
+        }
+      },
+      {
+        "text": "March",
+        "confidence": 96.5954360961914,
+        "bbox": {
+          "x0": 522,
+          "y0": 466,
+          "x1": 644,
+          "y1": 499
+        }
+      },
+      {
+        "text": "Queue",
+        "confidence": 96.12385559082031,
+        "bbox": {
+          "x0": 658,
+          "y0": 466,
+          "x1": 774,
+          "y1": 504
+        }
+      },
+      {
+        "text": "Injured",
+        "confidence": 96.322998046875,
+        "bbox": {
+          "x0": 911,
+          "y0": 466,
+          "x1": 1046,
+          "y1": 509
+        }
+      },
+      {
+        "text": "3",
+        "confidence": 25.16730499267578,
+        "bbox": {
+          "x0": 41,
+          "y0": 478,
+          "x1": 102,
+          "y1": 538
+        }
+      },
+      {
+        "text": ")",
+        "confidence": 0.02410888671875,
+        "bbox": {
+          "x0": 90,
+          "y0": 478,
+          "x1": 117,
+          "y1": 533
+        }
+      },
+      {
+        "text": "Total",
+        "confidence": 96.46027374267578,
+        "bbox": {
+          "x0": 131,
+          "y0": 466,
+          "x1": 229,
+          "y1": 499
+        }
+      },
+      {
+        "text": "Troops",
+        "confidence": 96.42935180664062,
+        "bbox": {
+          "x0": 241,
+          "y0": 466,
+          "x1": 374,
+          "y1": 509
+        }
+      },
+      {
+        "text": "2.3M/2.3M",
+        "confidence": 91.2069320678711,
+        "bbox": {
+          "x0": 130,
+          "y0": 525,
+          "x1": 308,
+          "y1": 555
+        }
+      },
+      {
+        "text": "-",
+        "confidence": 29.832992553710938,
+        "bbox": {
+          "x0": 435,
+          "y0": 477,
+          "x1": 500,
+          "y1": 542
+        }
+      },
+      {
+        "text": "6/6",
+        "confidence": 94.9071044921875,
+        "bbox": {
+          "x0": 520,
+          "y0": 524,
+          "x1": 580,
+          "y1": 555
+        }
+      },
+      {
+        "text": "+",
+        "confidence": 88.61018371582031,
+        "bbox": {
+          "x0": 828,
+          "y0": 478,
+          "x1": 889,
+          "y1": 542
+        }
+      },
+      {
+        "text": "6/261.4K",
+        "confidence": 77.85680389404297,
+        "bbox": {
+          "x0": 910,
+          "y0": 524,
+          "x1": 1061,
+          "y1": 555
+        }
+      },
+      {
+        "text": "Helios",
+        "confidence": 96.90695190429688,
+        "bbox": {
+          "x0": 276,
+          "y0": 766,
+          "x1": 388,
+          "y1": 799
+        }
+      },
+      {
+        "text": "Infantry",
+        "confidence": 96.79581451416016,
+        "bbox": {
+          "x0": 402,
+          "y0": 765,
+          "x1": 557,
+          "y1": 809
+        }
+      },
+      {
+        "text": "i",
+        "confidence": 60.65808868408203,
+        "bbox": {
+          "x0": 787,
+          "y0": 729,
+          "x1": 834,
+          "y1": 785
+        }
+      },
+      {
+        "text": "Apex",
+        "confidence": 96.30531311035156,
+        "bbox": {
+          "x0": 843,
+          "y0": 767,
+          "x1": 940,
+          "y1": 809
+        }
+      },
+      {
+        "text": "Infantry",
+        "confidence": 95.85930633544922,
+        "bbox": {
+          "x0": 953,
+          "y0": 765,
+          "x1": 1108,
+          "y1": 809
+        }
+      },
+      {
+        "text": "11,701",
+        "confidence": 88.31391143798828,
+        "bbox": {
+          "x0": 845,
+          "y0": 822,
+          "x1": 948,
+          "y1": 854
+        }
+      },
+      {
+        "text": "E>",
+        "confidence": 43.09530258178711,
+        "bbox": {
+          "x0": 114,
+          "y0": 816,
+          "x1": 249,
+          "y1": 899
+        }
+      },
+      {
+        "text": "839.78",
+        "confidence": 61.47366714477539,
+        "bbox": {
+          "x0": 276,
+          "y0": 822,
+          "x1": 430,
+          "y1": 854
+        }
+      },
+      {
+        "text": "oe",
+        "confidence": 0.8750839233398438,
+        "bbox": {
+          "x0": 118,
+          "y0": 964,
+          "x1": 144,
+          "y1": 967
+        }
+      },
+      {
+        "text": "35",
+        "confidence": 65.57989501953125,
+        "bbox": {
+          "x0": 214,
+          "y0": 950,
+          "x1": 258,
+          "y1": 1038
+        }
+      },
+      {
+        "text": "Apex",
+        "confidence": 86.45301818847656,
+        "bbox": {
+          "x0": 287,
+          "y0": 950,
+          "x1": 368,
+          "y1": 1038
+        }
+      },
+      {
+        "text": "Lancer",
+        "confidence": 96.81745910644531,
+        "bbox": {
+          "x0": 384,
+          "y0": 991,
+          "x1": 517,
+          "y1": 1024
+        }
+      },
+      {
+        "text": ">",
+        "confidence": 62.27400207519531,
+        "bbox": {
+          "x0": 789,
+          "y0": 955,
+          "x1": 833,
+          "y1": 1009
+        }
+      },
+      {
+        "text": "Apex",
+        "confidence": 96.36138916015625,
+        "bbox": {
+          "x0": 843,
+          "y0": 991,
+          "x1": 940,
+          "y1": 1034
+        }
+      },
+      {
+        "text": "Marksman",
+        "confidence": 96.08521270751953,
+        "bbox": {
+          "x0": 953,
+          "y0": 991,
+          "x1": 1158,
+          "y1": 1024
+        }
+      },
+      {
+        "text": "816,585",
+        "confidence": 96.6753158569336,
+        "bbox": {
+          "x0": 845,
+          "y0": 1047,
+          "x1": 1002,
+          "y1": 1079
+        }
+      },
+      {
+        "text": ">",
+        "confidence": 7.463066101074219,
+        "bbox": {
+          "x0": 114,
+          "y0": 1045,
+          "x1": 250,
+          "y1": 1121
+        }
+      },
+      {
+        "text": "32\u00b074",
+        "confidence": 46.52672576904297,
+        "bbox": {
+          "x0": 292,
+          "y0": 1047,
+          "x1": 439,
+          "y1": 1079
+        }
+      },
+      {
+        "text": "S",
+        "confidence": 21.6849365234375,
+        "bbox": {
+          "x0": 118,
+          "y0": 1189,
+          "x1": 138,
+          "y1": 1192
+        }
+      },
+      {
+        "text": "BBs",
+        "confidence": 34.03404998779297,
+        "bbox": {
+          "x0": 214,
+          "y0": 1174,
+          "x1": 297,
+          "y1": 1264
+        }
+      },
+      {
+        "text": "upreme",
+        "confidence": 62.71985626220703,
+        "bbox": {
+          "x0": 304,
+          "y0": 1226,
+          "x1": 442,
+          "y1": 1259
+        }
+      },
+      {
+        "text": "Lancer",
+        "confidence": 96.77200317382812,
+        "bbox": {
+          "x0": 456,
+          "y0": 1216,
+          "x1": 589,
+          "y1": 1249
+        }
+      },
+      {
+        "text": "0",
+        "confidence": 0,
+        "bbox": {
+          "x0": 788,
+          "y0": 1183,
+          "x1": 832,
+          "y1": 1234
+        }
+      },
+      {
+        "text": "Supreme",
+        "confidence": 62.2335319519043,
+        "bbox": {
+          "x0": 836,
+          "y0": 1193,
+          "x1": 964,
+          "y1": 1255
+        }
+      },
+      {
+        "text": "Marksman",
+        "confidence": 96.31968688964844,
+        "bbox": {
+          "x0": 974,
+          "y0": 1216,
+          "x1": 1122,
+          "y1": 1255
+        }
+      },
+      {
+        "text": "38,539",
+        "confidence": 96.4517822265625,
+        "bbox": {
+          "x0": 277,
+          "y0": 1272,
+          "x1": 416,
+          "y1": 1302
+        }
+      },
+      {
+        "text": "38,132",
+        "confidence": 96.71620178222656,
+        "bbox": {
+          "x0": 846,
+          "y0": 1272,
+          "x1": 973,
+          "y1": 1303
+        }
+      },
+      {
+        "text": "CJ",
+        "confidence": 34.55863952636719,
+        "bbox": {
+          "x0": 110,
+          "y0": 1182,
+          "x1": 267,
+          "y1": 1345
+        }
+      }
+    ]
+  },
+  "crops": [
+    {
+      "type": "infantry",
+      "labelBox": {
+        "x0": 402,
+        "y0": 765,
+        "x1": 557,
+        "y1": 809
+      },
+      "labelRead": null,
+      "amountReads": [
+        {
+          "text": "839,716\n",
+          "confidence": 96
+        },
+        {
+          "text": "839,716\n",
+          "confidence": 96
+        },
+        {
+          "text": "839,716\n",
+          "confidence": 96
+        }
+      ]
+    },
+    {
+      "type": "infantry",
+      "labelBox": {
+        "x0": 953,
+        "y0": 765,
+        "x1": 1108,
+        "y1": 809
+      },
+      "labelRead": null,
+      "amountReads": [
+        {
+          "text": "11,701\n",
+          "confidence": 95
+        },
+        {
+          "text": "11,701\n",
+          "confidence": 95
+        },
+        {
+          "text": "11,701\n",
+          "confidence": 94
+        }
+      ]
+    },
+    {
+      "type": "lancer",
+      "labelBox": {
+        "x0": 384,
+        "y0": 991,
+        "x1": 517,
+        "y1": 1024
+      },
+      "labelRead": null,
+      "amountReads": [
+        {
+          "text": "632,574\n",
+          "confidence": 95
+        },
+        {
+          "text": "632,574\n",
+          "confidence": 95
+        },
+        {
+          "text": "632,574\n",
+          "confidence": 95
+        }
+      ]
+    },
+    {
+      "type": "marksman",
+      "labelBox": {
+        "x0": 953,
+        "y0": 991,
+        "x1": 1158,
+        "y1": 1024
+      },
+      "labelRead": null,
+      "amountReads": [
+        {
+          "text": "816,585\n",
+          "confidence": 96
+        },
+        {
+          "text": "816,585\n",
+          "confidence": 96
+        },
+        {
+          "text": "816,585\n",
+          "confidence": 96
+        }
+      ]
+    },
+    {
+      "type": "lancer",
+      "labelBox": {
+        "x0": 456,
+        "y0": 1216,
+        "x1": 589,
+        "y1": 1249
+      },
+      "labelRead": {
+        "text": "\u00a5 Supreme Lancer\n",
+        "confidence": 90,
+        "words": [
+          {
+            "text": "\u00a5",
+            "confidence": 79.84912872314453,
+            "bbox": {
+              "x0": 0,
+              "y0": 13,
+              "x1": 79,
+              "y1": 158
+            }
+          },
+          {
+            "text": "Supreme",
+            "confidence": 95.76680755615234,
+            "bbox": {
+              "x0": 81,
+              "y0": 0,
+              "x1": 631,
+              "y1": 158
+            }
+          },
+          {
+            "text": "Lancer",
+            "confidence": 96.65608215332031,
+            "bbox": {
+              "x0": 673,
+              "y0": 30,
+              "x1": 1072,
+              "y1": 127
+            }
+          }
+        ]
+      },
+      "amountReads": [
+        {
+          "text": "38539\n",
+          "confidence": 0
+        },
+        {
+          "text": "38539\n",
+          "confidence": 0
+        },
+        {
+          "text": "38539\n",
+          "confidence": 0
+        }
+      ]
+    },
+    {
+      "type": "marksman",
+      "labelBox": {
+        "x0": 974,
+        "y0": 1216,
+        "x1": 1122,
+        "y1": 1255
+      },
+      "labelRead": null,
+      "amountReads": [
+        {
+          "text": "38,132\n",
+          "confidence": 96
+        },
+        {
+          "text": "38,132\n",
+          "confidence": 96
+        },
+        {
+          "text": "38,132\n",
+          "confidence": 96
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "t11Infantry": 839716,
+    "t10Infantry": 11701,
+    "t10Marksman": 816585,
+    "t9Marksman": 38132,
+    "t10Lancer": 632574,
+    "t9Lancer": 38539
+  }
+}

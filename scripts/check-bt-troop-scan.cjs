@@ -74,7 +74,7 @@ const esbuild = deps('esbuild');
     image.parentElement.scrollTop=1500;
     await act(async()=>{image.dispatchEvent(new window.Event('load'));await new Promise(resolve=>setTimeout(resolve,30));});
     assert.equal(wholeReads.length,2);
-    assert.ok(wholeReads.every(r=>r.height===3200),'Scrolling the preview must not crop the OCR image');
+    assert.ok(wholeReads.every(r=>r.height===2778),'Full-resolution screenshot must remain uncropped and avoid fractional resampling');
     assert.equal(document.querySelectorAll('[aria-label^="Scanned "]').length,3);
     const apply=[...document.querySelectorAll('button')].find(b=>b.textContent==='Use these troops');assert.ok(apply);assert.equal(apply.disabled,false);
     await act(async()=>apply.click());

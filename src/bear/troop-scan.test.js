@@ -62,11 +62,28 @@ test('IMG_9133: sparse card detection and wider crops recover all six actual tro
     const reading=confirmAmountReadings(crop.readings) || (parsed.values[key] !== undefined ? {value:parsed.values[key],confidence:60} : null);
     assert.ok(reading,`${card.type} T${card.level} needs agreeing close-ups`);
     actual[`t${card.level}${card.type[0].toUpperCase()+card.type.slice(1)}`]=reading.value;
-    assert.ok(card.amountRegion.sx < card.prefix,'Crop must include leading digits before the label edge');
+    assert.ok(card.amountRegion.sx >= card.xMin && card.amountRegion.sx < card.label.bbox.x1,'Amount must stay in its own column');
   }
   assert.deepEqual(actual,{t11Infantry:839716,t10Infantry:11701,t10Lancer:632574,t10Marksman:816585,t9Lancer:38539,t9Marksman:38132});
   assert.equal(actual.t9Infantry,undefined,'An absent card must not be fabricated as zero');
 });
 test('conflicting close-ups cannot confirm a clipped leading digit even at high OCR confidence',()=>{
   assert.equal(confirmAmountReadings([{text:'1,701',confidence:95},{text:'1,701',confidence:96},{text:'11,701',confidence:94}]),null);
+});
+
+test('IMG_9133 with the app Tesseract.js engine: all visible counts and uncertain readings are preserved',()=>{
+  const fixture=JSON.parse(fs.readFileSync(new URL('./__fixtures__/troop-9133-tesseractjs.json',import.meta.url),'utf8'));
+  const parsed=parseScanText(fixture.data);
+  const actual={...parsed.values},confidence=Object.fromEntries(Object.keys(parsed.confidence).map(k=>[k,Math.min(60,parsed.confidence[k])]));
+  for(const original of parsed.cards){
+    const crop=fixture.crops.find(c=>c.type===original.type&&c.labelBox.x0===original.label.bbox.x0&&c.labelBox.y0===original.label.bbox.y0);
+    assert.ok(crop);
+    const card=original.level?original:resolveCardLabel(original,crop.labelRead);
+    const key=`t${card.level}${card.type[0].toUpperCase()+card.type.slice(1)}`;
+    const reading=confirmAmountReadings(crop.amountReads);
+    if(reading){actual[key]=reading.value;confidence[key]=Math.min(reading.confidence,card.tierConfidence);}
+  }
+  assert.deepEqual(actual,{t11Infantry:839716,t10Infantry:11701,t10Lancer:632574,t10Marksman:816585,t9Lancer:38539,t9Marksman:38132});
+  assert.ok(confidence.t9Marksman<85,'Unconfirmed crop must still need review');
+  assert.ok(confidence.t9Lancer<85,'Repeated low-confidence readings must still need review');
 });
