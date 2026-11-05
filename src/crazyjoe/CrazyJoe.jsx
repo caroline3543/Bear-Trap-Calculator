@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTimeHub } from '../timehub/TimeHubContext.jsx';
-import { cleanJoe, calculateJoe, resolveJoeTroops } from './logic.js';
+import { cleanJoe, calculateJoe, resolveJoeTroops, resolveJoeCapacity } from './logic.js';
 import './crazyjoe.css';
 
 function NumberInput({label,value,onChange,hint}) {
@@ -9,12 +9,24 @@ function NumberInput({label,value,onChange,hint}) {
 export default function CrazyJoe({ inventory, scanner }) {
   const { activeAccountId, defaultAccountId, dataFor, updateAccount, lang, accountById }=useTimeHub();
   const accountId=activeAccountId || defaultAccountId;
-  const form=cleanJoe(dataFor(accountId).crazyJoe);
+  const savedForm=cleanJoe(dataFor(accountId).crazyJoe);
+  const form=resolveJoeCapacity(savedForm,inventory,accountId);
   const [picked,setPicked]=useState(null);
   const [copied,setCopied]=useState(false);
-  useEffect(()=>{setPicked(null);setCopied(false);},[accountId]);
+  useEffect(()=>{setPicked(null);setCopied(false);},[accountId, inventory?.rallyCapacity, inventory?.snowApeBoost]);
   const fmt=n=>n.toLocaleString(lang);
-  const patch=p=>{setPicked(null);setCopied(false);updateAccount(accountId,d=>({...d,crazyJoe:{...form,...p}}));};
+  const patch=p=>{setPicked(null);setCopied(false);updateAccount(accountId,d=>({...d,crazyJoe:{...savedForm,...p}}));};
+  const sharedCapacity = form.capacityLinked && inventory?.accountId === accountId;
+  const editCapacity = value => {
+    setPicked(null); setCopied(false);
+    if (sharedCapacity) inventory.onCapacityChange?.(value === '' ? '' : Number(value));
+    else patch({capacity:value});
+  };
+  const editPet = value => {
+    setPicked(null); setCopied(false);
+    if (sharedCapacity) inventory.onSnowApeChange?.(value === '' ? '' : Number(value));
+    else patch({pet:value});
+  };
   const troops=resolveJoeTroops(form,inventory,accountId);
   const result=calculateJoe(troops);
   const selected=result?.scenarios.find(s=>s.key===picked)||result?.best;
@@ -37,16 +49,18 @@ export default function CrazyJoe({ inventory, scanner }) {
       </section>
       <section className="cj-card"><h2>2. Your marches</h2><label className="cj-field"><span>Available marches</span><select className="th-input" value={form.marches} onChange={e=>patch({marches:Number(e.target.value)})}>{[1,2,3,4,5,6].map(n=><option key={n} value={n}>{n} {n===1?'march':'marches'}</option>)}</select></label>
         <p className="cj-help">Count only marches free to reinforce allies. Check capacity with the heroes you plan to send.</p>
-        <label className="cj-check"><input type="checkbox" checked={form.measured} onChange={e=>patch({measured:e.target.checked})}/>Buffs already included</label>
+        <label className="cj-check"><input type="checkbox" checked={form.capacityLinked} onChange={e=>patch({capacityLinked:e.target.checked,capacity:form.capacity,pet:form.pet,measured:form.measured,different:form.different})}/>Use Bear Trap capacity</label>
+        {form.capacityLinked && <p className="cj-help">Deployment capacity and Snow Ape bonus are shared with {accountById(accountId)?.name || 'this account'} in Bear Trap. Changes here update both calculators.</p>}
+        {!form.capacityLinked && <label className="cj-check"><input type="checkbox" checked={form.measured} onChange={e=>patch({measured:e.target.checked})}/>Buffs already included</label>}
         <p className="cj-help">{form.measured?'Enter the limit shown in game. No extra buffs will be added.':'Enter capacity before temporary pet, minister and city buffs. Include heroes and permanent bonuses.'}</p>
-        {!form.different&&<NumberInput label="Capacity per march" value={form.capacity} onChange={v=>patch({capacity:v})}/>}
-        <label className="cj-check"><input type="checkbox" checked={form.different} onChange={e=>patch({different:e.target.checked,capacities:form.capacities.map(v=>v||form.capacity)})}/>Set capacity for each march</label>
+        {!form.different&&<NumberInput label="Capacity per march" value={form.capacity} onChange={editCapacity}/>}
+        {!form.capacityLinked && <label className="cj-check"><input type="checkbox" checked={form.different} onChange={e=>patch({different:e.target.checked,capacities:form.capacities.map(v=>v||form.capacity)})}/>Set capacity for each march</label>}
         <details><summary>March details</summary><p className="cj-help">Sending to an ally with limited space? Enter how many troops they can accept. Leave blank to use your full march capacity.</p>
           {Array.from({length:form.marches},(_,i)=><div className="cj-march-input" key={i}><b>March {i+1}</b>{form.different&&<NumberInput label={`March ${i+1} capacity`} value={form.capacities[i]} onChange={v=>patch({capacities:form.capacities.map((x,j)=>j===i?v:x)})}/>}<NumberInput label={`March ${i+1} ally’s free space (optional)`} value={form.spaces[i]} onChange={v=>patch({spaces:form.spaces.map((x,j)=>j===i?v:x)})}/></div>)}
         </details>
       </section>
       {!form.measured&&<section className="cj-card"><h2>3. Available buffs</h2><p>Choose the buffs you can use. We’ll recommend only what you need.</p>
-        <NumberInput label="Snow Ape capacity bonus" hint="Enter the extra troops shown on the skill. Leave blank if you can’t use it." value={form.pet} onChange={v=>patch({pet:v})}/>
+        <NumberInput label="Snow Ape capacity bonus" hint={form.capacityLinked ? "Shared with Bear Trap for this account. We recommend it only when needed." : "Enter the extra troops shown on the skill. Leave blank if you can’t use it."} value={form.pet} onChange={editPet}/>
         <label className="cj-field"><span>Capacity items you have</span><select className="th-input" value={form.item} onChange={e=>patch({item:Number(e.target.value)})}><option value={0}>None</option><option value={10}>10% only</option><option value={20}>10% and 20%</option></select></label>
         <label className="cj-field"><span>Minister of Strategy</span><select className="th-input" value={form.minister} onChange={e=>patch({minister:Number(e.target.value)})}><option value={0}>Not available</option><option value={2500}>Normal: +2,500 per march</option><option value={3750}>Supreme: +3,750 per march</option></select></label>
         <p className="cj-help">10% and 20% items don’t stack.</p>
@@ -67,7 +81,7 @@ export default function CrazyJoe({ inventory, scanner }) {
           {selected.minister>0&&<p className="cj-callout">Hold Minister of Strategy when you send. Keep all selected buffs active for redeployments.</p>}
           <div className="cj-table-wrap"><table><caption>Send these troops</caption><thead><tr><th>March</th><th>Infantry</th><th>Lancers</th><th>Total / limit</th></tr></thead><tbody>{selected.rows.map((r,i)=><tr key={i}><th>{i+1}</th><td>{fmt(r.infantry)}</td><td>{fmt(r.lancer)}</td><td>{fmt(r.total)} / {fmt(r.capacity)}</td></tr>)}</tbody></table></div>
           <button type="button" className="cj-button" onClick={copy}>{copied?'Copied':'Copy march plan'}</button>
-          {!form.measured&&<><p className="cj-help">Check the suggested limits in game before sending.</p><details><summary>About capacity estimates</summary><p>We add Snow Ape and Strategy bonuses to your base capacity, then apply the capacity item and round down. If the game shows a different limit, turn on “Buffs already included” and enter that limit.</p></details></>}
+          {!form.measured&&<><p className="cj-help">Check the suggested limits in game before sending.</p><details><summary>About capacity estimates</summary><p>We add Snow Ape and Strategy bonuses to your base capacity, then apply the capacity item and round down. If the game shows a different limit, turn off “Use Bear Trap capacity”, then turn on “Buffs already included” and enter that limit.</p></details></>}
         </>}
       </section>
       {result&&result.scenarios.length>1&&<section className="cj-card"><details><summary>Compare buffs</summary><p>Choose an option to preview its troop split.</p><div className="cj-options">{[...result.scenarios].sort((a,b)=>a.actions-b.actions||a.percent-b.percent||a.minister-b.minister).map(s=><button key={s.key} type="button" aria-pressed={selected.key===s.key} onClick={()=>{setPicked(s.key);setCopied(false);}}><span><b>{label(s)}</b>{s.key===result.best.key&&<small>Recommended</small>}</span><span>{fmt(s.left)} at home</span></button>)}</div></details></section>}
