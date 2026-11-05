@@ -1,5 +1,9 @@
 /* Polar Field Journal chrome. Existing translated workflows remain unchanged. */
 export const en = {
+  trainingCountSetup: "Add full-batch time and troop count in camp settings.",
+  trainingCountOverMax: "Longer than one full batch; check your camp settings.",
+  trainingCountTooShort: "Too short to train one troop.",
+  trainingCountHelp: "For the next batch in each camp, based on your saved settings. Rounded down to finish within the chosen duration. Match the troop tier and buffs in game.",
   calendarAlertsTitle: "Calendar alerts", calendarNoAlert: "No alert", calendarOneAlert: "1 reminder", calendarTwoAlerts: "2 reminders",
   calendarFirstAlert: "First reminder", calendarSecondAlert: "Second reminder",
   calendarAlertUnits: "Minutes before the event. Enter 0 for the start time. Maximum 10,080 minutes (7 days).",

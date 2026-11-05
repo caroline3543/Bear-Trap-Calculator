@@ -1866,3 +1866,8 @@ html.th-skin #root > div > div[style*="inset: 0"] { display: none !important; }
   .th-todos input, .th-todos textarea { scroll-margin-block: 100px; }
   .th-resume-card .th-item-actions > button { flex: 1 1 auto; }
 }
+
+/* Troop counts stay readable beside each camp on narrow screens. */
+.th-training-counts { display: grid; gap: 8px; min-width: 0; }
+.th-training-counts .th-max-list li { flex-wrap: wrap; align-items: baseline; }
+.th-training-counts .th-note { margin: 0; }

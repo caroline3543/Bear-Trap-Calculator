@@ -66,6 +66,30 @@ function FinishPreview({ entries, now }) {
   );
 }
 
+/** The count belongs beside the session duration, before starting the timer. */
+function TrainingCounts({ data, rows, capOn, onEditTimes }) {
+  const { t, lang } = useTimeHub();
+  const valid = rows.filter((r) => Number.isFinite(r.durationMs) && r.durationMs > 0);
+  if (!valid.length) return null;
+  return <div className="th-training-counts" aria-live="polite">
+    <b>{t("troopsToTrain")}</b>
+    <ul className="th-max-list">
+      {valid.map(({ camp, troop, durationMs }) => {
+        const fullMs = effectiveMax(data, camp, troop, capOn);
+        const fullTroops = campTroopsFor(data, camp);
+        const n = troopsForDuration(durationMs, fullMs, fullTroops * (capOn ? CAPACITY_FACTOR : 1));
+        const missing = !(fullMs > 0 && fullTroops > 0);
+        return <li key={camp}>
+          <span>{troop === "helios" ? t("heliosCamp", { camp: t(camp) }) : t(camp)}</span>
+          <span>{missing ? t("trainingCountSetup") : durationMs > fullMs ? t("trainingCountOverMax") : n < 1 ? t("trainingCountTooShort") : <><b>≈ {n.toLocaleString(lang)} {t("troopsWord")}</b> · {formatSpan(durationForTroops(n, fullMs, fullTroops * (capOn ? CAPACITY_FACTOR : 1)), lang)}</>}</span>
+        </li>;
+      })}
+    </ul>
+    <p className="th-note">{t("trainingCountHelp")}</p>
+    {onEditTimes && <button type="button" className="th-link" onClick={onEditTimes}>{t("trSettings")}</button>}
+  </div>;
+}
+
 /* ---------- shared pieces: the "before you restart" review, and Education-aware advice ---------- */
 
 /** The compact summary shown before camps (re)start. Shows one shared finish only when every camp
@@ -634,6 +658,7 @@ export function TrainForm({ onDone, preset, accountId, onEditTimes, onPerCamp })
           </ul>
         )}
         {!maxKnown.length && <p className="th-note">{t("noMaxNote")}</p>}
+        <TrainingCounts data={data} rows={maxKnown.map((x) => ({ ...x, durationMs: x.max }))} capOn={capOn} onEditTimes={onEditTimes} />
         {capBox}
         <EduAdvice advice={advice} onUse={useAdvice} />
         {error && <span className="th-error" role="alert">{error}</span>}
@@ -669,6 +694,7 @@ export function TrainForm({ onDone, preset, accountId, onEditTimes, onPerCamp })
         )}
         {capBox}
         {share === "same" && campChips}
+        <TrainingCounts data={data} rows={entries.filter((e) => !e.r.error).map((e) => ({ ...e, durationMs: e.r.ms }))} capOn={capOn} onEditTimes={onEditTimes} />
         {error && <span className="th-error" role="alert">{error}</span>}
         <Btn tone="gold" block onClick={saveLeft}>{cta}</Btn>
         {ok ? <div className="th-tf-under">{underLines(one.ms, now + one.ms)}</div> : share === "each" && <FinishPreview entries={entries} now={now} />}
@@ -774,6 +800,12 @@ export function TrainForm({ onDone, preset, accountId, onEditTimes, onPerCamp })
       {capBox}
       {campChips}
 
+      <TrainingCounts data={data} capOn={capOn} onEditTimes={onEditTimes} rows={
+        oneGo ? plans.map((x) => ({ ...x, durationMs: need }))
+          : back && planStyle === "nonstop" && bplan?.ok ? bplan.camps.map((c) => ({ ...c, durationMs: c.batches[0].ms }))
+          : back ? back.rows.map((r) => ({ ...r, durationMs: r.durMs }))
+          : targetOk ? planCamps.map((camp) => ({ camp, troop: troopOf(camp), durationMs: need })) : []
+      } />
       {/* 3. the answer */}
       {simple && !oneGo && (
         <>
