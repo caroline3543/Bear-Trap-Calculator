@@ -12,16 +12,19 @@ const p = { ...migrateSetup(), capacity: 100000, capacityIsEffective: true, allA
   starters: ['Hector','Mia','Gwen'], roster: Object.fromEntries(['Hector','Mia','Gwen'].map(h=>[h,{stars:'5*',widget:10,skill:5}])),
   tiers: ['FC6 T10','FC6 T10','FC6 T10'], petsActive: true, minister: 'None', trap: 25 };
 const close = (a,b) => assert.ok(Math.abs(a-b) < 1e-8, `${a} != ${b}`);
-test('new setup has no phantom Chameleon or Cyrille bonus; legacy source calls keep parity',()=>{
-  const r=calculate(p,db);close(r.sourceBoost,r.boost);close(r.normalization,1/23400);
-  close(calculate({...p,cyrilleDamage:30},db).sourceBoost,r.sourceBoost*1.3);
+test('displayed score uses WOS Nerds normalization independently of entered Cyrille',()=>{
+  const r=calculate(p,db);close(r.sourceBoost,r.boost*1.3*1.1);close(r.normalization,1/23400);
+  close(calculate({...p,cyrilleDamage:30},db).sourceBoost,r.sourceBoost);
+  close(calculate({...p,cyrilleDamage:30},db).boost,r.boost*1.3);
+  close(calculate({...p,petsActive:false},db).sourceNormalization,1.3/23400);
+  close(calculate({...p,chameleon:5},db).sourceNormalization,1.05*1.3/23400);
   assert.equal(migrateSetup({allAttack:400}).cyrilleDamage,30);
   assert.equal(migrateSetup().cyrilleDamage,0);
   const migrated=migrateSetup({petStatsIncluded:true,cityStatsIncluded:true,titlesStatsIncluded:true});
   assert.ok(!migrated.petStatsIncluded && !migrated.cityStatsIncluded && !migrated.titlesStatsIncluded);
   assert.equal(migrateCapacityBuffs({capacityBuffs:{titlesCapacityIncluded:true}}).titlesCapacityIncluded,false);
   const legacy={...p};delete legacy.buffModelVersion;delete legacy.cyrilleDamage;
-  close(calculate(legacy,db).sourceBoost,r.sourceBoost*1.3*1.1);
+  close(calculate(legacy,db).sourceBoost,r.sourceBoost);
 });
 test('city items add to the special-stat pool, not the base-stat percentage',()=>{
   const base=calculate(p,db), r=calculate({...p,cityAttack:20,cityLethality:10},db);

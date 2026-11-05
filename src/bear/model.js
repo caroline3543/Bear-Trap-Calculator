@@ -83,8 +83,10 @@ export function calculate(profile, db) {
   const raw = Math.sqrt(sum * capacity) * (1 + widgetL) * (1 + widgetA);
   const cyrille = profile.cyrilleDamage == null ? 1.3 : 1 + nonnegative(profile.cyrilleDamage) / 100;
   const normalization = (pets ? 1 + nonnegative(profile.chameleon) / 100 : 1) * cyrille / 23400;
-  // Retain the historical zero-Chameleon fallback only for legacy parity calls.
-  const sourceNormalization = (pets ? 1 + (nonnegative(profile.chameleon) || (profile.buffModelVersion ? 0 : 10)) / 100 : 1) * cyrille / 23400;
+  // WOS Nerds display convention (standard, non-Rosarion mode): fixed
+  // 30% Cyrille and a 10% fallback when active Chameleon is entered as zero.
+  // Keep this separate from the entered-buff normalization above.
+  const sourceNormalization = (pets ? 1 + (nonnegative(profile.chameleon) || 10) / 100 : 1) * 1.3 / 23400;
   const sourceBoost = raw * sourceNormalization;
   return { sourceBoost, raw, boost: raw * normalization, capacity, ratios, counts: integerCounts(ratios, capacity), damage, widgetL, widgetA, normalization, sourceNormalization };
 
