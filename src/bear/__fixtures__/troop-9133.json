@@ -1,0 +1,588 @@
+{
+  "source": "IMG_9133.png; native Tesseract eng sparse page + psm7 close-ups, 3x resize. Low-confidence readings require review.",
+  "data": {
+    "text": "+ Troops Preview All SS , Be US! eo March Queue Injured a Total Troops 2.3M/2.3M = 6/6 O 6/261.4K = Helios Infantry zB Apex Infantry 11,701 Sr _ B Apex Lancer \u201c Apex Marksman 632,574 816,585 S Supreme Lancer is \u2018Supreme Marksman 38,539 38,132 e Squac",
+    "words": [
+      {
+        "text": "+",
+        "confidence": 0.0,
+        "bbox": {
+          "x0": 20,
+          "y0": 128,
+          "x1": 132,
+          "y1": 223
+        }
+      },
+      {
+        "text": "Troops",
+        "confidence": 96.664276,
+        "bbox": {
+          "x0": 170,
+          "y0": 155,
+          "x1": 356,
+          "y1": 215
+        }
+      },
+      {
+        "text": "Preview",
+        "confidence": 96.183128,
+        "bbox": {
+          "x0": 373,
+          "y0": 155,
+          "x1": 590,
+          "y1": 201
+        }
+      },
+      {
+        "text": "All",
+        "confidence": 94.628281,
+        "bbox": {
+          "x0": 211,
+          "y0": 325,
+          "x1": 266,
+          "y1": 359
+        }
+      },
+      {
+        "text": "SS",
+        "confidence": 0.0,
+        "bbox": {
+          "x0": 939,
+          "y0": 334,
+          "x1": 1028,
+          "y1": 335
+        }
+      },
+      {
+        "text": ",",
+        "confidence": 0.0,
+        "bbox": {
+          "x0": 1014,
+          "y0": 316,
+          "x1": 1031,
+          "y1": 344
+        }
+      },
+      {
+        "text": "Be",
+        "confidence": 26.220695,
+        "bbox": {
+          "x0": 945,
+          "y0": 365,
+          "x1": 976,
+          "y1": 370
+        }
+      },
+      {
+        "text": "US!",
+        "confidence": 16.780899,
+        "bbox": {
+          "x0": 999,
+          "y0": 352,
+          "x1": 1063,
+          "y1": 380
+        }
+      },
+      {
+        "text": "eo",
+        "confidence": 13.577759,
+        "bbox": {
+          "x0": 1088,
+          "y0": 365,
+          "x1": 1154,
+          "y1": 371
+        }
+      },
+      {
+        "text": "March",
+        "confidence": 96.439056,
+        "bbox": {
+          "x0": 522,
+          "y0": 466,
+          "x1": 644,
+          "y1": 499
+        }
+      },
+      {
+        "text": "Queue",
+        "confidence": 96.852226,
+        "bbox": {
+          "x0": 658,
+          "y0": 466,
+          "x1": 774,
+          "y1": 504
+        }
+      },
+      {
+        "text": "Injured",
+        "confidence": 95.443748,
+        "bbox": {
+          "x0": 911,
+          "y0": 466,
+          "x1": 1046,
+          "y1": 509
+        }
+      },
+      {
+        "text": "a",
+        "confidence": 73.236008,
+        "bbox": {
+          "x0": 41,
+          "y0": 478,
+          "x1": 102,
+          "y1": 538
+        }
+      },
+      {
+        "text": "Total",
+        "confidence": 96.506622,
+        "bbox": {
+          "x0": 131,
+          "y0": 466,
+          "x1": 229,
+          "y1": 499
+        }
+      },
+      {
+        "text": "Troops",
+        "confidence": 96.296463,
+        "bbox": {
+          "x0": 241,
+          "y0": 466,
+          "x1": 374,
+          "y1": 509
+        }
+      },
+      {
+        "text": "2.3M/2.3M",
+        "confidence": 92.413223,
+        "bbox": {
+          "x0": 130,
+          "y0": 525,
+          "x1": 308,
+          "y1": 555
+        }
+      },
+      {
+        "text": "=",
+        "confidence": 24.511505,
+        "bbox": {
+          "x0": 435,
+          "y0": 477,
+          "x1": 500,
+          "y1": 542
+        }
+      },
+      {
+        "text": "6/6",
+        "confidence": 96.699265,
+        "bbox": {
+          "x0": 520,
+          "y0": 524,
+          "x1": 580,
+          "y1": 555
+        }
+      },
+      {
+        "text": "O",
+        "confidence": 11.315918,
+        "bbox": {
+          "x0": 828,
+          "y0": 478,
+          "x1": 889,
+          "y1": 542
+        }
+      },
+      {
+        "text": "6/261.4K",
+        "confidence": 90.79277,
+        "bbox": {
+          "x0": 910,
+          "y0": 524,
+          "x1": 1061,
+          "y1": 555
+        }
+      },
+      {
+        "text": "=",
+        "confidence": 10.042534,
+        "bbox": {
+          "x0": 217,
+          "y0": 729,
+          "x1": 263,
+          "y1": 785
+        }
+      },
+      {
+        "text": "Helios",
+        "confidence": 96.597214,
+        "bbox": {
+          "x0": 276,
+          "y0": 766,
+          "x1": 388,
+          "y1": 799
+        }
+      },
+      {
+        "text": "Infantry",
+        "confidence": 96.64212,
+        "bbox": {
+          "x0": 402,
+          "y0": 765,
+          "x1": 557,
+          "y1": 809
+        }
+      },
+      {
+        "text": "zB",
+        "confidence": 33.956161,
+        "bbox": {
+          "x0": 783,
+          "y0": 725,
+          "x1": 834,
+          "y1": 813
+        }
+      },
+      {
+        "text": "Apex",
+        "confidence": 95.803391,
+        "bbox": {
+          "x0": 843,
+          "y0": 767,
+          "x1": 940,
+          "y1": 809
+        }
+      },
+      {
+        "text": "Infantry",
+        "confidence": 96.526985,
+        "bbox": {
+          "x0": 953,
+          "y0": 765,
+          "x1": 1108,
+          "y1": 809
+        }
+      },
+      {
+        "text": "11,701",
+        "confidence": 95.540062,
+        "bbox": {
+          "x0": 845,
+          "y0": 822,
+          "x1": 948,
+          "y1": 854
+        }
+      },
+      {
+        "text": "Sr",
+        "confidence": 20.443115,
+        "bbox": {
+          "x0": 114,
+          "y0": 820,
+          "x1": 264,
+          "y1": 895
+        }
+      },
+      {
+        "text": "_",
+        "confidence": 57.962631,
+        "bbox": {
+          "x0": 163,
+          "y0": 822,
+          "x1": 425,
+          "y1": 966
+        }
+      },
+      {
+        "text": "B",
+        "confidence": 50.637016,
+        "bbox": {
+          "x0": 250,
+          "y0": 958,
+          "x1": 261,
+          "y1": 966
+        }
+      },
+      {
+        "text": "Apex",
+        "confidence": 67.920441,
+        "bbox": {
+          "x0": 288,
+          "y0": 954,
+          "x1": 370,
+          "y1": 1039
+        }
+      },
+      {
+        "text": "Lancer",
+        "confidence": 96.821457,
+        "bbox": {
+          "x0": 384,
+          "y0": 991,
+          "x1": 517,
+          "y1": 1024
+        }
+      },
+      {
+        "text": "\u201c",
+        "confidence": 0.0,
+        "bbox": {
+          "x0": 789,
+          "y0": 955,
+          "x1": 833,
+          "y1": 1009
+        }
+      },
+      {
+        "text": "Apex",
+        "confidence": 96.5532,
+        "bbox": {
+          "x0": 843,
+          "y0": 991,
+          "x1": 940,
+          "y1": 1034
+        }
+      },
+      {
+        "text": "Marksman",
+        "confidence": 96.534492,
+        "bbox": {
+          "x0": 953,
+          "y0": 991,
+          "x1": 1158,
+          "y1": 1024
+        }
+      },
+      {
+        "text": "632,574",
+        "confidence": 96.481743,
+        "bbox": {
+          "x0": 276,
+          "y0": 1047,
+          "x1": 440,
+          "y1": 1079
+        }
+      },
+      {
+        "text": "816,585",
+        "confidence": 96.893799,
+        "bbox": {
+          "x0": 845,
+          "y0": 1047,
+          "x1": 1002,
+          "y1": 1079
+        }
+      },
+      {
+        "text": "S",
+        "confidence": 45.746132,
+        "bbox": {
+          "x0": 110,
+          "y0": 948,
+          "x1": 267,
+          "y1": 1121
+        }
+      },
+      {
+        "text": "Supreme",
+        "confidence": 95.98584,
+        "bbox": {
+          "x0": 275,
+          "y0": 1216,
+          "x1": 442,
+          "y1": 1259
+        }
+      },
+      {
+        "text": "Lancer",
+        "confidence": 95.98584,
+        "bbox": {
+          "x0": 456,
+          "y0": 1216,
+          "x1": 589,
+          "y1": 1249
+        }
+      },
+      {
+        "text": "is",
+        "confidence": 52.347488,
+        "bbox": {
+          "x0": 788,
+          "y0": 1183,
+          "x1": 832,
+          "y1": 1234
+        }
+      },
+      {
+        "text": "\u2018Supreme",
+        "confidence": 56.962334,
+        "bbox": {
+          "x0": 836,
+          "y0": 1213,
+          "x1": 964,
+          "y1": 1251
+        }
+      },
+      {
+        "text": "Marksman",
+        "confidence": 96.438667,
+        "bbox": {
+          "x0": 974,
+          "y0": 1221,
+          "x1": 1122,
+          "y1": 1244
+        }
+      },
+      {
+        "text": "38,539",
+        "confidence": 96.876244,
+        "bbox": {
+          "x0": 277,
+          "y0": 1272,
+          "x1": 416,
+          "y1": 1302
+        }
+      },
+      {
+        "text": "38,132",
+        "confidence": 96.619186,
+        "bbox": {
+          "x0": 846,
+          "y0": 1272,
+          "x1": 973,
+          "y1": 1303
+        }
+      },
+      {
+        "text": "e",
+        "confidence": 0.0,
+        "bbox": {
+          "x0": 106,
+          "y0": 1173,
+          "x1": 165,
+          "y1": 1349
+        }
+      },
+      {
+        "text": "Squac",
+        "confidence": 92.303329,
+        "bbox": {
+          "x0": 546,
+          "y0": 2540,
+          "x1": 698,
+          "y1": 2616
+        }
+      }
+    ]
+  },
+  "crops": [
+    {
+      "type": "infantry",
+      "level": 11,
+      "readings": [
+        {
+          "text": "839,716",
+          "confidence": 0.0
+        },
+        {
+          "text": "839,716",
+          "confidence": 0.0
+        },
+        {
+          "text": "839,716",
+          "confidence": 0.0
+        }
+      ]
+    },
+    {
+      "type": "infantry",
+      "level": 10,
+      "readings": [
+        {
+          "text": "11,701",
+          "confidence": 0.0
+        },
+        {
+          "text": "11,701",
+          "confidence": 22.175003
+        },
+        {
+          "text": "11,701",
+          "confidence": 0.0
+        }
+      ]
+    },
+    {
+      "type": "lancer",
+      "level": 10,
+      "readings": [
+        {
+          "text": "632,574",
+          "confidence": 96.790939
+        },
+        {
+          "text": "632,574",
+          "confidence": 96.790939
+        },
+        {
+          "text": "632,574",
+          "confidence": 10.064285
+        }
+      ]
+    },
+    {
+      "type": "marksman",
+      "level": 10,
+      "readings": [
+        {
+          "text": "816,585",
+          "confidence": 0.0
+        },
+        {
+          "text": "816,585",
+          "confidence": 0.0
+        },
+        {
+          "text": "816,585",
+          "confidence": 0.0
+        }
+      ]
+    },
+    {
+      "type": "lancer",
+      "level": 9,
+      "readings": [
+        {
+          "text": "38,539",
+          "confidence": 0.0
+        },
+        {
+          "text": "38,539",
+          "confidence": 0.0
+        },
+        {
+          "text": "38,539",
+          "confidence": 0.0
+        }
+      ]
+    },
+    {
+      "type": "marksman",
+      "level": 9,
+      "readings": [
+        {
+          "text": "38,132",
+          "confidence": 0.211555
+        },
+        {
+          "text": "138,132",
+          "confidence": 0.0
+        },
+        {
+          "text": "38,132",
+          "confidence": 0.0
+        }
+      ]
+    }
+  ]
+}

@@ -50,3 +50,23 @@ test('a later Apex screenshot cannot replace a detected Helios FC; unresolved co
   const saved=[{fc:5,level:10},{fc:4,level:10},{fc:5,level:11}];
   assert.deepEqual(mergeScannedTiers(saved,conflict),saved);
 });
+
+test('IMG_9133: sparse card detection and wider crops recover all six actual troop counts',()=>{
+  const fixture=JSON.parse(fs.readFileSync(new URL('./__fixtures__/troop-9133.json',import.meta.url),'utf8'));
+  const parsed=parseScanText(fixture.data);
+  assert.equal(parsed.cards.length,6);
+  const actual={};
+  for(const card of parsed.cards){
+    const crop=fixture.crops.find(c=>c.type===card.type&&c.level===card.level);
+    const key=`t${card.level}${card.type[0].toUpperCase()+card.type.slice(1)}`;
+    const reading=confirmAmountReadings(crop.readings) || (parsed.values[key] !== undefined ? {value:parsed.values[key],confidence:60} : null);
+    assert.ok(reading,`${card.type} T${card.level} needs agreeing close-ups`);
+    actual[`t${card.level}${card.type[0].toUpperCase()+card.type.slice(1)}`]=reading.value;
+    assert.ok(card.amountRegion.sx < card.prefix,'Crop must include leading digits before the label edge');
+  }
+  assert.deepEqual(actual,{t11Infantry:839716,t10Infantry:11701,t10Lancer:632574,t10Marksman:816585,t9Lancer:38539,t9Marksman:38132});
+  assert.equal(actual.t9Infantry,undefined,'An absent card must not be fabricated as zero');
+});
+test('conflicting close-ups cannot confirm a clipped leading digit even at high OCR confidence',()=>{
+  assert.equal(confirmAmountReadings([{text:'1,701',confidence:95},{text:'1,701',confidence:96},{text:'11,701',confidence:94}]),null);
+});

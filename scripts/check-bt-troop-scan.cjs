@@ -56,7 +56,7 @@ const esbuild = deps('esbuild');
     recognize:async canvas=>{wholeReads.push({width:canvas.width,height:canvas.height});return {data:sample.data};},
     createWorker:async()=>{
       const kind=workerNumber++;
-      const outputs=sample.crops.flatMap(c=>kind===0?c.amountReads:c.fcReads);let i=0;
+      const outputs=kind===0 ? [sample.data] : sample.crops.flatMap(c=>kind===1?c.amountReads:c.fcReads);let i=0;
       return {setParameters:async()=>{},terminate:async()=>{},recognize:async()=>({data:outputs[i++]})};
     }
   };

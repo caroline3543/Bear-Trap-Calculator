@@ -42,7 +42,7 @@ export function troopCards(words) {
       const level = troopLevel(card.label.text) || troopLevel(tierWord?.text);
       const rowBottom = Math.max(b.y1, tierWord?.bbox.y1 || 0);
       return { ...card, h, level, prefixKnown: Boolean(tierWord), tierConfidence: tierWord?.confidence ?? (level ? card.label.confidence : 0), xMin, xMax, prefix,
-        amountRegion: { sx: prefix, sy: rowBottom + h * .08, sw: Math.min(xMax-prefix, Math.max(b.x1-prefix, h*7.5)), sh: h*1.65 },
+        amountRegion: { sx: Math.max(xMin, prefix-h*.6), sy: rowBottom + h * .08, sw: Math.min(xMax-Math.max(xMin,prefix-h*.6), Math.max(b.x1-Math.max(xMin,prefix-h*.6), h*8.1)), sh: h*1.65 },
         labelRegion: { sx: Math.max(xMin, b.x0-h*6.8), sy: b.y0-h*.3, sw: Math.min(xMax-Math.max(xMin,b.x0-h*6.8), b.x1-Math.max(xMin,b.x0-h*6.8)+h*.2), sh: b.y1-b.y0+h*.6 } };
     });
   });
@@ -59,10 +59,11 @@ export function confirmAmountReadings(readings, baseline) {
     group.count++; group.confidence = Math.max(group.confidence, Number(reading.confidence)||0); groups.set(value,group);
   }
   const candidates = [...groups].filter(([,r])=>r.count >= 2 && r.confidence >= 65);
-  if (candidates.length === 1) return { value:candidates[0][0], confidence:candidates[0][1].confidence };
-  if (groups.size === 1 && baseline?.confidence >= 85) {
+  if (candidates.length === 1 && [...groups].every(([value,r])=>value===candidates[0][0] || r.confidence<65)) return { value:candidates[0][0], confidence:candidates[0][1].confidence };
+  // Repeated low-confidence counts are useful for review, never safe to auto-apply.
+  if (groups.size === 1) {
     const [value, group] = [...groups][0];
-    if (group.count >= 3 && baseline.value === value) return { value, confidence: baseline.confidence };
+    if (group.count >= 3) return { value, confidence: Math.min(60,group.confidence) };
   }
   return null;
 }
@@ -94,8 +95,8 @@ export function resolveCardLabel(original, data) {
   if (!card.level || card.tierConfidence < 65) return { ...card, level: null };
   card.prefixKnown = Boolean(prefixWord);
   card.prefix = prefixWord ? Math.max(0, card.labelRegion.sx) + prefixWord.bbox.x0 / 3 : Math.max(card.xMin, card.label.bbox.x0-card.h*(card.level === 9 ? 5.6 : 3.5));
-  card.amountRegion.sx = card.prefix;
-  card.amountRegion.sw = Math.min(card.xMax-card.prefix, Math.max(card.label.bbox.x1-card.prefix, card.h*7.5));
+  card.amountRegion.sx = Math.max(card.xMin,card.prefix-card.h*.6);
+  card.amountRegion.sw = Math.min(card.xMax-card.amountRegion.sx, Math.max(card.label.bbox.x1-card.amountRegion.sx, card.h*8.1));
   return card;
 }
 export function mergeBadgeReadings(previous = {}, incoming = {}) {
@@ -108,4 +109,10 @@ export function mergeBadgeReadings(previous = {}, incoming = {}) {
       : reading;
   }
   return merged;
+}
+
+/** Prefer complete, tier-identified cards, not noisy labels from icons. */
+export function scanCoverageScore(parsed) {
+  return new Set(parsed.cards.filter(c=>c.level).map(c=>`${c.level}:${c.type}`)).size*1000
+    + Object.values(parsed.confidence).reduce((sum,c)=>sum+(Number(c)||0),0);
 }

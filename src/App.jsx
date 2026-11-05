@@ -1,7 +1,7 @@
 import "./ui/journal.css";
 import { migrateCapacityBuffs, effectiveCapacity, POSITIONS } from './bear/buffs.js';
 import { Button as SharedButton, Field as SharedField, Chevron } from './ui/components.jsx';
-import { flattenWords, parseScanText, resolveCardLabel, mergeBadgeReadings, confirmAmountReadings } from "./bear/troop-scan.js";
+import { flattenWords, parseScanText, resolveCardLabel, mergeBadgeReadings, confirmAmountReadings, scanCoverageScore } from "./bear/troop-scan.js";
 import { loadTesseract } from "./bear/ocr-runtime.js";
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import TimeHub from "./timehub/TimeHub.jsx";
@@ -1597,10 +1597,10 @@ function buildOcrCanvas(imgEl) {
   return canvas;
 }
 
-// A small, bounded crop reads just this troop card's amount. Multiple
+// A small, bounded crop reads just this troop card's amount. Horizontal
 // offsets must agree, so a clipped digit cannot silently become a count.
 async function scanTroopAmounts(Tesseract, canvas, parsed) {
-  const verified = { ...parsed, values: { ...parsed.values }, confidence: { ...parsed.confidence }, cards: [] };
+  const verified = { ...parsed, values: { ...parsed.values }, confidence: Object.fromEntries(Object.keys(parsed.confidence).map(k=>[k, Math.min(60,parsed.confidence[k])])), cards: [] };
   if (!parsed.cards.length) return verified;
   let worker;
   try {
@@ -1618,7 +1618,8 @@ async function scanTroopAmounts(Tesseract, canvas, parsed) {
       await worker.setParameters({ tessedit_pageseg_mode: '7', tessedit_char_whitelist: '0123456789,.' });
       const readings = [];
       for (const pad of [0, .08, .16]) {
-        const region = { ...card.amountRegion, sy: card.amountRegion.sy-card.h*pad, sh: card.amountRegion.sh+card.h*pad };
+        const left = Math.max(card.xMin,card.amountRegion.sx-card.h*pad);
+        const region = { ...card.amountRegion, sx:left, sw:card.amountRegion.sw+card.amountRegion.sx-left, sy: card.amountRegion.sy, sh: card.amountRegion.sh };
         const { data } = await worker.recognize(buildRegionCanvas(canvas, region));
         readings.push({ text: data.text, confidence: data.confidence });
       }
@@ -1757,18 +1758,24 @@ function ScreenshotScanner({ lang, accounts, activeAccountId, onApply }) {
           },
         });
         const parsed = parseScanText(res.data);
-        // Score by total confidence across all 6 fields (a missing field
-        // contributes 0) rather than just "how many fields did it find" —
-        // this is what lets a language that finds everything cleanly beat
-        // one that also finds everything but shakily. Every candidate in
-        // the list gets a full pass; auto-detect picks the best afterward
-        // instead of stopping at the first "found everything."
-        let score = parsed.cards.length * 200;
-        SCAN_FIELDS.forEach((f) => {
-          const c = parsed.confidence[f.key];
-          score += c === null || c === undefined ? 0 : c;
-        });
+        // Complete tier-identified cards outrank noisy labels and isolated high scores.
+        let score = scanCoverageScore(parsed);
         if (!best || score > best.score) best = { langUsed: candidateLang, parsed, score, words: flattenWords(res.data) };
+      }
+      // Sparse text ignores the icons and blank panel that confuse the page-layout pass.
+      // Keep it even when Chinese wins the first pass: English troop labels may be recoverable.
+      if (autoDetect || scanLang === 'eng') {
+        let sparseWorker;
+        try {
+          setScanStatus('Finding troop cards in both columns…');
+          sparseWorker = await Tesseract.createWorker('eng', 1, { workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js', corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5' });
+          await sparseWorker.setParameters({ tessedit_pageseg_mode: '11' });
+          const { data } = await sparseWorker.recognize(ocrCanvas);
+          const parsed = parseScanText(data);
+          const score = scanCoverageScore(parsed);
+          if (!best || score > best.score) best = { langUsed:'eng', parsed, score, words:flattenWords(data) };
+        } catch { /* Keep the normal page pass if sparse OCR is unavailable. */ }
+        finally { if (sparseWorker) await sparseWorker.terminate().catch(()=>{}); }
       }
       // Merge into whatever's already there instead of overwriting — since
       // a scan now only covers the scrolled-to region, a field this pass
