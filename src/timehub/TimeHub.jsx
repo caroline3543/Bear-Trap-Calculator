@@ -1,3 +1,4 @@
+import CrazyJoe from "../crazyjoe/CrazyJoe.jsx";
 import { JournalBrand, JournalNavFooter, JournalPageContext, JournalSectionLinks } from "../ui/JournalChrome.jsx";
 import { PageHeader, AccountSelector } from '../ui/components.jsx';
 /* ============================================================
@@ -71,7 +72,7 @@ function Header({ title, tab, headerExtra, onSettings, settingsOpen, children })
 export function AccountGrid({ onAdd }) {
   const { t, accounts, filter, setFilter, activeAccountId } = useTimeHub();
   const { tab } = useTab();
-  const calculator = tab === 'calc';
+  const calculator = tab === 'calc' || tab === 'joe';
   return <AccountSelector accounts={accounts} value={calculator ? activeAccountId : filter} onChange={setFilter}
     label={t('showAccounts')} allLabel={t('allAccounts')} allValue={ALL} allowAll={!calculator}
     manageLabel={t('settingsTitle')} onManage={onAdd} />;
@@ -82,6 +83,7 @@ const TABS = [
   { id: "timers", icon: "plan" },
   { id: "events", icon: "foundry" },
   { id: "calc", icon: "trap" },
+  { id: "joe", icon: "training" },
 ];
 
 
@@ -377,7 +379,7 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
   if (!visited.has(active)) setVisited(new Set([...visited, active]));
   // After the first screen is up, quietly prepare the other tabs so their first open is instant too.
   useEffect(() => {
-    const all = ["today", "todos", "timers", "events", ...(calculator ? ["calc"] : [])];
+    const all = ["today", "todos", "timers", "events", "joe", ...(calculator ? ["calc"] : [])];
     const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1200));
     // in a transition, so a tap during this background work always wins
     const id = idle(() => startTransition(() => setVisited((v) => (all.every((x) => v.has(x)) ? v : new Set([...v, ...all])))));
@@ -428,6 +430,7 @@ function TimeHubBody({ showHeader, headerExtra, calculator }) {
         {panel("timers", TIMERS_EL)}
         {panel("events", EVENTS_EL)}
         {calculator && panel("calc", <CalcPanel calculator={calculator} />)}
+        {panel("joe", <CrazyJoe />)}
       </div></main>
       {tour != null && <Tour step={tour} setStep={setTour} setSettings={setSettings} />}
       <Toast />

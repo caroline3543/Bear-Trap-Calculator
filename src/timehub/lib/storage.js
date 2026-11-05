@@ -1,3 +1,4 @@
+import { cleanJoe } from "../../crazyjoe/logic.js";
 import { calendarAlerts } from "./ics.js";
 /* ============================================================
    STORAGE v2 — localStorage key "timehub:v1" (kept so upgrades are
@@ -163,6 +164,7 @@ function cleanPlan(p) {
 function cleanAccountData(a) {
   if (!a || typeof a !== "object") return emptyAccountData();
   return {
+    crazyJoe: cleanJoe(a.crazyJoe),
     bookings: list(a.bookings, cleanBooking), timers: list(a.timers, cleanTimer), contrib: cleanContrib(a.contrib),
     campMax: cleanCampMax(a.campMax), helios: cleanHelios(a.helios), plans: list(a.plans, cleanPlan),
     lastEnded: Object.fromEntries(TRAINING_CAMPS.filter((c) => isNum(a.lastEnded?.[c])).map((c) => [c, a.lastEnded[c]])),
@@ -292,7 +294,7 @@ export function sanitizeState(raw, now = Date.now(), makeId = newId) {
       calendarAlertsMin: calendarAlerts(s),
       calendarAlarmMin: isNum(s.calendarAlarmMin) && s.calendarAlarmMin >= 0 && s.calendarAlarmMin <= 1440 ? s.calendarAlarmMin : 10,
       setupDismissed: s.setupDismissed === true,
-      tab: ["today", "timers", "events", "todos", "calc"].includes(s.tab) ? s.tab : "today",
+      tab: ["today", "timers", "events", "todos", "calc", "joe"].includes(s.tab) ? s.tab : "today",
       haptics: s.haptics !== false,
       showSpeed: s.showSpeed === true,
       tour: s.tour === "done" || s.tour === "skipped" ? s.tour : null,

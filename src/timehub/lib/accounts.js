@@ -1,3 +1,4 @@
+import { cleanJoe } from "../../crazyjoe/logic.js";
 /* ============================================================
    ACCOUNTS — any number of game accounts in one dashboard.
    Account: { id, name, type: "main"|"farm"|"other", color: 1..6, notes, isPrimary, order }
@@ -12,6 +13,7 @@ export const ALL = "all";
 
 export function emptyAccountData() {
   return {
+    crazyJoe: cleanJoe(),
     bookings: [],
     timers: [],
     contrib: { count: 20, anchorAt: 0, max: 20, intervalMs: 10 * 60000, whenFull: "pause" },

@@ -1,0 +1,50 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { allocateJoe, calculateJoe, cleanJoe } from './logic.js';
+import { emptyState, loadState, saveState } from '../timehub/lib/storage.js';
+const setup={infantry:'400000',lancer:'350000',capacity:'120000',marches:6,item:10,pet:'15000',minister:2500};
+test('no invented troops: blank input is incomplete, zero is valid',()=>{
+ assert.equal(calculateJoe({}),null);
+ assert.equal(calculateJoe({...setup,infantry:'',lancer:'0'}),null);
+ const r=calculateJoe({...setup,infantry:'0',lancer:'0'});assert.equal(r.best.sent,0);assert.equal(r.best.actions,0);
+});
+test('infantry has priority, both types are balanced across marches',()=>{
+ const r=allocateJoe(400000,350000,[120000,120000,120000,120000,120000,120000]);
+ assert.equal(r.leftInf,0);assert.equal(r.leftLan,30000);assert.equal(r.sent,720000);
+ assert.ok(r.rows.every(x=>x.infantry>=66666&&x.infantry<=66667));
+});
+test('recommend minimal activations, preferring pet over consumable when both work',()=>{
+ const r=calculateJoe(setup);assert.equal(r.best.pet,15000);assert.equal(r.best.percent,0);assert.equal(r.best.minister,0);assert.equal(r.best.left,0);
+});
+test('only 10% available: never recommend 20%; minister can close exact gap',()=>{
+ const r=calculateJoe({...setup,pet:'',infantry:'410000',lancer:'390000'});
+ assert.equal(r.best.percent,10);assert.equal(r.best.minister,2500);assert.equal(r.best.left,0);
+ assert.ok(r.scenarios.every(s=>s.percent<=10));
+});
+test('recipient limits prevent buff spending that cannot improve evacuation',()=>{
+ const r=calculateJoe({...setup,spaces:Array(6).fill('100000')});assert.equal(r.best.left,150000);assert.equal(r.best.actions,0);
+});
+test('displayed capacities never double count active buffs',()=>{
+ const r=calculateJoe({...setup,measured:true});assert.equal(r.scenarios.length,1);assert.equal(r.best.space,720000);
+});
+test('different hero capacities, zero recipient space and one march are respected',()=>{
+ const r=calculateJoe({...setup,marches:3,different:true,capacities:['100000','120000','80000'],spaces:['','0','50000']});
+ assert.deepEqual(r.baseline.rows.map(x=>x.capacity),[100000,0,50000]);assert.equal(r.baseline.leftInf,250000);
+ assert.equal(calculateJoe({...setup,marches:1}).baseline.space,120000);
+});
+test('allocation invariants across inventories, capacities and empty marches',()=>{
+ for(let seed=0;seed<200;seed++){
+  const i=seed*6711,l=seed*9179,caps=Array.from({length:seed%6+1},(_,j)=>(seed*13201+j*6787)%180000);
+  const r=allocateJoe(i,l,caps);
+  assert.equal(r.rows.reduce((n,x)=>n+x.infantry,0)+r.leftInf,i);
+  assert.equal(r.rows.reduce((n,x)=>n+x.lancer,0)+r.leftLan,l);
+  assert.ok(r.rows.every(x=>Number.isInteger(x.infantry)&&Number.isInteger(x.lancer)&&x.total<=x.capacity&&x.infantry>=0&&x.lancer>=0));
+  assert.equal(r.sent,Math.min(i+l,caps.reduce((a,b)=>a+b,0)));
+ }
+});
+test('saved Joe settings survive normalization and stay separate from other account data',()=>{
+ const state=emptyState();state.accountData.A.crazyJoe=setup;
+ const storage={value:null,setItem(k,v){this.value=v;},getItem(){return this.value;}};
+ saveState(state,storage);const restored=loadState(storage);assert.deepEqual(restored.accountData.A.crazyJoe,cleanJoe(setup));
+ assert.equal(restored.accountData.A.timers.length,0);
+});

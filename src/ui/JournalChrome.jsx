@@ -29,7 +29,7 @@ export function JournalNavFooter() {
     <span className="journal-footer-note">{t('journalPace')}</span>
   </div>;
 }
-const NUMBER = { today: '01', todos: '02', timers: '03', events: '04', calc: '05', settings: '06' };
+const NUMBER = { today: '01', todos: '02', timers: '03', events: '04', calc: '05', joe: '06', settings: '07' };
 /** Describes each real workflow without inventing user activity or account data. */
 export function JournalPageContext({ page }) {
   const { t, state, tz, accountIds } = useTimeHub();

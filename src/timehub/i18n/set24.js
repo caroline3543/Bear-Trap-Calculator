@@ -1,5 +1,6 @@
 /* Polar Field Journal chrome. Existing translated workflows remain unchanged. */
 export const en = {
+  tab_joe: "Crazy Joe", journal_joe_eyebrow: "REINFORCEMENT PLANNER", journal_joe_sub: "Empty your city of infantry and lancers. Find the capacity you need.",
   trainingCountSetup: "Add full-batch time and troop count in camp settings.",
   trainingCountOverMax: "Longer than one full batch; check your camp settings.",
   trainingCountTooShort: "Too short to train one troop.",
