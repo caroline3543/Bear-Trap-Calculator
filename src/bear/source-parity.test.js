@@ -10,6 +10,10 @@ for (const [i, { profile, expected }] of read('./source-parity-fixtures.json').f
     assert.equal(actual.capacity, expected.capacity);
     assert.ok(Math.abs(actual.raw - expected.raw) / Math.max(1, expected.raw) < 1e-12);
     assert.equal(actual.sourceBoost.toFixed(4), expected.sourceBoost.toFixed(4));
+    // The current form excludes custom damage bonuses and uses versioned buffs.
+    // Its displayed score must still match the reference display convention.
+    const currentForm = calculate({ ...profile, buffModelVersion: 1, cyrilleDamage: 0 }, db);
+    assert.equal(currentForm.sourceBoost.toFixed(4), expected.sourceBoost.toFixed(4));
     actual.ratios.forEach((r, c) => {
       assert.ok(Math.abs(r - expected.ratios[c]) < 1e-12);
       assert.equal((r * 100).toFixed(2), (expected.ratios[c] * 100).toFixed(2));
