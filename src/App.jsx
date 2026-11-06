@@ -10,6 +10,7 @@ import { loadState } from "./timehub/lib/storage.js";
 import { primaryAccount } from "./timehub/lib/accounts.js";
 import paperGrainTile from "./paper-grain.png";
 const BearLab = React.lazy(() => import("./bear/BearLab.jsx"));
+import { joinerCapacities, scaleJoinerTarget } from './bear/joiner-capacity.js';
 import { computeTarget } from './bear/composition.js';
 import { detectLanguage } from "./timehub/lib/language.js";
 
@@ -2093,6 +2094,109 @@ function loadSavedForAccount(id) {
   }
 }
 
+
+const JOINER_CAPACITY_COPY = {
+  "en": {
+    "mixedCapacity": "Different capacity without heroes?",
+    "heroCapLabel": "Joiner cap / capacity with heroes",
+    "heroCountLabel": "Joiner marches with heroes",
+    "noHeroCapLabel": "March capacity without heroes",
+    "withHeroes": "With heroes",
+    "withoutHeroes": "No heroes",
+    "mixedHelp": "Enter the number of joiner marches with heroes. The remaining marches have no heroes. Check both capacities with the same active buffs.",
+    "mixedRatioHelp": "All joiner marches use the same troop percentages, rounded to whole troops. Marches without heroes use the lower of their capacity and the joiner cap.",
+    "zeroCapacityHelp": "Enter a capacity above zero for marches without heroes."
+  },
+  "it": {
+    "mixedCapacity": "Capacità diversa senza eroi?",
+    "heroCapLabel": "Limite / capacità con eroi",
+    "heroCountLabel": "Marce di supporto con eroi",
+    "noHeroCapLabel": "Capacità senza eroi",
+    "withHeroes": "Con eroi",
+    "withoutHeroes": "Senza eroi",
+    "mixedHelp": "Inserisci quante marce di supporto hanno eroi. Le altre non hanno eroi. Controlla entrambe le capacità con gli stessi bonus attivi.",
+    "mixedRatioHelp": "Tutte le marce usano le stesse percentuali, arrotondate a truppe intere. Senza eroi si usa il valore minore tra capacità e limite.",
+    "zeroCapacityHelp": "Inserisci una capacità superiore a zero per le marce senza eroi."
+  },
+  "es": {
+    "mixedCapacity": "¿Capacidad diferente sin héroes?",
+    "heroCapLabel": "Límite / capacidad con héroes",
+    "heroCountLabel": "Marchas de apoyo con héroes",
+    "noHeroCapLabel": "Capacidad sin héroes",
+    "withHeroes": "Con héroes",
+    "withoutHeroes": "Sin héroes",
+    "mixedHelp": "Indica cuántas marchas de apoyo llevan héroes. Las demás no llevan héroes. Comprueba ambas capacidades con los mismos potenciadores activos.",
+    "mixedRatioHelp": "Todas las marchas usan los mismos porcentajes, redondeados a tropas enteras. Sin héroes se usa el menor valor entre su capacidad y el límite.",
+    "zeroCapacityHelp": "Introduce una capacidad mayor que cero para las marchas sin héroes."
+  },
+  "ko": {
+    "mixedCapacity": "영웅이 없을 때 수용량이 다른가요?",
+    "heroCapLabel": "집결 참여 상한 / 영웅 동반 수용량",
+    "heroCountLabel": "영웅이 있는 참여 행군 수",
+    "noHeroCapLabel": "영웅 없는 행군 수용량",
+    "withHeroes": "영웅 있음",
+    "withoutHeroes": "영웅 없음",
+    "mixedHelp": "영웅이 있는 참여 행군 수를 입력하세요. 나머지는 영웅이 없습니다. 같은 버프를 적용하여 두 수용량을 확인하세요.",
+    "mixedRatioHelp": "모든 참여 행군은 같은 병력 비율을 사용하며 정수로 반올림합니다. 영웅 없는 행군은 수용량과 참여 상한 중 작은 값을 사용합니다.",
+    "zeroCapacityHelp": "영웅 없는 행군의 수용량을 0보다 크게 입력하세요."
+  },
+  "de": {
+    "mixedCapacity": "Andere Kapazität ohne Helden?",
+    "heroCapLabel": "Beitrittslimit / Kapazität mit Helden",
+    "heroCountLabel": "Beitrittsmärsche mit Helden",
+    "noHeroCapLabel": "Marschkapazität ohne Helden",
+    "withHeroes": "Mit Helden",
+    "withoutHeroes": "Ohne Helden",
+    "mixedHelp": "Gib die Anzahl der Beitrittsmärsche mit Helden ein. Die übrigen haben keine Helden. Prüfe beide Kapazitäten mit denselben aktiven Boni.",
+    "mixedRatioHelp": "Alle Märsche verwenden dieselben Truppenanteile, auf ganze Truppen gerundet. Ohne Helden gilt der kleinere Wert aus Kapazität und Beitrittslimit.",
+    "zeroCapacityHelp": "Gib für Märsche ohne Helden eine Kapazität über null ein."
+  },
+  "ru": {
+    "mixedCapacity": "Вместимость без героев отличается?",
+    "heroCapLabel": "Лимит / вместимость с героями",
+    "heroCountLabel": "Марши присоединения с героями",
+    "noHeroCapLabel": "Вместимость без героев",
+    "withHeroes": "С героями",
+    "withoutHeroes": "Без героев",
+    "mixedHelp": "Укажите число маршей присоединения с героями. Остальные идут без героев. Проверяйте обе вместимости с одинаковыми активными бонусами.",
+    "mixedRatioHelp": "Все марши используют одинаковые проценты с округлением до целых бойцов. Без героев используется меньшее из вместимости и лимита.",
+    "zeroCapacityHelp": "Укажите вместимость больше нуля для маршей без героев."
+  },
+  "pl": {
+    "mixedCapacity": "Inna pojemność bez bohaterów?",
+    "heroCapLabel": "Limit / pojemność z bohaterami",
+    "heroCountLabel": "Marsze wsparcia z bohaterami",
+    "noHeroCapLabel": "Pojemność bez bohaterów",
+    "withHeroes": "Z bohaterami",
+    "withoutHeroes": "Bez bohaterów",
+    "mixedHelp": "Podaj liczbę marszów wsparcia z bohaterami. Pozostałe nie mają bohaterów. Sprawdź obie pojemności z tymi samymi aktywnymi premiami.",
+    "mixedRatioHelp": "Wszystkie marsze używają tych samych procentów, zaokrąglonych do całych żołnierzy. Bez bohaterów obowiązuje mniejsza wartość z pojemności i limitu.",
+    "zeroCapacityHelp": "Podaj pojemność większą od zera dla marszów bez bohaterów."
+  },
+  "tr": {
+    "mixedCapacity": "Kahramansız kapasite farklı mı?",
+    "heroCapLabel": "Katılım sınırı / kahramanlı kapasite",
+    "heroCountLabel": "Kahramanlı katılım yürüyüşü sayısı",
+    "noHeroCapLabel": "Kahramansız yürüyüş kapasitesi",
+    "withHeroes": "Kahramanlı",
+    "withoutHeroes": "Kahramansız",
+    "mixedHelp": "Kahramanlı katılım yürüyüşü sayısını girin. Diğerleri kahramansızdır. İki kapasiteyi aynı etkin güçlendirmelerle kontrol edin.",
+    "mixedRatioHelp": "Tüm yürüyüşler aynı birlik yüzdelerini kullanır ve tam sayıya yuvarlanır. Kahramansız yürüyüşlerde kapasite ile katılım sınırından düşük olan kullanılır.",
+    "zeroCapacityHelp": "Kahramansız yürüyüşler için sıfırdan büyük kapasite girin."
+  },
+  "ar": {
+    "mixedCapacity": "هل تختلف السعة دون أبطال؟",
+    "heroCapLabel": "حد الانضمام / السعة مع الأبطال",
+    "heroCountLabel": "عدد مسيرات الانضمام مع الأبطال",
+    "noHeroCapLabel": "سعة المسيرة دون أبطال",
+    "withHeroes": "مع أبطال",
+    "withoutHeroes": "دون أبطال",
+    "mixedHelp": "أدخل عدد مسيرات الانضمام مع الأبطال. المسيرات المتبقية دون أبطال. تحقق من السعتين باستخدام التعزيزات النشطة نفسها.",
+    "mixedRatioHelp": "تستخدم جميع المسيرات نسب القوات نفسها مع التقريب لأعداد صحيحة. للمسيرات دون أبطال تُستخدم السعة أو حد الانضمام، أيهما أقل.",
+    "zeroCapacityHelp": "أدخل سعة أكبر من صفر للمسيرات دون أبطال."
+  }
+};
+
 export default function App() {
   // The tracker owns account identities and names. Calculator data stays keyed by ID.
   const [trackedAccounts, setTrackedAccounts] = useState(() => loadState().accounts);
@@ -2107,7 +2211,13 @@ export default function App() {
   const [troopsEditing, setTroopsEditing] = useState(() => !saved?.t10);
 
   const [capacity, setCapacity] = useState(saved?.capacity ?? 110000);
+  const [differentHeroCapacity, setDifferentHeroCapacity] = useState(saved?.differentHeroCapacity ?? false);
+  const [heroMarches, setHeroMarches] = useState(saved?.heroMarches ?? 3);
+  const [noHeroCapacity, setNoHeroCapacity] = useState(saved?.noHeroCapacity ?? 80000);
   const [numSquads, setNumSquads] = useState(saved?.numSquads ?? 6);
+  const squadCapacities = useMemo(() => joinerCapacities(capacity, numSquads, differentHeroCapacity, heroMarches, noHeroCapacity), [capacity, numSquads, differentHeroCapacity, heroMarches, noHeroCapacity]);
+  const totalJoinerCapacity = squadCapacities.reduce((sum, value) => sum + value, 0);
+  const capacityDivisor = capacity > 0 ? totalJoinerCapacity / capacity : 0;
   const [t10, setT10] = useState(saved?.t10 ?? SAMPLE.t10);
   const [t9, setT9] = useState(saved?.t9 ?? SAMPLE.t9);
   const [troopTiers, setTroopTiers] = useState(() => loadTroopTiers(activeAccount, saved));
@@ -2175,7 +2285,7 @@ export default function App() {
       localStorage.setItem(
         accountStorageKey(activeAccount),
         JSON.stringify({
-          capacity, numSquads, t10, t9, t11, hasHelios, troopTiers,
+          capacity, numSquads, differentHeroCapacity, heroMarches, noHeroCapacity, t10, t9, t11, hasHelios, troopTiers,
           mode, ratio, exact, minMarchMarksman,
           strategy,
           rallyCapacity, cyrilleBoost, snowApeBoost, capacityBuffs, rallyMode, rallyRatio, rallyExact,
@@ -2187,14 +2297,14 @@ export default function App() {
     }
   }, [
     activeAccount,
-    capacity, numSquads, t10, t9, t11, hasHelios, troopTiers,
+    capacity, numSquads, differentHeroCapacity, heroMarches, noHeroCapacity, t10, t9, t11, hasHelios, troopTiers,
     mode, ratio, exact, minMarchMarksman,
     strategy,
     rallyCapacity, cyrilleBoost, snowApeBoost, capacityBuffs, rallyMode, rallyRatio, rallyExact,
     advancedOpen, darkMode, lang, fills, recInfantryPct, recLancerPct,
   ]);
 
-  const tr = (key) => (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || TRANSLATIONS.en[key] || key;
+  const tr = (key) => JOINER_CAPACITY_COPY[lang]?.[key] || JOINER_CAPACITY_COPY.en[key] || (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || TRANSLATIONS.en[key] || key;
 
   const targetManual = useMemo(() => computeTarget(capacity, mode, ratio, exact), [capacity, mode, ratio, exact]);
   const effectiveRallyCapacity = effectiveCapacity(rallyCapacity, cyrilleBoost, snowApeBoost, { ...capacityBuffs, frostdragon: 'None' });
@@ -2220,15 +2330,15 @@ export default function App() {
   // this is a hard stock limit, separate from (and independent of) the softer
   // 60,000-Marksman warning below. Recomputed live as the troop pool changes.
   const infantryStockMaxPct =
-    numSquads > 0 && capacity > 0
-      ? Math.min(MAX_JOINER_INFANTRY_PCT * 100, (Math.floor(joinerAvailable.infantry / numSquads) / capacity) * 100)
+    totalJoinerCapacity > 0
+      ? Math.min(MAX_JOINER_INFANTRY_PCT * 100, (joinerAvailable.infantry / totalJoinerCapacity) * 100)
       : MAX_JOINER_INFANTRY_PCT * 100;
   const infantryEffectiveMax = Math.max(MIN_JOINER_INFANTRY_PCT * 100, infantryStockMaxPct);
   const infantryStockLimited = infantryStockMaxPct < MAX_JOINER_INFANTRY_PCT * 100 - 0.001;
 
   const lancerStockMaxPct =
-    numSquads > 0 && capacity > 0
-      ? Math.min(MAX_JOINER_LANCER_UI_PCT * 100, (Math.floor(joinerAvailable.lancer / numSquads) / capacity) * 100)
+    totalJoinerCapacity > 0
+      ? Math.min(MAX_JOINER_LANCER_UI_PCT * 100, (joinerAvailable.lancer / totalJoinerCapacity) * 100)
       : MAX_JOINER_LANCER_UI_PCT * 100;
   const lancerEffectiveMax = Math.max(5, lancerStockMaxPct);
   const lancerStockLimited = lancerStockMaxPct < MAX_JOINER_LANCER_UI_PCT * 100 - 0.001;
@@ -2241,11 +2351,11 @@ export default function App() {
       priorityTargetWithFloors(
         capacity,
         joinerAvailable,
-        numSquads,
+        capacityDivisor,
         { infantry: Math.max(DIVERSITY_FLOOR, Math.round(capacity * (effectiveRecInfantryPct / 100))), lancer: Math.max(DIVERSITY_FLOOR, Math.round(capacity * (effectiveRecLancerPct / 100))), marksman: DIVERSITY_FLOOR },
         { infantry: infantryCap }
       ),
-    [capacity, joinerAvailable, numSquads, infantryCap, effectiveRecInfantryPct, effectiveRecLancerPct]
+    [capacity, joinerAvailable, capacityDivisor, infantryCap, effectiveRecInfantryPct, effectiveRecLancerPct]
   );
   // Marksman isn't a slider — it's whatever's left after Infantry and Lancer. This flag
   // drives the one remaining warning: dropping below the hard 60,000 floor.
@@ -2256,22 +2366,25 @@ export default function App() {
     const pools = { t11: { ...rallyComputation.pools.t11 }, t10: { ...rallyComputation.pools.t10 }, t9: { ...rallyComputation.pools.t9 } };
     const squads = [];
     for (let i = 0; i < numSquads; i++) {
-      const tgt = strategy === "manual" ? targetManual : recommendedTarget;
+      const baseTarget = strategy === "manual" ? targetManual : recommendedTarget;
+      const marchCapacity = squadCapacities[i];
+      const tgt = scaleJoinerTarget(baseTarget, capacity, marchCapacity);
 
       if (!tgt.valid) {
         squads.push(null);
         continue;
       }
-      const sq = allocateSquad(capacity, tgt, pools, fills[i + 1] || []);
+      const sq = allocateSquad(marchCapacity, tgt, pools, fills[i + 1] || []);
       // Snapshot what's left in the shared pool right after this squad draws
       // from it, so Squad Results can show a running total while scrolling
       // instead of making the player jump back up to Remaining Troops.
+      sq.heroMarch = !differentHeroCapacity || i < Math.min(heroMarches, numSquads);
       sq.remainingAfter = {};
       TYPES.forEach((t) => (sq.remainingAfter[t] = pools.t11[t] + pools.t10[t] + pools.t9[t]));
       squads.push(sq);
     }
     return { squads, pools };
-  }, [rallyComputation, numSquads, strategy, targetManual, recommendedTarget, capacity, fills]);
+  }, [rallyComputation, numSquads, strategy, targetManual, recommendedTarget, capacity, fills, squadCapacities, differentHeroCapacity, heroMarches]);
 
   const recommendedTroopTiers = useMemo(() => TYPES.map((type, i) => ({
     ...troopTiers[i], level: t11[type] > 0 ? 11 : t10[type] > 0 ? 10 : t9[type] > 0 ? 9 : troopTiers[i].level,
@@ -2281,7 +2394,7 @@ export default function App() {
   const rallyAllocated = rallyComputation.result ? rallyComputation.result.totalAllocated : 0;
   const totalAllocated = computation.squads.reduce((s, sq) => s + (sq ? sq.totalAllocated : 0), 0) + rallyAllocated;
   const totalRemaining = totalAvailable - totalAllocated;
-  const totalCapacityRequired = capacity * numSquads + effectiveRallyCapacity;
+  const totalCapacityRequired = totalJoinerCapacity + effectiveRallyCapacity;
   const fullCount = computation.squads.filter((s) => s && s.status === "full").length;
   const partialCount = computation.squads.filter((s) => s && s.status === "partial").length;
   const unfilledSpaces = Math.max(0, totalCapacityRequired - totalAllocated);
@@ -2373,7 +2486,7 @@ export default function App() {
   }
   function resetAll() {
     const snapshot = {
-      capacity, numSquads, t10, t9, t11, hasHelios, troopTiers,
+      capacity, numSquads, differentHeroCapacity, heroMarches, noHeroCapacity, t10, t9, t11, hasHelios, troopTiers,
       mode, ratio, exact, minMarchMarksman,
       strategy,
       rallyCapacity, cyrilleBoost, snowApeBoost, capacityBuffs, rallyMode, rallyRatio, rallyExact,
@@ -2381,6 +2494,9 @@ export default function App() {
     };
     setCapacity(110000);
     setNumSquads(6);
+    setDifferentHeroCapacity(false);
+    setHeroMarches(3);
+    setNoHeroCapacity(80000);
     setT10(SAMPLE.t10);
     setT9(SAMPLE.t9);
     setT11(EMPTY);
@@ -2408,6 +2524,9 @@ export default function App() {
     showToast(tr("resetToast"), tr("undoAction"), () => {
       setCapacity(snapshot.capacity);
       setNumSquads(snapshot.numSquads);
+      setDifferentHeroCapacity(snapshot.differentHeroCapacity);
+      setHeroMarches(snapshot.heroMarches);
+      setNoHeroCapacity(snapshot.noHeroCapacity);
       setT10(snapshot.t10);
       setT9(snapshot.t9);
       setT11(snapshot.t11);
@@ -2434,7 +2553,7 @@ export default function App() {
   // tracked accounts, so each keeps its own independent troop pool and settings.
   function buildAccountSnapshot() {
     return {
-      capacity, numSquads, t10, t9, t11, hasHelios, troopTiers,
+      capacity, numSquads, differentHeroCapacity, heroMarches, noHeroCapacity, t10, t9, t11, hasHelios, troopTiers,
       mode, ratio, exact, minMarchMarksman,
       strategy,
       rallyCapacity, cyrilleBoost, snowApeBoost, capacityBuffs, rallyMode, rallyRatio, rallyExact,
@@ -2446,6 +2565,9 @@ export default function App() {
     setTroopTiers(loadTroopTiers(accountId, data));
     setCapacity(data.capacity ?? 110000);
     setNumSquads(data.numSquads ?? 6);
+    setDifferentHeroCapacity(data.differentHeroCapacity ?? false);
+    setHeroMarches(data.heroMarches ?? 3);
+    setNoHeroCapacity(data.noHeroCapacity ?? 80000);
     setT10(data.t10 ?? SAMPLE.t10);
     setT9(data.t9 ?? SAMPLE.t9);
     setT11(data.t11 ?? EMPTY);
@@ -2518,7 +2640,7 @@ export default function App() {
     const auto = priorityTargetWithFloors(
       capacity,
       joinerAvailable,
-      numSquads,
+      capacityDivisor,
       { infantry: autoInfantryFloor, lancer: autoLancerFloor, marksman: Math.max(DIVERSITY_FLOOR, minMarchMarksman) },
       {},
       ["marksman", "lancer", "infantry"]
@@ -2559,6 +2681,7 @@ export default function App() {
       while (
         j + 1 < squads.length &&
         squads[j + 1] &&
+        (!differentHeroCapacity || squads[j + 1].heroMarch === sq.heroMarch) &&
         squads[j + 1].breakdown.infantry.total === sq.breakdown.infantry.total &&
         squads[j + 1].breakdown.lancer.total === sq.breakdown.lancer.total &&
         squads[j + 1].breakdown.marksman.total === sq.breakdown.marksman.total
@@ -2566,7 +2689,7 @@ export default function App() {
         j++;
       }
       const label = i === j ? `${tr("squadLabel")} ${i + 1}` : `${tr("squadLabel")} ${i + 1}-${j + 1}`;
-      lines.push(`${label}: ${fmt(sq.breakdown.infantry.total)} - ${fmt(sq.breakdown.lancer.total)} - ${fmt(sq.breakdown.marksman.total)}`);
+      lines.push(`${label}${differentHeroCapacity ? (sq.heroMarch ? ` (${tr("withHeroes")})` : ` (${tr("withoutHeroes")})`) : ""}: ${fmt(sq.breakdown.infantry.total)} - ${fmt(sq.breakdown.lancer.total)} - ${fmt(sq.breakdown.marksman.total)}`);
       i = j + 1;
     }
 
@@ -2975,9 +3098,22 @@ export default function App() {
                     <Card>
                       <SectionHeader step={3} title={tr("joinerSquadsLabel")} sub={tr("settingsSub")} />
                       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                        <NumField label={tr("squadCapacity")} value={capacity} onChange={setCapacity} />
-                        <NumField label={tr("numSquadsLabel")} value={numSquads} onChange={setNumSquads} />
+                        <NumField label={differentHeroCapacity ? tr("heroCapLabel") : tr("squadCapacity")} value={capacity} onChange={value => { setCapacity(value); setFills(prev => ({ rally: prev.rally || [] })); }} />
+                        <NumField label={tr("numSquadsLabel")} value={numSquads} onChange={value => { setNumSquads(value); setHeroMarches(Math.min(heroMarches, value)); setFills(prev => ({ rally: prev.rally || [] })); }} />
                       </div>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 16, minHeight: 44 }}>
+                        <input type="checkbox" checked={differentHeroCapacity} onChange={e => { setDifferentHeroCapacity(e.target.checked); setFills(prev => ({ rally: prev.rally || [] })); }} />
+                        {tr("mixedCapacity")}
+                      </label>
+                      {differentHeroCapacity && <>
+                        <p className="bt-flow-note">{tr("mixedHelp")}</p>
+                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                          <NumField label={tr("heroCountLabel")} value={Math.min(heroMarches, numSquads)} onChange={value => { setHeroMarches(Math.min(value, numSquads)); setFills(prev => ({ rally: prev.rally || [] })); }} />
+                          <NumField label={tr("noHeroCapLabel")} value={noHeroCapacity} onChange={value => { setNoHeroCapacity(value); setFills(prev => ({ rally: prev.rally || [] })); }} />
+                        </div>
+                        <p className="bt-flow-note">{Math.min(heroMarches, numSquads)} {tr("withHeroes")} · {Math.max(0, numSquads - heroMarches)} {tr("withoutHeroes")}. {tr("mixedRatioHelp")}</p>
+                        {noHeroCapacity === 0 && heroMarches < numSquads && <p role="alert" className="bt-flow-note">{tr("zeroCapacityHelp")}</p>}
+                      </>}
                       {numSquads === 0 && <p className="bt-flow-note">{tr('noJoinerSquads')}</p>}
                     </Card>
                       </div>
@@ -3128,7 +3264,7 @@ export default function App() {
                           {computation.squads.map((sq, i) => (
                             <SquadCard
                               key={i}
-                              index={i + 1}
+                              index={differentHeroCapacity ? `${i + 1} · ${sq?.heroMarch ? tr("withHeroes") : tr("withoutHeroes")}` : i + 1}
                               squadKey={i + 1}
                               result={sq}
                               invalid={false}
