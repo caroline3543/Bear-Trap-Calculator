@@ -184,6 +184,34 @@ H.applyAdaptiveReflow=applyAdaptiveReflow;
 
 
 
+// Optional existing structures can be proposed for relocation without altering the plan.
+function suggestAllianceStructurePositions(s,kind,{radius=8,limit=5}={}){
+ if(!['HQ','Node'].includes(kind))throw Error('Choose HQ or Node.');
+ if(!Number.isInteger(radius)||radius<0||radius>40||!Number.isInteger(limit)||limit<1||limit>50)throw Error('Invalid search radius or limit.');
+ const current=allianceMarkers(s).find(m=>m.name===kind);
+ if(!current)return [];
+ const o=origin(s),fixed=[...s.traps,...s.slots,...s.blocks,...s.structures,...allianceMarkers(s).filter(m=>m.name!==kind)];
+ const out=[];
+ for(let dy=-radius;dy<=radius;dy++)for(let dx=-radius;dx<=radius;dx++){
+  if(!dx&&!dy)continue;
+  const box={x:current.x+dx,y:current.y+dy,w:current.w,h:current.h};
+  if(worldBlocked(s,box,'structure')||fixed.some(item=>H.overlap(item,box)))continue;
+  out.push({kind,x:current.worldX+dx,y:current.worldY+dy,distance:Math.abs(dx)+Math.abs(dy),footprintVerified:false});
+ }
+ return out.sort((a,b)=>a.distance-b.distance||a.y-b.y||a.x-b.x).slice(0,limit);
+}
+H.suggestAllianceStructurePositions=suggestAllianceStructurePositions;
+function applyAllianceStructurePosition(s,kind,x,y){
+ if(!['HQ','Node'].includes(kind)||![x,y].every(Number.isInteger))throw Error('Invalid alliance structure relocation.');
+ const marker=allianceMarkers(s).find(m=>m.name===kind);
+ if(!marker)throw Error('Enter the existing structure coordinates in Settings first.');
+ const o=origin(s),box={x:x-o.x,y:y-o.y,w:marker.w,h:marker.h};
+ if(worldBlocked(s,box,'structure')||[...s.traps,...s.slots,...s.blocks,...s.structures,...allianceMarkers(s).filter(m=>m.name!==kind)].some(b=>H.overlap(b,box)))throw Error('Proposed structure overlaps terrain or another object.');
+ const n=copy(s),kx=kind==='HQ'?'hqX':'nodeX',ky=kind==='HQ'?'hqY':'nodeY';
+ n.settings[kx]=x;n.settings[ky]=y;
+ return n;
+}
+H.applyAllianceStructurePosition=applyAllianceStructurePosition;
 H.worldAt=at;H.worldOrigin=origin;H.worldBlocked=worldBlocked;H.worldFeatures=features;H.syncMapCoordinates=sync;H.changeMapReference=reference;
 H.worldSource={name:'WOS Nerds community world map',url:'https://github.com/wosnerdwarriors/wos-data/tree/main/data/worldmap',revision:'802a263238893581b1ae7fc38914fa660f37b42f',tiles:198365,coverage:'1200 × 1200; state-specific differences and missing nodes are not verified'};
 if(typeof module!=='undefined')module.exports=H;
