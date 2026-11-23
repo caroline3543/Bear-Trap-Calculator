@@ -14,7 +14,7 @@ Hive.migrate(state);if(!state.mapMode)state.mapMode='plain';if(state.mapMode==='
 if(localStorage.getItem(KEY+'-dark')==='true')document.body.classList.add('dark');
 function toast(s){$('#toast').textContent=s;$('#toast').classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#toast').classList.remove('show'),3500)}
 function persist(){if(readonly)return;try{localStorage.setItem(KEY,JSON.stringify(state));localStorage.setItem(KEY+'-history',JSON.stringify(history.slice(-10)));$('#saveState').textContent='Saved on this device'}catch{$('#saveState').textContent='Not saved · storage full';toast('Save failed. Download a backup now.')}}
-function commit(fn){if(readonly)return;undo.push(JSON.stringify(state));if(undo.length>40)undo.shift();redo=[];history.push({at:new Date().toISOString(),state:JSON.stringify(state)});fn();persist();render()}
+function commit(fn){if(readonly)return;undo.push(JSON.stringify(state));if(undo.length>40)undo.shift();redo=[];history.push({at:new Date().toISOString(),state:JSON.stringify(state)});fn();terrainPreview=null;const terrainResults=$('#terrainResults');if(terrainResults)terrainResults.textContent='Plan changed. Search again to calculate suggestions for the current layout.';persist();render()}
 function openModal(html){$('#modalBody').innerHTML=html;if(!$('#modal').open)$('#modal').showModal()}
 function closeModal(){$('#modal').close();moveTarget=null}
 $('#closeModal').onclick=closeModal;$('#modal').addEventListener('click',e=>{if(e.target===$('#modal'))closeModal()});
