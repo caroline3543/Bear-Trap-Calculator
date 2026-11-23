@@ -27,6 +27,32 @@ H.switchMapMode=switchMode;H.placeBearTrap=placeTrap;
 // Marker footprints are provisional and are not used to claim buildability.
 function allianceMarkers(s){const o=origin(s),out=[];for(const [name,kx,ky,w,h] of [['HQ','hqX','hqY',3,3],['Node','nodeX','nodeY',1,1]]){const x=s.settings[kx],y=s.settings[ky];if(Number.isInteger(x)&&Number.isInteger(y))out.push({name,worldX:x,worldY:y,x:x-o.x,y:y-o.y,w,h,footprintVerified:false})}return out}
 H.allianceMarkers=allianceMarkers;
+// Read-only terrain-aware BT candidate search. This never changes the plan.
+// A candidate is a map-model suggestion, not an in-game construction guarantee.
+function suggestTrapPositions(s,id,{radius=8,limit=3}={}){
+ if(![1,2].includes(Number(id)))throw Error('Choose BT1 or BT2.');
+ if(!Number.isInteger(radius)||radius<0||radius>40||!Number.isInteger(limit)||limit<1||limit>20)throw Error('Invalid search radius or candidate limit.');
+ const trap=s.traps.find(t=>t.id===Number(id)),o=origin(s);
+ const x0=Number(id)===1?s.settings.anchorX:s.settings.anchor2X;
+ const y0=Number(id)===1?s.settings.anchorY:s.settings.anchor2Y;
+ if(!Number.isInteger(x0)||!Number.isInteger(y0))return [];
+ const candidates=[];
+ for(let dy=-radius;dy<=radius;dy++)for(let dx=-radius;dx<=radius;dx++){
+  const x=x0+dx,y=y0+dy;if(x<0||y<0||x>1197||y>1197)continue;
+  const box={x:x-o.x,y:y-o.y,w:3,h:3};
+  if(worldBlocked(s,box,'trap'))continue;
+  const conflicts=[...s.traps.filter(t=>t.id!==Number(id)),...s.structures,...s.blocks,...s.slots.filter(p=>!trap||p.trap!==Number(id))];
+  if(conflicts.some(item=>H.overlap(box,item)))continue;
+  // Existing cities belonging to this trap may need reflow; count them, do not mutate.
+  const affected=s.slots.filter(p=>p.trap===Number(id)&&H.overlap(box,p));
+  const locked=affected.some(p=>s.members.some(m=>m.slot===p.id&&m.locked));
+  if(locked)continue;
+  candidates.push({x,y,offsetX:dx,offsetY:dy,distance:Math.abs(dx)+Math.abs(dy),affectedSlots:affected.length,requiresReflow:!!(dx||dy),terrainVerified:false});
+ }
+ return candidates.sort((a,b)=>a.distance-b.distance||a.affectedSlots-b.affectedSlots||Math.abs(a.offsetY)-Math.abs(b.offsetY)||a.y-b.y||a.x-b.x).slice(0,limit);
+}
+H.suggestTrapPositions=suggestTrapPositions;
+
 H.worldAt=at;H.worldOrigin=origin;H.worldBlocked=worldBlocked;H.worldFeatures=features;H.syncMapCoordinates=sync;H.changeMapReference=reference;
 H.worldSource={name:'WOS Nerds community world map',url:'https://github.com/wosnerdwarriors/wos-data/tree/main/data/worldmap',revision:'802a263238893581b1ae7fc38914fa660f37b42f',tiles:198365,coverage:'1200 × 1200; state-specific differences and missing nodes are not verified'};
 if(typeof module!=='undefined')module.exports=H;
