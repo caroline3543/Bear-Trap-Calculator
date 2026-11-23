@@ -41,7 +41,7 @@ function suggestTrapPositions(s,id,{radius=8,limit=3}={}){
   const x=x0+dx,y=y0+dy;if(x<0||y<0||x>1197||y>1197)continue;
   const box={x:x-o.x,y:y-o.y,w:3,h:3};
   if(worldBlocked(s,box,'trap'))continue;
-  const conflicts=[...s.traps.filter(t=>t.id!==Number(id)),...s.structures,...s.blocks,...s.slots.filter(p=>!trap||p.trap!==Number(id))];
+  const conflicts=[...s.traps.filter(t=>t.id!==Number(id)),...s.structures,...allianceMarkers(s),...s.blocks,...s.slots.filter(p=>!trap||p.trap!==Number(id))];
   if(conflicts.some(item=>H.overlap(box,item)))continue;
   // Existing cities belonging to this trap may need reflow; count them, do not mutate.
   const affected=s.slots.filter(p=>p.trap===Number(id)&&H.overlap(box,p));
@@ -61,7 +61,7 @@ function previewTrapShift(s,id,x,y){
  const o=origin(s),dx=x-o.x-trap.x,dy=y-o.y-trap.y;
  const moved=s.slots.filter(p=>p.trap===Number(id)).map(p=>({id:p.id,x:p.x+dx,y:p.y+dy,w:p.w,h:p.h,trap:p.trap}));
  const nextTrap={...trap,x:trap.x+dx,y:trap.y+dy};
- const others=[...s.traps.filter(t=>t.id!==Number(id)),...s.structures,...s.blocks,...s.slots.filter(p=>p.trap!==Number(id))];
+ const others=[...s.traps.filter(t=>t.id!==Number(id)),...s.structures,...allianceMarkers(s),...s.blocks,...s.slots.filter(p=>p.trap!==Number(id))];
  const blocked=[];
  if(worldBlocked(s,nextTrap,'trap')||others.some(b=>H.overlap(nextTrap,b)))blocked.push('Bear Trap footprint');
  for(const p of moved)if(worldBlocked(s,p,'city')||others.some(b=>H.overlap(p,b))||H.overlap(p,nextTrap))blocked.push(p.id);
@@ -78,7 +78,7 @@ function previewAdaptiveReflow(s,id,x,y,{radius=8}={}){
  if(!initial.trap)return {...initial,adapted:true,unplaced:[]};
  const trap=s.traps.find(t=>t.id===Number(id)),o=origin(s);
  const box={...trap,x:x-o.x,y:y-o.y};
- const fixed=[...s.traps.filter(t=>t.id!==Number(id)),...s.blocks,...s.structures,...s.slots.filter(p=>p.trap!==Number(id)),box];
+ const fixed=[...s.traps.filter(t=>t.id!==Number(id)),...s.blocks,...s.structures,...allianceMarkers(s),...s.slots.filter(p=>p.trap!==Number(id)),box];
  const slots=s.slots.filter(p=>p.trap===Number(id));
  const membersBySlot=new Map(s.members.filter(m=>m.slot).map(m=>[m.slot,m]));
  const placed=[],unplaced=[],used=[];
@@ -174,7 +174,7 @@ function applyAdaptiveReflow(s,id,x,y,{radius=8}={}){
  // Verify the complete result, including city-to-city and trap collisions.
  for(const slot of n.slots.filter(p=>p.trap===Number(id))){
   if(worldBlocked(n,slot,'city')||n.traps.some(t=>H.overlap(t,slot))||
-    [...n.blocks,...n.structures,...n.slots.filter(p=>p.id!==slot.id)].some(b=>H.overlap(b,slot)))
+    [...n.blocks,...n.structures,...allianceMarkers(n),...n.slots.filter(p=>p.id!==slot.id)].some(b=>H.overlap(b,slot)))
    throw Error('Relocation validation failed for city slot '+slot.id);
  }
  return {state:n,preview};
