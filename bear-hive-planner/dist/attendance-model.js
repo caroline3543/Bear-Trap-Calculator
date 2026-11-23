@@ -46,10 +46,10 @@ function routeAttendanceGroups(s,now=Date.now()){
  }
  return n;
 }
-function setRosterGroup(s,ids,trap,{automatic=true,kind='keep'}={}){
+function setRosterGroup(s,ids,trap,{automatic=false,kind='keep'}={}){
  if(![0,1,2].includes(+trap))throw Error('Choose a BT list.');
  const n=H.bulkMemberAction?H.bulkMemberAction(s,ids,+trap).state:clone(s);
- for(const id of ids){const m=n.members.find(m=>m.id===id);if(!m)throw Error('Choose an existing player.');m.trap=+trap;m.btGroupMode=automatic?'attendance':'manual';m.attendanceGroupBase=+trap;delete m.suggestedAttendanceTrap;if(trap&&kind!=='keep'){if(!labels[kind])throw Error('Choose a valid frequency.');m.attendance[trap]={kind,attended:null,total:null}}}
+ for(const id of ids){const m=n.members.find(m=>m.id===id);if(!m)throw Error('Choose an existing player.');m.trap=+trap;m.btGroupMode='manual';m.attendanceGroupBase=+trap;delete m.suggestedAttendanceTrap;if(trap&&kind!=='keep'){if(!labels[kind])throw Error('Choose a valid frequency.');m.attendance[trap]={kind,attended:null,total:null}}}
  return n;
 }
 const originalSaveSession=saveSession;
@@ -58,6 +58,8 @@ Object.assign(H,{rosterSuggestions,preferredAttendanceTrap,routeAttendanceGroups
 // Manual participation only. Legacy event records remain readable for backup compatibility,
 // but never determine player categories, placements or BT roster membership.
 routeAttendanceGroups=function(s){return clone(s)};
+H.routeAttendanceGroups=routeAttendanceGroups;
+H.preferredAttendanceTrap=function(s,m){return {trap:m.trap,source:'manual',counts:{1:0,2:0}}};
 stats=function(s,m,trap=m.trap){
  const kind=m.participation||'unknown';
  const normalized={regular:'regular',sometimes:'sometimes',rarely:'rarely',none:'none',unknown:'unknown'}[kind]||'unknown';
@@ -67,5 +69,5 @@ stats=function(s,m,trap=m.trap){
 attendance=function(s,m,t){const kind=stats(s,m,t).kind;return {regular:1,sometimes:.5,rarely:.2,none:0,unknown:0}[kind]};
 const baseSuggest=H.suggest;
 H.suggest=function(s,trap){const work=clone(s);migrate(work);for(const m of work.members){for(const t of [1,2]){const a=stats(work,m,t);if(a.enough)m.attendance[t]={kind:a.kind,attended:a.attended,total:a.count}}}for(const m of work.members){const kind=stats(work,m,trap).kind;if(kind==='none'||kind==='unknown')m.attendance[trap]={kind:'rarely',attended:0,total:1};else m.attendance[trap]={kind,attended:null,total:null};}const result=baseSuggest(work,trap);for(const m of result.members){const old=s.members.find(x=>x.id===m.id);m.attendance=clone(old.attendance)}return result};
-Object.assign(H,{migrate,attendanceStats:stats,attendanceScore:attendance,parseBulk:parseRoster,reviewBulk:reviewRoster,applyBulk:applyRoster,frequencyLabels:labels,attendanceSession:session,attendanceSessionKey:sessionKey,shiftEventDate:shiftDate,expectedEventDate:expected,parseAttendees,matchAttendee:match,reviewAttendees,saveAttendanceSession:saveSession,sessionFinished:finished});if(typeof module!=='undefined')module.exports=H;
+Object.assign(H,{migrate,attendanceStats:stats,attendanceScore:attendance,parseBulk:parseRoster,reviewBulk:reviewRoster,applyBulk:applyRoster,frequencyLabels:labels,attendanceSession:session,attendanceSessionKey:sessionKey,shiftEventDate:shiftDate,expectedEventDate:expected,parseAttendees,matchAttendee:match,reviewAttendees,saveAttendanceSession:function(){throw Error('Attendance recording has been retired. Use manual participation categories.')},sessionFinished:finished});if(typeof module!=='undefined')module.exports=H;
 })(typeof window!=='undefined'?window:globalThis);
