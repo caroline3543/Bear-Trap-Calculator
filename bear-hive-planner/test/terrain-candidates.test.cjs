@@ -12,4 +12,11 @@ assert.deepEqual(results.map(p=>p.distance),results.map(p=>p.distance).sort((a,b
 assert.equal(JSON.stringify(s),before,'suggestions must not mutate the plan');
 assert.throws(()=>H.suggestTrapPositions(s,3),/BT1 or BT2/);
 assert.throws(()=>H.suggestTrapPositions(s,1,{radius:100}),/Invalid/);
+
+const shift=H.previewTrapShift(s,1,s.settings.anchorX,s.settings.anchorY);
+assert.equal(shift.valid,true);
+assert.equal(shift.terrainVerified,false);
+assert.equal(JSON.stringify(s),before,'shift preview must not mutate plan');
+const bad=H.previewTrapShift(s,1,-1,-1);
+assert.equal(bad.valid,false);
 console.log('Terrain candidate search tests passed');
