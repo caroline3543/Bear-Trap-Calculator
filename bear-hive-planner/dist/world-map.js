@@ -135,7 +135,8 @@ function compareTrapScenarios(s,id,{radius=8,reflowRadius=8}={}){
  const used=new Set();
  const rank=(label,fn)=>{
   const ordered=[...valid].sort((a,b)=>fn(a)-fn(b)||a.distance-b.distance||a.y-b.y||a.x-b.x);
-  const choice=ordered.find(p=>!used.has(p.x+','+p.y))||ordered[0];
+  const choice=ordered.find(p=>!used.has(p.x+','+p.y));
+  if(!choice)return null;
   used.add(choice.x+','+choice.y);
   return {label,...choice};
  };
@@ -143,7 +144,7 @@ function compareTrapScenarios(s,id,{radius=8,reflowRadius=8}={}){
   rank('Most compact',p=>p.compactness),
   rank('Least disruption',p=>p.moves*10000+p.totalMovement*10+p.distance),
   rank('Terrain adapted',p=>p.compactness+p.totalMovement*2+p.distance*5)
- ];
+ ].filter(Boolean);
 }
 H.compareTrapScenarios=compareTrapScenarios;
 
