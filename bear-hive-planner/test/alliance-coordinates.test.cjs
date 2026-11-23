@@ -13,4 +13,12 @@ assert.equal(first[0].x+origin.x,612);
 assert.equal(first[1].y+origin.y,622);
 restored.settings.hqX=null;restored.settings.hqY=null;
 assert.equal(H.allianceMarkers(restored).length,1);
+
+const modePlan=H.migrate(H.emptyPlan());
+const originalX=modePlan.settings.anchorX;
+const terrain=H.switchMapMode(modePlan,'terrain');
+const updated=H.changeMapReference(terrain,{anchorX:originalX+1}).state;
+const plain=H.switchMapMode(updated,'plain');
+assert.equal(plain.settings.anchorX,originalX+1,'map mode must not restore old BT coordinates');
+assert.equal(H.switchMapMode(plain,'terrain').settings.anchorX,originalX+1);
 console.log('Alliance coordinate marker persistence tests passed');
