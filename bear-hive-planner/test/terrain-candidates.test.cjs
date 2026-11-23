@@ -42,7 +42,8 @@ assert.equal(JSON.stringify(s),before,'scenario comparison must not mutate plan'
 // Safety regression: locked players remain in their original city footprints.
 const lockedPlan=H.migrate(H.emptyPlan());
 lockedPlan.mapMode='plain';
-const occupied=lockedPlan.slots.find(p=>p.trap===1);
+const occupied={id:'locked-slot-test',trap:1,x:lockedPlan.traps[0].x+5,y:lockedPlan.traps[0].y+5,w:2,h:2};
+lockedPlan.slots.push(occupied);
 lockedPlan.members.push({id:'locked-test',name:'Locked player',trap:1,slot:occupied.id,locked:true,confirmed:true,verified:true});
 const lockedBefore=JSON.stringify(lockedPlan);
 const lockedProposal=H.previewAdaptiveReflow(lockedPlan,1,lockedPlan.settings.anchorX+1,lockedPlan.settings.anchorY,{radius:8});
