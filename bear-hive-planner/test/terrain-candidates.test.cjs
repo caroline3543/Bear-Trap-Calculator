@@ -32,6 +32,10 @@ assert.throws(()=>H.applyAdaptiveReflow(s,1,-1,-1),/conflict|valid|position|foot
 const scenarios=H.compareTrapScenarios(s,1,{radius:2,reflowRadius:2});
 assert(Array.isArray(scenarios));
 assert(scenarios.length===0||scenarios.length===3);
-if(scenarios.length)assert.deepEqual(scenarios.map(p=>p.label),['Most compact','Least disruption','Terrain adapted']);
+if(scenarios.length){
+ assert.deepEqual(scenarios.map(p=>p.label),['Most compact','Least disruption','Terrain adapted']);
+ assert(scenarios.every(p=>p.distance>0),'a relocation must actually move the trap');
+ assert(scenarios.every(p=>p.valid),'all proposed scenarios must pass collision checks');
+}
 assert.equal(JSON.stringify(s),before,'scenario comparison must not mutate plan');
 console.log('Terrain candidate search tests passed');
