@@ -123,7 +123,13 @@ function compareTrapScenarios(s,id,{radius=8,reflowRadius=8}={}){
  });
  const valid=scored.filter(p=>p.valid);
  if(!valid.length)return [];
- const rank=(label,fn)=>({label,...[...valid].sort((a,b)=>fn(a)-fn(b)||a.distance-b.distance||a.y-b.y||a.x-b.x)[0]});
+ const used=new Set();
+ const rank=(label,fn)=>{
+  const ordered=[...valid].sort((a,b)=>fn(a)-fn(b)||a.distance-b.distance||a.y-b.y||a.x-b.x);
+  const choice=ordered.find(p=>!used.has(p.x+','+p.y))||ordered[0];
+  used.add(choice.x+','+choice.y);
+  return {label,...choice};
+ };
  return [
   rank('Most compact',p=>p.compactness),
   rank('Least disruption',p=>p.moves*10000+p.totalMovement*10+p.distance),
