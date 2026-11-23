@@ -1,0 +1,16 @@
+'use strict';
+const assert=require('node:assert/strict');
+const H=require('../dist/world-map.js');
+const plan=H.migrate(H.emptyPlan());
+plan.settings.hqX=612;plan.settings.hqY=617;plan.settings.nodeX=620;plan.settings.nodeY=622;
+const first=H.allianceMarkers(plan);
+assert.equal(first.length,2);
+assert.deepEqual(first.map(x=>[x.name,x.worldX,x.worldY]),[['HQ',612,617],['Node',620,622]]);
+const restored=H.validate(JSON.parse(JSON.stringify(plan)));
+assert.deepEqual(H.allianceMarkers(restored).map(x=>[x.worldX,x.worldY]),[[612,617],[620,622]]);
+const origin=H.worldOrigin(restored);
+assert.equal(first[0].x+origin.x,612);
+assert.equal(first[1].y+origin.y,622);
+restored.settings.hqX=null;restored.settings.hqY=null;
+assert.equal(H.allianceMarkers(restored).length,1);
+console.log('Alliance coordinate marker persistence tests passed');
