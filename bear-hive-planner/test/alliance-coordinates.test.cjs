@@ -46,6 +46,6 @@ const proposal=suggestions[0],changed=H.applyAllianceStructurePosition(structure
 assert.equal(changed.settings.hqX,proposal.x);
 assert.equal(changed.settings.hqY,proposal.y);
 assert.equal(JSON.stringify(structurePlan),before,'Apply must preserve original plan');
-assert.throws(()=>H.applyAllianceStructurePosition(structurePlan,'HQ',660,660),'Must reject Node overlap');
+assert.throws(()=>H.applyAllianceStructurePosition(structurePlan,'HQ',660,660),/overlaps/);
 assert.throws(()=>H.suggestAllianceStructurePositions(structurePlan,'invalid'));
 console.log('Alliance coordinate marker persistence and relocation collision tests passed');
