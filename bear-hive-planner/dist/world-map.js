@@ -70,6 +70,41 @@ function previewTrapShift(s,id,x,y){
  return {valid:blocked.length===0,reason:blocked.length?'The shifted formation conflicts with terrain, other objects or locked cities.':'Whole formation can shift without model-detected collisions.',moved,blocked,trap:{x,y},offsetX:dx,offsetY:dy,terrainVerified:false};
 }
 H.previewTrapShift=previewTrapShift;
+// Adapt individual city slots around obstacles while preserving their identities.
+// Locked occupied slots cannot move. This is a read-only proposed layout.
+function previewAdaptiveReflow(s,id,x,y,{radius=8}={}){
+ if(!Number.isInteger(radius)||radius<0||radius>20)throw Error('Choose a reflow radius from 0 to 20.');
+ const initial=previewTrapShift(s,id,x,y);
+ if(!initial.trap)return {...initial,adapted:true,unplaced:[]};
+ const trap=s.traps.find(t=>t.id===Number(id)),o=origin(s);
+ const box={...trap,x:x-o.x,y:y-o.y};
+ const fixed=[...s.traps.filter(t=>t.id!==Number(id)),...s.blocks,...s.structures,...s.slots.filter(p=>p.trap!==Number(id)),box];
+ const slots=s.slots.filter(p=>p.trap===Number(id));
+ const membersBySlot=new Map(s.members.filter(m=>m.slot).map(m=>[m.slot,m]));
+ const placed=[],unplaced=[],used=[];
+ const search=[];
+ for(let dy=-radius;dy<=radius;dy++)for(let dx=-radius;dx<=radius;dx++)search.push({dx,dy,d:Math.abs(dx)+Math.abs(dy)});
+ search.sort((a,b)=>a.d-b.d||Math.abs(a.dy)-Math.abs(b.dy)||a.dy-b.dy||a.dx-b.dx);
+ // Place locked occupied slots first at their original positions.
+ const ordered=[...slots].sort((a,b)=>Number(!!membersBySlot.get(b.id)?.locked)-Number(!!membersBySlot.get(a.id)?.locked));
+ for(const slot of ordered){
+  const locked=!!membersBySlot.get(slot.id)?.locked;
+  const preferred={...slot,x:slot.x+initial.offsetX,y:slot.y+initial.offsetY};
+  const choices=locked?[{dx:-initial.offsetX,dy:-initial.offsetY}]:search;
+  let found=null;
+  for(const offset of choices){
+   const candidate={...preferred,x:preferred.x+offset.dx,y:preferred.y+offset.dy};
+   if(worldBlocked(s,candidate,'city')||fixed.some(b=>H.overlap(candidate,b))||used.some(b=>H.overlap(candidate,b)))continue;
+   found=candidate;break;
+  }
+  if(found){used.push(found);placed.push({...found,shifted:found.x!==slot.x||found.y!==slot.y,locked})}
+  else unplaced.push({id:slot.id,locked,member:membersBySlot.get(slot.id)?.name||null});
+ }
+ const trapBlocked=worldBlocked(s,box,'trap')||fixed.slice(0,-1).some(b=>H.overlap(box,b));
+ return {valid:!trapBlocked&&!unplaced.length,adapted:true,trap:{x,y},moved:placed,unplaced,blocked:[...(trapBlocked?['Bear Trap footprint']:[]),...unplaced.map(p=>p.id)],reason:trapBlocked?'Bear Trap position conflicts with a fixed object.':unplaced.length?'Some city slots cannot be placed without collisions.':'Proposed reflow avoids model-detected collisions.',terrainVerified:false};
+}
+H.previewAdaptiveReflow=previewAdaptiveReflow;
+
 
 
 H.worldAt=at;H.worldOrigin=origin;H.worldBlocked=worldBlocked;H.worldFeatures=features;H.syncMapCoordinates=sync;H.changeMapReference=reference;
