@@ -1,0 +1,15 @@
+'use strict';
+const assert=require('node:assert/strict');
+const H=require('../dist/world-map.js');
+const s=H.migrate(H.emptyPlan());
+s.mapMode='plain';
+const before=JSON.stringify(s);
+const results=H.suggestTrapPositions(s,1,{radius:4,limit:8});
+assert(results.length>0);
+assert(results.every(p=>p.x>=0&&p.x<=1197&&p.y>=0&&p.y<=1197));
+assert(results.every(p=>p.terrainVerified===false));
+assert.deepEqual(results.map(p=>p.distance),results.map(p=>p.distance).sort((a,b)=>a-b));
+assert.equal(JSON.stringify(s),before,'suggestions must not mutate the plan');
+assert.throws(()=>H.suggestTrapPositions(s,3),/BT1 or BT2/);
+assert.throws(()=>H.suggestTrapPositions(s,1,{radius:100}),/Invalid/);
+console.log('Terrain candidate search tests passed');
