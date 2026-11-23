@@ -52,6 +52,25 @@ function suggestTrapPositions(s,id,{radius=8,limit=3}={}){
  return candidates.sort((a,b)=>a.distance-b.distance||a.affectedSlots-b.affectedSlots||Math.abs(a.offsetY)-Math.abs(b.offsetY)||a.y-b.y||a.x-b.x).slice(0,limit);
 }
 H.suggestTrapPositions=suggestTrapPositions;
+// Preview a whole-hive shift around a candidate BT coordinate. No state changes.
+// This conservative first strategy preserves every city-to-trap offset and locked placement.
+function previewTrapShift(s,id,x,y){
+ const trap=s.traps.find(t=>t.id===Number(id));
+ if(!trap)return {valid:false,reason:'Place the selected Bear Trap first.',moved:[],blocked:[]};
+ if(![x,y].every(Number.isInteger))return {valid:false,reason:'Use whole-number coordinates.',moved:[],blocked:[]};
+ const o=origin(s),dx=x-o.x-trap.x,dy=y-o.y-trap.y;
+ const moved=s.slots.filter(p=>p.trap===Number(id)).map(p=>({id:p.id,x:p.x+dx,y:p.y+dy,w:p.w,h:p.h,trap:p.trap}));
+ const nextTrap={...trap,x:trap.x+dx,y:trap.y+dy};
+ const others=[...s.traps.filter(t=>t.id!==Number(id)),...s.structures,...s.blocks,...s.slots.filter(p=>p.trap!==Number(id))];
+ const blocked=[];
+ if(worldBlocked(s,nextTrap,'trap')||others.some(b=>H.overlap(nextTrap,b)))blocked.push('Bear Trap footprint');
+ for(const p of moved)if(worldBlocked(s,p,'city')||others.some(b=>H.overlap(p,b))||H.overlap(p,nextTrap))blocked.push(p.id);
+ const locked=s.members.filter(m=>m.locked&&m.slot&&moved.some(p=>p.id===m.slot));
+ if((dx||dy)&&locked.length)blocked.push(...locked.map(m=>m.name));
+ return {valid:blocked.length===0,reason:blocked.length?'The shifted formation conflicts with terrain, other objects or locked cities.':'Whole formation can shift without model-detected collisions.',moved,blocked,trap:{x,y},offsetX:dx,offsetY:dy,terrainVerified:false};
+}
+H.previewTrapShift=previewTrapShift;
+
 
 H.worldAt=at;H.worldOrigin=origin;H.worldBlocked=worldBlocked;H.worldFeatures=features;H.syncMapCoordinates=sync;H.changeMapReference=reference;
 H.worldSource={name:'WOS Nerds community world map',url:'https://github.com/wosnerdwarriors/wos-data/tree/main/data/worldmap',revision:'802a263238893581b1ae7fc38914fa660f37b42f',tiles:198365,coverage:'1200 × 1200; state-specific differences and missing nodes are not verified'};
