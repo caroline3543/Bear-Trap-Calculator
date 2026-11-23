@@ -21,6 +21,11 @@ function placeObject(s,kind,x,y,{memberId,trapId=1}={}){const size={city:2,slot:
 H.placeMapObject=placeObject;
 H.switchMapMode=switchMode;H.placeBearTrap=placeTrap;
 
+
+// Coordinates for optional alliance structures are stored in world space.
+// Marker footprints are provisional and are not used to claim buildability.
+function allianceMarkers(s){const o=origin(s),out=[];for(const [name,kx,ky,w,h] of [['HQ','hqX','hqY',3,3],['Node','nodeX','nodeY',1,1]]){const x=s.settings[kx],y=s.settings[ky];if(Number.isInteger(x)&&Number.isInteger(y))out.push({name,worldX:x,worldY:y,x:x-o.x,y:y-o.y,w,h,footprintVerified:false})}return out}
+H.allianceMarkers=allianceMarkers;
 H.worldAt=at;H.worldOrigin=origin;H.worldBlocked=worldBlocked;H.worldFeatures=features;H.syncMapCoordinates=sync;H.changeMapReference=reference;
 H.worldSource={name:'WOS Nerds community world map',url:'https://github.com/wosnerdwarriors/wos-data/tree/main/data/worldmap',revision:'802a263238893581b1ae7fc38914fa660f37b42f',tiles:198365,coverage:'1200 × 1200; state-specific differences and missing nodes are not verified'};
 if(typeof module!=='undefined')module.exports=H;
