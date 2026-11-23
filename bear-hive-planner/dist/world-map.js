@@ -212,6 +212,24 @@ function applyAllianceStructurePosition(s,kind,x,y){
  return n;
 }
 H.applyAllianceStructurePosition=applyAllianceStructurePosition;
+// Compare immutable saved versions in world coordinates, independent of map origins.
+function compareSavedLayouts(before,after){
+ const a=origin(before),b=origin(after),prior=new Map(before.slots.map(slot=>[slot.id,slot]));
+ const moved=[],added=[],unchanged=[],removed=[];
+ for(const slot of after.slots){
+  const old=prior.get(slot.id),to={x:slot.x+b.x,y:slot.y+b.y};
+  if(!old){added.push({id:slot.id,to});continue}
+  const from={x:old.x+a.x,y:old.y+a.y};
+  (from.x===to.x&&from.y===to.y?unchanged:moved).push({id:slot.id,from,to});
+ }
+ for(const slot of before.slots)if(!after.slots.some(s=>s.id===slot.id))removed.push({id:slot.id,from:{x:slot.x+a.x,y:slot.y+a.y}});
+ const structures=[];
+ for(const [name,x,y] of [['BT1','anchorX','anchorY'],['BT2','anchor2X','anchor2Y'],['HQ','hqX','hqY'],['Node','nodeX','nodeY']]){
+  if(before.settings[x]!==after.settings[x]||before.settings[y]!==after.settings[y])structures.push({name,from:{x:before.settings[x]??null,y:before.settings[y]??null},to:{x:after.settings[x]??null,y:after.settings[y]??null}});
+ }
+ return {moved,added,removed,unchanged,structures};
+}
+H.compareSavedLayouts=compareSavedLayouts;
 H.worldAt=at;H.worldOrigin=origin;H.worldBlocked=worldBlocked;H.worldFeatures=features;H.syncMapCoordinates=sync;H.changeMapReference=reference;
 H.worldSource={name:'WOS Nerds community world map',url:'https://github.com/wosnerdwarriors/wos-data/tree/main/data/worldmap',revision:'802a263238893581b1ae7fc38914fa660f37b42f',tiles:198365,coverage:'1200 × 1200; state-specific differences and missing nodes are not verified'};
 if(typeof module!=='undefined')module.exports=H;
