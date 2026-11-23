@@ -59,13 +59,13 @@ Object.assign(H,{rosterSuggestions,preferredAttendanceTrap,routeAttendanceGroups
 // but never determine player categories, placements or BT roster membership.
 routeAttendanceGroups=function(s){return clone(s)};
 stats=function(s,m,trap=m.trap){
- const kind=m.participation||m.attendance?.[trap]?.kind||'unknown';
+ const kind=m.participation||'unknown';
  const normalized={regular:'regular',sometimes:'sometimes',rarely:'rarely',none:'none',unknown:'unknown'}[kind]||'unknown';
  const names={regular:'Always joins',sometimes:'Often joins',rarely:'Rarely joins',none:'Not part of BT',unknown:'Uncategorised'};
  return {count:0,attended:0,rate:null,kind:normalized,calculated:normalized,enough:false,source:'manual',label:names[normalized]};
 };
 attendance=function(s,m,t){const kind=stats(s,m,t).kind;return {regular:1,sometimes:.5,rarely:.2,none:0,unknown:0}[kind]};
 const baseSuggest=H.suggest;
-H.suggest=function(s,trap){const work=clone(s);migrate(work);for(const m of work.members){for(const t of [1,2]){const a=stats(work,m,t);if(a.enough)m.attendance[t]={kind:a.kind,attended:a.attended,total:a.count}}}const result=baseSuggest(work,trap);for(const m of result.members){const old=s.members.find(x=>x.id===m.id);m.attendance=clone(old.attendance)}return result};
+H.suggest=function(s,trap){const work=clone(s);migrate(work);for(const m of work.members){for(const t of [1,2]){const a=stats(work,m,t);if(a.enough)m.attendance[t]={kind:a.kind,attended:a.attended,total:a.count}}}for(const m of work.members){const kind=stats(work,m,trap).kind;if(kind==='none'||kind==='unknown')m.attendance[trap]={kind:'rarely',attended:0,total:1};else m.attendance[trap]={kind,attended:null,total:null};}const result=baseSuggest(work,trap);for(const m of result.members){const old=s.members.find(x=>x.id===m.id);m.attendance=clone(old.attendance)}return result};
 Object.assign(H,{migrate,attendanceStats:stats,attendanceScore:attendance,parseBulk:parseRoster,reviewBulk:reviewRoster,applyBulk:applyRoster,frequencyLabels:labels,attendanceSession:session,attendanceSessionKey:sessionKey,shiftEventDate:shiftDate,expectedEventDate:expected,parseAttendees,matchAttendee:match,reviewAttendees,saveAttendanceSession:saveSession,sessionFinished:finished});if(typeof module!=='undefined')module.exports=H;
 })(typeof window!=='undefined'?window:globalThis);
