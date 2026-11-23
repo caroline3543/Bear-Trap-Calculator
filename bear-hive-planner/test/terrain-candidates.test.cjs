@@ -70,4 +70,23 @@ assert.throws(()=>H.applyAdaptiveReflow(obstructed,1,obstacleX,obstacleY),/confl
 // No-op candidates should not be presented as relocation scenarios.
 const ranked=H.compareTrapScenarios(s,1,{radius:4,reflowRadius:4});
 assert(ranked.every(p=>p.distance>0));
+
+// Apply/restore coordinates must remain consistent for either Bear Trap.
+for(const trapId of [1,2]){
+ const plan=H.migrate(H.emptyPlan());plan.mapMode='plain';
+ const xKey=trapId===1?'anchorX':'anchor2X',yKey=trapId===1?'anchorY':'anchor2Y';
+ const nextX=plan.settings[xKey]+1,nextY=plan.settings[yKey];
+ const original=JSON.stringify(plan);
+ const proposal=H.previewAdaptiveReflow(plan,trapId,nextX,nextY);
+ assert.equal(proposal.valid,true,'simple BT'+trapId+' relocation should be valid');
+ const result=H.applyAdaptiveReflow(plan,trapId,nextX,nextY).state;
+ assert.equal(result.settings[xKey],nextX);
+ assert.equal(result.settings[yKey],nextY);
+ const mapOrigin=H.worldOrigin(result),placed=result.traps.find(t=>t.id===trapId);
+ assert.equal(placed.x+mapOrigin.x,nextX,'BT'+trapId+' local/world X mismatch');
+ assert.equal(placed.y+mapOrigin.y,nextY,'BT'+trapId+' local/world Y mismatch');
+ assert.equal(JSON.stringify(plan),original,'applying BT'+trapId+' must not mutate original');
+}
+assert.throws(()=>H.compareTrapScenarios(s,1,{radius:41}),/search radius/);
+assert.throws(()=>H.compareTrapScenarios(s,1,{reflowRadius:21}),/reflow radius/);
 console.log('Terrain candidate search tests passed');
