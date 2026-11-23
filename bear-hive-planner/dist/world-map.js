@@ -109,6 +109,8 @@ H.previewAdaptiveReflow=previewAdaptiveReflow;
 function compareTrapScenarios(s,id,{radius=8,reflowRadius=8}={}){
  // Sample across the entire requested radius instead of evaluating only the nearest 20.
  // Keep computation bounded for mobile devices while including farther alternatives.
+ if(!Number.isInteger(radius)||radius<0||radius>40)throw Error('Choose a search radius from 0 to 40.');
+ if(!Number.isInteger(reflowRadius)||reflowRadius<0||reflowRadius>20)throw Error('Choose a reflow radius from 0 to 20.');
  const pool=suggestTrapPositions(s,id,{radius,limit:7000}).filter(p=>p.distance>0);
  const candidates=[];
  const seen=new Set();
