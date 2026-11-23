@@ -47,7 +47,8 @@ lockedPlan.slots.push(occupied);
 lockedPlan.members.push({id:'locked-test',name:'Locked player',trap:1,slot:occupied.id,locked:true,confirmed:true,verified:true});
 const lockedBefore=JSON.stringify(lockedPlan);
 const lockedProposal=H.previewAdaptiveReflow(lockedPlan,1,lockedPlan.settings.anchorX+1,lockedPlan.settings.anchorY,{radius:8});
-if(lockedProposal.valid){
+assert.equal(lockedProposal.valid,true,'locked-player reflow fixture must exercise a valid relocation');
+{
  const lockedAfter=H.applyAdaptiveReflow(lockedPlan,1,lockedPlan.settings.anchorX+1,lockedPlan.settings.anchorY).state;
  const original=lockedPlan.slots.find(p=>p.id===occupied.id),after=lockedAfter.slots.find(p=>p.id===occupied.id);
  assert.equal(after.x,original.x);
