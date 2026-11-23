@@ -1,0 +1,39 @@
+name: Bear Hive Planner branch verification
+on:
+  push:
+    branches:
+      - work/bear-hive-manual-participation
+    paths:
+      - 'bear-hive-planner/**'
+      - '.github/workflows/bear-hive-preview-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: bear-hive-planner
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Model and UI smoke tests
+        run: npm test
+      - name: Install browser
+        run: npx playwright install --with-deps chromium
+      - name: Browser flows
+        run: npm run test:browser
+      - name: Planning browser flows
+        run: npm run test:planning
+      - name: Design browser checks
+        run: npm run test:design
