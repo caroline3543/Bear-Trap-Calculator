@@ -38,4 +38,34 @@ if(scenarios.length){
  assert(scenarios.every(p=>p.valid),'all proposed scenarios must pass collision checks');
 }
 assert.equal(JSON.stringify(s),before,'scenario comparison must not mutate plan');
+
+// Safety regression: locked players remain in their original city footprints.
+const lockedPlan=H.migrate(H.emptyPlan());
+lockedPlan.mapMode='plain';
+const occupied=lockedPlan.slots.find(p=>p.trap===1);
+lockedPlan.members.push({id:'locked-test',name:'Locked player',trap:1,slot:occupied.id,locked:true,confirmed:true,verified:true});
+const lockedBefore=JSON.stringify(lockedPlan);
+const lockedProposal=H.previewAdaptiveReflow(lockedPlan,1,lockedPlan.settings.anchorX+1,lockedPlan.settings.anchorY,{radius:8});
+if(lockedProposal.valid){
+ const lockedAfter=H.applyAdaptiveReflow(lockedPlan,1,lockedPlan.settings.anchorX+1,lockedPlan.settings.anchorY).state;
+ const original=lockedPlan.slots.find(p=>p.id===occupied.id),after=lockedAfter.slots.find(p=>p.id===occupied.id);
+ assert.equal(after.x,original.x);
+ assert.equal(after.y,original.y);
+ assert.equal(lockedAfter.members.find(m=>m.id==='locked-test').slot,occupied.id);
+ assert.equal(lockedAfter.members.find(m=>m.id==='locked-test').confirmed,true);
+}
+assert.equal(JSON.stringify(lockedPlan),lockedBefore,'locked relocation preview must not mutate the source');
+
+// Safety regression: known fixed structures must never be displaced by a candidate.
+const obstructed=H.migrate(H.emptyPlan());
+obstructed.mapMode='plain';
+const obstacle={id:'test-obstacle',x:obstructed.traps[0].x+3,y:obstructed.traps[0].y,w:3,h:3};
+obstructed.structures.push(obstacle);
+const obstacleX=obstructed.settings.anchorX+3,obstacleY=obstructed.settings.anchorY;
+assert.equal(H.previewAdaptiveReflow(obstructed,1,obstacleX,obstacleY).valid,false);
+assert.throws(()=>H.applyAdaptiveReflow(obstructed,1,obstacleX,obstacleY),/conflict|valid|position|footprint/i);
+
+// No-op candidates should not be presented as relocation scenarios.
+const ranked=H.compareTrapScenarios(s,1,{radius:4,reflowRadius:4});
+assert(ranked.every(p=>p.distance>0));
 console.log('Terrain candidate search tests passed');
