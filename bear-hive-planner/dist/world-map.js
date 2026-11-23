@@ -104,6 +104,37 @@ function previewAdaptiveReflow(s,id,x,y,{radius=8}={}){
  return {valid:!trapBlocked&&!unplaced.length,adapted:true,trap:{x,y},moved:placed,unplaced,blocked:[...(trapBlocked?['Bear Trap footprint']:[]),...unplaced.map(p=>p.id)],reason:trapBlocked?'Bear Trap position conflicts with a fixed object.':unplaced.length?'Some city slots cannot be placed without collisions.':'Proposed reflow avoids model-detected collisions.',terrainVerified:false};
 }
 H.previewAdaptiveReflow=previewAdaptiveReflow;
+// Apply only a freshly recalculated, fully valid adaptive preview.
+// Callers retain the original state for undo and must explicitly confirm.
+function applyAdaptiveReflow(s,id,x,y,{radius=8}={}){
+ const preview=previewAdaptiveReflow(s,id,x,y,{radius});
+ if(!preview.valid||preview.unplaced.length)throw Error(preview.reason||'Relocation is not valid.');
+ const n=copy(s),o=origin(n),trap=n.traps.find(t=>t.id===Number(id));
+ if(!trap)throw Error('The selected Bear Trap does not exist.');
+ const byId=new Map(preview.moved.map(p=>[p.id,p]));
+ for(const slot of n.slots.filter(p=>p.trap===Number(id))){
+  const target=byId.get(slot.id);
+  if(!target)throw Error('A planned city slot is missing from the relocation.');
+  slot.x=target.x;slot.y=target.y;
+ }
+ trap.x=x-o.x;trap.y=y-o.y;
+ const xKey=Number(id)===1?'anchorX':'anchor2X',yKey=Number(id)===1?'anchorY':'anchor2Y';
+ n.settings[xKey]=x;n.settings[yKey]=y;
+ for(const m of n.members.filter(m=>m.slot&&byId.has(m.slot))){
+  const target=byId.get(m.slot),original=s.slots.find(p=>p.id===m.slot);
+  if(m.locked&&(target.x!==original.x||target.y!==original.y))throw Error('Locked player cannot be relocated.');
+  if(target.x!==original.x||target.y!==original.y){m.confirmed=false;m.verified=false}
+ }
+ // Verify the complete result, including city-to-city and trap collisions.
+ for(const slot of n.slots.filter(p=>p.trap===Number(id))){
+  if(worldBlocked(n,slot,'city')||n.traps.some(t=>H.overlap(t,slot))||
+    [...n.blocks,...n.structures,...n.slots.filter(p=>p.id!==slot.id)].some(b=>H.overlap(b,slot)))
+   throw Error('Relocation validation failed for city slot '+slot.id);
+ }
+ return {state:n,preview};
+}
+H.applyAdaptiveReflow=applyAdaptiveReflow;
+
 
 
 
