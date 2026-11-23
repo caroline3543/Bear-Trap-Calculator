@@ -31,7 +31,7 @@ H.allianceMarkers=allianceMarkers;
 // A candidate is a map-model suggestion, not an in-game construction guarantee.
 function suggestTrapPositions(s,id,{radius=8,limit=3}={}){
  if(![1,2].includes(Number(id)))throw Error('Choose BT1 or BT2.');
- if(!Number.isInteger(radius)||radius<0||radius>40||!Number.isInteger(limit)||limit<1||limit>20)throw Error('Invalid search radius or candidate limit.');
+ if(!Number.isInteger(radius)||radius<0||radius>40||!Number.isInteger(limit)||limit<1||limit>120)throw Error('Invalid search radius or candidate limit.');
  const trap=s.traps.find(t=>t.id===Number(id)),o=origin(s);
  const x0=Number(id)===1?s.settings.anchorX:s.settings.anchor2X;
  const y0=Number(id)===1?s.settings.anchorY:s.settings.anchor2Y;
@@ -107,7 +107,16 @@ H.previewAdaptiveReflow=previewAdaptiveReflow;
 // Rank verified-by-model proposals with distinct, transparent priorities.
 // Scores are comparative only; no claim of optimality or in-game verification.
 function compareTrapScenarios(s,id,{radius=8,reflowRadius=8}={}){
- const candidates=suggestTrapPositions(s,id,{radius,limit:20}).filter(p=>p.distance>0);
+ // Sample across the entire requested radius instead of evaluating only the nearest 20.
+ // Keep computation bounded for mobile devices while including farther alternatives.
+ const pool=suggestTrapPositions(s,id,{radius,limit:120}).filter(p=>p.distance>0);
+ const candidates=[];
+ const seen=new Set();
+ const pick=p=>{if(p&&!seen.has(p.x+','+p.y)){seen.add(p.x+','+p.y);candidates.push(p)}};
+ // Nearest options retain fine-grained precision.
+ pool.slice(0,24).forEach(pick);
+ // Spread the remaining budget across the full candidate pool.
+ for(let i=0;i<Math.min(56,pool.length);i++)pick(pool[Math.floor(i*(pool.length-1)/Math.max(1,Math.min(56,pool.length)-1))]);
  const source=s.traps.find(t=>t.id===Number(id));
  if(!source)return [];
  const scored=candidates.map(p=>{
