@@ -104,6 +104,34 @@ function previewAdaptiveReflow(s,id,x,y,{radius=8}={}){
  return {valid:!trapBlocked&&!unplaced.length,adapted:true,trap:{x,y},moved:placed,unplaced,blocked:[...(trapBlocked?['Bear Trap footprint']:[]),...unplaced.map(p=>p.id)],reason:trapBlocked?'Bear Trap position conflicts with a fixed object.':unplaced.length?'Some city slots cannot be placed without collisions.':'Proposed reflow avoids model-detected collisions.',terrainVerified:false};
 }
 H.previewAdaptiveReflow=previewAdaptiveReflow;
+// Rank verified-by-model proposals with distinct, transparent priorities.
+// Scores are comparative only; no claim of optimality or in-game verification.
+function compareTrapScenarios(s,id,{radius=8,reflowRadius=8}={}){
+ const candidates=suggestTrapPositions(s,id,{radius,limit:20});
+ const source=s.traps.find(t=>t.id===Number(id));
+ if(!source)return [];
+ const scored=candidates.map(p=>{
+  const preview=previewAdaptiveReflow(s,id,p.x,p.y,{radius:reflowRadius});
+  const originals=new Map(s.slots.filter(q=>q.trap===Number(id)).map(q=>[q.id,q]));
+  let moves=0,totalMovement=0,compactness=0;
+  for(const q of preview.moved){
+   const old=originals.get(q.id);
+   if(old){const d=Math.abs(q.x-old.x)+Math.abs(q.y-old.y);if(d)moves++;totalMovement+=d}
+   compactness+=Math.abs(q.x+q.w/2-(p.x-origin(s).x+1.5))+Math.abs(q.y+q.h/2-(p.y-origin(s).y+1.5));
+  }
+  return {...p,valid:preview.valid,moves,totalMovement,compactness,unplaced:preview.unplaced.length,conflicts:preview.blocked.length};
+ });
+ const valid=scored.filter(p=>p.valid);
+ if(!valid.length)return [];
+ const rank=(label,fn)=>({label,...[...valid].sort((a,b)=>fn(a)-fn(b)||a.distance-b.distance||a.y-b.y||a.x-b.x)[0]});
+ return [
+  rank('Most compact',p=>p.compactness),
+  rank('Least disruption',p=>p.moves*10000+p.totalMovement*10+p.distance),
+  rank('Terrain adapted',p=>p.compactness+p.totalMovement*2+p.distance*5)
+ ];
+}
+H.compareTrapScenarios=compareTrapScenarios;
+
 // Apply only a freshly recalculated, fully valid adaptive preview.
 // Callers retain the original state for undo and must explicitly confirm.
 function applyAdaptiveReflow(s,id,x,y,{radius=8}={}){
