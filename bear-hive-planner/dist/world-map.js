@@ -107,7 +107,7 @@ H.previewAdaptiveReflow=previewAdaptiveReflow;
 // Rank verified-by-model proposals with distinct, transparent priorities.
 // Scores are comparative only; no claim of optimality or in-game verification.
 function compareTrapScenarios(s,id,{radius=8,reflowRadius=8}={}){
- const candidates=suggestTrapPositions(s,id,{radius,limit:20});
+ const candidates=suggestTrapPositions(s,id,{radius,limit:20}).filter(p=>p.distance>0);
  const source=s.traps.find(t=>t.id===Number(id));
  if(!source)return [];
  const scored=candidates.map(p=>{
